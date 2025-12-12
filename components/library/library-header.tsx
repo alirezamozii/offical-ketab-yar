@@ -3,6 +3,14 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -23,13 +31,15 @@ import {
 import { Slider } from '@/components/ui/slider'
 import { useLibraryStore } from '@/lib/store/library-store'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Filter, Grid3x3, List, Search, Sparkles, Star, TrendingUp, X } from 'lucide-react'
+import { BookOpen, ChevronDown, Filter, Grid3x3, List, Search, Sparkles, Star, TrendingUp, X } from 'lucide-react'
 import { useState } from 'react'
 
 interface Category {
-  id: number
+  id: string | number
   name: string
   slug: string
+  _id?: string
+  bookCount?: number
 }
 
 interface LibraryHeaderProps {
@@ -45,6 +55,9 @@ export function LibraryHeader({ categories }: LibraryHeaderProps) {
   const [sortBy, setSortBy] = useState('popular')
 
   const languages = ['English', 'Persian']
+
+  // Use categories from Sanity (passed as prop)
+  const availableGenres = categories.map(c => c.name)
 
   const handleGenreToggle = (genre: string) => {
     setSelectedGenres(prev =>
@@ -179,6 +192,68 @@ export function LibraryHeader({ categories }: LibraryHeaderProps) {
               )}
             </AnimatePresence>
           </motion.div>
+
+          {/* Genre Dropdown */}
+          {availableGenres.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+                  <Button
+                    variant="outline"
+                    className="h-12 border-2 border-gold-500/30 bg-background/80 backdrop-blur-sm shadow-lg hover:shadow-xl hover:border-gold-600/60 transition-all duration-300 gap-2"
+                  >
+                    <Sparkles className="h-4 w-4 text-gold-600 dark:text-gold-500" />
+                    <span>ژانرها</span>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                    {selectedGenres.length > 0 && (
+                      <Badge className="mr-1 h-5 w-5 p-0 flex items-center justify-center bg-gold-600 text-white">
+                        {selectedGenres.length}
+                      </Badge>
+                    )}
+                  </Button>
+                </motion.div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-56 max-h-[400px] overflow-y-auto"
+                dir="rtl"
+              >
+                <DropdownMenuLabel className="text-right">انتخاب ژانر</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="p-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start text-right mb-2"
+                    onClick={() => setSelectedGenres([])}
+                  >
+                    <BookOpen className="ml-2 h-4 w-4" />
+                    همه کتاب‌ها
+                  </Button>
+                  {availableGenres.map((genre) => (
+                    <DropdownMenuItem
+                      key={genre}
+                      className="cursor-pointer text-right"
+                      onClick={() => handleGenreToggle(genre)}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span>{genre}</span>
+                        {selectedGenres.includes(genre) && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="h-2 w-2 rounded-full bg-gold-600"
+                          />
+                        )}
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+
 
           {/* Enhanced Sort */}
           <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>

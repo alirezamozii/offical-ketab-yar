@@ -3,11 +3,9 @@
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
 import {
-  Activity,
   ArrowUpRight,
   BookMarked,
   BookOpen,
-  Cookie,
   Crown,
   Heart,
   HelpCircle,
@@ -16,7 +14,6 @@ import {
   MessageCircle,
   PenTool,
   Rocket,
-  Shield,
   Sparkles,
   Target
 } from 'lucide-react'
@@ -44,14 +41,9 @@ export function SiteFooter() {
       { label: 'وبلاگ', href: '/blog', icon: PenTool },
       { label: 'فرصت‌های شغلی', href: '/careers', icon: Rocket },
     ],
-    legal: [
-      { label: 'حریم خصوصی', href: '/privacy', icon: Shield },
-      { label: 'کوکی‌ها', href: '/cookies', icon: Cookie },
-    ],
     support: [
       { label: 'مرکز راهنمایی', href: '/help', icon: HelpCircle },
       { label: 'پشتیبانی', href: '/support', icon: MessageCircle },
-      { label: 'وضعیت سرویس', href: '/status', icon: Activity },
     ],
   }
 
@@ -160,7 +152,6 @@ export function SiteFooter() {
                 <span className="w-1 h-6 bg-gradient-to-b from-gold-600 to-gold-400 rounded-full" />
                 {key === 'product' && 'محصول'}
                 {key === 'company' && 'شرکت'}
-                {key === 'legal' && 'قانونی'}
                 {key === 'support' && 'پشتیبانی'}
               </h4>
               <ul className="space-y-3">
@@ -221,9 +212,6 @@ export function SiteFooter() {
             </Link>
             <Link href="/contact" className="text-sm text-muted-foreground hover:text-gold-600 transition-colors">
               تماس با ما
-            </Link>
-            <Link href="/privacy" className="text-sm text-muted-foreground hover:text-gold-600 transition-colors">
-              حریم خصوصی
             </Link>
             <Link href="/support" className="text-sm text-muted-foreground hover:text-gold-600 transition-colors">
               پشتیبانی

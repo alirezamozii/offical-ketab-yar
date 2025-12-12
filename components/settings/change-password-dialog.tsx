@@ -143,7 +143,7 @@ export default function ChangePasswordDialog({ open, onOpenChange }: ChangePassw
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                             انصراف
                         </Button>
-                        <Button type="submit" disabled={isLoading} className="bg-gold hover:bg-gold/90">
+                        <Button type="submit" disabled={isLoading} variant="bronze">
                             {isLoading ? (
                                 <>
                                     <Loader2 className="ml-2 size-4 animate-spin" />

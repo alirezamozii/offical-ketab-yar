@@ -1,215 +1,219 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import { createClient } from '@/lib/supabase/server'
-import { BookOpen, DollarSign, TrendingUp, Users } from 'lucide-react'
-import { Suspense } from 'react'
+'use client'
 
-export const dynamic = 'force-dynamic'
-
-async function getAdminStats() {
-  const supabase = await createClient()
-
-  const [
-    { count: totalBooks },
-    { count: totalUsers },
-    { count: activeSubscriptions },
-    { data: recentBooks },
-  ] = await Promise.all([
-    supabase.from('books').select('*', { count: 'exact', head: true }),
-    supabase.from('profiles').select('*', { count: 'exact', head: true }),
-    supabase
-      .from('subscriptions')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'active'),
-    supabase
-      .from('books')
-      .select('title, created_at, view_count')
-      .order('created_at', { ascending: false })
-      .limit(5),
-  ])
-
-  return {
-    totalBooks: totalBooks || 0,
-    totalUsers: totalUsers || 0,
-    activeSubscriptions: activeSubscriptions || 0,
-    recentBooks: recentBooks || [],
-  }
-}
-
-function StatsSkeleton() {
-  return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {[...Array(4)].map((_, i) => (
-        <Card key={i}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-4 w-4" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-8 w-16" />
-            <Skeleton className="mt-2 h-3 w-32" />
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  )
-}
-
-async function AdminStats() {
-  const stats = await getAdminStats()
-
-  const cards = [
-    {
-      title: 'Total Books',
-      value: stats.totalBooks,
-      icon: BookOpen,
-      description: 'Published books',
-    },
-    {
-      title: 'Total Users',
-      value: stats.totalUsers,
-      icon: Users,
-      description: 'Registered users',
-    },
-    {
-      title: 'Active Subscriptions',
-      value: stats.activeSubscriptions,
-      icon: TrendingUp,
-      description: 'Premium members',
-    },
-    {
-      title: 'Revenue',
-      value: `$${(stats.activeSubscriptions * 9.99).toFixed(2)}`,
-      icon: DollarSign,
-      description: 'Monthly recurring',
-    },
-  ]
-
-  return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {cards.map((card) => (
-        <Card key={card.title}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-            <card.icon className="text-muted-foreground h-4 w-4" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{card.value}</div>
-            <p className="text-muted-foreground text-xs">{card.description}</p>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  )
-}
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Activity, BookOpen, Key, TrendingUp, Users } from 'lucide-react'
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { Area, AreaChart, Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 export default function AdminDashboard() {
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await fetch('/api/admin/dashboard/stats')
+      const result = await response.json()
+      if (result.success) {
+        setData(result)
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto py-8" dir="rtl">
+        <div className="text-center py-12">در حال بارگذاری...</div>
+      </div>
+    )
+  }
+
+  const stats = data?.stats || {}
+
   return (
-    <div className="space-y-8">
+    <div className="container mx-auto py-8 space-y-8" dir="rtl">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome to the Ketab Yar admin panel
-        </p>
+        <h1 className="text-3xl font-bold">📊 داشبورد</h1>
+        <p className="text-muted-foreground">خوش آمدید به پنل مدیریت کتاب‌یار</p>
       </div>
 
-      <Suspense fallback={<StatsSkeleton />}>
-        <AdminStats />
-      </Suspense>
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">کل کاربران</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.users?.total?.toLocaleString('fa-IR') || 0}</div>
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <TrendingUp className="h-3 w-3 text-green-500" />
+              {stats.users?.newThisWeek || 0} کاربر این هفته
+            </p>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            <a
-              href="/Studio"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:bg-accent block rounded-lg p-4 transition-colors border"
-            >
-              <div className="font-medium">📚 Manage Books</div>
-              <div className="text-muted-foreground text-sm">
-                Add/edit books in Sanity CMS
-              </div>
-            </a>
-            <a
-              href="/Studio"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:bg-accent block rounded-lg p-4 transition-colors border"
-            >
-              <div className="font-medium">✍️ Manage Blog</div>
-              <div className="text-muted-foreground text-sm">
-                Create blog posts in Sanity CMS
-              </div>
-            </a>
-            <a
-              href="/admin/users"
-              className="hover:bg-accent block rounded-lg p-4 transition-colors border"
-            >
-              <div className="font-medium">👥 Manage Users</div>
-              <div className="text-muted-foreground text-sm">
-                Ban/unban, create test users
-              </div>
-            </a>
-            <a
-              href="/admin/ai-keys"
-              className="hover:bg-accent block rounded-lg p-4 transition-colors border"
-            >
-              <div className="font-medium">🤖 AI Keys</div>
-              <div className="text-muted-foreground text-sm">
-                Manage Gemini API keys
-              </div>
-            </a>
-          </div>
-        </CardContent>
-      </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">کاربران فعال</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.users?.active?.toLocaleString('fa-IR') || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.users?.premium || 0} کاربر پرمیوم
+            </p>
+          </CardContent>
+        </Card>
 
-      <Card className="bg-gradient-to-br from-gold-50 to-gold-100 dark:from-gold-950 dark:to-gold-900 border-gold-200 dark:border-gold-800">
-        <CardContent className="pt-6">
-          <h3 className="text-lg font-semibold mb-3">📌 Admin Panel Features</h3>
-          <div className="grid gap-2 md:grid-cols-2">
-            <div className="space-y-1">
-              <h4 className="font-medium text-sm">✅ User Management</h4>
-              <ul className="text-xs text-muted-foreground space-y-0.5">
-                <li>• Ban/unban users with reason tracking</li>
-                <li>• Create test users with unlimited access</li>
-                <li>• Make users admin or remove admin role</li>
-                <li>• Export user data to CSV</li>
-              </ul>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">کل کتاب‌ها</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.books?.total?.toLocaleString('fa-IR') || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.books?.published || 0} منتشر شده
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">صفحات خوانده شده</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.reading?.totalPages?.toLocaleString('fa-IR') || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.reading?.totalSessions || 0} جلسه خواندن
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>ثبت‌نام کاربران (30 روز اخیر)</CardTitle>
+            <CardDescription>تعداد کاربران جدید در هر روز</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={data?.charts?.signups || []}>
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(value) => new Date(value).toLocaleDateString('fa-IR', { month: 'short', day: 'numeric' })}
+                />
+                <YAxis />
+                <Tooltip
+                  labelFormatter={(value) => new Date(value).toLocaleDateString('fa-IR')}
+                  formatter={(value: any) => [value.toLocaleString('fa-IR'), 'کاربر']}
+                />
+                <Area type="monotone" dataKey="value" stroke="#D4AF37" fill="#D4AF37" fillOpacity={0.3} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>فعالیت خواندن (30 روز اخیر)</CardTitle>
+            <CardDescription>تعداد صفحات خوانده شده در هر روز</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={data?.charts?.activity || []}>
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(value) => new Date(value).toLocaleDateString('fa-IR', { month: 'short', day: 'numeric' })}
+                />
+                <YAxis />
+                <Tooltip
+                  labelFormatter={(value) => new Date(value).toLocaleDateString('fa-IR')}
+                  formatter={(value: any) => [value.toLocaleString('fa-IR'), 'صفحه']}
+                />
+                <Bar dataKey="value" fill="#D4AF37" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions & Top Books */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>دسترسی سریع</CardTitle>
+            <CardDescription>عملیات‌های متداول</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Link href="/Studio">
+              <Button className="w-full justify-start">
+                <BookOpen className="ml-2 h-4 w-4" />
+                مدیریت کتاب‌ها (Sanity)
+              </Button>
+            </Link>
+            <Link href="/admin/users">
+              <Button variant="outline" className="w-full justify-start">
+                <Users className="ml-2 h-4 w-4" />
+                مدیریت کاربران
+              </Button>
+            </Link>
+            <Link href="/admin/api-keys">
+              <Button variant="outline" className="w-full justify-start">
+                <Key className="ml-2 h-4 w-4" />
+                مدیریت کلیدهای API
+              </Button>
+            </Link>
+            <Link href="/admin/analytics">
+              <Button variant="outline" className="w-full justify-start">
+                <Activity className="ml-2 h-4 w-4" />
+                تحلیل‌ها و گزارش‌ها
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>کتاب‌های برتر</CardTitle>
+            <CardDescription>پرخواننده‌ترین کتاب‌ها</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {data?.topBooks?.length > 0 ? (
+                data.topBooks.map((book: any, index: number) => (
+                  <div key={book.book_id} className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gold-100 text-gold-700 font-bold text-sm">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{book.title}</p>
+                      <p className="text-xs text-muted-foreground">{book.reads} بار خوانده شده</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  هنوز داده‌ای وجود ندارد
+                </p>
+              )}
             </div>
-            <div className="space-y-1">
-              <h4 className="font-medium text-sm">✅ Content Management</h4>
-              <ul className="text-xs text-muted-foreground space-y-0.5">
-                <li>• Manage books via Sanity CMS</li>
-                <li>• Create blog posts with rich editor</li>
-                <li>• Manage authors and genres</li>
-                <li>• All content is bilingual (EN/FA)</li>
-              </ul>
-            </div>
-            <div className="space-y-1">
-              <h4 className="font-medium text-sm">✅ Analytics & Stats</h4>
-              <ul className="text-xs text-muted-foreground space-y-0.5">
-                <li>• Real-time platform statistics</li>
-                <li>• User growth and conversion rates</li>
-                <li>• Revenue estimation</li>
-                <li>• Export stats to CSV</li>
-              </ul>
-            </div>
-            <div className="space-y-1">
-              <h4 className="font-medium text-sm">✅ AI System</h4>
-              <ul className="text-xs text-muted-foreground space-y-0.5">
-                <li>• Manage multiple Gemini API keys</li>
-                <li>• Automatic key rotation</li>
-                <li>• Usage and error tracking</li>
-                <li>• Fallback system for reliability</li>
-              </ul>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

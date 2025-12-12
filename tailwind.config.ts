@@ -51,19 +51,37 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        // Custom gold/beige theme colors
+        // Bronze/Beige theme - Main: #B8956A
         gold: {
-          50: '#fdfbf7',
-          100: '#f9f5eb',
-          200: '#f2e9d4',
-          300: '#e8d9b8',
-          400: '#d4c19a',
-          500: '#c9a961', // Primary gold
-          600: '#b8956a',
-          700: '#9d7d54',
-          800: '#7d6343',
-          900: '#5d4a32',
-          950: '#3d3121',
+          50: '#faf9f7',   // Lightest cream
+          100: '#f5f2ed',  // Very light beige
+          200: '#ebe4d9',  // Light beige
+          300: '#ddd0bd',  // Soft beige
+          400: '#cdb89a',  // Medium beige
+          500: '#b8956a',  // PRIMARY BRONZE
+          600: '#a67f56',  // Dark bronze
+          700: '#8a6847',  // Rich bronze
+          800: '#6d523a',  // Deep bronze
+          900: '#523d2c',  // Very dark
+          950: '#3a2b20',  // Darkest
+        },
+        // Extra beige variations
+        beige: {
+          50: '#fdfcfa',
+          100: '#f8f6f2',
+          200: '#f0ebe3',
+          300: '#e5ddd0',
+          400: '#d6c9b5',
+          500: '#c4b49a',
+        },
+        // Warm colors for gradients
+        warm: {
+          50: '#faf9f7',
+          100: '#f5f2ed',
+          200: '#ebe4d9',
+          300: '#ddd0bd',
+          400: '#cdb89a',
+          500: '#b8956a',
         },
       },
       borderRadius: {

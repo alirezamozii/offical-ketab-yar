@@ -190,15 +190,15 @@ export function AIChatPanel({
         )
     }
 
-    // Desktop: Side panel (from bottom like mobile)
+    // Desktop: Side panel (from LEFT side)
     return (
         <motion.div
-            initial={{ y: '100%', opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: '100%', opacity: 0 }}
+            initial={{ x: '-100%', opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: '-100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             className={cn(
-                "fixed inset-x-0 bottom-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[70vh] border-t-2 shadow-2xl z-[200] flex flex-col rounded-t-3xl",
+                "fixed inset-y-0 left-0 w-96 md:w-[450px] border-r-2 shadow-2xl z-[200] flex flex-col",
                 theme === 'light' && "bg-gradient-to-br from-gold-50 to-amber-50 border-gold-200",
                 theme === 'sepia' && "bg-gradient-to-br from-amber-100 to-amber-50 border-amber-300",
                 theme === 'dark' && "bg-gradient-to-br from-[#0f0e0c] to-[#1a1612] border-gold-700"

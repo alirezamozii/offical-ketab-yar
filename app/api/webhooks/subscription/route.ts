@@ -2,9 +2,11 @@ import { createClient } from "@/lib/supabase/server"
 import { headers } from "next/headers"
 import { NextResponse } from "next/server"
 
-// TODO: Add Stripe SDK and verify signature properly
-// import Stripe from 'stripe'
-// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+/**
+ * ZarinPal doesn't use webhooks like Stripe
+ * Payment verification happens in the verify endpoint
+ * This file is kept for future webhook integrations
+ */
 
 export async function POST(req: Request) {
   try {

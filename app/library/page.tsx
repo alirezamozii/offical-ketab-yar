@@ -1,6 +1,7 @@
 import { BookGrid } from '@/components/books/book-grid'
 import { LibraryHeader } from '@/components/library/library-header'
 import { Skeleton } from '@/components/ui/skeleton'
+import { getAllGenres } from '@/lib/sanity/queries'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 
@@ -54,19 +55,17 @@ export const metadata: Metadata = {
   },
 }
 
-// Mock categories data
-const categories = [
-  { id: 1, name: 'داستانی', slug: 'fiction' },
-  { id: 2, name: 'خودیاری', slug: 'self-help' },
-  { id: 3, name: 'کسب‌وکار', slug: 'business' },
-  { id: 4, name: 'عاشقانه', slug: 'romance' },
-  { id: 5, name: 'بیوگرافی', slug: 'biography' },
-  { id: 6, name: 'کلاسیک', slug: 'classic' },
-  { id: 7, name: 'علمی تخیلی', slug: 'sci-fi' },
-  { id: 8, name: 'تاریخی', slug: 'historical' },
-]
+export default async function LibraryPage() {
+  // Fetch genres from Sanity
+  const sanityGenres = await getAllGenres()
 
-export default function LibraryPage() {
+  // Transform to expected format
+  const categories = sanityGenres.map((genre: any) => ({
+    id: genre._id,
+    name: genre.nameFa || genre.name,
+    slug: genre.name.toLowerCase().replace(/\s+/g, '-'),
+    _id: genre._id,
+  }))
   // JSON-LD CollectionPage Schema for SEO (Agent 1)
   const collectionSchema = {
     '@context': 'https://schema.org',

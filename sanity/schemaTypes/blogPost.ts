@@ -1,53 +1,84 @@
 import { FileEdit } from 'lucide-react'
 import { defineField, defineType } from 'sanity'
 
+/**
+ * 📰 BLOG POST SCHEMA | اسکیمای پست بلاگ
+ * 
+ * EN: Blog posts for content marketing and SEO
+ * FA: پست‌های بلاگ برای بازاریابی محتوا و سئو
+ * 
+ * 🎯 PURPOSE | هدف:
+ * - Content marketing (attract organic traffic)
+ * - Internal linking to book pages (SEO boost)
+ * - Build authority and trust
+ * 
+ * 💡 EXAMPLES | نمونه‌ها:
+ * - "Top 10 Books for Learning English"
+ * - "How to Build a Reading Habit"
+ * - "Review: Atomic Habits"
+ */
 export default defineType({
     name: 'blogPost',
-    title: 'Blog Post',
+    title: 'پست بلاگ | Blog Post',
     type: 'document',
     icon: FileEdit,
+    description: '📰 پست‌های بلاگ برای بازاریابی و سئو | Blog posts for marketing & SEO',
     groups: [
-        { name: 'content', title: 'Content', default: true },
-        { name: 'seo', title: 'SEO' },
-        { name: 'settings', title: 'Settings' },
+        { name: 'content', title: '📝 محتوا | Content', default: true },
+        { name: 'seo', title: '🔍 سئو | SEO' },
+        { name: 'settings', title: '⚙️ تنظیمات | Settings' },
     ],
     fields: [
         defineField({
             name: 'title',
-            title: 'Title',
+            title: 'عنوان | Title',
             type: 'object',
+            description: '📌 EN: Post title in both languages | FA: عنوان پست به دو زبان',
             group: 'content',
             fields: [
-                { name: 'en', title: 'English', type: 'string', validation: (Rule) => Rule.required() },
-                { name: 'fa', title: 'Persian (فارسی)', type: 'string' },
+                {
+                    name: 'en',
+                    title: 'انگلیسی | English',
+                    type: 'string',
+                    validation: (Rule) => Rule.required().error('عنوان انگلیسی الزامی است | English title required')
+                },
+                {
+                    name: 'fa',
+                    title: 'فارسی | Persian',
+                    type: 'string',
+                    description: 'اختیاری | Optional'
+                },
             ],
             validation: (Rule) => Rule.required(),
         }),
         defineField({
             name: 'slug',
-            title: 'Slug',
+            title: 'آدرس URL | URL Slug',
             type: 'slug',
+            description: '🔗 EN: URL-friendly version (e.g., "top-10-books-for-learning") | FA: نسخه URL-friendly (مثال: "top-10-books-for-learning")',
             group: 'content',
             options: {
                 source: 'title.en',
                 maxLength: 96,
             },
-            validation: (Rule) => Rule.required(),
+            validation: (Rule) => Rule.required().error('آدرس URL الزامی است | URL slug required'),
         }),
         defineField({
             name: 'excerpt',
-            title: 'Excerpt',
+            title: 'خلاصه | Excerpt',
             type: 'object',
+            description: '📄 EN: Short summary (2-3 sentences) | FA: خلاصه کوتاه (2-3 جمله)',
             group: 'content',
             fields: [
-                { name: 'en', title: 'English', type: 'text', rows: 3 },
-                { name: 'fa', title: 'Persian (فارسی)', type: 'text', rows: 3 },
+                { name: 'en', title: 'انگلیسی | English', type: 'text', rows: 3 },
+                { name: 'fa', title: 'فارسی | Persian', type: 'text', rows: 3 },
             ],
         }),
         defineField({
             name: 'mainImage',
-            title: 'Main Image',
+            title: 'تصویر اصلی | Main Image',
             type: 'image',
+            description: '🖼️ EN: Featured image (recommended: 1200x630px for social sharing) | FA: تصویر شاخص (توصیه: 1200x630 پیکسل برای اشتراک‌گذاری)',
             group: 'content',
             options: {
                 hotspot: true,
@@ -55,16 +86,17 @@ export default defineType({
             fields: [
                 {
                     name: 'alt',
-                    title: 'Alt Text',
+                    title: 'متن جایگزین | Alt Text',
                     type: 'string',
-                    description: 'Important for SEO and accessibility',
+                    description: '♿ EN: Important for SEO and accessibility | FA: مهم برای سئو و دسترسی‌پذیری',
                 },
             ],
         }),
         defineField({
             name: 'body',
-            title: 'Body',
+            title: 'متن اصلی | Body',
             type: 'array',
+            description: '📖 EN: Main content with rich text formatting | FA: محتوای اصلی با قالب‌بندی متنی پیشرفته',
             group: 'content',
             of: [
                 {
@@ -120,7 +152,7 @@ export default defineType({
                                         name: 'reference',
                                         type: 'reference',
                                         title: 'Reference',
-                                        to: [{ type: 'book' }, { type: 'blogPost' }, { type: 'author' }],
+                                        to: [{ type: 'compactBook' }, { type: 'blogPost' }, { type: 'author' }],
                                     },
                                 ],
                             },
@@ -147,56 +179,61 @@ export default defineType({
         }),
         defineField({
             name: 'author',
-            title: 'Author',
+            title: 'نویسنده | Author',
             type: 'reference',
+            description: '✍️ EN: Select post author | FA: نویسنده پست را انتخاب کنید',
             group: 'content',
             to: [{ type: 'author' }],
         }),
         defineField({
             name: 'categories',
-            title: 'Categories',
+            title: 'دسته‌بندی‌ها | Categories',
             type: 'array',
+            description: '🏷️ EN: Post categories (select multiple) | FA: دسته‌بندی پست (می‌توانید چند مورد انتخاب کنید)',
             group: 'content',
             of: [{ type: 'string' }],
             options: {
                 list: [
-                    { title: 'Book Reviews', value: 'book-reviews' },
-                    { title: 'Language Learning', value: 'language-learning' },
-                    { title: 'Reading Tips', value: 'reading-tips' },
-                    { title: 'Author Interviews', value: 'author-interviews' },
-                    { title: 'News', value: 'news' },
+                    { title: 'نقد کتاب | Book Reviews', value: 'book-reviews' },
+                    { title: 'یادگیری زبان | Language Learning', value: 'language-learning' },
+                    { title: 'نکات مطالعه | Reading Tips', value: 'reading-tips' },
+                    { title: 'مصاحبه با نویسندگان | Author Interviews', value: 'author-interviews' },
+                    { title: 'اخبار | News', value: 'news' },
                 ],
             },
         }),
         defineField({
             name: 'relatedBooks',
-            title: 'Related Books',
+            title: 'کتاب‌های مرتبط | Related Books',
             type: 'array',
+            description: '🔗 EN: Books mentioned in this post (creates internal links for SEO) | FA: کتاب‌های ذکر شده در این پست (لینک داخلی برای سئو)',
             group: 'content',
-            of: [{ type: 'reference', to: [{ type: 'book' }] }],
-            description: 'Books mentioned or related to this post (great for internal linking)',
+            of: [{ type: 'reference', to: [{ type: 'compactBook' }] }],
         }),
 
-        // SEO Fields
+        // ============================================
+        // SEO FIELDS | فیلدهای سئو
+        // ============================================
         defineField({
             name: 'seoTitle',
-            title: 'SEO Title',
+            title: 'عنوان سئو | SEO Title',
             type: 'string',
+            description: '🔍 EN: Custom title for Google (50-60 chars). Leave empty to use post title | FA: عنوان سفارشی برای گوگل (50-60 کاراکتر). خالی بگذارید تا از عنوان پست استفاده شود',
             group: 'seo',
-            description: 'Override default title for search engines (50-60 characters)',
         }),
         defineField({
             name: 'seoDescription',
-            title: 'SEO Description',
+            title: 'توضیحات سئو | SEO Description',
             type: 'text',
-            group: 'seo',
             rows: 3,
-            description: 'Meta description for search engines (150-160 characters)',
+            description: '📄 EN: Meta description for Google (150-160 chars) | FA: توضیحات متا برای گوگل (150-160 کاراکتر)',
+            group: 'seo',
         }),
         defineField({
             name: 'seoKeywords',
-            title: 'SEO Keywords',
+            title: 'کلمات کلیدی | SEO Keywords',
             type: 'array',
+            description: '🔑 EN: Target keywords for this post | FA: کلمات کلیدی هدف برای این پست',
             group: 'seo',
             of: [{ type: 'string' }],
             options: {
@@ -204,30 +241,34 @@ export default defineType({
             },
         }),
 
-        // Settings
+        // ============================================
+        // SETTINGS | تنظیمات
+        // ============================================
         defineField({
             name: 'publishedAt',
-            title: 'Published At',
+            title: 'تاریخ انتشار | Published At',
             type: 'datetime',
+            description: '📅 EN: Publication date and time | FA: تاریخ و زمان انتشار',
             group: 'settings',
         }),
         defineField({
             name: 'featured',
-            title: 'Featured',
+            title: 'ویژه | Featured',
             type: 'boolean',
-            group: 'settings',
             initialValue: false,
-            description: 'Show on homepage',
+            description: '⭐ EN: Show on homepage | FA: نمایش در صفحه اصلی',
+            group: 'settings',
         }),
         defineField({
             name: 'status',
-            title: 'Status',
+            title: 'وضعیت | Status',
             type: 'string',
+            description: '🚦 EN: Publishing status | FA: وضعیت انتشار',
             group: 'settings',
             options: {
                 list: [
-                    { title: '📝 Draft', value: 'draft' },
-                    { title: '✅ Published', value: 'published' },
+                    { title: '📝 پیش‌نویس | Draft', value: 'draft' },
+                    { title: '✅ منتشر شده | Published', value: 'published' },
                 ],
                 layout: 'radio',
             },

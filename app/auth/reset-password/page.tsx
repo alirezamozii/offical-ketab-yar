@@ -35,12 +35,8 @@ export const dynamic = 'force-dynamic'
 
 export default function ResetPasswordPage() {
     return (
-        <div className="container flex min-h-screen items-center justify-center py-8">
-            <div className="w-full max-w-md">
-                <Suspense>
-                    <ResetPasswordForm />
-                </Suspense>
-            </div>
-        </div>
+        <Suspense>
+            <ResetPasswordForm />
+        </Suspense>
     )
 }

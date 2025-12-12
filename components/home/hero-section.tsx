@@ -23,12 +23,12 @@ export function HeroSection() {
           <div className="space-y-8 text-center lg:text-right overflow-hidden">
             {/* Badge */}
             <div className="inline-block">
-              <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gold-500/10 border border-gold-500/20">
+              <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-beige-200 dark:bg-gold-500/10 border border-beige-300 dark:border-gold-500/20">
                 <Sparkles className="h-4 w-4 text-gold-600 dark:text-gold-400" />
                 <span className="text-sm font-semibold text-gold-700 dark:text-gold-400">
                   پلتفرم مطالعه هوشمند با AI
                 </span>
-                <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-gold-500/20">
+                <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-gold-500/15 dark:bg-gold-500/20">
                   <TrendingUp className="h-3 w-3 text-gold-700 dark:text-gold-400" />
                   <span className="text-xs font-bold text-gold-700 dark:text-gold-400">جدید</span>
                 </div>
@@ -38,7 +38,7 @@ export function HeroSection() {
             {/* Main heading */}
             <div className="space-y-4">
               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight leading-[1.1] break-words">
-                <span className="inline-block bg-gradient-to-r from-gold-600 via-gold-500 to-gold-600 bg-clip-text text-transparent">
+                <span className="inline-block bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600 bg-clip-text text-transparent">
                   کتاب‌یار
                 </span>
               </h1>
@@ -55,8 +55,9 @@ export function HeroSection() {
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <Button
-                size="lg"
-                className="group bg-gold-600 hover:bg-gold-700 text-white text-lg px-8 h-14 shadow-lg shadow-gold-500/20 hover:shadow-gold-500/30 transition-all duration-300"
+                size="xl"
+                variant="glow"
+                className="group text-lg px-10"
                 asChild
               >
                 <Link href="/library">
@@ -68,7 +69,7 @@ export function HeroSection() {
               <Button
                 size="lg"
                 variant="outline"
-                className="group text-lg px-8 h-14 border-2 border-gold-600/40 hover:border-gold-600 hover:bg-gold-600/10 hover:text-gold-900 dark:hover:bg-gold-950/30 dark:hover:text-gold-100 transition-all duration-200"
+                className="group text-lg px-8 h-14 transition-all duration-200"
                 asChild
               >
                 <Link href="/about">

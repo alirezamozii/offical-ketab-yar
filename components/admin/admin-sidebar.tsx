@@ -2,145 +2,107 @@
 
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { motion } from 'framer-motion'
 import {
   BarChart3,
   BookOpen,
-  ExternalLink,
   Home,
-  LayoutDashboard,
   LogOut,
+  Menu,
   Settings,
-  Users
+  Users,
+  X
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useState } from 'react'
 
-const navItems = [
-  {
-    title: 'داشبورد',
-    href: '/admin',
-    icon: LayoutDashboard,
-  },
-  {
-    title: 'کاربران',
-    href: '/admin/users',
-    icon: Users,
-  },
-  {
-    title: 'تحلیل‌ها',
-    href: '/admin/analytics',
-    icon: BarChart3,
-  },
-  {
-    title: 'کلیدهای AI',
-    href: '/admin/ai-keys',
-    icon: Settings,
-  },
-  {
-    title: 'CMS (کتاب‌ها و بلاگ)',
-    href: '/Studio',
-    icon: BookOpen,
-    external: true,
-  },
+const navigation = [
+  { name: 'داشبورد', href: '/admin', icon: Home },
+  { name: 'مدیریت کتاب‌ها', href: '/admin/books', icon: BookOpen },
+  { name: 'کاربران', href: '/admin/users', icon: Users },
+  { name: 'آمار و تحلیل', href: '/admin/analytics', icon: BarChart3 },
+  { name: 'تنظیمات', href: '/admin/settings', icon: Settings },
 ]
 
 export function AdminSidebar() {
   const pathname = usePathname()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <aside className="w-64 border-l bg-card flex flex-col">
-      {/* Logo */}
-      <div className="p-6 border-b">
-        <Link href="/admin" className="flex items-center gap-3 group">
-          <motion.div
-            whileHover={{ rotate: 360 }}
-            transition={{ duration: 0.5 }}
-            className="w-10 h-10 bg-gradient-to-br from-gold-600 to-gold-400 rounded-lg flex items-center justify-center shadow-lg shadow-gold-500/30"
-          >
-            <BookOpen className="h-5 w-5 text-white" />
-          </motion.div>
-          <div>
-            <span className="block text-lg font-bold bg-gradient-to-r from-gold-600 to-gold-400 bg-clip-text text-transparent">
-              کتاب‌یار
-            </span>
-            <span className="block text-xs text-muted-foreground">پنل مدیریت</span>
-          </div>
-        </Link>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
-        {navItems.map((item) => {
-          const Icon = item.icon
-          const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
-
-          if (item.external) {
-            return (
-              <a
-                key={item.href}
-                href={item.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group relative hover:bg-muted text-muted-foreground hover:text-foreground"
-              >
-                <Icon className="h-5 w-5 transition-transform group-hover:scale-110" />
-                <span className="font-medium flex-1">{item.title}</span>
-                <ExternalLink className="h-4 w-4" />
-              </a>
-            )
-          }
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group relative',
-                isActive
-                  ? 'bg-gradient-to-r from-gold-600 to-gold-500 text-white shadow-lg shadow-gold-500/20'
-                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-              )}
-            >
-              <Icon className={cn(
-                'h-5 w-5 transition-transform group-hover:scale-110',
-                isActive && 'text-white'
-              )} />
-              <span className="font-medium">{item.title}</span>
-
-              {isActive && (
-                <motion.div
-                  layoutId="activeTab"
-                  className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full"
-                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                />
-              )}
-            </Link>
-          )
-        })}
-      </nav>
-
-      {/* Bottom Actions */}
-      <div className="p-4 border-t space-y-2">
+    <>
+      {/* Mobile menu button */}
+      <div className="lg:hidden fixed top-4 right-4 z-50">
         <Button
           variant="outline"
-          className="w-full justify-start"
-          asChild
+          size="icon"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
-          <Link href="/">
-            <Home className="h-4 w-4 ml-2" />
-            بازگشت به سایت
-          </Link>
-        </Button>
-
-        <Button
-          variant="ghost"
-          className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
-        >
-          <LogOut className="h-4 w-4 ml-2" />
-          خروج
+          {mobileMenuOpen ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <Menu className="h-5 w-5" />
+          )}
         </Button>
       </div>
-    </aside>
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          'fixed inset-y-0 right-0 z-40 w-64 bg-card border-l transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static',
+          mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+        )}
+      >
+        <div className="flex h-full flex-col">
+          {/* Logo */}
+          <div className="flex h-16 items-center justify-center border-b px-6">
+            <Link href="/admin" className="flex items-center gap-2">
+              <BookOpen className="h-6 w-6 text-gold" />
+              <span className="text-xl font-bold">کتاب‌یار</span>
+            </Link>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 space-y-1 px-3 py-4" dir="rtl">
+            {navigation.map((item) => {
+              const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.name}
+                </Link>
+              )
+            })}
+          </nav>
+
+          {/* Footer */}
+          <div className="border-t p-4" dir="rtl">
+            <Link href="/auth/logout">
+              <Button variant="ghost" className="w-full justify-start gap-2">
+                <LogOut className="h-5 w-5" />
+                خروج
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </aside>
+
+      {/* Mobile overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+    </>
   )
 }

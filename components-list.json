@@ -1,0 +1,782 @@
+﻿[
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\error-card.tsx",
+        "Length":  1496
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\theme-toggle.tsx",
+        "Length":  2968
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\about\\about-cta.tsx",
+        "Length":  7352
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\about\\about-features.tsx",
+        "Length":  6643
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\about\\about-hero.tsx",
+        "Length":  7572
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\about\\about-mission.tsx",
+        "Length":  6234
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\about\\about-stats.tsx",
+        "Length":  5674
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\about\\about-team.tsx",
+        "Length":  7397
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\admin\\admin-sidebar.tsx",
+        "Length":  3507
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\admin\\ai-keys-manager.tsx",
+        "Length":  17214
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\admin\\analytics-dashboard.tsx",
+        "Length":  5351
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\admin\\book-editor.tsx",
+        "Length":  20015
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\admin\\book-upload-form.tsx",
+        "Length":  3294
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\admin\\complete-analytics-dashboard.tsx",
+        "Length":  11849
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\admin\\complete-users-management.tsx",
+        "Length":  7922
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\admin\\users-management.tsx",
+        "Length":  5593
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\auth\\avatar-selector.tsx",
+        "Length":  12178
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\auth\\forgot-password-form.tsx",
+        "Length":  8360
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\auth\\login-form.tsx",
+        "Length":  13257
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\auth\\multi-step-register-form.tsx",
+        "Length":  48293
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\auth\\register-form.tsx",
+        "Length":  13104
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\auth\\reset-password-form.tsx",
+        "Length":  9767
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\auth\\username-input.tsx",
+        "Length":  7367
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\authors\\author-detail-client.tsx",
+        "Length":  12379
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\blog\\blog-card.tsx",
+        "Length":  5372
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\books\\book-card.tsx",
+        "Length":  10127
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\books\\book-detail-client.tsx",
+        "Length":  13074
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\books\\book-grid.tsx",
+        "Length":  5242
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\books\\book-list-item.tsx",
+        "Length":  9681
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\books\\book-stats.tsx",
+        "Length":  4240
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\books\\like-button.tsx",
+        "Length":  3448
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\books\\premium-access-badge.tsx",
+        "Length":  2264
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\books\\review-form.tsx",
+        "Length":  6222
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\books\\review-list.tsx",
+        "Length":  9715
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\dashboard\\dashboard.tsx",
+        "Length":  27063
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\friends\\activity-feed.tsx",
+        "Length":  6104
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\friends\\find-friends.tsx",
+        "Length":  3612
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\friends\\friend-requests.tsx",
+        "Length":  5596
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\friends\\friends-content.tsx",
+        "Length":  4997
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\friends\\friends-list.tsx",
+        "Length":  7426
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\gamification\\achievement-card.tsx",
+        "Length":  9666
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\gamification\\gamification-dashboard.tsx",
+        "Length":  13888
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\gamification\\gamification-provider.tsx",
+        "Length":  2447
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\gamification\\index.ts",
+        "Length":  690
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\gamification\\level-badge.tsx",
+        "Length":  5868
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\gamification\\reading-tracker.tsx",
+        "Length":  2897
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\gamification\\streak-flame.tsx",
+        "Length":  5201
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\gamification\\streak-warning.tsx",
+        "Length":  10436
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\gamification\\xp-display.tsx",
+        "Length":  3039
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\gamification\\xp-progress-bar.tsx",
+        "Length":  4544
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\gamification\\xp-reward-animation.tsx",
+        "Length":  2059
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\help\\help-client.tsx",
+        "Length":  17499
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\home\\book-carousel-section-client.tsx",
+        "Length":  1414
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\home\\book-carousel-section.tsx",
+        "Length":  11696
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\home\\continue-reading.tsx",
+        "Length":  2599
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\home\\cta-section.tsx",
+        "Length":  4956
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\home\\featured-books.tsx",
+        "Length":  3294
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\home\\features-section.tsx",
+        "Length":  4531
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\home\\hero-section.tsx",
+        "Length":  9476
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\home\\highest-rated-books.tsx",
+        "Length":  1523
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\home\\how-it-works.tsx",
+        "Length":  5545
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\home\\most-read-books.tsx",
+        "Length":  1503
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\home\\recently-added-books.tsx",
+        "Length":  1752
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\home\\stats-section.tsx",
+        "Length":  5697
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\home\\trending-books.tsx",
+        "Length":  4788
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\layout\\conditional-layout.tsx",
+        "Length":  1446
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\layout\\native-bottom-nav.tsx",
+        "Length":  2932
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\layout\\navigation-progress.tsx",
+        "Length":  2158
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\layout\\page-transition.tsx",
+        "Length":  898
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\layout\\site-footer.tsx",
+        "Length":  11258
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\layout\\site-header.tsx",
+        "Length":  12926
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\layout\\theme-transition-overlay.tsx",
+        "Length":  1866
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\leaderboard\\leaderboard-tabs.tsx",
+        "Length":  12154
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\library\\library-header.tsx",
+        "Length":  23597
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\playlists\\create-playlist-dialog.tsx",
+        "Length":  5462
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\playlists\\discover-playlists.tsx",
+        "Length":  2193
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\playlists\\followed-playlists.tsx",
+        "Length":  2176
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\playlists\\my-playlists.tsx",
+        "Length":  2170
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\playlists\\playlist-card.tsx",
+        "Length":  7239
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\playlists\\playlists-content.tsx",
+        "Length":  3033
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\pricing\\feature-comparison.tsx",
+        "Length":  5049
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\pricing\\money-back-guarantee.tsx",
+        "Length":  5378
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\pricing\\pricing-client.tsx",
+        "Length":  22296
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\pricing\\pricing-comparison.tsx",
+        "Length":  6457
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\pricing\\pricing-faq.tsx",
+        "Length":  4976
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\pricing\\pricing-testimonials.tsx",
+        "Length":  6107
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\pricing\\testimonials.tsx",
+        "Length":  4770
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\pricing\\trust-badges.tsx",
+        "Length":  2413
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\profile\\profile-achievements.tsx",
+        "Length":  8680
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\profile\\profile-client.tsx",
+        "Length":  13485
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\profile\\profile-completion.tsx",
+        "Length":  2730
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\profile\\profile-form.tsx",
+        "Length":  9434
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\profile\\profile-header.tsx",
+        "Length":  6585
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\profile\\profile-settings.tsx",
+        "Length":  1007
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\profile\\profile-stats.tsx",
+        "Length":  3485
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\profile\\profile-tabs.tsx",
+        "Length":  4304
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\profile\\reading-history.tsx",
+        "Length":  7981
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\providers\\offline-provider.tsx",
+        "Length":  1286
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\providers\\query-provider.tsx",
+        "Length":  558
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\providers\\theme-provider.tsx",
+        "Length":  354
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\pwa\\download-book-button.tsx",
+        "Length":  4804
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\pwa\\install-button.tsx",
+        "Length":  10070
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\pwa\\install-prompt.tsx",
+        "Length":  6108
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\pwa\\offline-indicator.tsx",
+        "Length":  2950
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\pwa\\open-in-app-banner.tsx",
+        "Length":  5120
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\pwa\\pwa-provider.tsx",
+        "Length":  1615
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\pwa\\pwa-wrapper.tsx",
+        "Length":  1145
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\advanced-progress-bar.tsx",
+        "Length":  5640
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\ai-chat-panel.tsx",
+        "Length":  17000
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\BilingualRenderer.tsx",
+        "Length":  16073
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\completion-celebration.tsx",
+        "Length":  11533
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\floating-ai-button.tsx",
+        "Length":  2612
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\FreemiumPaywall.tsx",
+        "Length":  16562
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\highlights-panel.tsx",
+        "Length":  12712
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\LanguageSwitch.tsx",
+        "Length":  3208
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\page-transition.tsx",
+        "Length":  3132
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\paywall-check.tsx",
+        "Length":  2344
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\paywall-overlay.tsx",
+        "Length":  8084
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\premium-paywall.tsx",
+        "Length":  8224
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\professional-reader.tsx",
+        "Length":  55028
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\reader-with-dictionary-example.tsx",
+        "Length":  2101
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\reader-with-tracking.tsx",
+        "Length":  932
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\text-selection-handler.tsx",
+        "Length":  4616
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\text-selection-menu.tsx",
+        "Length":  10766
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\VocabularySelector.tsx",
+        "Length":  8343
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\word-popup-dictionary.tsx",
+        "Length":  31980
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\physics\\DynamicShadows.tsx",
+        "Length":  2863
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\physics\\physics-config.ts",
+        "Length":  2589
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\reader\\physics\\PhysicsPageTurn.tsx",
+        "Length":  7051
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\settings\\change-password-dialog.tsx",
+        "Length":  7027
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\settings\\delete-account-dialog.tsx",
+        "Length":  6549
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\settings\\notification-settings.tsx",
+        "Length":  11823
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\settings\\offline-settings-client.tsx",
+        "Length":  13683
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\settings\\privacy-settings.tsx",
+        "Length":  6848
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\settings\\reading-settings.tsx",
+        "Length":  11531
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\settings\\settings-client.tsx",
+        "Length":  2294
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\settings\\settings-tabs.tsx",
+        "Length":  2627
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\status\\status-client.tsx",
+        "Length":  13657
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\subscription\\subscription-plans.tsx",
+        "Length":  2037
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\subscription\\zarinpal-checkout-button.tsx",
+        "Length":  2132
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\support\\support-client.tsx",
+        "Length":  10560
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\sync\\sync-indicator.tsx",
+        "Length":  9062
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\accordion.tsx",
+        "Length":  2169
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\achievement-badge.tsx",
+        "Length":  6116
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\alert-dialog.tsx",
+        "Length":  4577
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\alert.tsx",
+        "Length":  1679
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\avatar.tsx",
+        "Length":  1461
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\badge.tsx",
+        "Length":  1687
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\book-completion-celebration.tsx",
+        "Length":  9021
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\button.tsx",
+        "Length":  4303
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\card.tsx",
+        "Length":  2908
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\checkbox.tsx",
+        "Length":  1100
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\custom-toast.tsx",
+        "Length":  2486
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\dialog.tsx",
+        "Length":  3972
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\dropdown-menu.tsx",
+        "Length":  7477
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\form.tsx",
+        "Length":  4301
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\input.tsx",
+        "Length":  1245
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\jalali-date-picker.tsx",
+        "Length":  10556
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\label.tsx",
+        "Length":  752
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\loading-bar.tsx",
+        "Length":  1017
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\native-button.tsx",
+        "Length":  4898
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\native-card.tsx",
+        "Length":  4094
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\native-input.tsx",
+        "Length":  2222
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\native-toast.tsx",
+        "Length":  4195
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\navigation-menu.tsx",
+        "Length":  5421
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\page-loading-template.tsx",
+        "Length":  4815
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\page-transition-loader.tsx",
+        "Length":  5451
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\page-transition-wrapper.tsx",
+        "Length":  947
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\popover.tsx",
+        "Length":  1277
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\progress-steps.tsx",
+        "Length":  4458
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\progress.tsx",
+        "Length":  1752
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\radio-group.tsx",
+        "Length":  1523
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\scroll-area.tsx",
+        "Length":  1696
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\select.tsx",
+        "Length":  5780
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\separator.tsx",
+        "Length":  797
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\sheet.tsx",
+        "Length":  4422
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\skeleton.tsx",
+        "Length":  1574
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\slider.tsx",
+        "Length":  1403
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\switch.tsx",
+        "Length":  1183
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\table.tsx",
+        "Length":  3077
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\tabs.tsx",
+        "Length":  1954
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\textarea.tsx",
+        "Length":  711
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\toast.tsx",
+        "Length":  4972
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\toggle-group.tsx",
+        "Length":  1816
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\toggle.tsx",
+        "Length":  1588
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\upgrade-prompt.tsx",
+        "Length":  7211
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\ui\\use-toast.tsx",
+        "Length":  4343
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\vocabulary\\advanced-flashcard-system.tsx",
+        "Length":  15461
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\vocabulary\\flashcard-practice.tsx",
+        "Length":  25859
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\vocabulary\\quiz-card.tsx",
+        "Length":  3539
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\vocabulary\\quiz-results.tsx",
+        "Length":  2362
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\vocabulary\\vocabulary-limit-modal.tsx",
+        "Length":  8976
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\vocabulary\\vocabulary-manager.tsx",
+        "Length":  15150
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\vocabulary\\vocabulary-word-card.tsx",
+        "Length":  8364
+    },
+    {
+        "FullName":  "D:\\coding project\\keyab_yar\\components\\vocabulary\\word-suggestions.tsx",
+        "Length":  5649
+    }
+]

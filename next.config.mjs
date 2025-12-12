@@ -16,6 +16,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'cdn.sanity.io',
       },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
     ],
   },
   experimental: {
@@ -73,7 +77,7 @@ const nextConfig = {
 // PWA Configuration (Agent 2 - Performance)
 const pwaConfig = withPWA({
   dest: 'public',
-  disable: process.env.NODE_ENV === 'development',
+  disable: process.env.NODE_ENV === 'development', // Disable PWA in development to prevent cache issues
   register: true,
   skipWaiting: true,
   sw: 'service-worker.js',

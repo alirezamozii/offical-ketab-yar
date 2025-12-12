@@ -14,7 +14,16 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "setup-sanity": "node scripts/setup-sanity.bat",
     "studio": "cd studio && npm run dev",
-    "import-books": "node scripts/import-book.mjs"
+    "import-books": "node scripts/import-book.mjs",
+    "db:reset": "supabase db reset",
+    "db:push": "supabase db push",
+    "db:types": "supabase gen types typescript --local > types/database.types.ts",
+    "db:types:remote": "supabase gen types typescript --project-id gnbaujtogmgrrwxrqsfj > types/database.types.ts",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:status": "supabase status",
+    "verify:auth": "npx tsx scripts/verify-auth-setup.ts",
+    "verify:setup": "npx tsx scripts/verify-complete-setup.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.0",
@@ -82,6 +91,7 @@
     "recharts": "^3.3.0",
     "sanity": "^4.14.0",
     "sonner": "^1.7.3",
+    "stripe": "^19.3.0",
     "tailwind-merge": "^2.6.0",
     "vaul": "^1.1.2",
     "workbox-window": "^7.3.0",

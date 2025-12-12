@@ -1,37 +1,60 @@
-import { Skeleton } from '@/components/ui/skeleton'
-import { Metadata } from 'next'
-import dynamic from 'next/dynamic'
-import { Suspense } from 'react'
+import ProfileSettings from '@/components/profile/profile-settings'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { createClient } from '@/lib/supabase/server'
+import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 
-// Agent 2 (Performance): Convert to CSR with dynamic imports
-const SettingsClient = dynamic(() => import('@/components/settings/settings-client'), {
-  loading: () => <SettingsSkeleton />,
-})
-
-// Agent 1 (SEO): Block from search engines
 export const metadata: Metadata = {
-  title: 'تنظیمات | کتاب‌یار',
-  description: 'تنظیمات خواندن، اعلان‌ها و حریم خصوصی',
+  title: 'تنظیمات پروفایل | کتاب‌یار',
+  description: 'ویرایش پروفایل، تغییر آواتار و نام کاربری',
   robots: {
     index: false,
-    follow: false,
-  },
+    follow: false
+  }
 }
 
-function SettingsSkeleton() {
+export default async function SettingsPage() {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/auth/login?redirect=/settings')
+  }
+
+  // Fetch user profile
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile) {
+    redirect('/auth/login')
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
-      <Skeleton className="h-10 w-48" />
-      <Skeleton className="h-12 w-full max-w-md" />
-      <Skeleton className="h-96 w-full max-w-4xl" />
+    <div className="container max-w-4xl py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">تنظیمات پروفایل</h1>
+        <p className="text-muted-foreground">
+          اطلاعات پروفایل خود را ویرایش کنید
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>اطلاعات شخصی</CardTitle>
+          <CardDescription>
+            آواتار، نام کاربری و نام کامل خود را تغییر دهید
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ProfileSettings user={user} profile={profile} />
+        </CardContent>
+      </Card>
     </div>
-  )
-}
-
-export default function SettingsPage() {
-  return (
-    <Suspense fallback={<SettingsSkeleton />}>
-      <SettingsClient />
-    </Suspense>
   )
 }

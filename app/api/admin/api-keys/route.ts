@@ -1,66 +1,197 @@
-import { createClient } from "@/lib/supabase/server"
-import { nanoid } from "nanoid"
-import { NextResponse } from "next/server"
+import { addApiKey, deleteApiKey, getAllApiKeys, testApiKey, updateApiKey } from '@/lib/admin/api-key-manager'
+import { createClient } from '@/lib/supabase/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function POST(request: Request) {
+/**
+ * GET /api/admin/api-keys
+ * Get all API keys
+ */
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-    // Check if user is authenticated and is admin
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    if (!session) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check for admin role
+    // Check if user is admin
     const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", session.user.id)
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
       .single()
 
-    if (!profile || profile.role !== "admin") {
-      return NextResponse.json(
-        { error: "Forbidden" },
-        { status: 403 }
-      )
+    if (profile?.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, type } = await request.json()
+    const searchParams = request.nextUrl.searchParams
+    const service = searchParams.get('service') || undefined
 
-    // Generate a secure API key
-    const key = `sk_${nanoid(32)}`
+    const keys = await getAllApiKeys(service)
 
-    // Store the API key in the database
-    const { data: apiKey, error } = await supabase
-      .from("api_keys")
-      .insert([
-        {
-          name,
-          key,
-          type,
-          created_by: session.user.id,
-        },
-      ])
-      .select()
-      .single()
-
-    if (error) {
-      throw error
-    }
-
-    return NextResponse.json(apiKey)
+    return NextResponse.json({ success: true, keys })
   } catch (error) {
-    console.error("Error generating API key:", error)
+    console.error('Error fetching API keys:', error)
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
-} 
+}
+
+/**
+ * POST /api/admin/api-keys
+ * Add new API key
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check if user is admin
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const body = await request.json()
+    const { name, key_value, service = 'gemini', test = false } = body
+
+    if (!name || !key_value) {
+      return NextResponse.json(
+        { error: 'Name and key_value are required' },
+        { status: 400 }
+      )
+    }
+
+    // Test key if requested
+    if (test) {
+      const isValid = await testApiKey(key_value, service)
+      if (!isValid) {
+        return NextResponse.json(
+          { error: 'API key is invalid or not working' },
+          { status: 400 }
+        )
+      }
+    }
+
+    const result = await addApiKey(name, key_value, service)
+
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 400 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error adding API key:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * PATCH /api/admin/api-keys
+ * Update API key
+ */
+export async function PATCH(request: NextRequest) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check if user is admin
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const body = await request.json()
+    const { id, ...updates } = body
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 })
+    }
+
+    const result = await updateApiKey(id, updates)
+
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 400 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error updating API key:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * DELETE /api/admin/api-keys
+ * Delete API key
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check if user is admin
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const searchParams = request.nextUrl.searchParams
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 })
+    }
+
+    const result = await deleteApiKey(id)
+
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 400 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error deleting API key:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}

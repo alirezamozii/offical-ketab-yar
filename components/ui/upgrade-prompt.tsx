@@ -94,7 +94,7 @@ export function UpgradePrompt({
                 animate={{ opacity: 1, scale: 1 }}
                 className={`flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r ${message.color} bg-opacity-10 border-2 border-current/20 ${className}`}
             >
-                <Icon className="w-5 h-5 text-gold-600 flex-shrink-0" />
+                <Icon className="w-5 h-5 text-primary flex-shrink-0" />
                 <p className="text-sm flex-1">{compact ? message.title : message.description}</p>
                 <Button asChild size="sm" variant="outline">
                     <Link href="/subscription">ارتقا</Link>
@@ -110,7 +110,7 @@ export function UpgradePrompt({
             animate={{ opacity: 1, y: 0 }}
             className={className}
         >
-            <Card className="border-2 border-gold-500/30 bg-gradient-to-br from-gold-500/5 to-gold-600/5 overflow-hidden">
+            <Card className="border-2 border-primary/30 bg-gradient-to-br from-beige-100 to-beige-50 dark:from-gold-500/5 dark:to-gold-600/5 overflow-hidden">
                 <CardContent className="p-6">
                     <div className="flex items-start gap-4">
                         <div className={`p-3 rounded-lg bg-gradient-to-br ${message.color}`}>
@@ -122,7 +122,7 @@ export function UpgradePrompt({
                                 {message.description}
                             </p>
                             <div className="flex flex-wrap gap-2">
-                                <Button asChild className="bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-600 hover:to-gold-700">
+                                <Button asChild variant="premium">
                                     <Link href="/subscription">
                                         <Crown className="w-4 h-4 mr-2" />
                                         مشاهده پلن‌ها
@@ -136,7 +136,7 @@ export function UpgradePrompt({
                     </div>
 
                     {/* Social Proof */}
-                    <div className="mt-4 pt-4 border-t border-gold-500/20">
+                    <div className="mt-4 pt-4 border-t border-primary/20">
                         <p className="text-xs text-muted-foreground text-center">
                             ✨ بیش از 1,000 کاربر به پریمیوم ارتقا یافته‌اند
                         </p>
@@ -162,7 +162,8 @@ export function FloatingUpgradeButton() {
             <Button
                 asChild
                 size="lg"
-                className="bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-600 hover:to-gold-700 shadow-2xl shadow-gold-500/50 rounded-full"
+                variant="premium"
+                className="rounded-full"
             >
                 <Link href="/subscription">
                     <Crown className="w-5 h-5 mr-2" />

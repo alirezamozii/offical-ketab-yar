@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate PWA Icons</title>
+</head>
+<body>
+    <h1>Generating PWA Icons...</h1>
+    <canvas id="canvas"></canvas>
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        
+        sizes.forEach(size => {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Gold gradient background
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#D4AF37');
+            gradient.addColorStop(0.5, '#C9A961');
+            gradient.addColorStop(1, '#B8956A');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Draw book icon
+            ctx.fillStyle = '#FFFFFF';
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = size * 0.04;
+            
+            // Book shape
+            const bookWidth = size * 0.5;
+            const bookHeight = size * 0.6;
+            const x = (size - bookWidth) / 2;
+            const y = (size - bookHeight) / 2;
+            
+            // Book cover
+            ctx.fillRect(x, y, bookWidth, bookHeight);
+            
+            // Book spine
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.fillRect(x, y, bookWidth * 0.15, bookHeight);
+            
+            // Pages
+            ctx.fillStyle = '#FFFFFF';
+            const pageOffset = size * 0.02;
+            for (let i = 0; i < 3; i++) {
+                const lineY = y + bookHeight * 0.3 + (i * bookHeight * 0.15);
+                ctx.fillRect(x + bookWidth * 0.25, lineY, bookWidth * 0.5, size * 0.015);
+            }
+            
+            // Download
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `icon-${size}x${size}.png`;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        });
+        
+        document.body.innerHTML += '<p>Icons generated! Check your downloads folder.</p>';
+    </script>
+</body>
+</html>

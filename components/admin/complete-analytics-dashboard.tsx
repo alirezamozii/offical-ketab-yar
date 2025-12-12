@@ -38,8 +38,8 @@ export function CompleteAnalyticsDashboard() {
             const data = await getPlatformStats()
             setStats(data)
         } catch (error) {
-            console.error('Error fetching stats:', error)
-            toast.error('Failed to load statistics')
+            console.error('خطا در بارگذاری آمار:', error)
+            toast.error('بارگذاری آمار با خطا مواجه شد')
         } finally {
             setLoading(false)
         }
@@ -49,88 +49,90 @@ export function CompleteAnalyticsDashboard() {
         if (!stats) return
 
         const csvContent = [
-            ['Metric', 'Value'],
-            ['Total Users', stats.totalUsers],
-            ['Admin Users', stats.adminUsers],
-            ['Test Users', stats.testUsers],
-            ['Banned Users', stats.bannedUsers],
-            ['Premium Users', stats.premiumUsers],
-            ['Active Users (30d)', stats.activeUsers],
-            ['Free Users', stats.totalUsers - stats.premiumUsers],
-            ['Premium Conversion Rate', `${((stats.premiumUsers / stats.totalUsers) * 100).toFixed(2)}%`],
+            ['معیار', 'مقدار'],
+            ['تعداد کل کاربران', stats.totalUsers],
+            ['کاربران ادمین', stats.adminUsers],
+            ['کاربران تستی', stats.testUsers],
+            ['کاربران مسدود', stats.bannedUsers],
+            ['کاربران پرمیوم', stats.premiumUsers],
+            ['کاربران فعال (30 روز)', stats.activeUsers],
+            ['کاربران رایگان', stats.totalUsers - stats.premiumUsers],
+            ['نرخ تبدیل به پرمیوم', `${((stats.premiumUsers / stats.totalUsers) * 100).toFixed(2)}%`],
         ]
             .map(row => row.join(','))
             .join('\n')
 
-        const blob = new Blob([csvContent], { type: 'text/csv' })
+        // Add BOM for UTF-8 encoding
+        const BOM = '\uFEFF'
+        const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
         a.download = `platform-stats-${new Date().toISOString().split('T')[0]}.csv`
         a.click()
-        toast.success('Statistics exported successfully')
+        toast.success('آمار با موفقیت خروجی گرفته شد')
     }
 
     if (loading) {
-        return <div className="text-center py-8">Loading statistics...</div>
+        return <div className="text-center py-8">در حال بارگذاری آمار...</div>
     }
 
     if (!stats) {
-        return <div className="text-center py-8 text-muted-foreground">No data available</div>
+        return <div className="text-center py-8 text-muted-foreground">داده‌ای موجود نیست</div>
     }
 
     const statCards = [
         {
-            title: 'Total Users',
-            value: stats.totalUsers.toLocaleString(),
+            title: 'تعداد کل کاربران',
+            value: stats.totalUsers.toLocaleString('fa-IR'),
             icon: Users,
-            description: 'All registered users',
+            description: 'تمام کاربران ثبت‌نام شده',
             color: 'text-blue-600',
         },
         {
-            title: 'Active Users (30d)',
-            value: stats.activeUsers.toLocaleString(),
+            title: 'کاربران فعال (30 روز)',
+            value: stats.activeUsers.toLocaleString('fa-IR'),
             icon: TrendingUp,
-            description: 'Users active in last 30 days',
+            description: 'کاربران فعال در 30 روز اخیر',
             color: 'text-green-600',
         },
         {
-            title: 'Premium Users',
-            value: stats.premiumUsers.toLocaleString(),
+            title: 'کاربران پرمیوم',
+            value: stats.premiumUsers.toLocaleString('fa-IR'),
             icon: UserCheck,
-            description: `${((stats.premiumUsers / stats.totalUsers) * 100).toFixed(1)}% conversion rate`,
+            description: `${((stats.premiumUsers / stats.totalUsers) * 100).toFixed(1)}% نرخ تبدیل`,
             color: 'text-gold-600',
         },
         {
-            title: 'Admin Users',
-            value: stats.adminUsers.toLocaleString(),
+            title: 'کاربران ادمین',
+            value: stats.adminUsers.toLocaleString('fa-IR'),
             icon: Shield,
-            description: 'Platform administrators',
+            description: 'مدیران پلتفرم',
             color: 'text-purple-600',
         },
         {
-            title: 'Test Users',
-            value: stats.testUsers.toLocaleString(),
+            title: 'کاربران تستی',
+            value: stats.testUsers.toLocaleString('fa-IR'),
             icon: BookOpen,
-            description: 'Test accounts with unlimited access',
+            description: 'حساب‌های تستی با دسترسی نامحدود',
             color: 'text-orange-600',
         },
         {
-            title: 'Banned Users',
-            value: stats.bannedUsers.toLocaleString(),
+            title: 'کاربران مسدود',
+            value: stats.bannedUsers.toLocaleString('fa-IR'),
             icon: UserX,
-            description: 'Suspended accounts',
+            description: 'حساب‌های معلق شده',
             color: 'text-red-600',
         },
     ]
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" dir="rtl">
             {/* Export Button */}
             <div className="flex justify-end">
                 <Button onClick={exportStats} variant="outline">
-                    <Download className="h-4 w-4 mr-2" />
-                    Export Statistics (CSV)
+                    <Download className="h-4 w-4 ml-2" />
+                    خروجی آمار (CSV)
                 </Button>
             </div>
 
@@ -157,20 +159,20 @@ export function CompleteAnalyticsDashboard() {
             <div className="grid gap-4 md:grid-cols-2">
                 <Card>
                     <CardHeader>
-                        <CardTitle>User Distribution</CardTitle>
+                        <CardTitle>توزیع کاربران</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Free Users</span>
-                                <span className="font-bold">{(stats.totalUsers - stats.premiumUsers).toLocaleString()}</span>
+                                <span className="text-sm text-muted-foreground">کاربران رایگان</span>
+                                <span className="font-bold">{(stats.totalUsers - stats.premiumUsers).toLocaleString('fa-IR')}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Premium Users</span>
-                                <span className="font-bold text-gold-600">{stats.premiumUsers.toLocaleString()}</span>
+                                <span className="text-sm text-muted-foreground">کاربران پرمیوم</span>
+                                <span className="font-bold text-gold-600">{stats.premiumUsers.toLocaleString('fa-IR')}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Conversion Rate</span>
+                                <span className="text-sm text-muted-foreground">نرخ تبدیل</span>
                                 <span className="font-bold">
                                     {((stats.premiumUsers / stats.totalUsers) * 100).toFixed(2)}%
                                 </span>
@@ -181,51 +183,51 @@ export function CompleteAnalyticsDashboard() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>User Health</CardTitle>
+                        <CardTitle>سلامت کاربران</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Active Users</span>
-                                <span className="font-bold text-green-600">{stats.activeUsers.toLocaleString()}</span>
+                                <span className="text-sm text-muted-foreground">کاربران فعال</span>
+                                <span className="font-bold text-green-600">{stats.activeUsers.toLocaleString('fa-IR')}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Inactive Users</span>
+                                <span className="text-sm text-muted-foreground">کاربران غیرفعال</span>
                                 <span className="font-bold text-orange-600">
-                                    {(stats.totalUsers - stats.activeUsers).toLocaleString()}
+                                    {(stats.totalUsers - stats.activeUsers).toLocaleString('fa-IR')}
                                 </span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Banned Users</span>
-                                <span className="font-bold text-red-600">{stats.bannedUsers.toLocaleString()}</span>
+                                <span className="text-sm text-muted-foreground">کاربران مسدود</span>
+                                <span className="font-bold text-red-600">{stats.bannedUsers.toLocaleString('fa-IR')}</span>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Revenue Estimation (if premium users exist) */}
+            {/* Revenue Estimation */}
             {stats.premiumUsers > 0 && (
                 <Card>
                     <CardHeader>
-                        <CardTitle>Revenue Estimation</CardTitle>
+                        <CardTitle>تخمین درآمد</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="grid gap-4 md:grid-cols-3">
                             <div>
-                                <p className="text-sm text-muted-foreground">Monthly (avg $9.99)</p>
+                                <p className="text-sm text-muted-foreground">ماهانه (میانگین $9.99)</p>
                                 <p className="text-2xl font-bold text-gold-600">
                                     ${(stats.premiumUsers * 9.99).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                 </p>
                             </div>
                             <div>
-                                <p className="text-sm text-muted-foreground">Quarterly (avg $24.99)</p>
+                                <p className="text-sm text-muted-foreground">سه‌ماهه (میانگین $24.99)</p>
                                 <p className="text-2xl font-bold text-gold-600">
                                     ${(stats.premiumUsers * 24.99).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                 </p>
                             </div>
                             <div>
-                                <p className="text-sm text-muted-foreground">Annual (avg $89.99)</p>
+                                <p className="text-sm text-muted-foreground">سالانه (میانگین $89.99)</p>
                                 <p className="text-2xl font-bold text-gold-600">
                                     ${(stats.premiumUsers * 89.99).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                 </p>
@@ -238,12 +240,12 @@ export function CompleteAnalyticsDashboard() {
             {/* Info Card */}
             <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
                 <CardContent className="pt-6">
-                    <h4 className="font-semibold mb-2">📊 Analytics Information</h4>
+                    <h4 className="font-semibold mb-2">📊 اطلاعات تحلیلی</h4>
                     <ul className="text-sm space-y-1 text-muted-foreground">
-                        <li>• Statistics are updated in real-time</li>
-                        <li>• Active users = users who logged in within last 30 days</li>
-                        <li>• Test users have unlimited premium features but cannot access admin panel</li>
-                        <li>• Export CSV to analyze data in Excel or Google Sheets</li>
+                        <li>• آمار به صورت لحظه‌ای به‌روزرسانی می‌شود</li>
+                        <li>• کاربران فعال = کاربرانی که در 30 روز اخیر وارد شده‌اند</li>
+                        <li>• کاربران تستی دسترسی نامحدود به امکانات پرمیوم دارند اما نمی‌توانند به پنل ادمین دسترسی داشته باشند</li>
+                        <li>• خروجی CSV را برای تحلیل داده‌ها در اکسل یا گوگل شیت استفاده کنید</li>
                     </ul>
                 </CardContent>
             </Card>

@@ -28,8 +28,16 @@ const item = {
 // Agent 0 (Investigation): Using unified data API (Sanity CMS)
 async function fetchBooks(): Promise<BookListItem[]> {
   const books = await getBooks()
-  // Convert to plain objects to avoid class instance issues
-  return JSON.parse(JSON.stringify(books)) as BookListItem[]
+  const { transformBooksForDisplay } = await import('@/lib/sanity/transform')
+  const transformed = transformBooksForDisplay(books)
+
+  // Map to expected format with Farsi text and proper images
+  return transformed.map(book => ({
+    ...book,
+    title: book.displayTitle,
+    author: book.authorName,
+    // Convert to plain objects to avoid class instance issues
+  })) as BookListItem[]
 }
 
 export function BookGrid() {

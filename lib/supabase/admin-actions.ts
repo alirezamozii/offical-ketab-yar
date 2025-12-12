@@ -20,166 +20,194 @@ export interface UserProfile {
     banned_reason: string | null
     subscription_tier: string
     subscription_status: string
+    subscription_expires_at: string | null
     created_at: string
 }
 
 /**
- * Ban a user
+ * مسدود کردن کاربر - با به‌روزرسانی فوری
  */
 export async function banUser(userId: string, reason: string) {
     const supabase = createClient()
 
-    const { error } = await supabase
+    // به‌روزرسانی پروفایل
+    const { data, error } = await supabase
         .from('profiles')
         .update({
             is_banned: true,
             banned_at: new Date().toISOString(),
-            banned_reason: reason
+            banned_reason: reason,
+            updated_at: new Date().toISOString()
         })
         .eq('id', userId)
+        .select()
+        .single()
 
-    if (error) throw error
+    if (error) {
+        console.error('خطا در مسدود کردن کاربر:', error)
+        throw new Error('مسدود کردن کاربر با خطا مواجه شد: ' + error.message)
+    }
 
-    // Log action
-    await supabase.rpc('log_admin_action', {
-        p_action_type: 'ban_user',
-        p_target_user_id: userId,
-        p_details: { reason }
-    })
-
-    return { success: true }
+    return { success: true, data }
 }
 
 /**
- * Unban a user
+ * رفع مسدودیت کاربر - با به‌روزرسانی فوری
  */
 export async function unbanUser(userId: string) {
     const supabase = createClient()
 
-    const { error } = await supabase
+    const { data, error } = await supabase
         .from('profiles')
         .update({
             is_banned: false,
             banned_at: null,
-            banned_reason: null
+            banned_reason: null,
+            updated_at: new Date().toISOString()
         })
         .eq('id', userId)
+        .select()
+        .single()
 
-    if (error) throw error
+    if (error) {
+        console.error('خطا در رفع مسدودیت:', error)
+        throw new Error('رفع مسدودیت با خطا مواجه شد: ' + error.message)
+    }
 
-    // Log action
-    await supabase.rpc('log_admin_action', {
-        p_action_type: 'unban_user',
-        p_target_user_id: userId,
-        p_details: {}
-    })
-
-    return { success: true }
+    return { success: true, data }
 }
 
 /**
- * Make a user admin
+ * تبدیل کاربر به ادمین - با دسترسی نامحدود پرمیوم
  */
 export async function makeUserAdmin(userId: string) {
     const supabase = createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+    if (!user) throw new Error('احراز هویت نشده است')
 
-    const { error } = await supabase
+    // تاریخ انقضا: 100 سال بعد (نامحدود)
+    const expiryDate = new Date()
+    expiryDate.setFullYear(expiryDate.getFullYear() + 100)
+
+    const { data, error } = await supabase
         .from('profiles')
         .update({
             role: 'admin',
             made_admin_by: user.id,
-            made_admin_at: new Date().toISOString()
+            made_admin_at: new Date().toISOString(),
+            // ادمین‌ها هم پرمیوم نامحدود دارند
+            subscription_tier: 'annual',
+            subscription_status: 'active',
+            subscription_expires_at: expiryDate.toISOString(),
+            updated_at: new Date().toISOString()
         })
         .eq('id', userId)
+        .select()
+        .single()
 
-    if (error) throw error
+    if (error) {
+        console.error('خطا در تبدیل به ادمین:', error)
+        throw new Error('تبدیل به ادمین با خطا مواجه شد: ' + error.message)
+    }
 
-    // Log action
-    await supabase.rpc('log_admin_action', {
-        p_action_type: 'make_admin',
-        p_target_user_id: userId,
-        p_details: {}
-    })
-
-    return { success: true }
+    return { success: true, data }
 }
 
 /**
- * Remove admin role from user
+ * حذف نقش ادمین از کاربر
  */
 export async function removeUserAdmin(userId: string) {
     const supabase = createClient()
 
-    const { error } = await supabase
+    const { data, error } = await supabase
         .from('profiles')
         .update({
             role: 'user',
             made_admin_by: null,
-            made_admin_at: null
+            made_admin_at: null,
+            // برگرداندن به اشتراک رایگان
+            subscription_tier: 'free',
+            subscription_status: 'inactive',
+            subscription_expires_at: null,
+            updated_at: new Date().toISOString()
         })
         .eq('id', userId)
+        .select()
+        .single()
 
-    if (error) throw error
+    if (error) {
+        console.error('خطا در حذف نقش ادمین:', error)
+        throw new Error('حذف نقش ادمین با خطا مواجه شد: ' + error.message)
+    }
 
-    // Log action
-    await supabase.rpc('log_admin_action', {
-        p_action_type: 'remove_admin',
-        p_target_user_id: userId,
-        p_details: {}
-    })
-
-    return { success: true }
+    return { success: true, data }
 }
 
 /**
- * Create a test user account
+ * ایجاد کاربر تستی با دسترسی نامحدود پرمیوم
+ * شامل: نام، نام کاربری، ایمیل، رمز عبور
  */
-export async function createTestUser(email: string, password: string, fullName: string) {
+export async function createTestUser(
+    email: string,
+    password: string,
+    fullName: string,
+    username?: string
+) {
     const supabase = createClient()
 
-    // Create auth user
+    // ایجاد کاربر در سیستم احراز هویت
     const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
             data: {
                 full_name: fullName,
-                role: 'test_user'
-            }
+                username: username || email.split('@')[0],
+            },
+            emailRedirectTo: undefined // جلوگیری از ارسال ایمیل تأیید
         }
     })
 
-    if (authError) throw authError
-    if (!authData.user) throw new Error('Failed to create user')
+    if (authError) {
+        console.error('خطا در ایجاد کاربر:', authError)
+        throw new Error(authError.message)
+    }
 
-    // Update profile to test_user with unlimited features
-    const { error: profileError } = await supabase
+    if (!authData.user) {
+        throw new Error('ایجاد کاربر با خطا مواجه شد')
+    }
+
+    // تاریخ انقضا: 100 سال بعد (نامحدود)
+    const expiryDate = new Date()
+    expiryDate.setFullYear(expiryDate.getFullYear() + 100)
+
+    // تنظیم پروفایل به عنوان کاربر تستی با اشتراک نامحدود
+    const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .update({
             role: 'test_user',
-            subscription_tier: 'annual', // Give them premium features
+            full_name: fullName,
+            username: username || email.split('@')[0],
+            subscription_tier: 'annual',
             subscription_status: 'active',
-            subscription_expires_at: new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString() // 100 years
+            subscription_expires_at: expiryDate.toISOString(),
+            updated_at: new Date().toISOString()
         })
         .eq('id', authData.user.id)
+        .select()
+        .single()
 
-    if (profileError) throw profileError
+    if (profileError) {
+        console.error('خطا در تنظیم پروفایل:', profileError)
+        throw new Error('تنظیم پروفایل با خطا مواجه شد: ' + profileError.message)
+    }
 
-    // Log action
-    await supabase.rpc('log_admin_action', {
-        p_action_type: 'create_test_user',
-        p_target_user_id: authData.user.id,
-        p_details: { email, full_name: fullName }
-    })
-
-    return { success: true, userId: authData.user.id }
+    return { success: true, userId: authData.user.id, profile: profileData }
 }
 
 /**
- * Get all users with filters
+ * دریافت لیست تمام کاربران با فیلتر
  */
 export async function getAllUsers(filters?: {
     role?: string
@@ -212,37 +240,22 @@ export async function getAllUsers(filters?: {
 
     const { data, error } = await query
 
-    if (error) throw error
+    if (error) {
+        console.error('خطا در دریافت کاربران:', error)
+        throw new Error('دریافت کاربران با خطا مواجه شد: ' + error.message)
+    }
 
     return data as UserProfile[]
 }
 
 /**
- * Get admin action logs
- */
-export async function getAdminLogs(limit = 50) {
-    const supabase = createClient()
-
-    const { data, error } = await supabase
-        .from('admin_actions')
-        .select(`
-            *,
-            admin:profiles!admin_actions_admin_id_fkey(full_name, email),
-            target:profiles!admin_actions_target_user_id_fkey(full_name, email)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(limit)
-
-    if (error) throw error
-
-    return data
-}
-
-/**
- * Get platform statistics
+ * دریافت آمار پلتفرم
  */
 export async function getPlatformStats() {
     const supabase = createClient()
+
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
     const [
         { count: totalUsers },
@@ -256,8 +269,8 @@ export async function getPlatformStats() {
         supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'admin'),
         supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'test_user'),
         supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_banned', true),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('subscription_status', 'active'),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('updated_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('subscription_status', 'active').neq('subscription_tier', 'free'),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('updated_at', thirtyDaysAgo.toISOString()),
     ])
 
     return {
@@ -271,23 +284,29 @@ export async function getPlatformStats() {
 }
 
 /**
- * Export users to CSV
+ * خروجی CSV از کاربران
  */
 export async function exportUsersToCSV() {
     const users = await getAllUsers()
 
-    const headers = ['Email', 'Name', 'Role', 'Subscription', 'Status', 'Banned', 'Created At']
+    const headers = ['ایمیل', 'نام', 'نام کاربری', 'نقش', 'اشتراک', 'وضعیت', 'مسدود', 'تاریخ عضویت']
     const rows = users.map(user => [
         user.email || '',
         user.full_name || '',
-        user.role,
-        user.subscription_tier,
-        user.subscription_status,
-        user.is_banned ? 'Yes' : 'No',
-        new Date(user.created_at).toLocaleDateString()
+        user.username || '',
+        user.role === 'admin' ? 'ادمین' : user.role === 'test_user' ? 'کاربر تستی' : 'کاربر عادی',
+        user.subscription_tier === 'free' ? 'رایگان' :
+            user.subscription_tier === 'monthly' ? 'ماهانه' :
+                user.subscription_tier === 'quarterly' ? 'سه‌ماهه' :
+                    user.subscription_tier === 'annual' ? 'سالانه' : user.subscription_tier,
+        user.subscription_status === 'active' ? 'فعال' : 'غیرفعال',
+        user.is_banned ? 'بله' : 'خیر',
+        new Date(user.created_at).toLocaleDateString('fa-IR')
     ])
 
-    const csvContent = [
+    // Add BOM for UTF-8 encoding (for Excel to recognize Persian characters)
+    const BOM = '\uFEFF'
+    const csvContent = BOM + [
         headers.join(','),
         ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
     ].join('\n')

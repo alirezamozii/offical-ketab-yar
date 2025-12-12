@@ -1,353 +1,305 @@
 'use client'
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { PremiumPaywall } from '@/components/ui/premium-paywall'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import useEmblaCarousel from 'embla-carousel-react'
+import { Separator } from '@/components/ui/separator'
+import { createClient } from '@/lib/supabase/client'
+import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
-import { BookOpen, Calendar, Globe, Heart, Lock, Share2, Star } from 'lucide-react'
+import { BookOpen, Clock, Eye, Heart, Lock, Star, TrendingUp } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useState } from 'react'
-import { BookCard } from './book-card'
-import { ReviewForm } from './review-form'
-import { ReviewList } from './review-list'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 interface BookDetailClientProps {
-  book: {
-    _id: string
-    slug: string
-    title: string | { en: string; fa: string }
-    title_fa?: string
-    subtitle?: string
-    cover_image?: string
-    rating?: number
-    review_count: number
-    page_count: number
-    publication_year: number
-    genres: string[]
-    languages: string[]
-    isPremium: boolean
-    free_preview_pages: number
-    summary: string
-    isbn?: string
-    publisher?: string
-  }
-  author?: {
-    id: string
-    name: string
-    bio?: string
-    photo_url?: string
-  }
-  reviews: Array<{
-    id: string
-    rating: number
-    comment: string
-    created_at: string
-    helpful_count: number
-    profiles?: {
-      full_name?: string
-      avatar_url?: string
-    }
-  }>
-  relatedBooks: Array<{
-    id?: string
-    _id?: string
-    slug: string
-    title: string | { en: string; fa: string }
-    author?: string | { name: string; slug: string }
-    author_id?: string
-    cover_url?: string
-    cover_image?: string
-    rating?: number
-    genres?: string[]
-    isPremium?: boolean
-    is_premium?: boolean
-    read_count?: number
-  }>
-  isPremiumUser?: boolean
+  book: any
+  analytics: any
 }
 
-export function BookDetailClient({ book, author, reviews, relatedBooks, isPremiumUser = false }: BookDetailClientProps) {
-  const [isInLibrary, setIsInLibrary] = useState(false)
-  const [isInWishlist, setIsInWishlist] = useState(false)
-  const [showPaywall, setShowPaywall] = useState(false)
-  const [emblaRef] = useEmblaCarousel({ align: 'start', dragFree: true })
+export function BookDetailClient({ book, analytics }: BookDetailClientProps) {
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
+  const [isLiked, setIsLiked] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const supabase = createClient()
 
-  // Agent 3 (Psychology): Check if book is premium and user needs upgrade
-  const canRead = !book.isPremium || isPremiumUser
+  // Get user on mount
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user)
+    })
+  }, [])
+
+  // Handle author - can be string or object
+  const authorName = typeof book.author === 'string' 
+    ? book.author 
+    : book.author?.name || book.authors?.name || 'نویسنده ناشناس'
+  
+  const isPremium = book.is_premium || false
+  const freePages = book.free_preview_pages || 20
+
+  const handleStartReading = async () => {
+    setIsLoading(true)
+
+    // Track book view
+    try {
+      await fetch('/api/books/track-view', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookId: book.id }),
+      })
+    } catch (error) {
+      console.error('Failed to track view:', error)
+    }
+
+    router.push(`/books/read/${book.slug}`)
+  }
+
+  const handleLike = async () => {
+    if (!user) {
+      toast.error('برای لایک کردن کتاب، ابتدا وارد شوید')
+      router.push('/auth/login')
+      return
+    }
+
+    setIsLiked(!isLiked)
+    toast.success(isLiked ? 'کتاب از علاقه‌مندی‌ها حذف شد' : 'کتاب به علاقه‌مندی‌ها اضافه شد')
+  }
 
   return (
-    <>
-      {/* Premium Paywall Modal (Agent 3: FOMO Psychology) */}
-      <PremiumPaywall
-        isOpen={showPaywall}
-        onClose={() => setShowPaywall(false)}
-        trigger="book_locked"
-        bookTitle={typeof book.title === 'string' ? book.title : book.title.en}
-      />
-
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-        {/* Hero Section */}
-        <div className="relative bg-gradient-to-r from-gold-500/10 via-gold-400/5 to-transparent">
-          <div className="container mx-auto px-4 py-12">
-            <div className="grid md:grid-cols-[300px,1fr] gap-8 lg:gap-12">
-              {/* Book Cover */}
-              <div className="flex justify-center md:justify-start">
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-gold-500/20 blur-2xl group-hover:bg-gold-500/30 transition-all duration-500" />
-                  <div className="relative rounded-lg overflow-hidden shadow-2xl transform group-hover:scale-105 transition-transform duration-300">
+    <div className="min-h-screen bg-gradient-to-b from-background via-muted/30 to-background">
+      <div className="container py-8 md:py-12">
+        <div className="grid gap-8 lg:grid-cols-3">
+          {/* Left Column: Book Cover & Actions */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            className="lg:col-span-1"
+          >
+            <Card className="sticky top-24 overflow-hidden border-2 border-beige-300 dark:border-gold-500/20">
+              <CardContent className="p-6">
+                {/* Book Cover */}
+                <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg shadow-2xl">
+                  {book.cover_url ? (
                     <Image
-                      src={book.cover_image || '/placeholder-book.jpg'}
-                      alt={`جلد کتاب ${typeof book.title === 'string' ? book.title : book.title.fa || book.title.en}`}
-                      width={300}
-                      height={450}
+                      src={book.cover_url}
+                      alt={`جلد کتاب ${book.title}`}
+                      fill
+                      className="object-cover"
                       priority
-                      className="w-full h-auto"
-                      sizes="(max-width: 768px) 100vw, 300px"
+                      sizes="(max-width: 768px) 100vw, 33vw"
                     />
-                  </div>
-                </div>
-              </div>
-
-              {/* Book Info */}
-              <div className="space-y-6">
-                <div>
-                  <h1 className="text-4xl lg:text-5xl font-bold mb-2 bg-gradient-to-r from-gold-600 to-gold-400 bg-clip-text text-transparent">
-                    {typeof book.title === 'string' ? book.title : book.title.en}
-                  </h1>
-                  {book.title_fa && (
-                    <h2 className="text-2xl lg:text-3xl font-bold mb-2 text-muted-foreground">
-                      {book.title_fa}
-                    </h2>
+                  ) : (
+                    <div className="flex h-full items-center justify-center bg-gradient-to-br from-gold-400/20 to-gold-600/20">
+                      <BookOpen className="h-24 w-24 text-gold-500" />
+                    </div>
                   )}
-                  {book.subtitle && <p className="text-xl text-muted-foreground">{book.subtitle}</p>}
-                </div>
 
-                {/* Author */}
-                {author && (
-                  <Link href={`/authors/${author.id}`} className="flex items-center gap-3 group w-fit">
-                    <Avatar className="h-12 w-12 border-2 border-gold-500/20">
-                      <AvatarImage src={author.photo_url || undefined} alt={author.name} />
-                      <AvatarFallback>{author.name[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm text-muted-foreground">نویسنده</p>
-                      <p className="font-semibold group-hover:text-gold-600 transition-colors">{author.name}</p>
+                  {/* Premium Badge */}
+                  {isPremium && (
+                    <div className="absolute top-4 right-4">
+                      <Badge className="bg-gradient-to-r from-gold-500 to-gold-600 text-white">
+                        <Lock className="mr-1 h-3 w-3" />
+                        پرمیوم
+                      </Badge>
                     </div>
-                  </Link>
-                )}
-
-                {/* Rating & Stats */}
-                <div className="flex flex-wrap items-center gap-6">
-                  <div className="flex items-center gap-2">
-                    <div className="flex">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`h-5 w-5 ${i < Math.floor(book.rating || 0) ? 'fill-gold-500 text-gold-500' : 'text-gray-300'
-                            }`}
-                        />
-                      ))}
-                    </div>
-                    <span className="font-semibold">{book.rating || 0}</span>
-                    <span className="text-muted-foreground">({book.review_count.toLocaleString('fa-IR')} نظر)</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <BookOpen className="h-4 w-4" />
-                    <span>{book.page_count.toLocaleString('fa-IR')} صفحه</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    <span>{book.publication_year}</span>
-                  </div>
-                </div>
-
-                {/* Genres */}
-                <div className="flex flex-wrap gap-2">
-                  {book.genres.map((genre: string) => (
-                    <Badge key={genre} variant="secondary" className="bg-gold-500/15 text-gold-800 dark:text-gold-700 hover:bg-gold-500/25 border-2 border-gold-500/30 font-semibold">
-                      {genre}
-                    </Badge>
-                  ))}
-                </div>
-
-                {/* Languages */}
-                <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">موجود به زبان: {book.languages.join('، ')}</span>
+                  )}
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-wrap gap-3">
-                  {canRead ? (
-                    <Button
-                      size="lg"
-                      className="bg-gradient-to-r from-gold-600 to-gold-500 hover:from-gold-700 hover:to-gold-600"
-                      asChild
-                    >
-                      <Link href={`/books/read/${book.slug}`}>
-                        <BookOpen className="ml-2 h-5 w-5" />
-                        {book.isPremium ? 'شروع مطالعه' : 'مطالعه رایگان'}
-                      </Link>
-                    </Button>
-                  ) : (
-                    <Button
-                      size="lg"
-                      className="bg-gradient-to-r from-gold-600 to-gold-500 hover:from-gold-700 hover:to-gold-600"
-                      onClick={() => setShowPaywall(true)}
-                    >
-                      <Lock className="ml-2 h-5 w-5" />
-                      ارتقا برای مطالعه
-                    </Button>
-                  )}
+                <div className="mt-6 space-y-3">
+                  {/* Agent 3: Primary CTA with attractive design */}
                   <Button
-                    size="lg"
-                    variant="outline"
-                    onClick={() => setIsInLibrary(!isInLibrary)}
-                    className={isInLibrary ? 'border-gold-500 text-gold-600' : ''}
+                    onClick={handleStartReading}
+                    disabled={isLoading}
+                    variant="glow"
+                    size="xl"
+                    className="w-full text-lg"
                   >
-                    {isInLibrary ? 'در کتابخانه' : 'افزودن به کتابخانه'}
+                    <BookOpen className="ml-2 h-5 w-5" />
+                    {isPremium ? `خواندن ${freePages} صفحه رایگان` : 'شروع مطالعه رایگان'}
                   </Button>
-                  <Button size="lg" variant="outline" onClick={() => setIsInWishlist(!isInWishlist)}>
-                    <Heart className={`ml-2 h-5 w-5 ${isInWishlist ? 'fill-red-500 text-red-500' : ''}`} />
-                    علاقه‌مندی‌ها
-                  </Button>
-                  <Button size="lg" variant="outline">
-                    <Share2 className="ml-2 h-5 w-5" />
-                    اشتراک‌گذاری
+
+                  {/* Like Button */}
+                  <Button
+                    onClick={handleLike}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <Heart className={cn('ml-2 h-5 w-5', isLiked && 'fill-red-500 text-red-500')} />
+                    {isLiked ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها'}
                   </Button>
                 </div>
+
+                {/* Book Stats */}
+                <div className="mt-6 space-y-3">
+                  <Separator />
+
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    {analytics?.total_views && (
+                      <div className="flex items-center gap-2">
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                        <span>{analytics.total_views.toLocaleString('fa-IR')} بازدید</span>
+                      </div>
+                    )}
+
+                    {analytics?.average_rating && (
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                        <span>{analytics.average_rating.toFixed(1)} ({analytics.total_ratings})</span>
+                      </div>
+                    )}
+
+                    {book.total_pages && (
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="h-4 w-4 text-muted-foreground" />
+                        <span>{book.total_pages.toLocaleString('fa-IR')} صفحه</span>
+                      </div>
+                    )}
+
+                    {book.level && (
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                        <span>سطح {book.level}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Right Column: Book Info */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="lg:col-span-2 space-y-6"
+          >
+            {/* Title & Author */}
+            <div>
+              <h1 className="text-4xl md:text-5xl font-bold mb-2 text-gradient-bronze">
+                {book.title}
+              </h1>
+              {book.subtitle && (
+                <p className="text-xl text-muted-foreground mb-4">{book.subtitle}</p>
+              )}
+              <div className="flex items-center gap-4 flex-wrap">
+                <Link
+                  href={`/authors/${book.author_id}`}
+                  className="text-lg text-gold-600 dark:text-gold-400 hover:underline"
+                >
+                  {authorName}
+                </Link>
+                <Badge variant="outline">{book.language === 'english' ? 'انگلیسی' : 'فارسی'}</Badge>
+                {book.publication_year && (
+                  <span className="text-sm text-muted-foreground flex items-center gap-1">
+                    <Clock className="h-4 w-4" />
+                    {book.publication_year}
+                  </span>
+                )}
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Content Tabs */}
-        <div className="container mx-auto px-4 py-12">
-          <Tabs defaultValue="overview" className="space-y-8" dir="rtl">
-            <TabsList className="grid w-full max-w-md grid-cols-3">
-              <TabsTrigger value="overview">خلاصه</TabsTrigger>
-              <TabsTrigger value="reviews">نظرات ({reviews.length.toLocaleString('fa-IR')})</TabsTrigger>
-              <TabsTrigger value="details">جزئیات</TabsTrigger>
-            </TabsList>
+            <Separator />
 
-            <TabsContent value="overview" className="space-y-8">
-              {/* Summary */}
-              <Card className="border-2 shadow-md dark:border-border dark:shadow-none">
-                <CardContent className="pt-6">
-                  <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-foreground">درباره این کتاب</h2>
-                  <p className="text-gray-700 dark:text-muted-foreground leading-relaxed">{book.summary}</p>
+            {/* Description */}
+            {book.description && (
+              <Card>
+                <CardContent className="p-6">
+                  <h2 className="text-2xl font-bold mb-4">درباره کتاب</h2>
+                  <p className="text-lg leading-relaxed text-muted-foreground whitespace-pre-line">
+                    {book.description}
+                  </p>
                 </CardContent>
               </Card>
+            )}
 
-              {/* Author Bio */}
-              {author && (
-                <Card className="border-2 shadow-md dark:border-border dark:shadow-none">
-                  <CardContent className="pt-6">
-                    <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-foreground">درباره نویسنده</h2>
-                    <div className="flex gap-4">
-                      <Avatar className="h-16 w-16">
-                        <AvatarImage src={author.photo_url || undefined} alt={author.name} />
-                        <AvatarFallback>{author.name[0]}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg mb-2 text-gray-900 dark:text-foreground">{author.name}</h3>
-                        <p className="text-gray-700 dark:text-muted-foreground text-sm leading-relaxed">{author.bio}</p>
-                      </div>
+            {/* What You Get */}
+            <Card className="border-2 border-beige-300 dark:border-gold-500/20">
+              <CardContent className="p-6">
+                <h2 className="text-2xl font-bold mb-4">با مطالعه این کتاب چه چیزی دریافت می‌کنید؟</h2>
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-3">
+                    <div className="mt-1 rounded-full bg-gold-500/15 p-1">
+                      <BookOpen className="h-4 w-4 text-gold-600 dark:text-gold-400" />
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                    <div>
+                      <p className="font-semibold">مطالعه دوزبانه</p>
+                      <p className="text-sm text-muted-foreground">
+                        متن انگلیسی با ترجمه فارسی در کنار هم
+                      </p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="mt-1 rounded-full bg-gold-600/15 p-1">
+                      <Star className="h-4 w-4 text-gold-700 dark:text-gold-300" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">دیکشنری هوشمند</p>
+                      <p className="text-sm text-muted-foreground">
+                        معنی هر کلمه را با یک کلیک دریافت کنید
+                      </p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="mt-1 rounded-full bg-gold-700/15 p-1">
+                      <TrendingUp className="h-4 w-4 text-gold-800 dark:text-gold-200" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">سیستم XP و پیشرفت</p>
+                      <p className="text-sm text-muted-foreground">
+                        با هر صفحه‌ای که می‌خوانید XP کسب کنید
+                      </p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="mt-1 rounded-full bg-gold-400/15 p-1">
+                      <Heart className="h-4 w-4 text-gold-500 dark:text-gold-500" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">ذخیره واژگان</p>
+                      <p className="text-sm text-muted-foreground">
+                        کلمات جدید را ذخیره کنید و با فلش‌کارت تمرین کنید
+                      </p>
+                    </div>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
 
-              {/* Related Books - Swipeable Carousel */}
-              {relatedBooks.length > 0 && (
-                <div>
-                  <h2 className="text-2xl font-bold mb-6">شاید دوست داشته باشید</h2>
-                  <div className="overflow-hidden" ref={emblaRef}>
-                    <div className="flex gap-6 touch-pan-y">
-                      {relatedBooks.map((relatedBook) => (
-                        <motion.div
-                          key={relatedBook.id || relatedBook._id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="flex-[0_0_280px] md:flex-[0_0_300px] min-w-0"
-                        >
-                          <BookCard book={relatedBook as { id?: string; _id?: string; slug: string; title: string | { en: string; fa: string }; author?: string | { name: string; slug: string }; author_id?: string; cover_url?: string; cover_image?: string; rating?: number; genres?: string[]; isPremium?: boolean; is_premium?: boolean; read_count?: number }} />
-                        </motion.div>
-                      ))}
+            {/* Premium Teaser (Agent 3: FOMO Psychology) */}
+            {isPremium && (
+              <Card className="border-2 border-gold-500 bg-gradient-to-br from-beige-100 to-beige-50 dark:from-gold-500/8 dark:to-gold-600/5">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="rounded-full bg-gold-500 p-3">
+                      <Lock className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold mb-2">
+                        {freePages} صفحه اول رایگان، بقیه با اشتراک پرمیوم
+                      </h3>
+                      <p className="text-muted-foreground mb-4">
+                        با اشتراک پرمیوم به بیش از 1000 کتاب کامل، واژگان نامحدود و ویژگی‌های ویژه دسترسی داشته باشید.
+                      </p>
+                      <Link href="/subscription">
+                        <Button variant="premium">
+                          مشاهده پلان‌های اشتراک
+                        </Button>
+                      </Link>
                     </div>
                   </div>
-                  <p className="text-center mt-4 text-sm text-muted-foreground md:hidden">
-                    ← برای مشاهده بیشتر بکشید →
-                  </p>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="reviews" className="space-y-6" dir="rtl">
-              {/* Review Form - Agent 3 (Psychology): Encourage engagement */}
-              <ReviewForm
-                bookId={book._id}
-                bookTitle={typeof book.title === 'string' ? book.title : book.title.en}
-                onReviewSubmitted={() => window.location.reload()}
-              />
-
-              {/* Review List */}
-              <ReviewList
-                reviews={reviews}
-              />
-            </TabsContent>
-
-            <TabsContent value="details">
-              <Card className="border-2 shadow-md dark:border-border dark:shadow-none">
-                <CardContent className="pt-6">
-                  <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-foreground">جزئیات کتاب</h2>
-                  <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <dt className="text-sm font-medium text-muted-foreground">شابک (ISBN)</dt>
-                      <dd className="mt-1">{book.isbn || 'نامشخص'}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-muted-foreground">ناشر</dt>
-                      <dd className="mt-1">{book.publisher || 'نامشخص'}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-muted-foreground">سال انتشار</dt>
-                      <dd className="mt-1">{book.publication_year}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-muted-foreground">تعداد صفحات</dt>
-                      <dd className="mt-1">{book.page_count.toLocaleString('fa-IR')}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-muted-foreground">زبان‌ها</dt>
-                      <dd className="mt-1">{book.languages.join('، ')}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-muted-foreground">پیش‌نمایش رایگان</dt>
-                      <dd className="mt-1">{book.free_preview_pages.toLocaleString('fa-IR')} صفحه</dd>
-                    </div>
-                    <div className="md:col-span-2">
-                      <dt className="text-sm font-medium text-muted-foreground">ژانرها</dt>
-                      <dd className="mt-2 flex flex-wrap gap-2">
-                        {book.genres.map((genre: string) => (
-                          <Badge key={genre} variant="secondary">
-                            {genre}
-                          </Badge>
-                        ))}
-                      </dd>
-                    </div>
-                  </dl>
                 </CardContent>
               </Card>
-            </TabsContent>
-          </Tabs>
+            )}
+          </motion.div>
         </div>
       </div>
-    </>
+    </div>
   )
 }

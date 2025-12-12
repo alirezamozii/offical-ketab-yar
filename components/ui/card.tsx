@@ -17,7 +17,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
     }
 
     const hoverEffects = hover || variant === "interactive"
-      ? "transition-all duration-200 ease-out hover:shadow-lg hover:-translate-y-1 hover:border-gold-300 dark:hover:border-gold-700 will-change-transform"
+      ? "transition-all duration-200 ease-out hover:shadow-lg hover:-translate-y-1 hover:border-primary/40 will-change-transform"
       : ""
 
     return (

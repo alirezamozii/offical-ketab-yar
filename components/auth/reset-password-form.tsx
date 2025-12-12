@@ -73,10 +73,10 @@ export default function ResetPasswordForm() {
 
     if (!isValidToken) {
         return (
-            <Card className="border-destructive/20">
+            <Card className="border-destructive/20 shadow-2xl w-full max-w-md">
                 <CardHeader className="space-y-1 text-center">
-                    <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-destructive/10">
-                        <AlertCircle className="size-6 text-destructive" />
+                    <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-destructive/10">
+                        <AlertCircle className="size-7 text-destructive" />
                     </div>
                     <CardTitle className="text-2xl font-bold">لینک نامعتبر</CardTitle>
                     <CardDescription>
@@ -136,14 +136,15 @@ export default function ResetPasswordForm() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
+            className="w-full max-w-md"
         >
-            <Card className="border-gold/20">
+            <Card className="border-gold/20 shadow-2xl">
                 <CardHeader className="space-y-1 text-center">
-                    <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-gold/10">
-                        <KeyRound className="size-6 text-gold" />
+                    <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-gold-400 to-gold-600 shadow-lg">
+                        <KeyRound className="size-7 text-white" />
                     </div>
-                    <CardTitle className="text-2xl font-bold">تنظیم رمز عبور جدید</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-3xl font-bold">تنظیم رمز عبور جدید</CardTitle>
+                    <CardDescription className="text-base">
                         رمز عبور جدید خود را وارد کنید
                     </CardDescription>
                 </CardHeader>

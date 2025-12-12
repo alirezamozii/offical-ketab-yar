@@ -230,7 +230,7 @@ export default function NotificationSettings({ userId, userEmail }: Notification
                             <Button
                                 onClick={handleSave}
                                 disabled={isSaving}
-                                className="bg-gold hover:bg-gold/90"
+                                variant="bronze"
                             >
                                 {isSaving ? (
                                     <>

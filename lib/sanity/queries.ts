@@ -1,115 +1,106 @@
 import { groq } from 'next-sanity'
-import { sanityClientWithMock as sanityClient } from './client-with-mock'
+import { sanityClient } from './client'
 import type { Author, SanityBook, SanityBookListItem } from './types'
 
 // ============================================
-// BOOK QUERIES
+// BOOK QUERIES (Updated for compactBook schema)
 // ============================================
 
 export const booksQuery = groq`
-  *[_type == "book" && !(_id in path("drafts.**"))] | order(publishedAt desc) {
+  *[_type == "compactBook" && status == "published"] | order(_createdAt desc) {
     _id,
     "slug": slug.current,
     title,
+    titleFa,
     "coverImage": coverImage.asset->url,
-    "coverImageAlt": coverImage.alt,
     "author": author->{
       _id,
       name,
-      "slug": slug.current,
-      "image": image.asset->url
+      bio,
+      nationality,
+      "photo": photo.asset->url
     },
-    publishYear,
     summary,
-    genres,
+    summaryFa,
+    "genres": genres[]->{
+      _id,
+      name,
+      nameFa,
+      color
+    },
     level,
-    freePreviewPages,
-    isPremium,
     featured,
-    publishedAt
+    _createdAt
   }
 `
 
 export const bookBySlugQuery = groq`
-  *[_type == "book" && slug.current == $slug && !(_id in path("drafts.**"))][0] {
+  *[_type == "compactBook" && slug.current == $slug && status == "published"][0] {
     _id,
     "slug": slug.current,
     title,
+    titleFa,
     "coverImage": coverImage.asset->url,
-    "coverImageAlt": coverImage.alt,
     "author": author->{
       _id,
       name,
-      "slug": slug.current,
-      "image": image.asset->url,
       bio,
       nationality,
-      born,
-      website,
-      socialMedia
+      "photo": photo.asset->url
     },
-    publishYear,
-    isbn,
-    publisher,
     summary,
-    genres,
-    level,
-    chapters[] {
-      title,
-      chapterNumber,
-      content[] {
-        _type,
-        _type == "bilingualParagraph" => {
-          english,
-          farsi
-        },
-        _type == "image" => {
-          "url": asset->url,
-          alt,
-          caption
-        }
-      }
+    summaryFa,
+    "genres": genres[]->{
+      _id,
+      name,
+      nameFa,
+      color
     },
-    freePreviewPages,
-    isPremium,
+    level,
+    bookData,
     featured,
-    publishedAt
+    seoTitle,
+    seoDescription,
+    _createdAt
   }
 `
 
 export const bookSlugsQuery = groq`
-  *[_type == "book" && !(_id in path("drafts.**"))] {
+  *[_type == "compactBook" && status == "published"] {
     "slug": slug.current
   }
 `
 
 export const featuredBooksQuery = groq`
-  *[_type == "book" && featured == true && !(_id in path("drafts.**"))] | order(publishedAt desc) [0...6] {
+  *[_type == "compactBook" && featured == true && status == "published"] | order(_createdAt desc) [0...6] {
     _id,
     "slug": slug.current,
     title,
+    titleFa,
     "coverImage": coverImage.asset->url,
-    "coverImageAlt": coverImage.alt,
     "author": author->{
-      name,
-      "slug": slug.current
+      name
     },
-    publishYear,
     summary,
-    genres,
-    level,
-    isPremium
+    summaryFa,
+    "genres": genres[]->{
+      name,
+      nameFa,
+      color
+    },
+    level
   }
 `
 
 export const booksByGenreQuery = groq`
-  *[_type == "book" && $genre in genres && !(_id in path("drafts.**"))] | order(publishedAt desc) [0...$limit] {
+  *[_type == "compactBook" && $genreId in genres[]._ref && status == "published"] | order(_createdAt desc) [0...$limit] {
     _id,
     "slug": slug.current,
     title,
+    titleFa,
     "coverImage": coverImage.asset->url,
     "author": author->name,
-    genres,
+    "genres": genres[]->name,
     level
   }
 `
@@ -119,214 +110,66 @@ export const booksByGenreQuery = groq`
 // ============================================
 
 export const authorsQuery = groq`
-  *[_type == "author" && !(_id in path("drafts.**"))] | order(name asc) {
+  *[_type == "author"] | order(name asc) {
     _id,
     name,
-    "slug": slug.current,
-    "image": image.asset->url,
+    "photo": photo.asset->url,
     nationality,
-    born
+    bio
+  }
+`
+
+export const authorByIdQuery = groq`
+  *[_type == "author" && _id == $id][0] {
+    _id,
+    name,
+    "photo": photo.asset->url,
+    nationality,
+    bio,
+    "books": *[_type == "compactBook" && author._ref == ^._id && status == "published"] | order(_createdAt desc) {
+      _id,
+      "slug": slug.current,
+      title,
+      titleFa,
+      "coverImage": coverImage.asset->url,
+      summary,
+      "genres": genres[]->name
+    }
   }
 `
 
 export const authorBySlugQuery = groq`
-  *[_type == "author" && slug.current == $slug && !(_id in path("drafts.**"))][0] {
+  *[_type == "author" && slug.current == $slug][0] {
     _id,
     name,
-    "slug": slug.current,
-    "image": image.asset->url,
-    "imageAlt": image.alt,
+    "photo": photo.asset->url,
     nationality,
-    born,
     bio,
-    website,
-    socialMedia,
-    "books": *[_type == "book" && references(^._id) && !(_id in path("drafts.**"))] | order(publishYear desc) {
+    "books": *[_type == "compactBook" && author._ref == ^._id && status == "published"] | order(_createdAt desc) {
       _id,
       "slug": slug.current,
       title,
+      titleFa,
       "coverImage": coverImage.asset->url,
-      "coverImageAlt": coverImage.alt,
-      publishYear,
-      genres,
       summary,
-      isPremium
+      "genres": genres[]->name
     }
   }
 `
 
-// Query to get all books by a specific author ID
-export const booksByAuthorIdQuery = groq`
-  *[_type == "book" && author._ref == $authorId && !(_id in path("drafts.**"))] | order(publishYear desc) {
-    _id,
-    "slug": slug.current,
-    title,
-    "coverImage": coverImage.asset->url,
-    "coverImageAlt": coverImage.alt,
-    publishYear,
-    genres,
-    summary,
-    isPremium
-  }
-`
-
 // ============================================
-// BLOG POST QUERIES
+// GENRE QUERIES
 // ============================================
 
-export const blogPostsQuery = groq`
-  *[_type == "blogPost" && !(_id in path("drafts.**"))] | order(publishedAt desc) {
+export const genresQuery = groq`
+  *[_type == "genre"] | order(name asc) {
     _id,
-    "slug": slug.current,
-    title,
-    "mainImage": mainImage.asset->url,
-    "mainImageAlt": mainImage.alt,
-    "author": author->{
-      name,
-      "slug": slug.current,
-      "image": image.asset->url
-    },
-    summary,
-    categories,
-    publishedAt,
-    featured
+    name,
+    nameFa,
+    description,
+    color
   }
 `
-
-export const blogPostBySlugQuery = groq`
-  *[_type == "blogPost" && slug.current == $slug && !(_id in path("drafts.**"))][0] {
-    _id,
-    "slug": slug.current,
-    title,
-    "mainImage": mainImage.asset->url,
-    "mainImageAlt": mainImage.alt,
-    "author": author->{
-      _id,
-      name,
-      "slug": slug.current,
-      "image": image.asset->url,
-      bio
-    },
-    summary,
-    body,
-    categories,
-    "relatedBooks": relatedBooks[]->{
-      _id,
-      "slug": slug.current,
-      title,
-      "coverImage": coverImage.asset->url,
-      "author": author->name
-    },
-    publishedAt,
-    featured
-  }
-`
-
-export const blogPostSlugsQuery = groq`
-  *[_type == "blogPost" && !(_id in path("drafts.**"))] {
-    "slug": slug.current
-  }
-`
-
-export const featuredBlogPostsQuery = groq`
-  *[_type == "blogPost" && featured == true && !(_id in path("drafts.**"))] | order(publishedAt desc) [0...3] {
-    _id,
-    "slug": slug.current,
-    title,
-    "mainImage": mainImage.asset->url,
-    "author": author->name,
-    summary,
-    publishedAt
-  }
-`
-
-// ============================================
-// READER QUERIES (Optimized for performance)
-// ============================================
-
-// Get book with ONLY first chapter (for initial load)
-export const bookWithFirstChapterQuery = groq`
-  *[_type == "book" && slug.current == $slug && !(_id in path("drafts.**"))][0] {
-    _id,
-    "slug": slug.current,
-    title,
-    "coverImage": coverImage.asset->url,
-    "coverImageAlt": coverImage.alt,
-    "author": author->{
-      _id,
-      name,
-      "slug": slug.current
-    },
-    publishYear,
-    "totalChapters": count(chapters),
-    "firstChapter": chapters[0] {
-      title,
-      chapterNumber,
-      content[] {
-        _type,
-        _key,
-        _type == "bilingualParagraph" => {
-          english,
-          farsi,
-          alignment,
-          pageBreakAfter
-        },
-        _type == "image" => {
-          "url": asset->url,
-          alt,
-          caption
-        }
-      }
-    }
-  }
-`
-
-// Get specific chapter by number
-export const chapterByNumberQuery = groq`
-  *[_type == "book" && slug.current == $slug && !(_id in path("drafts.**"))][0] {
-    "chapter": chapters[$chapterIndex] {
-      title,
-      chapterNumber,
-      content[] {
-        _type,
-        _key,
-        _type == "bilingualParagraph" => {
-          english,
-          farsi,
-          alignment,
-          pageBreakAfter
-        },
-        _type == "image" => {
-          "url": asset->url,
-          alt,
-          caption
-        }
-      }
-    }
-  }
-`
-
-// Get book metadata for reader (without content)
-export const bookMetadataQuery = groq`
-  *[_type == "book" && slug.current == $slug && !(_id in path("drafts.**"))][0] {
-    _id,
-    "slug": slug.current,
-    title,
-    "coverImage": coverImage.asset->url,
-    "coverImageAlt": coverImage.alt,
-    "author": author->{
-      _id,
-      name,
-      "slug": slug.current
-    },
-    publishYear,
-    "totalChapters": count(chapters),
-    "chapterTitles": chapters[].title,
-    freePreviewPages,
-    isPremium
-  }
-`
-
 
 // ============================================
 // QUERY FUNCTIONS
@@ -361,7 +204,29 @@ export async function getBookBySlug(slug: string): Promise<SanityBook | null> {
  */
 export async function getBookById(id: string): Promise<SanityBook | null> {
   try {
-    const query = groq`*[_type == "book" && _id == $id && !(_id in path("drafts.**"))][0]`
+    const query = groq`*[_type == "compactBook" && _id == $id][0] {
+      _id,
+      "slug": slug.current,
+      title,
+      titleFa,
+      "coverImage": coverImage.asset->url,
+      "author": author->{
+        _id,
+        name,
+        bio
+      },
+      summary,
+      summaryFa,
+      "genres": genres[]->{
+        name,
+        nameFa,
+        color
+      },
+      level,
+      bookData,
+      status,
+      featured
+    }`
     return await sanityClient.fetch(query, { id })
   } catch (error) {
     console.error('Error fetching book by ID:', error)
@@ -375,21 +240,23 @@ export async function getBookById(id: string): Promise<SanityBook | null> {
 export async function getRecentlyAddedBooks(limit: number = 12): Promise<SanityBookListItem[]> {
   try {
     const query = groq`
-      *[_type == "book" && !(_id in path("drafts.**"))] | order(publishedAt desc) [0...$limit] {
+      *[_type == "compactBook" && status == "published"] | order(_createdAt desc) [0...$limit] {
         _id,
         "slug": slug.current,
         title,
+        titleFa,
         "coverImage": coverImage.asset->url,
-        "coverImageAlt": coverImage.alt,
         "author": author->{
-          name,
-          "slug": slug.current
+          name
         },
-        publishYear,
         summary,
-        genres,
+        summaryFa,
+        "genres": genres[]->{
+          name,
+          nameFa,
+          color
+        },
         level,
-        isPremium,
         featured
       }
     `
@@ -406,21 +273,23 @@ export async function getRecentlyAddedBooks(limit: number = 12): Promise<SanityB
 export async function getFeaturedBooks(limit: number = 6): Promise<SanityBookListItem[]> {
   try {
     const query = groq`
-      *[_type == "book" && featured == true && !(_id in path("drafts.**"))] | order(publishedAt desc) [0...$limit] {
+      *[_type == "compactBook" && featured == true && status == "published"] | order(_createdAt desc) [0...$limit] {
         _id,
         "slug": slug.current,
         title,
+        titleFa,
         "coverImage": coverImage.asset->url,
-        "coverImageAlt": coverImage.alt,
         "author": author->{
-          name,
-          "slug": slug.current
+          name
         },
-        publishYear,
         summary,
-        genres,
+        summaryFa,
+        "genres": genres[]->{
+          name,
+          nameFa,
+          color
+        },
         level,
-        isPremium,
         featured
       }
     `
@@ -434,9 +303,9 @@ export async function getFeaturedBooks(limit: number = 6): Promise<SanityBookLis
 /**
  * Get books by genre
  */
-export async function getBooksByGenre(genre: string, limit: number = 12): Promise<SanityBookListItem[]> {
+export async function getBooksByGenre(genreId: string, limit: number = 12): Promise<SanityBookListItem[]> {
   try {
-    return await sanityClient.fetch(booksByGenreQuery, { genre, limit })
+    return await sanityClient.fetch(booksByGenreQuery, { genreId, limit })
   } catch (error) {
     console.error('Error fetching books by genre:', error)
     return []
@@ -448,8 +317,7 @@ export async function getBooksByGenre(genre: string, limit: number = 12): Promis
  */
 export async function getAuthorById(id: string): Promise<Author | null> {
   try {
-    const query = groq`*[_type == "author" && _id == $id && !(_id in path("drafts.**"))][0]`
-    return await sanityClient.fetch(query, { id })
+    return await sanityClient.fetch(authorByIdQuery, { id })
   } catch (error) {
     console.error('Error fetching author by ID:', error)
     return null
@@ -457,51 +325,25 @@ export async function getAuthorById(id: string): Promise<Author | null> {
 }
 
 /**
- * Get author by slug
+ * Get all genres
  */
-export async function getAuthorBySlug(slug: string): Promise<Author | null> {
+export async function getAllGenres() {
   try {
-    return await sanityClient.fetch(authorBySlugQuery, { slug })
+    return await sanityClient.fetch(genresQuery)
   } catch (error) {
-    console.error('Error fetching author by slug:', error)
-    return null
+    console.error('Error fetching genres:', error)
+    return []
   }
 }
 
 /**
- * Get book with first chapter (for reader)
+ * Get all authors
  */
-export async function getBookWithFirstChapter(slug: string) {
+export async function getAllAuthors() {
   try {
-    return await sanityClient.fetch(bookWithFirstChapterQuery, { slug })
+    return await sanityClient.fetch(authorsQuery)
   } catch (error) {
-    console.error('Error fetching book with first chapter:', error)
-    return null
-  }
-}
-
-/**
- * Get specific chapter by number
- */
-export async function getChapterByNumber(slug: string, chapterNumber: number) {
-  try {
-    const chapterIndex = chapterNumber - 1 // Convert to 0-based index
-    const result = await sanityClient.fetch(chapterByNumberQuery, { slug, chapterIndex })
-    return result?.chapter || null
-  } catch (error) {
-    console.error(`Error fetching chapter ${chapterNumber}:`, error)
-    return null
-  }
-}
-
-/**
- * Get book metadata (without content)
- */
-export async function getBookMetadata(slug: string) {
-  try {
-    return await sanityClient.fetch(bookMetadataQuery, { slug })
-  } catch (error) {
-    console.error('Error fetching book metadata:', error)
-    return null
+    console.error('Error fetching authors:', error)
+    return []
   }
 }

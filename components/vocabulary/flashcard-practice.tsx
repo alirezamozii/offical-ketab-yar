@@ -300,7 +300,7 @@ export function FlashcardPractice({ bookId, mode }: FlashcardPracticeProps) {
             <span>
                 {parts.map((part, i) =>
                     regex.test(part) ? (
-                        <span key={i} className="bg-gold-500/30 text-gold-900 dark:text-gold-100 px-1 rounded font-bold">
+                        <span key={i} className="bg-beige-300 text-gold-800 dark:bg-gold-500/30 dark:text-gold-100 px-1 rounded font-bold">
                             {part}
                         </span>
                     ) : (
@@ -315,7 +315,7 @@ export function FlashcardPractice({ bookId, mode }: FlashcardPracticeProps) {
         return (
             <div className="container mx-auto p-8">
                 <div className="flex items-center justify-center min-h-[400px]">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-600" />
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
                 </div>
             </div>
         )
@@ -381,15 +381,15 @@ export function FlashcardPractice({ bookId, mode }: FlashcardPracticeProps) {
                                 {/* Word */}
                                 <div className="text-center mb-6">
                                     <div className="flex items-center justify-center gap-3 mb-2">
-                                        <h2 className="text-5xl font-bold text-gold-600">
+                                        <h2 className="text-5xl font-bold text-gold-700 dark:text-gold-400">
                                             {currentWord.word}
                                         </h2>
                                         {dictionaryData?.audioUrl && (
                                             <button
                                                 onClick={playAudio}
-                                                className="p-3 hover:bg-gold/20 rounded-full transition-colors"
+                                                className="p-3 hover:bg-primary/10 rounded-full transition-colors"
                                             >
-                                                <Volume2 className="h-6 w-6 text-gold-600" />
+                                                <Volume2 className="h-6 w-6 text-primary" />
                                             </button>
                                         )}
                                     </div>
@@ -427,7 +427,7 @@ export function FlashcardPractice({ bookId, mode }: FlashcardPracticeProps) {
                                         >
                                             {loadingDefinition ? (
                                                 <div className="flex items-center justify-center py-8">
-                                                    <Loader2 className="w-8 h-8 animate-spin text-gold-600" />
+                                                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
                                                 </div>
                                             ) : dictionaryData && (
                                                 <>
@@ -438,7 +438,7 @@ export function FlashcardPractice({ bookId, mode }: FlashcardPracticeProps) {
                                                             <button
                                                                 onClick={translateDefinition}
                                                                 disabled={loadingTranslation}
-                                                                className="flex items-center gap-1 text-xs text-gold-600 hover:text-gold-700 transition-colors disabled:opacity-50"
+                                                                className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
                                                             >
                                                                 {loadingTranslation ? (
                                                                     <Loader2 className="h-3 w-3 animate-spin" />
@@ -537,7 +537,8 @@ export function FlashcardPractice({ bookId, mode }: FlashcardPracticeProps) {
                                         <Button
                                             size="lg"
                                             onClick={() => handleAnswer(false)}
-                                            className="bg-gold-600 hover:bg-gold-700 px-8"
+                                            variant="bronze"
+                                            className="px-8"
                                         >
                                             بعدی
                                         </Button>

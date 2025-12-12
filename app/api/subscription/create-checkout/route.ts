@@ -2,7 +2,6 @@
 // Agent 4: Payment API endpoint for Iranian market
 
 import { createClient } from '@/lib/supabase/server'
-import { createPaymentRequest } from '@/lib/zarinpal/zarinpal-client'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
@@ -29,7 +28,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Create ZarinPal payment request
-        const payment = await createPaymentRequest({
+        const payment = await requestPayment({
             userId: user.id,
             planId,
             successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/subscription/verify`,

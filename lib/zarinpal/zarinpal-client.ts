@@ -1,51 +1,47 @@
-// ZarinPal Payment Gateway Integration
-// Agent 4: Payment integration for Iranian market
-// Docs: https://docs.zarinpal.com/paymentGateway/
+/**
+ * ZarinPal Client Configuration
+ * Agent 4: Payment processing with ZarinPal (Iranian Gateway)
+ */
 
-export interface CreatePaymentParams {
-    userId: string
-    planId: 'monthly' | 'quarterly' | 'annual'
-    successUrl: string
-    cancelUrl: string
-}
-
-export interface PaymentSession {
-    authority: string
-    url: string
-}
-
-const PLAN_PRICES = {
-    monthly: 299000,
-    quarterly: 799000,
-    annual: 2499000,
-}
-
-const PLAN_NAMES = {
-    monthly: 'اشتراک ماهانه کتاب‌یار',
-    quarterly: 'اشتراک 3 ماهه کتاب‌یار',
-    annual: 'اشتراک سالانه کتاب‌یار',
+// ZarinPal pricing plans
+export const ZARINPAL_PLANS = {
+    monthly: {
+        amount: 99000, // 99,000 Toman
+        duration: 30, // days
+        name: 'اشتراک ماهانه',
+        description: 'دسترسی یک ماهه به تمام امکانات پرمیوم',
+    },
+    quarterly: {
+        amount: 249000, // 249,000 Toman (15% discount)
+        duration: 90, // days
+        name: 'اشتراک سه‌ماهه',
+        description: 'دسترسی سه ماهه به تمام امکانات پرمیوم - 15% تخفیف',
+    },
+    annual: {
+        amount: 890000, // 890,000 Toman (25% discount)
+        duration: 365, // days
+        name: 'اشتراک سالانه',
+        description: 'دسترسی یک ساله به تمام امکانات پرمیوم - 25% تخفیف',
+    },
 }
 
 /**
- * Create ZarinPal payment request
- * Docs: https://docs.zarinpal.com/paymentGateway/
+ * Request payment from ZarinPal
  */
-export async function createPaymentRequest(
-    params: CreatePaymentParams
-): Promise<PaymentSession> {
-    const merchantId = process.env.ZARINPAL_MERCHANT_ID
+export async function requestPayment(
+    userId: string,
+    planType: keyof typeof ZARINPAL_PLANS,
+    email?: string,
+    mobile?: string
+) {
+    const plan = ZARINPAL_PLANS[planType]
+    const merchantId = process.env.ZARINPAL_MERCHANT_ID || ''
 
     if (!merchantId) {
-        console.warn('ZarinPal merchant ID not configured, using mock mode')
-        // Return mock data for development
-        return {
-            authority: 'mock_authority_' + Date.now(),
-            url: params.successUrl,
-        }
+        throw new Error('ZarinPal Merchant ID not configured')
     }
 
-    const amount = PLAN_PRICES[params.planId]
-    const description = PLAN_NAMES[params.planId]
+    const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/zarinpal/verify`
 
     try {
         const response = await fetch('https://api.zarinpal.com/pg/v4/payment/request.json', {
@@ -55,12 +51,14 @@ export async function createPaymentRequest(
             },
             body: JSON.stringify({
                 merchant_id: merchantId,
-                amount: amount, // Amount in Tomans
-                description: description,
-                callback_url: params.successUrl,
+                amount: plan.amount * 10, // ZarinPal uses Rials (1 Toman = 10 Rials)
+                callback_url: callbackUrl,
+                description: plan.description,
                 metadata: {
-                    user_id: params.userId,
-                    plan_id: params.planId,
+                    user_id: userId,
+                    plan_type: planType,
+                    email: email || '',
+                    mobile: mobile || '',
                 },
             }),
         })
@@ -68,34 +66,25 @@ export async function createPaymentRequest(
         const data = await response.json()
 
         if (data.data && data.data.code === 100) {
-            // Success - return payment URL
             return {
+                success: true,
                 authority: data.data.authority,
-                url: `https://www.zarinpal.com/pg/StartPay/${data.data.authority}`,
+                paymentUrl: `https://www.zarinpal.com/pg/StartPay/${data.data.authority}`,
             }
         } else {
-            throw new Error(`ZarinPal error: ${data.errors?.message || 'Unknown error'}`)
+            throw new Error(data.errors?.message || 'Payment request failed')
         }
     } catch (error) {
-        console.error('Error creating ZarinPal payment:', error)
+        console.error('ZarinPal request error:', error)
         throw error
     }
 }
 
 /**
- * Verify ZarinPal payment
- * Call this after user returns from payment gateway
+ * Verify payment with ZarinPal
  */
-export async function verifyPayment(
-    authority: string,
-    amount: number
-): Promise<{ success: boolean; refId?: string }> {
-    const merchantId = process.env.ZARINPAL_MERCHANT_ID
-
-    if (!merchantId) {
-        console.warn('ZarinPal merchant ID not configured, using mock mode')
-        return { success: true, refId: 'mock_ref_' + Date.now() }
-    }
+export async function verifyPayment(authority: string, amount: number) {
+    const merchantId = process.env.ZARINPAL_MERCHANT_ID || ''
 
     try {
         const response = await fetch('https://api.zarinpal.com/pg/v4/payment/verify.json', {
@@ -105,7 +94,7 @@ export async function verifyPayment(
             },
             body: JSON.stringify({
                 merchant_id: merchantId,
-                amount: amount,
+                amount: amount * 10, // Convert Toman to Rial
                 authority: authority,
             }),
         })
@@ -113,45 +102,54 @@ export async function verifyPayment(
         const data = await response.json()
 
         if (data.data && data.data.code === 100) {
-            // Payment verified successfully
             return {
                 success: true,
                 refId: data.data.ref_id,
+                cardPan: data.data.card_pan,
+                cardHash: data.data.card_hash,
             }
         } else if (data.data && data.data.code === 101) {
-            // Payment already verified
+            // Already verified
             return {
                 success: true,
                 refId: data.data.ref_id,
+                alreadyVerified: true,
             }
         } else {
-            return { success: false }
+            return {
+                success: false,
+                error: data.errors?.message || 'Verification failed',
+            }
         }
     } catch (error) {
-        console.error('Error verifying ZarinPal payment:', error)
-        return { success: false }
+        console.error('ZarinPal verify error:', error)
+        return {
+            success: false,
+            error: 'Verification request failed',
+        }
     }
 }
 
 /**
- * Get payment status (for checking payment state)
+ * Get plan price
  */
-export async function getPaymentStatus(_authority: string): Promise<string> {
-    // This can be used to check payment status without verification
-    // Useful for showing payment status to user
-    return 'pending'
+export function getPlanPrice(planType: keyof typeof ZARINPAL_PLANS): number {
+    return ZARINPAL_PLANS[planType].amount
 }
 
 /**
- * Get plan price by ID
+ * Get plan duration in days
  */
-export function getPlanPrice(planId: 'monthly' | 'quarterly' | 'annual'): number {
-    return PLAN_PRICES[planId]
+export function getPlanDuration(planType: keyof typeof ZARINPAL_PLANS): number {
+    return ZARINPAL_PLANS[planType].duration
 }
 
 /**
- * Get plan name by ID
+ * Calculate subscription expiry date
  */
-export function getPlanName(planId: 'monthly' | 'quarterly' | 'annual'): string {
-    return PLAN_NAMES[planId]
+export function calculateExpiryDate(planType: keyof typeof ZARINPAL_PLANS): Date {
+    const duration = getPlanDuration(planType)
+    const expiryDate = new Date()
+    expiryDate.setDate(expiryDate.getDate() + duration)
+    return expiryDate
 }

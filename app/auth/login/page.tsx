@@ -18,12 +18,8 @@ export const dynamic = 'force-dynamic'
 
 export default function LoginPage() {
     return (
-        <div className="container flex min-h-screen items-center justify-center py-8">
-            <div className="w-full max-w-md">
-                <Suspense fallback={<LoginLoading />}>
-                    <LoginForm />
-                </Suspense>
-            </div>
-        </div>
+        <Suspense fallback={<LoginLoading />}>
+            <LoginForm />
+        </Suspense>
     )
 }

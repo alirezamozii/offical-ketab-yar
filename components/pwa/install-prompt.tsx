@@ -24,11 +24,11 @@ export function InstallPrompt() {
             return
         }
 
-        // Show prompt after 30 seconds if installable
+        // Show prompt after 5 seconds if installable (faster for better UX)
         if (isInstallable && !isInstalled) {
             const timer = setTimeout(() => {
                 setShowPrompt(true)
-            }, 30000) // 30 seconds
+            }, 5000) // 5 seconds (was 30)
 
             return () => clearTimeout(timer)
         }
@@ -38,6 +38,8 @@ export function InstallPrompt() {
         const success = await promptInstall()
         if (success) {
             setShowPrompt(false)
+            // Mark that PWA was installed
+            localStorage.setItem('pwa-was-installed', 'true')
         }
     }
 

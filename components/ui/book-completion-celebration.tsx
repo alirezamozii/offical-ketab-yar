@@ -141,7 +141,7 @@ export function BookCompletionCelebration({
                                     variant="outline"
                                     size="lg"
                                     onClick={onChooseNext}
-                                    className="flex-1 border-gold-300 dark:border-gold-700 hover:bg-gold-100 dark:hover:bg-gold-900"
+                                    className="flex-1 hover:bg-beige-100 dark:hover:bg-gold-900"
                                 >
                                     Choose Next Book
                                 </Button>

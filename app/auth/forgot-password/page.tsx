@@ -17,12 +17,8 @@ export const dynamic = 'force-dynamic'
 
 export default function ForgotPasswordPage() {
     return (
-        <div className="container flex min-h-screen items-center justify-center py-8">
-            <div className="w-full max-w-md">
-                <Suspense fallback={<ForgotPasswordLoading />}>
-                    <ForgotPasswordForm />
-                </Suspense>
-            </div>
-        </div>
+        <Suspense fallback={<ForgotPasswordLoading />}>
+            <ForgotPasswordForm />
+        </Suspense>
     )
 }

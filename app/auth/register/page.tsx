@@ -3,7 +3,7 @@ import dynamicImport from 'next/dynamic'
 import { Suspense } from 'react'
 import RegisterLoading from './loading'
 
-const RegisterForm = dynamicImport(() => import('@/components/auth/register-form'), {
+const MultiStepRegisterForm = dynamicImport(() => import('@/components/auth/multi-step-register-form'), {
     loading: () => <RegisterLoading />,
 })
 
@@ -21,12 +21,8 @@ export const dynamic = 'force-dynamic'
 
 export default function RegisterPage() {
     return (
-        <div className="container flex min-h-screen items-center justify-center py-8">
-            <div className="w-full max-w-md">
-                <Suspense fallback={<RegisterLoading />}>
-                    <RegisterForm />
-                </Suspense>
-            </div>
-        </div>
+        <Suspense fallback={<RegisterLoading />}>
+            <MultiStepRegisterForm />
+        </Suspense>
     )
 }

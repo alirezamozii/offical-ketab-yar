@@ -8,7 +8,6 @@
 import { initDB } from '@/lib/pwa/offline-storage'
 import { useEffect } from 'react'
 import { InstallPrompt } from './install-prompt'
-import { OfflineIndicator } from './offline-indicator'
 
 export function PWAProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
@@ -42,8 +41,8 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
     return (
         <>
             {children}
+            <OpenInAppBanner />
             <InstallPrompt />
-            <OfflineIndicator />
         </>
     )
 }

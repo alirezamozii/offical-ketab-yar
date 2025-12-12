@@ -34,23 +34,17 @@ interface BookCardProps {
 export function BookCard({ book, showReadCount, progress }: BookCardProps) {
   const ref = useRef<HTMLDivElement>(null)
 
+  // Data should already be transformed by parent component
   const coverImage = book.cover_image || book.coverImage || '/placeholder-book.jpg'
   const bookRating = book.rating || 0
   const bookGenre = book.genres || book.genre || []
   const bookId = book.id || book._id || book.slug
 
-  // Handle bilingual title
+  // Handle title (Farsi priority)
   const bookTitle = typeof book.title === 'string' ? book.title : (book.title?.fa || book.title?.en || 'Untitled')
 
-  // Handle bilingual author
-  let bookAuthor = 'Unknown Author'
-  if (typeof book.author === 'string') {
-    bookAuthor = book.author
-  } else if (book.author && typeof book.author === 'object' && 'name' in book.author) {
-    bookAuthor = book.author.name
-  } else if (book.authors?.name) {
-    bookAuthor = book.authors.name
-  }
+  // Handle author
+  const bookAuthor = typeof book.author === 'string' ? book.author : (book.author?.name || 'Unknown Author')
 
   // Agent 2 (Performance): Simplified 3D effect - only on desktop, GPU-optimized
   const [enable3D, setEnable3D] = useState(false)
@@ -200,15 +194,19 @@ export function BookCard({ book, showReadCount, progress }: BookCardProps) {
             <p className="text-sm text-warm-muted dark:text-muted-foreground line-clamp-1 font-medium">{bookAuthor}</p>
             {bookGenre.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-1">
-                {bookGenre.slice(0, 2).map((g) => (
-                  <Badge
-                    key={g}
-                    variant="secondary"
-                    className="text-xs px-2.5 py-0.5 bg-gold-500/15 text-gold-800 dark:text-gold-400 border-2 border-gold-500/30 hover:bg-gold-500/25 transition-colors font-semibold"
-                  >
-                    {g}
-                  </Badge>
-                ))}
+                {bookGenre.slice(0, 2).map((g) => {
+                  const genreName = typeof g === 'string' ? g : (g?.name || g?.nameFa || 'Unknown')
+                  const genreKey = typeof g === 'string' ? g : (g?._id || genreName)
+                  return (
+                    <Badge
+                      key={genreKey}
+                      variant="secondary"
+                      className="text-xs px-2.5 py-0.5 bg-gold-500/15 text-gold-800 dark:text-gold-400 border-2 border-gold-500/30 hover:bg-gold-500/25 transition-colors font-semibold"
+                    >
+                      {genreName}
+                    </Badge>
+                  )
+                })}
                 {bookGenre.length > 2 && (
                   <Badge
                     variant="secondary"

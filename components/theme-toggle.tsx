@@ -67,7 +67,7 @@ export function ThemeToggle() {
             }}
             className="absolute inset-0 flex items-center justify-center"
           >
-            <Moon className="h-[1.2rem] w-[1.2rem] text-gold-500 group-hover:scale-110 transition-transform duration-200" />
+            <Moon className="h-[1.2rem] w-[1.2rem] text-gold-700 dark:text-gold-500 group-hover:scale-110 transition-transform duration-200" />
           </motion.div>
         ) : (
           <motion.div
@@ -81,7 +81,7 @@ export function ThemeToggle() {
             }}
             className="absolute inset-0 flex items-center justify-center"
           >
-            <Sun className="h-[1.2rem] w-[1.2rem] text-gold-600 group-hover:scale-110 group-hover:rotate-90 transition-all duration-200" />
+            <Sun className="h-[1.2rem] w-[1.2rem] text-gold-700 dark:text-gold-600 group-hover:scale-110 group-hover:rotate-90 transition-all duration-200" />
           </motion.div>
         )}
       </AnimatePresence>

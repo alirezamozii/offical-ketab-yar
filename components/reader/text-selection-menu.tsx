@@ -38,7 +38,7 @@ export function TextSelectionMenu({
             exit={{ opacity: 0, scale: 0.9, y: 10 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
             className={cn(
-                "fixed z-[100] rounded-xl shadow-2xl p-2 flex gap-1.5 backdrop-blur-xl border-2",
+                "fixed z-[120] rounded-xl shadow-2xl p-2 flex gap-1.5 backdrop-blur-xl border-2",
                 theme === 'dark'
                     ? "bg-gradient-to-br from-[#1a1612]/98 to-[#0f0e0c]/98 border-gold-600 shadow-gold-900/50"
                     : "bg-gradient-to-br from-gold-50/98 to-amber-50/98 border-gold-400 shadow-gold-300/50"

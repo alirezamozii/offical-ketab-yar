@@ -103,7 +103,6 @@ export async function proxy(request: NextRequest) {
   // 6. Development mode: Allow all routes if Supabase not configured
   // This allows testing the app without authentication setup
   if (!isSupabaseConfigured) {
-    console.log(`[Middleware] Supabase not configured - allowing all routes: ${pathname}`)
     return NextResponse.next()
   }
 
@@ -150,8 +149,9 @@ export async function proxy(request: NextRequest) {
 }
 
 /**
- * Backward compatibility export
- * Allows older Next.js versions to use this middleware
+ * Export middleware function
+ * Note: Next.js 16 shows a deprecation warning suggesting 'proxy' export,
+ * but still requires 'middleware' export for now.
  */
 export const middleware = proxy
 

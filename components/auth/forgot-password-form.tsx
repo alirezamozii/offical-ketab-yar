@@ -46,8 +46,9 @@ export default function ForgotPasswordForm() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3 }}
+                className="w-full max-w-md"
             >
-                <Card className="border-green-500/20">
+                <Card className="border-green-500/20 shadow-2xl">
                     <CardHeader className="space-y-1 text-center">
                         <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-green-500/10">
                             <CheckCircle className="size-6 text-green-500" />
@@ -80,18 +81,26 @@ export default function ForgotPasswordForm() {
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full max-w-md"
         >
-            <Card className="border-gold/20">
-                <CardHeader className="space-y-1 text-center">
-                    <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-gold/10">
-                        <KeyRound className="size-6 text-gold" />
-                    </div>
-                    <CardTitle className="text-2xl font-bold">فراموشی رمز عبور</CardTitle>
-                    <CardDescription>
-                        ایمیل خود را وارد کنید تا لینک بازیابی برایتان ارسال شود
+            <Card className="border-gold/30 shadow-2xl backdrop-blur-sm bg-background/95 dark:bg-background/90">
+                <CardHeader className="space-y-2 text-center pb-4">
+                    <motion.div
+                        initial={{ scale: 0, rotate: -180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                        className="mx-auto mb-1 flex size-14 md:size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gold-400 via-gold-500 to-gold-600 shadow-xl shadow-gold-500/30"
+                    >
+                        <KeyRound className="size-7 md:size-8 text-white" />
+                    </motion.div>
+                    <CardTitle className="text-3xl md:text-4xl font-bold bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        فراموشی رمز عبور
+                    </CardTitle>
+                    <CardDescription className="text-sm md:text-base text-muted-foreground">
+                        لینک بازیابی به ایمیل شما ارسال می‌شود 📧
                     </CardDescription>
                 </CardHeader>
 
@@ -105,9 +114,9 @@ export default function ForgotPasswordForm() {
                         )}
 
                         <div className="space-y-2">
-                            <Label htmlFor="email">ایمیل</Label>
-                            <div className="relative">
-                                <Mail className="absolute right-3 top-3 size-4 text-muted-foreground" />
+                            <Label htmlFor="email" className="text-sm font-semibold">ایمیل</Label>
+                            <div className="relative group">
+                                <Mail className="absolute right-3 top-3.5 size-4 text-muted-foreground group-focus-within:text-gold transition-colors" />
                                 <Input
                                     id="email"
                                     type="email"
@@ -116,7 +125,7 @@ export default function ForgotPasswordForm() {
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
                                     disabled={isLoading}
-                                    className="pr-10"
+                                    className="pr-10 h-12 border-2 focus:border-gold focus:ring-gold/20 transition-all"
                                     dir="ltr"
                                 />
                             </div>
@@ -124,25 +133,29 @@ export default function ForgotPasswordForm() {
 
                         <Button
                             type="submit"
-                            className="w-full bg-gold hover:bg-gold/90"
+                            size="lg"
+                            className="w-full h-12 bg-gradient-to-r from-gold-500 via-gold-600 to-gold-500 hover:from-gold-600 hover:via-gold-700 hover:to-gold-600 text-white font-semibold shadow-lg shadow-gold-500/30 hover:shadow-xl hover:shadow-gold-500/40 transition-all duration-300"
                             disabled={isLoading}
                         >
                             {isLoading ? (
                                 <>
-                                    <Loader2 className="ml-2 size-4 animate-spin" />
+                                    <Loader2 className="ml-2 size-5 animate-spin" />
                                     در حال ارسال...
                                 </>
                             ) : (
-                                'ارسال لینک بازیابی'
+                                <>
+                                    <Mail className="ml-2 size-5" />
+                                    ارسال لینک بازیابی
+                                </>
                             )}
                         </Button>
                     </CardContent>
                 </form>
 
-                <CardFooter className="flex flex-col space-y-2">
-                    <div className="text-center text-sm text-muted-foreground">
-                        رمز عبور خود را به یاد آوردید؟{' '}
-                        <Link href="/auth/login" className="text-gold hover:underline">
+                <CardFooter className="flex flex-col space-y-2 pt-6 border-t">
+                    <div className="text-center text-sm">
+                        <span className="text-muted-foreground">رمز عبور خود را به یاد آوردید؟</span>{' '}
+                        <Link href="/auth/login" className="text-gold hover:text-gold/80 font-semibold transition-colors">
                             وارد شوید
                         </Link>
                     </div>

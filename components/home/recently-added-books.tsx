@@ -1,4 +1,5 @@
 import { getBooks } from '@/lib/data'
+import { transformBooksForDisplay } from '@/lib/sanity/transform'
 import { BookCarouselSectionClient } from './book-carousel-section-client'
 
 export async function RecentlyAddedBooks() {
@@ -9,16 +10,18 @@ export async function RecentlyAddedBooks() {
             return null
         }
 
-        // Transform Sanity books to match BookCarouselSection expected format
-        const books = sanityBooks.map(book => ({
+        // Transform Sanity books with proper image URLs and Farsi text
+        const transformedBooks = transformBooksForDisplay(sanityBooks)
+
+        const books = transformedBooks.map(book => ({
             _id: book._id,
             slug: book.slug,
-            title: typeof book.title === 'string' ? book.title : book.title.en,
-            author: typeof book.author === 'string' ? book.author : book.author.name,
-            coverImage: book.coverImage,
-            genres: book.genres,
+            title: book.displayTitle, // Farsi priority
+            author: book.authorName,
+            coverImage: book.coverImage, // Proper Sanity URL
+            genres: book.genres, // Already transformed to Farsi
             level: book.level,
-            isPremium: book.isPremium,
+            isPremium: book.isPremium || false,
         }))
 
         // Serialize to ensure JSON-safe data for Client Component (Agent 2 - Performance)

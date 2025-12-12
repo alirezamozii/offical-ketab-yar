@@ -18,7 +18,10 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
     // Hide header/footer on reading pages for immersive experience
     const isReadingPage = pathname?.startsWith('/books/read/')
 
-    if (isReadingPage) {
+    // Hide header/footer on auth pages for clean, modern auth experience (Agent 3: Psychology)
+    const isAuthPage = pathname?.startsWith('/auth/')
+
+    if (isReadingPage || isAuthPage) {
         return (
             <>
                 <ThemeTransitionOverlay />
