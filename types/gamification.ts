@@ -86,7 +86,7 @@ export const XP_REWARDS = {
 } as const
 
 // Level Calculation
-export function calculateLevel(xp: number): number {
+function calculateLevel(xp: number): number {
     return Math.floor(xp / 100) + 1
 }
 

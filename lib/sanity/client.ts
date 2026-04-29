@@ -2,7 +2,7 @@ import imageUrlBuilder from '@sanity/image-url'
 import type { SanityImageSource } from '@sanity/image-url/lib/types/types'
 import { createClient } from 'next-sanity'
 
-export const sanityConfig = {
+const sanityConfig = {
     projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || '',
     dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
     apiVersion: '2024-01-01', // Use current date
@@ -11,7 +11,7 @@ export const sanityConfig = {
 }
 
 // Client for server-side data fetching (with draft mode support)
-export async function getClient(preview?: { isEnabled: boolean }) {
+async function getClient(preview?: { isEnabled: boolean }) {
     const { isEnabled } = preview || { isEnabled: false }
 
     return createClient({
@@ -26,7 +26,7 @@ export async function getClient(preview?: { isEnabled: boolean }) {
 export const sanityClient = createClient(sanityConfig)
 
 // Client for client-side data fetching (with CDN)
-export const sanityClientCDN = createClient({
+const sanityClientCDN = createClient({
     ...sanityConfig,
     useCdn: true,
 })
@@ -34,7 +34,7 @@ export const sanityClientCDN = createClient({
 // Image URL builder
 const builder = imageUrlBuilder(sanityClient)
 
-export function urlFor(source: SanityImageSource) {
+function urlFor(source: SanityImageSource) {
     return builder.image(source)
 }
 

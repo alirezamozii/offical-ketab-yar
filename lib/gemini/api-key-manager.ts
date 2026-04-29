@@ -13,7 +13,7 @@ interface APIKey {
 /**
  * API Key Manager - Handles multiple Gemini API keys with rotation and fallback
  */
-export class APIKeyManager {
+class APIKeyManager {
     private fallbackKey: string
     private cachedKeys: APIKey[] = []
     private lastFetch: number = 0

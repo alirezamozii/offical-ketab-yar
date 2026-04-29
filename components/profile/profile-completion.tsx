@@ -19,7 +19,7 @@ interface ProfileCompletionProps {
     }
 }
 
-export default function ProfileCompletion({ percentage, profile }: ProfileCompletionProps) {
+function ProfileCompletion({ percentage, profile }: ProfileCompletionProps) {
     const tasks = [
         { label: 'نام کاربری', completed: !!profile.username },
         { label: 'نام کامل', completed: !!profile.full_name },

@@ -99,7 +99,7 @@ export async function updateSession(request: NextRequest) {
  * Check if user is authenticated from middleware response
  * Helper function for use in middleware.ts
  */
-export function isAuthenticated(response: NextResponse): boolean {
+function isAuthenticated(response: NextResponse): boolean {
   return response.headers.has('x-middleware-supabase-user')
 }
 
@@ -107,6 +107,6 @@ export function isAuthenticated(response: NextResponse): boolean {
  * Get user ID from middleware response
  * Helper function for use in middleware.ts
  */
-export function getUserId(response: NextResponse): string | null {
+function getUserId(response: NextResponse): string | null {
   return response.headers.get('x-middleware-supabase-user')
 }

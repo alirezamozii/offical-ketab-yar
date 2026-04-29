@@ -54,7 +54,7 @@ export async function createPlaylist(data: {
 /**
  * Update a playlist
  */
-export async function updatePlaylist(id: string, data: PlaylistUpdate) {
+async function updatePlaylist(id: string, data: PlaylistUpdate) {
     const supabase = createClient()
 
     const { data: playlist, error } = await supabase
@@ -85,7 +85,7 @@ export async function deletePlaylist(id: string) {
 /**
  * Add a book to playlist
  */
-export async function addBookToPlaylist(playlistId: string, bookId: string, note?: string) {
+async function addBookToPlaylist(playlistId: string, bookId: string, note?: string) {
     const supabase = createClient()
 
     // Get current max position
@@ -117,7 +117,7 @@ export async function addBookToPlaylist(playlistId: string, bookId: string, note
 /**
  * Remove a book from playlist
  */
-export async function removeBookFromPlaylist(playlistId: string, bookId: string) {
+async function removeBookFromPlaylist(playlistId: string, bookId: string) {
     const supabase = createClient()
 
     const { error } = await supabase
@@ -132,7 +132,7 @@ export async function removeBookFromPlaylist(playlistId: string, bookId: string)
 /**
  * Reorder books in playlist
  */
-export async function reorderPlaylistBooks(playlistId: string, bookIds: string[]) {
+async function reorderPlaylistBooks(playlistId: string, bookIds: string[]) {
     const supabase = createClient()
 
     // Update positions for all books
@@ -193,7 +193,7 @@ export async function unfollowPlaylist(playlistId: string, userId: string) {
 /**
  * Get a single playlist with books
  */
-export async function getPlaylist(id: string, userId?: string): Promise<PlaylistWithBooks | null> {
+async function getPlaylist(id: string, userId?: string): Promise<PlaylistWithBooks | null> {
     const supabase = createClient()
 
     const { data: playlist, error } = await supabase
@@ -342,7 +342,7 @@ export async function getPublicPlaylists(limit = 50, userId?: string): Promise<P
 /**
  * Search public playlists
  */
-export async function searchPlaylists(query: string, limit = 20): Promise<PlaylistWithBooks[]> {
+async function searchPlaylists(query: string, limit = 20): Promise<PlaylistWithBooks[]> {
     const supabase = createClient()
 
     const { data, error } = await supabase
@@ -370,7 +370,7 @@ export async function searchPlaylists(query: string, limit = 20): Promise<Playli
 /**
  * Increment playlist view count
  */
-export async function incrementPlaylistViews(playlistId: string) {
+async function incrementPlaylistViews(playlistId: string) {
     const supabase = createClient()
 
     const { error } = await supabase

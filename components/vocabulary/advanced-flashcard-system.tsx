@@ -35,7 +35,7 @@ interface AdvancedFlashcardSystemProps {
   onUpdateStatus: (wordId: string, newStatus: Word['status']) => void
 }
 
-export function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus }: AdvancedFlashcardSystemProps) {
+function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus }: AdvancedFlashcardSystemProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
   const [shuffledWords, setShuffledWords] = useState<Word[]>([])

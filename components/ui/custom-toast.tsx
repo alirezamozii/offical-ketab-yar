@@ -13,7 +13,7 @@ interface CustomToastProps {
     description?: string
 }
 
-export function showToast({ message, type = 'success', description }: CustomToastProps) {
+function showToast({ message, type = 'success', description }: CustomToastProps) {
     const icons = {
         success: <CheckCircle2 className="h-5 w-5 text-green-600" />,
         error: <XCircle className="h-5 w-5 text-red-600" />,

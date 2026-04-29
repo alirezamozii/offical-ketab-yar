@@ -47,7 +47,7 @@ async function deriveKey(userId: string, bookId: string): Promise<CryptoKey> {
  * Encrypt book content
  * Returns encrypted data + IV (initialization vector)
  */
-export async function encryptBookContent(
+async function encryptBookContent(
     content: string,
     userId: string,
     bookId: string
@@ -80,7 +80,7 @@ export async function encryptBookContent(
  * Decrypt book content
  * Requires the same userId and bookId used for encryption
  */
-export async function decryptBookContent(
+async function decryptBookContent(
     encryptedData: ArrayBuffer,
     iv: Uint8Array,
     userId: string,
@@ -109,7 +109,7 @@ export async function decryptBookContent(
 /**
  * Check if SubtleCrypto is available
  */
-export function isCryptoAvailable(): boolean {
+function isCryptoAvailable(): boolean {
     return typeof crypto !== 'undefined' &&
         typeof crypto.subtle !== 'undefined' &&
         typeof crypto.subtle.encrypt === 'function'
@@ -119,6 +119,6 @@ export function isCryptoAvailable(): boolean {
  * Generate encryption key ID for reference
  * This is NOT the actual key, just an identifier
  */
-export function generateKeyId(userId: string, bookId: string): string {
+function generateKeyId(userId: string, bookId: string): string {
     return `key_${userId.substring(0, 8)}_${bookId.substring(0, 8)}`
 }

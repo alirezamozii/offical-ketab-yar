@@ -11,7 +11,7 @@ interface ProfileAchievementsProps {
     userStats: unknown
 }
 
-export default function ProfileAchievements({ userId: _userId, userStats: _userStats }: ProfileAchievementsProps) {
+function ProfileAchievements({ userId: _userId, userStats: _userStats }: ProfileAchievementsProps) {
     // Mock achievements data - will be replaced with real data from database
     // userId and userStats will be used when real data is implemented
     const achievements = {

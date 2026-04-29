@@ -85,7 +85,7 @@ let dbInstance: IDBPDatabase<KetabYarDB> | null = null
 /**
  * Initialize IndexedDB
  */
-export async function initDB(): Promise<IDBPDatabase<KetabYarDB>> {
+async function initDB(): Promise<IDBPDatabase<KetabYarDB>> {
     if (dbInstance) return dbInstance
 
     dbInstance = await openDB<KetabYarDB>('ketab-yar-offline', 2, {
@@ -355,7 +355,7 @@ export async function getSyncQueue() {
     return await db.getAll('sync_queue')
 }
 
-export async function clearSyncQueue() {
+async function clearSyncQueue() {
     const db = await initDB()
     await db.clear('sync_queue')
 }
@@ -394,7 +394,7 @@ export async function getUnsyncedCount() {
 /**
  * Clear all offline data (for testing or logout)
  */
-export async function clearAllOfflineData() {
+async function clearAllOfflineData() {
     try {
         const db = await initDB()
         await Promise.all([

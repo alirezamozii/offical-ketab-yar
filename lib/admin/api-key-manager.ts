@@ -21,7 +21,7 @@ export interface ApiKey {
  * Get next available API key (auto-rotation)
  * Prioritizes: active keys → lowest errors → lowest usage → least recently used
  */
-export async function getNextApiKey(service: string = 'gemini'): Promise<ApiKey | null> {
+async function getNextApiKey(service: string = 'gemini'): Promise<ApiKey | null> {
     const supabase = await createClient()
 
     const { data, error } = await supabase
@@ -49,7 +49,7 @@ export async function getNextApiKey(service: string = 'gemini'): Promise<ApiKey 
 /**
  * Record API key usage (success or failure)
  */
-export async function recordApiKeyUsage(keyId: string, success: boolean = true): Promise<void> {
+async function recordApiKeyUsage(keyId: string, success: boolean = true): Promise<void> {
     const supabase = await createClient()
 
     await supabase.rpc('record_api_key_usage', {

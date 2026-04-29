@@ -33,7 +33,7 @@ export interface StorageBreakdown {
 /**
  * Get current storage information
  */
-export async function getStorageInfo(): Promise<StorageInfo | null> {
+async function getStorageInfo(): Promise<StorageInfo | null> {
     if (!('storage' in navigator) || !('estimate' in navigator.storage)) {
         console.warn('Storage API not available')
         return null
@@ -64,7 +64,7 @@ export async function getStorageInfo(): Promise<StorageInfo | null> {
 /**
  * Get storage breakdown by category
  */
-export async function getStorageBreakdown(): Promise<StorageBreakdown> {
+async function getStorageBreakdown(): Promise<StorageBreakdown> {
     try {
         const db = await getDB()
 
@@ -114,7 +114,7 @@ export async function getStorageBreakdown(): Promise<StorageBreakdown> {
 /**
  * Check if there's enough space for a download
  */
-export async function hasEnoughSpace(requiredBytes: number): Promise<boolean> {
+async function hasEnoughSpace(requiredBytes: number): Promise<boolean> {
     const info = await getStorageInfo()
     if (!info) return true // Assume yes if we can't check
 
@@ -124,7 +124,7 @@ export async function hasEnoughSpace(requiredBytes: number): Promise<boolean> {
 /**
  * Check if storage is getting full (>80%)
  */
-export async function isStorageAlmostFull(): Promise<boolean> {
+async function isStorageAlmostFull(): Promise<boolean> {
     const info = await getStorageInfo()
     if (!info) return false
 
@@ -134,7 +134,7 @@ export async function isStorageAlmostFull(): Promise<boolean> {
 /**
  * Check if storage is critically full (>95%)
  */
-export async function isStorageCriticallyFull(): Promise<boolean> {
+async function isStorageCriticallyFull(): Promise<boolean> {
     const info = await getStorageInfo()
     if (!info) return false
 
@@ -144,7 +144,7 @@ export async function isStorageCriticallyFull(): Promise<boolean> {
 /**
  * Get storage warning level
  */
-export async function getStorageWarningLevel(): Promise<'safe' | 'warning' | 'critical'> {
+async function getStorageWarningLevel(): Promise<'safe' | 'warning' | 'critical'> {
     const info = await getStorageInfo()
     if (!info) return 'safe'
 
@@ -157,7 +157,7 @@ export async function getStorageWarningLevel(): Promise<'safe' | 'warning' | 'cr
  * Clean up old cached data
  * Removes least recently accessed books
  */
-export async function cleanupOldCache(targetBytes: number): Promise<number> {
+async function cleanupOldCache(targetBytes: number): Promise<number> {
     try {
         const db = await getDB()
 
@@ -199,7 +199,7 @@ export async function cleanupOldCache(targetBytes: number): Promise<number> {
 /**
  * Request persistent storage (prevents automatic cleanup)
  */
-export async function requestPersistentStorage(): Promise<boolean> {
+async function requestPersistentStorage(): Promise<boolean> {
     if (!('storage' in navigator) || !('persist' in navigator.storage)) {
         console.warn('Persistent storage not available')
         return false
@@ -228,7 +228,7 @@ export async function requestPersistentStorage(): Promise<boolean> {
 /**
  * Update storage metadata in database
  */
-export async function updateStorageMetadata(): Promise<void> {
+async function updateStorageMetadata(): Promise<void> {
     try {
         const db = await getDB()
         const info = await getStorageInfo()
@@ -265,7 +265,7 @@ function formatBytes(bytes: number): string {
 /**
  * Estimate book size before download
  */
-export function estimateBookSize(chapters: number, avgChapterLength: number = 5000): number {
+function estimateBookSize(chapters: number, avgChapterLength: number = 5000): number {
     // Rough estimate: 5000 chars per chapter * 2 bytes per char * 1.5 for encryption overhead
     return chapters * avgChapterLength * 2 * 1.5
 }
@@ -273,7 +273,7 @@ export function estimateBookSize(chapters: number, avgChapterLength: number = 50
 /**
  * Auto-cleanup if storage is critically full
  */
-export async function autoCleanupIfNeeded(): Promise<void> {
+async function autoCleanupIfNeeded(): Promise<void> {
     const level = await getStorageWarningLevel()
 
     if (level === 'critical') {
@@ -290,7 +290,7 @@ export async function autoCleanupIfNeeded(): Promise<void> {
 /**
  * Monitor storage and warn user
  */
-export async function monitorStorage(): Promise<{
+async function monitorStorage(): Promise<{
     level: 'safe' | 'warning' | 'critical'
     message: string
     action?: string

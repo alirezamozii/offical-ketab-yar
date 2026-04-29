@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache'
  * Update reading progress for a book
  * Automatically marks book as completed when progress reaches 90%+
  */
-export async function updateReadingProgress(
+async function updateReadingProgress(
     bookId: string,
     currentPage: number,
     totalPages: number
@@ -73,7 +73,7 @@ export async function updateReadingProgress(
 /**
  * Start reading a book (creates initial progress entry)
  */
-export async function startReading(bookId: string, totalPages: number) {
+async function startReading(bookId: string, totalPages: number) {
     try {
         const supabase = await createClient()
 
@@ -130,7 +130,7 @@ export async function startReading(bookId: string, totalPages: number) {
 /**
  * Get reading progress for a specific book
  */
-export async function getReadingProgress(bookId: string) {
+async function getReadingProgress(bookId: string) {
     try {
         const supabase = await createClient()
 
@@ -166,7 +166,7 @@ export async function getReadingProgress(bookId: string) {
 /**
  * Get all books user is currently reading
  */
-export async function getCurrentlyReading() {
+async function getCurrentlyReading() {
     try {
         const supabase = await createClient()
 
@@ -206,7 +206,7 @@ export async function getCurrentlyReading() {
 /**
  * Get completed books for a user
  */
-export async function getCompletedBooks() {
+async function getCompletedBooks() {
     try {
         const supabase = await createClient()
 
@@ -245,7 +245,7 @@ export async function getCompletedBooks() {
 /**
  * Check if user has completed a book
  */
-export async function hasCompletedBook(bookId: string) {
+async function hasCompletedBook(bookId: string) {
     try {
         const supabase = await createClient()
 
@@ -280,7 +280,7 @@ export async function hasCompletedBook(bookId: string) {
 /**
  * Get reading statistics for a user
  */
-export async function getUserReadingStats() {
+async function getUserReadingStats() {
     try {
         const supabase = await createClient()
 
@@ -363,7 +363,7 @@ export async function getUserReadingStats() {
 /**
  * Increment book view count (when user clicks "Read" and opens reader page)
  */
-export async function incrementBookView(bookId: string) {
+async function incrementBookView(bookId: string) {
     try {
         const supabase = await createClient()
 
@@ -394,7 +394,7 @@ export async function incrementBookView(bookId: string) {
 /**
  * Get book view count and statistics
  */
-export async function getBookViewStats(bookId: string) {
+async function getBookViewStats(bookId: string) {
     try {
         const supabase = await createClient()
 

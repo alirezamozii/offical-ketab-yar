@@ -25,7 +25,7 @@ export async function getUserReadingProgress(userId: string) {
     return data
 }
 
-export async function updateReadingProgress(
+async function updateReadingProgress(
     userId: string,
     bookId: string,
     progress: {

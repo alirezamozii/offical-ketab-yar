@@ -12,7 +12,7 @@ interface StreakWarningProps {
     onDismiss?: () => void
 }
 
-export function StreakWarning({ streakDays, lastReadDate, onDismiss }: StreakWarningProps) {
+function StreakWarning({ streakDays, lastReadDate, onDismiss }: StreakWarningProps) {
     const [show, setShow] = useState(false)
     const [hoursLeft, setHoursLeft] = useState(0)
 
@@ -153,7 +153,7 @@ export function StreakWarning({ streakDays, lastReadDate, onDismiss }: StreakWar
 }
 
 // Toast-style notification (smaller, less intrusive)
-export function StreakWarningToast({ streakDays, hoursLeft }: { streakDays: number; hoursLeft: number }) {
+function StreakWarningToast({ streakDays, hoursLeft }: { streakDays: number; hoursLeft: number }) {
     const [show, setShow] = useState(true)
 
     useEffect(() => {

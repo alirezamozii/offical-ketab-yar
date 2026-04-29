@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# fallow cache
+.fallow/
+
+# code-simplifier
+reports/
+quality-history/
+quality-report-*.md

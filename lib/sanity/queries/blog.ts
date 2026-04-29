@@ -143,7 +143,7 @@ export async function getFeaturedBlogPosts(limit: number = 3): Promise<BlogPost[
 /**
  * Get blog posts by category
  */
-export async function getBlogPostsByCategory(category: string, limit?: number): Promise<BlogPost[]> {
+async function getBlogPostsByCategory(category: string, limit?: number): Promise<BlogPost[]> {
     const query = `*[_type == "blogPost" && $category in categories && publishedAt <= now()] | order(publishedAt desc) ${limit ? `[0...${limit}]` : ''} {
         _id,
         "slug": slug.current,

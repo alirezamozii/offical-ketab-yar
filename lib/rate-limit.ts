@@ -42,7 +42,7 @@ export interface RateLimitResult {
  * @param config - Rate limit configuration
  * @returns Rate limit result
  */
-export function rateLimit(
+function rateLimit(
     identifier: string,
     config: RateLimitConfig = {
         interval: 60 * 1000, // 1 minute
@@ -83,7 +83,7 @@ export function rateLimit(
  * @param request - Next.js request object
  * @returns Client identifier (IP or forwarded IP)
  */
-export function getClientIdentifier(request: Request): string {
+function getClientIdentifier(request: Request): string {
     // Try to get real IP from headers (for proxies/load balancers)
     const forwarded = request.headers.get('x-forwarded-for')
     const realIp = request.headers.get('x-real-ip')

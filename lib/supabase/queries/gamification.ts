@@ -170,7 +170,7 @@ export async function updateUserStats(
 /**
  * Get all achievements
  */
-export async function getAchievements(): Promise<{
+async function getAchievements(): Promise<{
     success: boolean
     achievements?: Achievement[]
     error?: string
@@ -199,7 +199,7 @@ export async function getAchievements(): Promise<{
 /**
  * Get user's earned achievements
  */
-export async function getUserAchievements(userId?: string): Promise<{
+async function getUserAchievements(userId?: string): Promise<{
     success: boolean
     achievements?: UserAchievement[]
     error?: string
@@ -398,7 +398,7 @@ export async function getStreakInfo(userId?: string): Promise<{
  * Get leaderboard (top users by XP)
  * Agent 3: Social competition
  */
-export async function getLeaderboard(limit: number = 10): Promise<{
+async function getLeaderboard(limit: number = 10): Promise<{
     success: boolean
     leaderboard?: Array<UserStats & { rank: number }>
     error?: string

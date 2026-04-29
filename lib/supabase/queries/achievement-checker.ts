@@ -15,7 +15,7 @@ interface AchievementCheck {
 /**
  * Check and award achievements for a user
  */
-export async function checkAndAwardAchievements(userId: string, checks: AchievementCheck[]) {
+async function checkAndAwardAchievements(userId: string, checks: AchievementCheck[]) {
     const supabase = createClient()
 
     try {
@@ -77,7 +77,7 @@ export async function checkAndAwardAchievements(userId: string, checks: Achievem
 /**
  * Check achievements after reading session
  */
-export async function checkReadingAchievements(userId: string) {
+async function checkReadingAchievements(userId: string) {
     const supabase = createClient()
 
     try {
@@ -125,7 +125,7 @@ export async function checkReadingAchievements(userId: string) {
 /**
  * Check level achievements
  */
-export async function checkLevelAchievements(userId: string, newLevel: number) {
+async function checkLevelAchievements(userId: string, newLevel: number) {
     const supabase = createClient()
 
     try {

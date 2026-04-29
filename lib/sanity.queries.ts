@@ -1,7 +1,7 @@
 import { sanityAdminClient, sanityClient } from './sanity.client'
 
 // Get all published books (for public pages)
-export async function getPublishedBooks() {
+async function getPublishedBooks() {
     const books = await sanityClient.fetch(
         `*[_type == "compactBook" && status == 'published'] | order(_createdAt desc) {
       _id,
@@ -33,7 +33,7 @@ export async function getPublishedBooks() {
 }
 
 // Get a single published book by slug (for public pages)
-export async function getPublishedBook(slug: string) {
+async function getPublishedBook(slug: string) {
     const book = await sanityClient.fetch(
         `*[_type == "compactBook" && slug.current == $slug && status == 'published'][0] {
       _id,
@@ -67,7 +67,7 @@ export async function getPublishedBook(slug: string) {
 }
 
 // Get a draft book by slug (for preview mode - requires admin token)
-export async function getDraftBook(slug: string) {
+async function getDraftBook(slug: string) {
     const book = await sanityAdminClient.fetch(
         `*[_type == "compactBook" && slug.current == $slug][0] {
       _id,
@@ -120,7 +120,7 @@ export async function getAllBooks() {
 }
 
 // Get a single book by ID (for admin editing)
-export async function getBookById(id: string) {
+async function getBookById(id: string) {
     const book = await sanityAdminClient.fetch(
         `*[_type == "compactBook" && _id == $id][0]`,
         { id }
@@ -129,7 +129,7 @@ export async function getBookById(id: string) {
 }
 
 // Get all unique genres from all books
-export async function getAllGenres() {
+async function getAllGenres() {
     const genres = await sanityClient.fetch(
         `*[_type == "genre"] | order(name asc) {
       _id,
@@ -143,7 +143,7 @@ export async function getAllGenres() {
 }
 
 // Get all authors
-export async function getAllAuthors() {
+async function getAllAuthors() {
     const authors = await sanityClient.fetch(
         `*[_type == "author"] | order(name asc) {
       _id,

@@ -25,7 +25,7 @@ interface DeleteAccountDialogProps {
     userEmail: string
 }
 
-export default function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
+function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
     const router = useRouter()
     const [confirmText, setConfirmText] = useState('')
     const [confirmCheckbox, setConfirmCheckbox] = useState(false)

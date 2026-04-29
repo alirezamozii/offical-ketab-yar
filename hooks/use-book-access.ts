@@ -7,7 +7,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 
-export function useBookAccess(bookId: string | null) {
+function useBookAccess(bookId: string | null) {
   const supabase = createClient()
 
   return useQuery({
@@ -35,7 +35,7 @@ export function useBookAccess(bookId: string | null) {
  * Hook to check if user has general premium access
  * Useful for showing/hiding premium features in UI
  */
-export function usePremiumAccess() {
+function usePremiumAccess() {
   const supabase = createClient()
 
   return useQuery({
@@ -58,7 +58,7 @@ export function usePremiumAccess() {
  * Hook to get user's role and subscription info
  * Useful for displaying badges and access indicators
  */
-export function useUserAccessInfo() {
+function useUserAccessInfo() {
   const supabase = createClient()
 
   return useQuery({

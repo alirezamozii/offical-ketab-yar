@@ -1,7 +1,7 @@
 import Stripe from 'stripe'
 
 // Initialize Stripe with secret key
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
     apiVersion: '2024-12-18.acacia',
     typescript: true,
 })
@@ -68,7 +68,7 @@ export async function createCheckoutSession({
 /**
  * Create a Stripe customer portal session
  */
-export async function createPortalSession({
+async function createPortalSession({
     customerId,
     returnUrl,
 }: {
@@ -86,13 +86,13 @@ export async function createPortalSession({
 /**
  * Get subscription details
  */
-export async function getSubscription(subscriptionId: string) {
+async function getSubscription(subscriptionId: string) {
     return await stripe.subscriptions.retrieve(subscriptionId)
 }
 
 /**
  * Cancel subscription
  */
-export async function cancelSubscription(subscriptionId: string) {
+async function cancelSubscription(subscriptionId: string) {
     return await stripe.subscriptions.cancel(subscriptionId)
 }

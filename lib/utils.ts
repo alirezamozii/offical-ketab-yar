@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatDate(date: Date | string) {
+function formatDate(date: Date | string) {
   const d = new Date(date)
   return d.toLocaleDateString("fa-IR", {
     year: "numeric",
@@ -14,18 +14,18 @@ export function formatDate(date: Date | string) {
   })
 }
 
-export function formatNumber(num: number) {
+function formatNumber(num: number) {
   return new Intl.NumberFormat("fa-IR").format(num)
 }
 
-export function formatPrice(price: number): string {
+function formatPrice(price: number): string {
   return new Intl.NumberFormat("fa-IR", {
     style: "currency",
     currency: "IRR",
   }).format(price)
 }
 
-export function formatBytes(bytes: number, decimals = 2): string {
+function formatBytes(bytes: number, decimals = 2): string {
   if (bytes === 0) return '0 Bytes'
   const k = 1024
   const dm = decimals < 0 ? 0 : decimals
@@ -34,7 +34,7 @@ export function formatBytes(bytes: number, decimals = 2): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
 }
 
-export function isValidUrl(url: string) {
+function isValidUrl(url: string) {
   try {
     new URL(url)
     return true
@@ -43,7 +43,7 @@ export function isValidUrl(url: string) {
   }
 }
 
-export function getInitials(name: string) {
+function getInitials(name: string) {
   return name
     .split(" ")
     .map((n) => n[0])
@@ -51,15 +51,15 @@ export function getInitials(name: string) {
     .toUpperCase()
 }
 
-export function truncate(str: string, length: number) {
+function truncate(str: string, length: number) {
   return str.length > length ? `${str.substring(0, length)}...` : str
 }
 
-export function delay(ms: number): Promise<void> {
+function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-export function generateSlug(str: string) {
+function generateSlug(str: string) {
   return str
     .toLowerCase()
     .replace(/[^a-z0-9\u0600-\u06FF\s-]/g, "")
@@ -68,7 +68,7 @@ export function generateSlug(str: string) {
     .trim()
 }
 
-export function debounce<T extends (...args: unknown[]) => unknown>(
+function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -83,7 +83,7 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
   }
 }
 
-export function groupBy<T>(array: T[], key: keyof T): { [key: string]: T[] } {
+function groupBy<T>(array: T[], key: keyof T): { [key: string]: T[] } {
   return array.reduce((result, currentValue) => {
     const groupKey = String(currentValue[key])
     ;(result[groupKey] = result[groupKey] || []).push(currentValue)
@@ -91,13 +91,13 @@ export function groupBy<T>(array: T[], key: keyof T): { [key: string]: T[] } {
   }, {} as { [key: string]: T[] })
 }
 
-export function calculateReadingTime(text: string): number {
+function calculateReadingTime(text: string): number {
   const wordsPerMinute = 200
   const words = text.trim().split(/\s+/).length
   return Math.ceil(words / wordsPerMinute)
 }
 
-export function getWordDifficultyColor(level: string): string {
+function getWordDifficultyColor(level: string): string {
   switch (level) {
     case "beginner":
       return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
@@ -110,7 +110,7 @@ export function getWordDifficultyColor(level: string): string {
   }
 }
 
-export function getLevelText(level: string): string {
+function getLevelText(level: string): string {
   switch (level) {
     case "beginner":
       return "مبتدی"
@@ -123,7 +123,7 @@ export function getLevelText(level: string): string {
   }
 }
 
-export function getLanguageText(language: string): string {
+function getLanguageText(language: string): string {
   switch (language) {
     case "english":
       return "انگلیسی"
@@ -140,7 +140,7 @@ export function getLanguageText(language: string): string {
   }
 }
 
-export function isValidSlug(slug: string): boolean {
+function isValidSlug(slug: string): boolean {
   const slugRegex = /^[a-z0-9\u0600-\u06FF]+(?:-[a-z0-9\u0600-\u06FF]+)*$/
   return slugRegex.test(slug)
 }

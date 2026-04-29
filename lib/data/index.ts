@@ -27,7 +27,7 @@ export async function getBooks(): Promise<SanityBookListItem[]> {
 /**
  * Get book by slug from Sanity CMS
  */
-export async function getBookBySlug(slug: string): Promise<SanityBook | null> {
+async function getBookBySlug(slug: string): Promise<SanityBook | null> {
     try {
         const { getBookBySlug: getSanityBookBySlug } = await import('@/lib/sanity/queries')
         return await getSanityBookBySlug(slug)
@@ -40,7 +40,7 @@ export async function getBookBySlug(slug: string): Promise<SanityBook | null> {
 /**
  * Get book by ID from Sanity CMS
  */
-export async function getBookById(id: string): Promise<SanityBook | null> {
+async function getBookById(id: string): Promise<SanityBook | null> {
     try {
         const { getBookById: getSanityBookById } = await import('@/lib/sanity/queries')
         return await getSanityBookById(id)
@@ -53,7 +53,7 @@ export async function getBookById(id: string): Promise<SanityBook | null> {
 /**
  * Get recently added books from Sanity CMS
  */
-export async function getRecentlyAddedBooks(limit: number = 12): Promise<SanityBookListItem[]> {
+async function getRecentlyAddedBooks(limit: number = 12): Promise<SanityBookListItem[]> {
     try {
         const { getRecentlyAddedBooks: getSanityRecentBooks } = await import('@/lib/sanity/queries')
         return await getSanityRecentBooks(limit)
@@ -66,7 +66,7 @@ export async function getRecentlyAddedBooks(limit: number = 12): Promise<SanityB
 /**
  * Get highest rated books from Sanity CMS
  */
-export async function getHighestRatedBooks(limit: number = 12): Promise<SanityBookListItem[]> {
+async function getHighestRatedBooks(limit: number = 12): Promise<SanityBookListItem[]> {
     try {
         const { getFeaturedBooks } = await import('@/lib/sanity/queries')
         return await getFeaturedBooks(limit)
@@ -92,7 +92,7 @@ export async function getMostReadBooks(limit: number = 12): Promise<SanityBookLi
 /**
  * Get related books by genre from Sanity CMS
  */
-export async function getRelatedBooks(bookId: string, genres: string[], limit: number = 4): Promise<SanityBookListItem[]> {
+async function getRelatedBooks(bookId: string, genres: string[], limit: number = 4): Promise<SanityBookListItem[]> {
     try {
         const { getBooksByGenre } = await import('@/lib/sanity/queries')
         // Get books from first genre
@@ -108,7 +108,7 @@ export async function getRelatedBooks(bookId: string, genres: string[], limit: n
 /**
  * Get author by ID from Sanity CMS
  */
-export async function getAuthorById(id: string): Promise<Author | null> {
+async function getAuthorById(id: string): Promise<Author | null> {
     try {
         const { getAuthorById: getSanityAuthorById } = await import('@/lib/sanity/queries')
         return await getSanityAuthorById(id)
@@ -151,7 +151,7 @@ export interface Review {
  * Get reviews by book ID
  * Note: Reviews are stored in Supabase, not Sanity
  */
-export async function getReviewsByBookId(_bookId: string): Promise<Review[]> {
+async function getReviewsByBookId(_bookId: string): Promise<Review[]> {
     try {
         // For now, return empty array since reviews are in Supabase
         // This will be implemented when we integrate Supabase reviews with Sanity books

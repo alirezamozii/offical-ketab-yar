@@ -3,7 +3,7 @@
  * Progressive leveling (1-99), XP bonuses, and rewards
  */
 
-export const MAX_LEVEL = 99
+const MAX_LEVEL = 99
 
 /**
  * Calculate user level from total XP (Progressive difficulty to level 99)
@@ -28,7 +28,7 @@ export function calculateLevel(xp: number): number {
 /**
  * Calculate XP needed for a specific level
  */
-export function xpForLevel(level: number): number {
+function xpForLevel(level: number): number {
     if (level <= 1) return 0
     if (level >= MAX_LEVEL) return 1000000
 
@@ -39,7 +39,7 @@ export function xpForLevel(level: number): number {
 /**
  * Calculate XP needed for next level
  */
-export function xpForNextLevel(currentLevel: number): number {
+function xpForNextLevel(currentLevel: number): number {
     return xpForLevel(currentLevel + 1)
 }
 
@@ -98,7 +98,7 @@ export function xpProgressToNextLevel(currentXP: number): {
 /**
  * Calculate XP reward for reading with bonuses
  */
-export function calculateReadingXP(params: {
+function calculateReadingXP(params: {
     pagesRead: number
     hasStreak: boolean
     streakDays?: number

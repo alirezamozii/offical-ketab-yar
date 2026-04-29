@@ -3,7 +3,7 @@ import { Home, Library, Users, UserX } from 'lucide-react'
 import { Metadata } from 'next'
 import Link from 'next/link'
 
-export const metadata: Metadata = {
+const metadata: Metadata = {
   title: 'Author Not Found | Ketab-Yar',
   description: 'The author you are looking for could not be found.',
 }

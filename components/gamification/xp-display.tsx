@@ -14,7 +14,7 @@ interface XPDisplayProps {
   size?: 'sm' | 'md' | 'lg'
 }
 
-export function XPDisplay({
+function XPDisplay({
   currentXP,
   level,
   className,

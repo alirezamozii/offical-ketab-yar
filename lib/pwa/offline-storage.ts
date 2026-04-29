@@ -149,7 +149,7 @@ async function getDB(): Promise<IDBPDatabase<KetabYarDB>> {
 }
 
 // Book operations
-export async function saveBookMetadata(book: {
+async function saveBookMetadata(book: {
     slug: string
     title: { en: string; fa: string }
     author: { name: string; slug: string }
@@ -163,7 +163,7 @@ export async function saveBookMetadata(book: {
     })
 }
 
-export async function getBookMetadata(slug: string) {
+async function getBookMetadata(slug: string) {
     const db = await getDB()
     return db.get('books', slug)
 }
@@ -173,7 +173,7 @@ export async function getAllDownloadedBooks() {
     return db.getAll('books')
 }
 
-export async function deleteBook(slug: string) {
+async function deleteBook(slug: string) {
     const db = await getDB()
 
     // Delete book metadata
@@ -210,18 +210,18 @@ export async function getChapter(bookSlug: string, chapterNumber: number) {
     return db.get('chapters', IDBKeyRange.only([bookSlug, chapterNumber]))
 }
 
-export async function getAllChaptersForBook(bookSlug: string) {
+async function getAllChaptersForBook(bookSlug: string) {
     const db = await getDB()
     return db.getAllFromIndex('chapters', 'bookSlug', bookSlug)
 }
 
-export async function isBookFullyDownloaded(bookSlug: string, totalChapters: number) {
+async function isBookFullyDownloaded(bookSlug: string, totalChapters: number) {
     const chapters = await getAllChaptersForBook(bookSlug)
     return chapters.length === totalChapters
 }
 
 // Storage info
-export async function getStorageInfo() {
+async function getStorageInfo() {
     if ('storage' in navigator && 'estimate' in navigator.storage) {
         const estimate = await navigator.storage.estimate()
         return {
@@ -234,7 +234,7 @@ export async function getStorageInfo() {
 }
 
 // Clear all offline data
-export async function clearAllOfflineData() {
+async function clearAllOfflineData() {
     const db = await getDB()
     await db.clear('books')
     await db.clear('chapters')

@@ -16,7 +16,7 @@ interface NotificationSettingsProps {
     userEmail: string
 }
 
-export default function NotificationSettings({ userId, userEmail }: NotificationSettingsProps) {
+function NotificationSettings({ userId, userEmail }: NotificationSettingsProps) {
     const [settings, setSettings] = useState({
         emailNotifications: true,
         readingReminders: true,

@@ -16,7 +16,7 @@ interface PrivacySettingsProps {
   userEmail: string
 }
 
-export default function PrivacySettings({ userEmail }: PrivacySettingsProps) {
+function PrivacySettings({ userEmail }: PrivacySettingsProps) {
   const [showChangePassword, setShowChangePassword] = useState(false)
   const [showDeleteAccount, setShowDeleteAccount] = useState(false)
   const [isExporting, setIsExporting] = useState(false)

@@ -5,7 +5,7 @@ type VocabularyInsert = Database['public']['Tables']['vocabulary']['Insert']
 type VocabularyUpdate = Database['public']['Tables']['vocabulary']['Update']
 
 // Get user's vocabulary words
-export async function getUserVocabulary(userId?: string) {
+async function getUserVocabulary(userId?: string) {
   const supabase = createClient()
 
   if (!userId) {
@@ -25,7 +25,7 @@ export async function getUserVocabulary(userId?: string) {
 }
 
 // Check vocabulary limit (Agent 3: Freemium psychology)
-export async function checkVocabularyLimit(userId?: string) {
+async function checkVocabularyLimit(userId?: string) {
   const supabase = createClient()
 
   if (!userId) {
@@ -64,7 +64,7 @@ export async function checkVocabularyLimit(userId?: string) {
 }
 
 // Add word to vocabulary (with limit check)
-export async function addVocabularyWord(word: Omit<VocabularyInsert, 'user_id'>) {
+async function addVocabularyWord(word: Omit<VocabularyInsert, 'user_id'>) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -91,7 +91,7 @@ export async function addVocabularyWord(word: Omit<VocabularyInsert, 'user_id'>)
 }
 
 // Update vocabulary word
-export async function updateVocabularyWord(id: string, updates: VocabularyUpdate) {
+async function updateVocabularyWord(id: string, updates: VocabularyUpdate) {
   const supabase = createClient()
   const { data, error } = await supabase
     .from('vocabulary')
@@ -105,7 +105,7 @@ export async function updateVocabularyWord(id: string, updates: VocabularyUpdate
 }
 
 // Delete vocabulary word
-export async function deleteVocabularyWord(id: string) {
+async function deleteVocabularyWord(id: string) {
   const supabase = createClient()
   const { error } = await supabase
     .from('vocabulary')
@@ -116,7 +116,7 @@ export async function deleteVocabularyWord(id: string) {
 }
 
 // Get words for review (spaced repetition)
-export async function getWordsForReview(userId?: string, limit: number = 20) {
+async function getWordsForReview(userId?: string, limit: number = 20) {
   const supabase = createClient()
 
   if (!userId) {
@@ -138,7 +138,7 @@ export async function getWordsForReview(userId?: string, limit: number = 20) {
 }
 
 // Update word mastery after review
-export async function updateWordMastery(
+async function updateWordMastery(
   id: string,
   correct: boolean
 ) {
@@ -183,7 +183,7 @@ export async function updateWordMastery(
 }
 
 // Get vocabulary statistics
-export async function getVocabularyStats(userId?: string) {
+async function getVocabularyStats(userId?: string) {
   const supabase = createClient()
 
   if (!userId) {
@@ -200,7 +200,7 @@ export async function getVocabularyStats(userId?: string) {
 }
 
 // Search vocabulary
-export async function searchVocabulary(query: string, userId?: string) {
+async function searchVocabulary(query: string, userId?: string) {
   const supabase = createClient()
 
   if (!userId) {
@@ -221,7 +221,7 @@ export async function searchVocabulary(query: string, userId?: string) {
 }
 
 // Get words by book
-export async function getVocabularyByBook(bookId: string, userId?: string) {
+async function getVocabularyByBook(bookId: string, userId?: string) {
   const supabase = createClient()
 
   if (!userId) {

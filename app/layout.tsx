@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/use-supabase-auth"
 import type { Metadata, Viewport } from "next"
 import { Inter, Vazirmatn } from "next/font/google"
 import { Toaster } from "sonner"
+import { Agentation } from "agentation"
 import "./globals.css"
 
 const inter = Inter({
@@ -138,6 +139,9 @@ export default function RootLayout({
             </QueryProvider>
           </AuthProvider>
         </ThemeProvider>
+        {process.env.NODE_ENV === "development" && (
+          <Agentation endpoint="http://localhost:4747" />
+        )}
       </body>
     </html>
   )

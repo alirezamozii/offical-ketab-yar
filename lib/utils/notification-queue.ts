@@ -190,13 +190,13 @@ class NotificationQueue {
 }
 
 // Singleton instance
-export const notificationQueue = new NotificationQueue()
+const notificationQueue = new NotificationQueue()
 
 /**
  * Helper functions for common notifications
  */
 
-export function notifyXPGain(xp: number, source?: string) {
+function notifyXPGain(xp: number, source?: string) {
     notificationQueue.add({
         type: 'xp',
         title: `+${xp} XP`,
@@ -206,7 +206,7 @@ export function notifyXPGain(xp: number, source?: string) {
     })
 }
 
-export function notifyLevelUp(newLevel: number, title: string) {
+function notifyLevelUp(newLevel: number, title: string) {
     notificationQueue.add({
         type: 'level_up',
         title: `سطح ${newLevel} 🎉`,
@@ -215,7 +215,7 @@ export function notifyLevelUp(newLevel: number, title: string) {
     })
 }
 
-export function notifyAchievement(name: string, description: string, icon: string, points: number) {
+function notifyAchievement(name: string, description: string, icon: string, points: number) {
     notificationQueue.add({
         type: 'achievement',
         title: `دستاورد جدید: ${name}`,
@@ -224,7 +224,7 @@ export function notifyAchievement(name: string, description: string, icon: strin
     })
 }
 
-export function notifyStreak(days: number) {
+function notifyStreak(days: number) {
     notificationQueue.add({
         type: 'streak',
         title: `استریک ${days} روزه! 🔥`,
@@ -233,7 +233,7 @@ export function notifyStreak(days: number) {
     })
 }
 
-export function notifyMilestone(title: string, description: string) {
+function notifyMilestone(title: string, description: string) {
     notificationQueue.add({
         type: 'milestone',
         title: title,

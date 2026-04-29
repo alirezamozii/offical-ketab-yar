@@ -140,14 +140,14 @@ export function getPlanPrice(planType: keyof typeof ZARINPAL_PLANS): number {
 /**
  * Get plan duration in days
  */
-export function getPlanDuration(planType: keyof typeof ZARINPAL_PLANS): number {
+function getPlanDuration(planType: keyof typeof ZARINPAL_PLANS): number {
     return ZARINPAL_PLANS[planType].duration
 }
 
 /**
  * Calculate subscription expiry date
  */
-export function calculateExpiryDate(planType: keyof typeof ZARINPAL_PLANS): Date {
+function calculateExpiryDate(planType: keyof typeof ZARINPAL_PLANS): Date {
     const duration = getPlanDuration(planType)
     const expiryDate = new Date()
     expiryDate.setDate(expiryDate.getDate() + duration)

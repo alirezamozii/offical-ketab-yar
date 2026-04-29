@@ -13,7 +13,7 @@ import { BookOpen, Info, Save, Sparkles, Type } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
-export default function ReadingSettings() {
+function ReadingSettings() {
     const { preferences, updatePreference } = useReadingPreferences()
     const [fontSize, setFontSize] = useState([16])
     const [lineHeight, setLineHeight] = useState([1.6])

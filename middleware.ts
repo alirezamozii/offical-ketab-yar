@@ -53,7 +53,7 @@ const ADMIN_ROUTES = [
 /**
  * Main middleware function using Next.js 16 proxy pattern
  */
-export async function proxy(request: NextRequest) {
+async function proxy(request: NextRequest) {
   const { pathname, origin } = request.nextUrl
 
   // 1. Skip middleware for static assets and Next.js internals

@@ -56,7 +56,7 @@ export function XPRewardAnimation({ amount, onComplete }: XPRewardAnimationProps
 }
 
 // Hook for triggering XP animations
-export function useXPReward() {
+function useXPReward() {
   const [reward, setReward] = useState<number | null>(null)
 
   const showReward = (amount: number) => {

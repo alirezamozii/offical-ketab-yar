@@ -17,7 +17,7 @@ export interface SubscriptionInfo {
 /**
  * Check if user has active premium subscription
  */
-export async function checkPremiumStatus(userId: string): Promise<boolean> {
+async function checkPremiumStatus(userId: string): Promise<boolean> {
     const supabase = await createClient()
 
     const { data: profile } = await supabase
@@ -53,7 +53,7 @@ export async function checkPremiumStatus(userId: string): Promise<boolean> {
 /**
  * Get detailed subscription information
  */
-export async function getSubscriptionInfo(userId: string): Promise<SubscriptionInfo> {
+async function getSubscriptionInfo(userId: string): Promise<SubscriptionInfo> {
     const supabase = await createClient()
 
     const { data: profile } = await supabase
@@ -213,7 +213,7 @@ export async function upgradeSubscription(
 /**
  * Cancel subscription
  */
-export async function cancelSubscription(userId: string): Promise<boolean> {
+async function cancelSubscription(userId: string): Promise<boolean> {
     const supabase = await createClient()
 
     const { error } = await supabase

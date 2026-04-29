@@ -13,7 +13,7 @@ import { getImageUrl } from './client'
  * Transform Sanity book for display
  * Handles images, text, and nested objects
  */
-export function transformBookForDisplay(book: any) {
+function transformBookForDisplay(book: any) {
     if (!book) return null
 
     // Get image URL with proper sizing
@@ -77,7 +77,7 @@ export function transformBooksForDisplay(books: any[]) {
 /**
  * Transform author for display
  */
-export function transformAuthorForDisplay(author: any) {
+function transformAuthorForDisplay(author: any) {
     if (!author) return null
 
     const photo = author.photo
@@ -93,7 +93,7 @@ export function transformAuthorForDisplay(author: any) {
 /**
  * Get genre display name (Farsi priority)
  */
-export function getGenreDisplayName(genre: any): string {
+function getGenreDisplayName(genre: any): string {
     if (typeof genre === 'string') return genre
     return genre?.nameFa || genre?.name || 'Unknown'
 }
@@ -101,14 +101,14 @@ export function getGenreDisplayName(genre: any): string {
 /**
  * Get book title for display (Farsi priority)
  */
-export function getBookDisplayTitle(book: any): string {
+function getBookDisplayTitle(book: any): string {
     return book?.titleFa || book?.title || 'Untitled'
 }
 
 /**
  * Get author display name
  */
-export function getAuthorDisplayName(author: any): string {
+function getAuthorDisplayName(author: any): string {
     if (typeof author === 'string') return author
     return author?.name || 'نویسنده ناشناس'
 }

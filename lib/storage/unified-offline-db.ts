@@ -175,7 +175,7 @@ let dbInstance: IDBPDatabase<UnifiedKetabYarDB> | null = null
 /**
  * Initialize unified database
  */
-export async function initUnifiedDB(): Promise<IDBPDatabase<UnifiedKetabYarDB>> {
+async function initUnifiedDB(): Promise<IDBPDatabase<UnifiedKetabYarDB>> {
     if (dbInstance) return dbInstance
 
     dbInstance = await openDB<UnifiedKetabYarDB>(DB_NAME, DB_VERSION, {
@@ -257,14 +257,14 @@ export async function initUnifiedDB(): Promise<IDBPDatabase<UnifiedKetabYarDB>> 
 /**
  * Get database instance (lazy initialization)
  */
-export async function getDB(): Promise<IDBPDatabase<UnifiedKetabYarDB>> {
+async function getDB(): Promise<IDBPDatabase<UnifiedKetabYarDB>> {
     return initUnifiedDB()
 }
 
 /**
  * Close database connection
  */
-export function closeDB() {
+function closeDB() {
     if (dbInstance) {
         dbInstance.close()
         dbInstance = null
@@ -274,7 +274,7 @@ export function closeDB() {
 /**
  * Delete and recreate database (for migrations or fixes)
  */
-export async function resetUnifiedDB() {
+async function resetUnifiedDB() {
     try {
         closeDB()
 
@@ -300,7 +300,7 @@ export async function resetUnifiedDB() {
 /**
  * Export database for backup
  */
-export async function exportDatabase(): Promise<string> {
+async function exportDatabase(): Promise<string> {
     const db = await getDB()
     const data: any = {}
 
@@ -315,7 +315,7 @@ export async function exportDatabase(): Promise<string> {
 /**
  * Import database from backup
  */
-export async function importDatabase(jsonData: string): Promise<void> {
+async function importDatabase(jsonData: string): Promise<void> {
     const data = JSON.parse(jsonData)
     const db = await getDB()
 

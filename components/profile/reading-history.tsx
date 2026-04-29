@@ -35,7 +35,7 @@ interface ReadingSession {
   }
 }
 
-export function ReadingHistory({ userId, limit, preview = false }: ReadingHistoryProps) {
+function ReadingHistory({ userId, limit, preview = false }: ReadingHistoryProps) {
   const [readingSessions, setReadingSessions] = useState<ReadingSession[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [page, setPage] = useState(1)

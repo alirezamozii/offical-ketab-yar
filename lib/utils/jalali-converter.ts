@@ -53,7 +53,7 @@ function isJalaliLeapYear(year: number): boolean {
 /**
  * Convert Jalali date to Gregorian date
  */
-export function jalaliToGregorian(jy: number, jm: number, jd: number): GregorianDate {
+function jalaliToGregorian(jy: number, jm: number, jd: number): GregorianDate {
     const gy = jy + 621
     const gDayNo = 365 * jy + Math.floor((jy / 33) * 8) + Math.floor(((jy % 33) + 3) / 4) + 78 + jd
 
@@ -67,7 +67,7 @@ export function jalaliToGregorian(jy: number, jm: number, jd: number): Gregorian
 /**
  * Convert Gregorian date to Jalali date
  */
-export function gregorianToJalali(gy: number, gm: number, gd: number): JalaliDate {
+function gregorianToJalali(gy: number, gm: number, gd: number): JalaliDate {
     const gDayNo = gregorianToDayNumber(gy, gm, gd)
     const jDayNo = gDayNo - 79
 
@@ -142,7 +142,7 @@ export function formatJalaliDate(date: JalaliDate): string {
 /**
  * Parse Jalali date string (YYYY/MM/DD)
  */
-export function parseJalaliDate(dateString: string): JalaliDate | null {
+function parseJalaliDate(dateString: string): JalaliDate | null {
     const parts = dateString.split('/')
     if (parts.length !== 3) return null
 
@@ -193,7 +193,7 @@ export const JALALI_MONTH_NAMES = [
 /**
  * Get Jalali weekday names in Persian
  */
-export const JALALI_WEEKDAY_NAMES = [
+const JALALI_WEEKDAY_NAMES = [
     'یکشنبه',
     'دوشنبه',
     'سه‌شنبه',
@@ -223,7 +223,7 @@ export function isValidJalaliDate(year: number, month: number, day: number): boo
 /**
  * Calculate age from Jalali birth date
  */
-export function calculateAgeFromJalali(birthDate: JalaliDate): number {
+function calculateAgeFromJalali(birthDate: JalaliDate): number {
     const today = dateToJalali(new Date())
     let age = today.year - birthDate.year
 

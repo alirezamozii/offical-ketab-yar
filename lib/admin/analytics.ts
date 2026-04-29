@@ -205,7 +205,7 @@ export async function getTopBooks(limit: number = 10): Promise<Array<{ book_id: 
 /**
  * Export data to CSV
  */
-export function exportToCSV(data: any[], filename: string): string {
+function exportToCSV(data: any[], filename: string): string {
     if (data.length === 0) return ''
 
     const headers = Object.keys(data[0])

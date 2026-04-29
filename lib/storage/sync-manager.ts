@@ -42,7 +42,7 @@ let syncCallbacks: SyncCallback[] = []
 /**
  * Register callback for sync progress updates
  */
-export function onSyncProgress(callback: SyncCallback) {
+function onSyncProgress(callback: SyncCallback) {
     syncCallbacks.push(callback)
 
     // Return unsubscribe function
@@ -61,7 +61,7 @@ function notifyProgress(progress: SyncProgress) {
 /**
  * Main sync function
  */
-export async function syncOfflineData(userId?: string): Promise<boolean> {
+async function syncOfflineData(userId?: string): Promise<boolean> {
     // Prevent concurrent syncs
     if (syncInProgress) {
         console.log('⏳ Sync already in progress')
@@ -361,7 +361,7 @@ if (typeof window !== 'undefined') {
 /**
  * Get current sync status
  */
-export async function getSyncStatus(): Promise<{
+async function getSyncStatus(): Promise<{
     unsyncedCount: number
     isOnline: boolean
 }> {

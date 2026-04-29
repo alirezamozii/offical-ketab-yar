@@ -16,14 +16,14 @@ import {
 /**
  * Check if online
  */
-export function isOnline(): boolean {
+function isOnline(): boolean {
     return navigator.onLine
 }
 
 /**
  * Sync all pending operations
  */
-export async function syncPendingOperations(): Promise<{
+async function syncPendingOperations(): Promise<{
     success: number
     failed: number
     errors: string[]
@@ -77,7 +77,7 @@ export async function syncPendingOperations(): Promise<{
 /**
  * Setup automatic sync when coming back online
  */
-export function setupAutoSync() {
+function setupAutoSync() {
     if (typeof window === 'undefined') return
 
     // Sync when coming back online
@@ -98,7 +98,7 @@ export function setupAutoSync() {
 /**
  * Queue operation for sync
  */
-export async function queueOperation(
+async function queueOperation(
     tableName: string,
     operation: 'INSERT' | 'UPDATE' | 'DELETE',
     recordId: string,
@@ -115,7 +115,7 @@ export async function queueOperation(
 /**
  * Get sync status
  */
-export async function getSyncStatus() {
+async function getSyncStatus() {
     const operations = await getUnsyncedOperations()
     return {
         pending: operations.length,

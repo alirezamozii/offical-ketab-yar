@@ -27,7 +27,7 @@ export interface UserProfile {
 /**
  * مسدود کردن کاربر - با به‌روزرسانی فوری
  */
-export async function banUser(userId: string, reason: string) {
+async function banUser(userId: string, reason: string) {
     const supabase = createClient()
 
     // به‌روزرسانی پروفایل
@@ -54,7 +54,7 @@ export async function banUser(userId: string, reason: string) {
 /**
  * رفع مسدودیت کاربر - با به‌روزرسانی فوری
  */
-export async function unbanUser(userId: string) {
+async function unbanUser(userId: string) {
     const supabase = createClient()
 
     const { data, error } = await supabase
@@ -80,7 +80,7 @@ export async function unbanUser(userId: string) {
 /**
  * تبدیل کاربر به ادمین - با دسترسی نامحدود پرمیوم
  */
-export async function makeUserAdmin(userId: string) {
+async function makeUserAdmin(userId: string) {
     const supabase = createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
@@ -117,7 +117,7 @@ export async function makeUserAdmin(userId: string) {
 /**
  * حذف نقش ادمین از کاربر
  */
-export async function removeUserAdmin(userId: string) {
+async function removeUserAdmin(userId: string) {
     const supabase = createClient()
 
     const { data, error } = await supabase
@@ -148,7 +148,7 @@ export async function removeUserAdmin(userId: string) {
  * ایجاد کاربر تستی با دسترسی نامحدود پرمیوم
  * شامل: نام، نام کاربری، ایمیل، رمز عبور
  */
-export async function createTestUser(
+async function createTestUser(
     email: string,
     password: string,
     fullName: string,
@@ -209,7 +209,7 @@ export async function createTestUser(
 /**
  * دریافت لیست تمام کاربران با فیلتر
  */
-export async function getAllUsers(filters?: {
+async function getAllUsers(filters?: {
     role?: string
     subscription?: string
     banned?: boolean
@@ -251,7 +251,7 @@ export async function getAllUsers(filters?: {
 /**
  * دریافت آمار پلتفرم
  */
-export async function getPlatformStats() {
+async function getPlatformStats() {
     const supabase = createClient()
 
     const thirtyDaysAgo = new Date()
@@ -286,7 +286,7 @@ export async function getPlatformStats() {
 /**
  * خروجی CSV از کاربران
  */
-export async function exportUsersToCSV() {
+async function exportUsersToCSV() {
     const users = await getAllUsers()
 
     const headers = ['ایمیل', 'نام', 'نام کاربری', 'نقش', 'اشتراک', 'وضعیت', 'مسدود', 'تاریخ عضویت']

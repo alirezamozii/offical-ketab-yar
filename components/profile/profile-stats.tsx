@@ -14,7 +14,7 @@ interface ProfileStatsProps {
     }
 }
 
-export function ProfileStats({ userStats }: ProfileStatsProps) {
+function ProfileStats({ userStats }: ProfileStatsProps) {
     const stats = [
         {
             icon: BookOpen,

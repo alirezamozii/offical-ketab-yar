@@ -114,7 +114,7 @@ class SoundEffects {
 // Singleton instance
 let soundEffectsInstance: SoundEffects | null = null
 
-export function getSoundEffects(): SoundEffects {
+function getSoundEffects(): SoundEffects {
     if (!soundEffectsInstance) {
         soundEffectsInstance = new SoundEffects()
     }

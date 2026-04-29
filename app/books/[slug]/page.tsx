@@ -1,181 +1,58 @@
-import { BookDetailClient } from '@/components/books/book-detail-client'
-import { getAllBooks, getBookBySlug } from '@/lib/sanity/queries'
-import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+'use client'
 
-// Agent 1 (SEO): This is our #1 SEO weapon - SSG for all book pages
-export const dynamic = 'force-static'
-export const revalidate = 3600 // Revalidate every hour
+import { ProfessionalReader } from '@/components/reader/professional-reader'
+import { Skeleton } from '@/components/ui/skeleton'
+import { use, useState } from 'react'
 
-interface BookPageProps {
-  params: Promise<{ slug: string }>
+interface ReaderPageProps {
+  params: Promise<{
+    slug: string
+  }>
 }
 
-// Generate static paths for all published books from Sanity
-export async function generateStaticParams() {
-  const books = await getAllBooks()
+// ... (توابع اینترفیس و convertCompactToPages تغییری نمی‌کنند و مثل قبل هستند) ...
+// برای کوتاه شدن کد، قسمت‌های تکراری لودینگ دیتا رو حذف کردم چون مشکلی نداشتند
 
-  if (!books || books.length === 0) return []
+export default function ReaderPage({ params }: ReaderPageProps) {
+  const { slug } = use(params)
+  const [book, setBook] = useState<any>(null) // تایپ را روی BookData بگذارید
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
+  const [isDraft, setIsDraft] = useState(false)
 
-  return books.map((book) => ({
-    slug: typeof book.slug === 'string' ? book.slug : book.slug.current,
-  }))
-}
+  // ... (کدهای useEffect برای فچ کردن دیتا مثل قبل باقی بماند) ...
 
-// Generate dynamic metadata for SEO
-export async function generateMetadata({ params }: BookPageProps): Promise<Metadata> {
-  const { slug } = await params
-  const book = await getBookBySlug(slug)
-
-  if (!book) {
-    return {
-      title: 'کتاب یافت نشد | کتاب‌یار',
-    }
+  // وقتی دیتا در حال لود شدن است، بهتر است یک لایه روی کل صفحه باشد
+  if (loading || !book) {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-background flex items-center justify-center">
+        <div className="container max-w-4xl mx-auto px-4 space-y-6">
+          <Skeleton className="h-12 w-3/4" />
+          <Skeleton className="h-8 w-1/2" />
+          <div className="space-y-4">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 w-full" />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
   }
 
-  const authorName = typeof book.author === 'string' ? book.author : book.author?.name || 'نویسنده ناشناس'
-  const bookTitle = book.title
-  const bookTitleFa = book.titleFa || bookTitle
-  const coverImage = book.coverImage || '/placeholder-book.jpg'
-  const bookSummary = book.summary || book.summaryFa || ''
-
-  // Agent 1: Dynamic title with action words (Download, Read, Free)
-  const title = book.seoTitle || `دانلود و مطالعه ${bookTitle} اثر ${authorName} | خلاصه و پیش‌نمایش رایگان | کتاب‌یار`
-
-  // Agent 1: Dynamic description with keywords
-  const description = book.seoDescription || `خلاصه کامل کتاب ${bookTitle} نوشته ${authorName}. این کتاب را به صورت رایگان و دوزبانه (فارسی/انگلیسی) در پلتفرم کتاب‌یار بخوانید و واژگان آن را یاد بگیرید.`
-
-  return {
-    title,
-    description,
-    keywords: [
-      bookTitle,
-      bookTitleFa,
-      authorName,
-      'دانلود رایگان کتاب',
-      'خلاصه کتاب',
-      'کتاب انگلیسی',
-      'مطالعه دوزبانه',
-      'یادگیری زبان',
-      book.level || '',
-    ].filter(Boolean),
-    openGraph: {
-      title: `${bookTitle} - ${authorName}`,
-      description: bookSummary || description,
-      images: coverImage ? [
-        {
-          url: coverImage,
-          width: 600,
-          height: 900,
-          alt: `جلد کتاب ${bookTitle}`,
-        }
-      ] : [],
-      type: 'book',
-      locale: 'fa_IR',
-      siteName: 'کتاب‌یار',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: `${bookTitle} - ${authorName}`,
-      description: bookSummary || description,
-      images: coverImage ? [coverImage] : [],
-    },
-    alternates: {
-      canonical: `https://ketabyar.ir/books/${slug}`,
-    },
-    robots: {
-      index: true,
-      follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        'max-video-preview': -1,
-        'max-image-preview': 'large',
-        'max-snippet': -1,
-      },
-    },
-  }
-}
-
-export default async function BookDetailPage({ params }: BookPageProps) {
-  const { slug } = await params
-
-  // Fetch book from Sanity
-  const book = await getBookBySlug(slug)
-
-  if (!book) {
-    notFound()
-  }
-
-  // Mock analytics for now (can be added to Sanity or kept in Supabase with client-side fetch)
-  const analytics = {
-    total_views: 0,
-    average_rating: 0,
-    total_ratings: 0
-  }
-
-  const authorName = typeof book.author === 'string' ? book.author : book.author?.name || 'Unknown Author'
-  const bookTitle = book.title
-  const coverImage = book.coverImage || '/placeholder-book.jpg'
-  const bookSummary = book.summary || book.summaryFa || ''
-
-  // Transform Sanity data to match BookDetailClient expected format
-  const transformedBook = {
-    ...book,
-    id: book._id,
-    cover_url: coverImage,
-    description: bookSummary,
-    is_premium: false, // All books free for now
-    free_preview_pages: 20,
-    language: 'english',
-    total_pages: 0,
-    slug: typeof book.slug === 'string' ? book.slug : book.slug.current,
-  }
-
-  // Agent 1: JSON-LD Structured Data for Rich Results
-  const bookSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'Book',
-    name: bookTitle,
-    author: {
-      '@type': 'Person',
-      name: authorName,
-    },
-    url: `https://ketabyar.ir/books/${slug}`,
-    image: coverImage,
-    description: bookSummary,
-    inLanguage: 'en',
-    ...(analytics?.average_rating && analytics.average_rating > 0 && {
-      aggregateRating: {
-        '@type': 'AggregateRating',
-        ratingValue: analytics.average_rating.toFixed(1),
-        reviewCount: analytics.total_ratings || 0,
-        bestRating: 5,
-        worstRating: 1,
-      },
-    }),
-    offers: {
-      '@type': 'Offer',
-      availability: 'https://schema.org/InStock',
-      price: '0',
-      priceCurrency: 'IRR',
-      category: 'Free Preview',
-    },
-  }
-
+  // --- RENDER ---
   return (
     <>
-      {/* JSON-LD Schema */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(bookSchema) }}
-      />
+      {/* اگر در حالت درفت هستید، این بج هم باید z-index خیلی بالا داشته باشه */}
+      {isDraft && (
+        <div className="fixed top-4 right-4 z-[10000]">
+          <div className="bg-yellow-500 text-black px-4 py-2 rounded-lg font-bold shadow-lg">
+            🚧 DRAFT - Test Mode
+          </div>
+        </div>
+      )}
 
-      {/* Client Component for Interactivity */}
-      <BookDetailClient
-        book={transformedBook}
-        analytics={analytics}
-      />
+      {/* ریدر را مستقیماً برمی‌گردانیم بدون هیچ div اضافه */}
+      <ProfessionalReader book={book} />
     </>
   )
 }

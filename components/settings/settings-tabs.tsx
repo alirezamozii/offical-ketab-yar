@@ -36,7 +36,7 @@ interface SettingsTabsProps {
   userEmail: string
 }
 
-export function SettingsTabs({ userId, userEmail }: SettingsTabsProps) {
+function SettingsTabs({ userId, userEmail }: SettingsTabsProps) {
   const [activeTab, setActiveTab] = useState('reading')
 
   return (

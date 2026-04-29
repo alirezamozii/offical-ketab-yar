@@ -6,7 +6,7 @@ import type { Author, SanityBook, SanityBookListItem } from './types'
 // BOOK QUERIES (Updated for compactBook schema)
 // ============================================
 
-export const booksQuery = groq`
+const booksQuery = groq`
   *[_type == "compactBook" && status == "published"] | order(_createdAt desc) {
     _id,
     "slug": slug.current,
@@ -34,7 +34,7 @@ export const booksQuery = groq`
   }
 `
 
-export const bookBySlugQuery = groq`
+const bookBySlugQuery = groq`
   *[_type == "compactBook" && slug.current == $slug && status == "published"][0] {
     _id,
     "slug": slug.current,
@@ -65,13 +65,13 @@ export const bookBySlugQuery = groq`
   }
 `
 
-export const bookSlugsQuery = groq`
+const bookSlugsQuery = groq`
   *[_type == "compactBook" && status == "published"] {
     "slug": slug.current
   }
 `
 
-export const featuredBooksQuery = groq`
+const featuredBooksQuery = groq`
   *[_type == "compactBook" && featured == true && status == "published"] | order(_createdAt desc) [0...6] {
     _id,
     "slug": slug.current,
@@ -92,7 +92,7 @@ export const featuredBooksQuery = groq`
   }
 `
 
-export const booksByGenreQuery = groq`
+const booksByGenreQuery = groq`
   *[_type == "compactBook" && $genreId in genres[]._ref && status == "published"] | order(_createdAt desc) [0...$limit] {
     _id,
     "slug": slug.current,
@@ -109,7 +109,7 @@ export const booksByGenreQuery = groq`
 // AUTHOR QUERIES
 // ============================================
 
-export const authorsQuery = groq`
+const authorsQuery = groq`
   *[_type == "author"] | order(name asc) {
     _id,
     name,
@@ -119,7 +119,7 @@ export const authorsQuery = groq`
   }
 `
 
-export const authorByIdQuery = groq`
+const authorByIdQuery = groq`
   *[_type == "author" && _id == $id][0] {
     _id,
     name,
@@ -161,7 +161,7 @@ export const authorBySlugQuery = groq`
 // GENRE QUERIES
 // ============================================
 
-export const genresQuery = groq`
+const genresQuery = groq`
   *[_type == "genre"] | order(name asc) {
     _id,
     name,
@@ -339,7 +339,7 @@ export async function getAllGenres() {
 /**
  * Get all authors
  */
-export async function getAllAuthors() {
+async function getAllAuthors() {
   try {
     return await sanityClient.fetch(authorsQuery)
   } catch (error) {

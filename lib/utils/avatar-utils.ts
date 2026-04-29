@@ -15,7 +15,7 @@ export interface AvatarData {
 /**
  * Get avatar URL based on avatar data
  */
-export function getAvatarUrl(avatar: AvatarData): string | null {
+function getAvatarUrl(avatar: AvatarData): string | null {
     switch (avatar.type) {
         case 'preset':
             return `/avatars/preset-${avatar.presetId || 1}.svg`
@@ -107,7 +107,7 @@ export function getInitialsColor(name: string): string {
 /**
  * Validate avatar preset ID
  */
-export function isValidPresetId(id: number): boolean {
+function isValidPresetId(id: number): boolean {
     return id >= 1 && id <= 6
 }
 
@@ -136,7 +136,7 @@ export function getPresetAvatarDescription(id: number): string {
 /**
  * Validate image URL
  */
-export function isValidImageUrl(url: string): boolean {
+function isValidImageUrl(url: string): boolean {
     try {
         const urlObj = new URL(url)
         return urlObj.protocol === 'http:' || urlObj.protocol === 'https:'
@@ -148,7 +148,7 @@ export function isValidImageUrl(url: string): boolean {
 /**
  * Extract Google profile photo URL from OAuth data
  */
-export function extractGooglePhotoUrl(userData: any): string | null {
+function extractGooglePhotoUrl(userData: any): string | null {
     // Try different possible locations for Google photo
     if (userData?.user_metadata?.avatar_url) {
         return userData.user_metadata.avatar_url
@@ -168,7 +168,7 @@ export function extractGooglePhotoUrl(userData: any): string | null {
 /**
  * Create avatar data object
  */
-export function createAvatarData(
+function createAvatarData(
     type: AvatarType,
     options?: {
         presetId?: number
@@ -198,7 +198,7 @@ export function createAvatarData(
 /**
  * Get default avatar for new user
  */
-export function getDefaultAvatar(name?: string): AvatarData {
+function getDefaultAvatar(name?: string): AvatarData {
     if (name) {
         return createAvatarData('initials', { name })
     }

@@ -3,7 +3,7 @@ import { BookOpen, Home, Library, Sparkles } from 'lucide-react'
 import { Metadata } from 'next'
 import Link from 'next/link'
 
-export const metadata: Metadata = {
+const metadata: Metadata = {
     title: '۴۰۴ - صفحه یافت نشد | کتاب‌یار',
     description: 'صفحه مورد نظر شما یافت نشد. به صفحه اصلی بازگردید یا کتابخانه را مرور کنید.',
 }

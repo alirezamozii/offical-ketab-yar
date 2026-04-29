@@ -38,7 +38,7 @@ let syncCallbacks: SyncCallback[] = []
 /**
  * Register callback for sync progress updates
  */
-export function onSyncProgress(callback: SyncCallback): () => void {
+function onSyncProgress(callback: SyncCallback): () => void {
     syncCallbacks.push(callback)
     return () => {
         syncCallbacks = syncCallbacks.filter(cb => cb !== callback)
@@ -62,7 +62,7 @@ function notifyProgress(progress: SyncProgress) {
  * Main unified sync function
  * Syncs ALL offline data to Supabase
  */
-export async function syncAllOfflineData(userId?: string): Promise<boolean> {
+async function syncAllOfflineData(userId?: string): Promise<boolean> {
     // Prevent concurrent syncs
     if (syncInProgress) {
         console.log('⏳ Sync already in progress')
@@ -450,7 +450,7 @@ if (typeof window !== 'undefined') {
 /**
  * Get sync status
  */
-export async function getSyncStatus(): Promise<{
+async function getSyncStatus(): Promise<{
     unsyncedCount: number
     isOnline: boolean
     isSyncing: boolean
@@ -486,6 +486,6 @@ export async function getSyncStatus(): Promise<{
 /**
  * Force sync now (manual trigger)
  */
-export async function forceSyncNow(): Promise<boolean> {
+async function forceSyncNow(): Promise<boolean> {
     return syncAllOfflineData()
 }

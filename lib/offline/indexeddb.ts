@@ -70,7 +70,7 @@ let dbInstance: IDBPDatabase<KetabYarDB> | null = null
 /**
  * Initialize IndexedDB
  */
-export async function initDB(): Promise<IDBPDatabase<KetabYarDB>> {
+async function initDB(): Promise<IDBPDatabase<KetabYarDB>> {
     if (dbInstance) return dbInstance
 
     dbInstance = await openDB<KetabYarDB>('ketab-yar-db', 1, {
@@ -109,7 +109,7 @@ export async function initDB(): Promise<IDBPDatabase<KetabYarDB>> {
 /**
  * Get database instance
  */
-export async function getDB(): Promise<IDBPDatabase<KetabYarDB>> {
+async function getDB(): Promise<IDBPDatabase<KetabYarDB>> {
     if (!dbInstance) {
         return await initDB()
     }
@@ -123,7 +123,7 @@ export async function getDB(): Promise<IDBPDatabase<KetabYarDB>> {
 /**
  * Save encrypted book content
  */
-export async function saveBookContent(
+async function saveBookContent(
     bookId: string,
     encryptedContent: ArrayBuffer,
     contentHash: string,
@@ -143,7 +143,7 @@ export async function saveBookContent(
 /**
  * Get encrypted book content
  */
-export async function getBookContent(bookId: string) {
+async function getBookContent(bookId: string) {
     const db = await getDB()
     const book = await db.get('books', bookId)
 
@@ -159,7 +159,7 @@ export async function getBookContent(bookId: string) {
 /**
  * Delete book content
  */
-export async function deleteBookContent(bookId: string) {
+async function deleteBookContent(bookId: string) {
     const db = await getDB()
     await db.delete('books', bookId)
 }
@@ -167,7 +167,7 @@ export async function deleteBookContent(bookId: string) {
 /**
  * Get all downloaded books
  */
-export async function getAllDownloadedBooks() {
+async function getAllDownloadedBooks() {
     const db = await getDB()
     return await db.getAll('books')
 }
@@ -175,7 +175,7 @@ export async function getAllDownloadedBooks() {
 /**
  * Clear expired books
  */
-export async function clearExpiredBooks() {
+async function clearExpiredBooks() {
     const db = await getDB()
     const books = await db.getAll('books')
     const now = Date.now()
@@ -194,7 +194,7 @@ export async function clearExpiredBooks() {
 /**
  * Add operation to sync queue
  */
-export async function addToSyncQueue(
+async function addToSyncQueue(
     tableName: string,
     operation: 'INSERT' | 'UPDATE' | 'DELETE',
     recordId: string,
@@ -214,7 +214,7 @@ export async function addToSyncQueue(
 /**
  * Get unsynced operations
  */
-export async function getUnsyncedOperations() {
+async function getUnsyncedOperations() {
     const db = await getDB()
     const index = db.transaction('syncQueue').store.index('by-synced')
     return await index.getAll(false)
@@ -223,7 +223,7 @@ export async function getUnsyncedOperations() {
 /**
  * Mark operation as synced
  */
-export async function markAsSynced(id: number) {
+async function markAsSynced(id: number) {
     const db = await getDB()
     const item = await db.get('syncQueue', id)
     if (item) {
@@ -235,7 +235,7 @@ export async function markAsSynced(id: number) {
 /**
  * Clear synced operations older than 7 days
  */
-export async function clearOldSyncedOperations() {
+async function clearOldSyncedOperations() {
     const db = await getDB()
     const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
     const allItems = await db.getAll('syncQueue')
@@ -254,7 +254,7 @@ export async function clearOldSyncedOperations() {
 /**
  * Save reading progress offline
  */
-export async function saveProgressOffline(
+async function saveProgressOffline(
     bookId: string,
     currentPage: number,
     progressPercentage: number,
@@ -273,7 +273,7 @@ export async function saveProgressOffline(
 /**
  * Get offline progress
  */
-export async function getProgressOffline(bookId: string) {
+async function getProgressOffline(bookId: string) {
     const db = await getDB()
     return await db.get('progress', bookId)
 }
@@ -285,7 +285,7 @@ export async function getProgressOffline(bookId: string) {
 /**
  * Save vocabulary word offline
  */
-export async function saveVocabularyOffline(
+async function saveVocabularyOffline(
     word: string,
     definition: string,
     meaning: string,
@@ -308,7 +308,7 @@ export async function saveVocabularyOffline(
 /**
  * Get all offline vocabulary
  */
-export async function getAllVocabularyOffline() {
+async function getAllVocabularyOffline() {
     const db = await getDB()
     return await db.getAll('vocabulary')
 }
@@ -316,7 +316,7 @@ export async function getAllVocabularyOffline() {
 /**
  * Delete vocabulary word offline
  */
-export async function deleteVocabularyOffline(word: string) {
+async function deleteVocabularyOffline(word: string) {
     const db = await getDB()
     await db.delete('vocabulary', word)
 }

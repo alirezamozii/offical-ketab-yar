@@ -134,7 +134,7 @@ export async function fetchWordDefinition(
 /**
  * Get Persian translation using Google Gemini
  */
-export async function getWordTranslation(
+async function getWordTranslation(
     word: string,
     context?: string
 ): Promise<string | null> {
@@ -158,7 +158,7 @@ export async function getWordTranslation(
 /**
  * Get complete word data (English definition + Persian translation)
  */
-export async function getCompleteWordData(
+async function getCompleteWordData(
     word: string,
     context?: string
 ): Promise<{

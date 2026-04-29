@@ -31,7 +31,7 @@ export interface FriendActivity {
 /**
  * Create a friend activity
  */
-export async function createFriendActivity(data: {
+async function createFriendActivity(data: {
     user_id: string
     activity_type: ActivityType
     book_id?: string
@@ -80,7 +80,7 @@ export async function getFriendActivityFeed(
 /**
  * Get user's own activities
  */
-export async function getUserActivities(userId: string, limit = 50) {
+async function getUserActivities(userId: string, limit = 50) {
     const supabase = createClient()
 
     const { data, error } = await supabase
@@ -101,7 +101,7 @@ export async function getUserActivities(userId: string, limit = 50) {
 /**
  * Delete an activity
  */
-export async function deleteActivity(activityId: string) {
+async function deleteActivity(activityId: string) {
     const supabase = createClient()
 
     const { error } = await supabase
@@ -115,7 +115,7 @@ export async function deleteActivity(activityId: string) {
 /**
  * Helper: Log book started activity
  */
-export async function logBookStarted(userId: string, bookId: string) {
+async function logBookStarted(userId: string, bookId: string) {
     return createFriendActivity({
         user_id: userId,
         activity_type: 'book_started',
@@ -126,7 +126,7 @@ export async function logBookStarted(userId: string, bookId: string) {
 /**
  * Helper: Log book completed activity
  */
-export async function logBookCompleted(userId: string, bookId: string, xpEarned?: number) {
+async function logBookCompleted(userId: string, bookId: string, xpEarned?: number) {
     return createFriendActivity({
         user_id: userId,
         activity_type: 'book_completed',
@@ -138,7 +138,7 @@ export async function logBookCompleted(userId: string, bookId: string, xpEarned?
 /**
  * Helper: Log achievement earned activity
  */
-export async function logAchievementEarned(
+async function logAchievementEarned(
     userId: string,
     achievementId: string,
     achievementName: string
@@ -154,7 +154,7 @@ export async function logAchievementEarned(
 /**
  * Helper: Log level up activity
  */
-export async function logLevelUp(userId: string, newLevel: number, levelTitle: string) {
+async function logLevelUp(userId: string, newLevel: number, levelTitle: string) {
     return createFriendActivity({
         user_id: userId,
         activity_type: 'level_up',
@@ -165,7 +165,7 @@ export async function logLevelUp(userId: string, newLevel: number, levelTitle: s
 /**
  * Helper: Log streak milestone activity
  */
-export async function logStreakMilestone(userId: string, streakDays: number) {
+async function logStreakMilestone(userId: string, streakDays: number) {
     return createFriendActivity({
         user_id: userId,
         activity_type: 'streak_milestone',
@@ -187,7 +187,7 @@ export async function logPlaylistCreated(userId: string, playlistId: string) {
 /**
  * Helper: Log vocabulary milestone activity
  */
-export async function logVocabularyMilestone(userId: string, wordCount: number) {
+async function logVocabularyMilestone(userId: string, wordCount: number) {
     return createFriendActivity({
         user_id: userId,
         activity_type: 'vocabulary_milestone',

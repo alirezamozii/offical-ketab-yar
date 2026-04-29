@@ -22,7 +22,7 @@ interface ChangePasswordDialogProps {
     userEmail: string
 }
 
-export default function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialogProps) {
+function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialogProps) {
     const [currentPassword, setCurrentPassword] = useState('')
     const [newPassword, setNewPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')

@@ -159,7 +159,7 @@ export async function searchUsers(query: string, currentUserId: string, limit = 
 /**
  * Check friendship status between two users
  */
-export async function checkFriendshipStatus(userId: string, friendId: string) {
+async function checkFriendshipStatus(userId: string, friendId: string) {
     const supabase = createClient()
 
     const { data, error } = await supabase
@@ -175,7 +175,7 @@ export async function checkFriendshipStatus(userId: string, friendId: string) {
 /**
  * Block a user
  */
-export async function blockUser(userId: string, friendId: string) {
+async function blockUser(userId: string, friendId: string) {
     const supabase = createClient()
 
     // First, check if friendship exists
@@ -206,7 +206,7 @@ export async function blockUser(userId: string, friendId: string) {
 /**
  * Unblock a user
  */
-export async function unblockUser(userId: string, friendId: string) {
+async function unblockUser(userId: string, friendId: string) {
     const supabase = createClient()
 
     const { error } = await supabase
