@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import type { BookListItem } from '@/lib/data'
 import { motion } from 'framer-motion'
+import React from 'react'
 import { BookOpen, Calendar, Star, User } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -18,7 +19,8 @@ interface BookListItemProps {
  * Agent 3 (Psychology): Premium list view with all book details
  * Agent 2 (Performance): Optimized images and animations
  */
-export function BookListItemComponent({ book }: BookListItemProps) {
+// ⚡ Bolt Optimization: Added React.memo to prevent unnecessary re-renders in large lists
+export const BookListItemComponent = React.memo(function BookListItemComponent({ book }: BookListItemProps) {
     const bookTitleFa = book.title
     const authorName = book.author || 'Unknown Author'
     const coverImage = book.cover_url || '/placeholder-book.png'
@@ -168,4 +170,4 @@ export function BookListItemComponent({ book }: BookListItemProps) {
             </Card>
         </motion.div>
     )
-}
+})
