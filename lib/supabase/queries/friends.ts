@@ -51,7 +51,7 @@ export async function sendFriendRequest(userId: string, friendId: string) {
             user_id: userId,
             friend_id: friendId,
             status: 'pending'
-        })
+        } as any)
         .select()
         .single()
 
@@ -69,7 +69,7 @@ export async function acceptFriendRequest(requestId: string) {
         .from('friendships')
         .update({
             status: 'accepted',
-            responded_at: new Date().toISOString()
+            responded_at: new Date( as any).toISOString()
         })
         .eq('id', requestId)
         .select()
@@ -89,7 +89,7 @@ export async function rejectFriendRequest(requestId: string) {
         .from('friendships')
         .update({
             status: 'rejected',
-            responded_at: new Date().toISOString()
+            responded_at: new Date( as any).toISOString()
         })
         .eq('id', requestId)
         .select()
@@ -185,7 +185,7 @@ async function blockUser(userId: string, friendId: string) {
         // Update existing friendship to blocked
         const { error } = await supabase
             .from('friendships')
-            .update({ status: 'blocked' })
+            .update({ status: 'blocked' } as any)
             .eq('id', existing.id)
 
         if (error) throw error
@@ -197,7 +197,7 @@ async function blockUser(userId: string, friendId: string) {
                 user_id: userId,
                 friend_id: friendId,
                 status: 'blocked'
-            })
+            } as any)
 
         if (error) throw error
     }

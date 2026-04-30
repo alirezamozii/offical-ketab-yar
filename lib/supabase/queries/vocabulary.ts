@@ -5,7 +5,7 @@ type VocabularyInsert = Database['public']['Tables']['vocabulary']['Insert']
 type VocabularyUpdate = Database['public']['Tables']['vocabulary']['Update']
 
 // Get user's vocabulary words
-async function getUserVocabulary(userId?: string) {
+export async function getUserVocabulary(userId?: string) {
   const supabase = createClient()
 
   if (!userId) {
@@ -64,7 +64,7 @@ async function checkVocabularyLimit(userId?: string) {
 }
 
 // Add word to vocabulary (with limit check)
-async function addVocabularyWord(word: Omit<VocabularyInsert, 'user_id'>) {
+export async function addVocabularyWord(word: Omit<VocabularyInsert, 'user_id'>) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -82,7 +82,7 @@ async function addVocabularyWord(word: Omit<VocabularyInsert, 'user_id'>) {
     .insert({
       ...word,
       user_id: user.id,
-    })
+    } as any)
     .select()
     .single()
 
@@ -95,7 +95,7 @@ async function updateVocabularyWord(id: string, updates: VocabularyUpdate) {
   const supabase = createClient()
   const { data, error } = await supabase
     .from('vocabulary')
-    .update(updates)
+    .update(updates as any)
     .eq('id', id)
     .select()
     .single()
@@ -105,7 +105,7 @@ async function updateVocabularyWord(id: string, updates: VocabularyUpdate) {
 }
 
 // Delete vocabulary word
-async function deleteVocabularyWord(id: string) {
+export async function deleteVocabularyWord(id: string) {
   const supabase = createClient()
   const { error } = await supabase
     .from('vocabulary')
@@ -129,8 +129,8 @@ async function getWordsForReview(userId?: string, limit: number = 20) {
     .from('vocabulary')
     .select('*')
     .eq('user_id', userId)
-    .lte('next_review_date', new Date().toISOString())
-    .order('next_review_date', { ascending: true })
+    .lte('next_review_at', new Date().toISOString())
+    .order('next_review_at', { ascending: true })
     .limit(limit)
 
   if (error) throw error
@@ -170,9 +170,11 @@ async function updateWordMastery(
     .from('vocabulary')
     .update({
       mastery_level: newLevel,
-      next_review_date: nextReviewDate.toISOString(),
+      next_review_at: nextReviewDate.toISOString( as any),
       last_reviewed_at: new Date().toISOString(),
       review_count: (word.review_count || 0) + 1,
+      correct_count: correct ? (word.correct_count || 0) + 1 : (word.correct_count || 0),
+      incorrect_count: !correct ? (word.incorrect_count || 0) + 1 : (word.incorrect_count || 0),
     })
     .eq('id', id)
     .select()

@@ -19,13 +19,12 @@ interface BookListItemProps {
  * Agent 2 (Performance): Optimized images and animations
  */
 export function BookListItemComponent({ book }: BookListItemProps) {
-    const bookTitle = typeof book.title === 'string' ? book.title : book.title?.en || 'Untitled'
-    const bookTitleFa = typeof book.title === 'string' ? book.title : book.title?.fa || bookTitle
-    const authorName = book.author?.name || 'Unknown Author'
-    const coverImage = book.coverImage || '/placeholder-book.png'
+    const bookTitleFa = book.title
+    const authorName = book.author || 'Unknown Author'
+    const coverImage = book.cover_url || '/placeholder-book.png'
     const rating = book.rating || 0
     const genres = Array.isArray(book.genres)
-        ? book.genres.map((g) => (typeof g === 'string' ? g : g.name || g.title || '')).filter(Boolean)
+        ? book.genres.filter(Boolean)
         : []
 
     return (
@@ -69,11 +68,6 @@ export function BookListItemComponent({ book }: BookListItemProps) {
                                 <h3 className="text-lg md:text-xl font-bold line-clamp-2 mb-1 hover:text-gold-600 transition-colors">
                                     {bookTitleFa}
                                 </h3>
-                                {bookTitle !== bookTitleFa && (
-                                    <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
-                                        {bookTitle}
-                                    </p>
-                                )}
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <User className="h-4 w-4" />
                                     <span className="line-clamp-1">{authorName}</span>
@@ -88,16 +82,10 @@ export function BookListItemComponent({ book }: BookListItemProps) {
                                         <span className="font-semibold">{rating.toFixed(1)}</span>
                                     </div>
                                 )}
-                                {book.publishYear && (
+                                {book.publication_year && (
                                     <div className="flex items-center gap-1 text-muted-foreground">
                                         <Calendar className="h-4 w-4" />
-                                        <span>{book.publishYear}</span>
-                                    </div>
-                                )}
-                                {book.chapters && (
-                                    <div className="flex items-center gap-1 text-muted-foreground">
-                                        <BookOpen className="h-4 w-4" />
-                                        <span>{book.chapters.length} فصل</span>
+                                        <span>{book.publication_year}</span>
                                     </div>
                                 )}
                             </div>
@@ -110,10 +98,10 @@ export function BookListItemComponent({ book }: BookListItemProps) {
                                         <span className="font-semibold">{rating.toFixed(1)}</span>
                                     </div>
                                 )}
-                                {book.publishYear && (
+                                {book.publication_year && (
                                     <div className="flex items-center gap-1 text-muted-foreground">
                                         <Calendar className="h-3 w-3" />
-                                        <span>{book.publishYear}</span>
+                                        <span>{book.publication_year}</span>
                                     </div>
                                 )}
                             </div>

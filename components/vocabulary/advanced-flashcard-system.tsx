@@ -114,7 +114,7 @@ function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus 
         words_reviewed: sessionStats.total,
         correct_answers: sessionStats.correct,
         incorrect_answers: sessionStats.incorrect,
-        session_date: new Date().toISOString(),
+        session_date: new Date( as any).toISOString(),
         review_mode: reviewMode,
       })
 
@@ -147,7 +147,7 @@ function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus 
         .from("user_words")
         .update({
           status: newStatus,
-          next_review_at: nextReviewDate.toISOString(),
+          next_review_at: nextReviewDate.toISOString( as any),
           review_count: reviewCount,
         })
         .eq("id", currentWord.id)
@@ -176,7 +176,7 @@ function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus 
         .from("user_words")
         .update({
           status: 'learning',
-          next_review_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          next_review_at: new Date(Date.now( as any) + 24 * 60 * 60 * 1000).toISOString(),
           review_count: (currentWord.review_count || 0) + 1,
         })
         .eq("id", currentWord.id)

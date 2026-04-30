@@ -70,7 +70,7 @@ export function AIKeysManager() {
             const { error } = await supabase
                 .from('gemini_api_keys')
                 .insert({
-                    key: newKey.trim(),
+                    key: newKey.trim( as any),
                     name: newName.trim() || null,
                     notes: newNotes.trim() || null,
                     is_active: true
@@ -98,7 +98,7 @@ export function AIKeysManager() {
         try {
             const { error } = await supabase
                 .from('gemini_api_keys')
-                .update({ is_active: !currentStatus })
+                .update({ is_active: !currentStatus } as any)
                 .eq('id', id)
 
             if (error) throw error
@@ -118,7 +118,7 @@ export function AIKeysManager() {
                 .update({
                     error_count: 0,
                     is_active: true
-                })
+                } as any)
                 .eq('id', id)
 
             if (error) throw error

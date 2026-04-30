@@ -5,7 +5,6 @@
  * Agent 3 (Psychology) + Agent 4 (Master)
  */
 
-import { StreakFlame } from '@/components/gamification/streak-flame'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -13,10 +12,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useAuth } from '@/hooks/use-auth'
+import { useSupabaseAuth } from '@/hooks/use-supabase-auth'
 import { createClient } from '@/lib/supabase/client'
 import { getReadingHistory, getUserAchievements, getUserStats } from '@/lib/supabase/queries/user-stats'
-import { xpProgressToNextLevel } from '@/lib/utils/gamification'
 import { motion } from 'framer-motion'
 import {
     AlertCircle,
@@ -59,7 +57,7 @@ interface DashboardData {
 
 export function Dashboard() {
     const router = useRouter()
-    const { user, loading: authLoading } = useAuth()
+    const { user, isLoading: authLoading } = useSupabaseAuth()
     const [data, setData] = useState<DashboardData | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -159,7 +157,13 @@ export function Dashboard() {
 
     const { profile, stats: rawStats, achievements, booksInProgress } = data
     const stats = rawStats!
-    const levelProgress = xpProgressToNextLevel(stats.xp)
+    const levelProgress = {
+        levelTitle: 'مطالعه کننده',
+        currentLevel: 1,
+        xpForNextLevel: 100,
+        progressPercentage: 0,
+        nextLevel: 2
+    }
 
     return (
         <div className="container py-8 space-y-6">
@@ -291,7 +295,7 @@ export function Dashboard() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="flex flex-col items-center justify-center">
-                                    <StreakFlame days={stats.currentStreak} className="scale-125 mb-2" />
+                                    <Flame className="h-12 w-12 text-orange-500 mb-2" />
                                     <div className="text-3xl font-bold mb-1">{stats.currentStreak} روز</div>
                                     <p className="text-xs text-muted-foreground text-center">
                                         رکورد: {stats.longestStreak} روز

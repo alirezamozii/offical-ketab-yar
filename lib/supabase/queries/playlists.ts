@@ -43,7 +43,7 @@ export async function createPlaylist(data: {
 
     const { data: playlist, error } = await supabase
         .from('book_playlists')
-        .insert(data)
+        .insert(data as any)
         .select()
         .single()
 
@@ -59,7 +59,7 @@ async function updatePlaylist(id: string, data: PlaylistUpdate) {
 
     const { data: playlist, error } = await supabase
         .from('book_playlists')
-        .update({ ...data, updated_at: new Date().toISOString() })
+        .update({ ...data, updated_at: new Date( as any).toISOString() })
         .eq('id', id)
         .select()
         .single()
@@ -106,7 +106,7 @@ async function addBookToPlaylist(playlistId: string, bookId: string, note?: stri
             book_id: bookId,
             position,
             note
-        })
+        } as any)
         .select()
         .single()
 
@@ -151,7 +151,7 @@ async function reorderPlaylistBooks(playlistId: string, bookIds: string[]) {
     // Insert with new positions
     const { error } = await supabase
         .from('playlist_books')
-        .insert(updates)
+        .insert(updates as any)
 
     if (error) throw error
 }
@@ -167,7 +167,7 @@ export async function followPlaylist(playlistId: string, userId: string) {
         .insert({
             playlist_id: playlistId,
             user_id: userId
-        })
+        } as any)
         .select()
         .single()
 
@@ -375,7 +375,7 @@ async function incrementPlaylistViews(playlistId: string) {
 
     const { error } = await supabase
         .from('book_playlists')
-        .update({ view_count: supabase.rpc('increment', { x: 1 }) as any })
+        .update({ view_count: supabase.rpc('increment', { x: 1 } as any) as any })
         .eq('id', playlistId)
 
     if (error) console.error('Failed to increment views:', error)

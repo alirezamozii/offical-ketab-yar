@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
             .from('vocabulary')
             .insert({
                 user_id: user.id,
-                word: word.toLowerCase(),
+                word: word.toLowerCase( as any),
                 definition,
                 translation,
                 context,

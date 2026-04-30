@@ -37,7 +37,7 @@ export function useOfflineSync() {
                         case 'xp':
                             await supabase
                                 .from('users')
-                                .update({ xp: item.data.xp })
+                                .update({ xp: item.data.xp } as any)
                                 .eq('id', item.data.userId)
                             break
 
@@ -47,7 +47,7 @@ export function useOfflineSync() {
                                 .update({
                                     current_streak: item.data.streak,
                                     last_read_at: item.data.lastReadAt,
-                                })
+                                } as any)
                                 .eq('id', item.data.userId)
                             break
 
@@ -57,7 +57,7 @@ export function useOfflineSync() {
                                 book_id: item.data.bookId,
                                 pages_read: item.data.pagesRead,
                                 duration_minutes: item.data.durationMinutes,
-                                created_at: new Date(item.timestamp).toISOString(),
+                                created_at: new Date(item.timestamp as any).toISOString(),
                             })
                             break
 
@@ -68,7 +68,7 @@ export function useOfflineSync() {
                                 definition: item.data.definition,
                                 book_id: item.data.bookId,
                                 context: item.data.context,
-                                created_at: new Date(item.timestamp).toISOString(),
+                                created_at: new Date(item.timestamp as any).toISOString(),
                             })
                             break
                     }

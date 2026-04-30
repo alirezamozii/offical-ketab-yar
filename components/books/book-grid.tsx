@@ -25,19 +25,9 @@ const item = {
 }
 
 // Agent 2 (Performance): TanStack Query for caching and optimistic updates
-// Agent 0 (Investigation): Using unified data API (Sanity CMS)
+// Agent 0 (Investigation): Using unified data API (Supabase)
 async function fetchBooks(): Promise<BookListItem[]> {
-  const books = await getBooks()
-  const { transformBooksForDisplay } = await import('@/lib/sanity/transform')
-  const transformed = transformBooksForDisplay(books)
-
-  // Map to expected format with Farsi text and proper images
-  return transformed.map(book => ({
-    ...book,
-    title: book.displayTitle,
-    author: book.authorName,
-    // Convert to plain objects to avoid class instance issues
-  })) as BookListItem[]
+  return await getBooks()
 }
 
 export function BookGrid() {
@@ -116,7 +106,7 @@ export function BookGrid() {
         >
           {books.map((book: BookListItem, index) => (
             <motion.div
-              key={book._id}
+              key={book.id}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{
@@ -141,7 +131,7 @@ export function BookGrid() {
         >
           {books.map((book: BookListItem, index) => (
             <motion.div
-              key={book._id}
+              key={book.id}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{

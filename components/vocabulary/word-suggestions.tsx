@@ -104,7 +104,7 @@ export function WordSuggestions({ userLevel, onAddWord }: WordSuggestionsProps) 
         meaning: word.meaning,
         level: word.level,
         status: "learning",
-        nextReviewAt: new Date().toISOString()
+        nextReviewAt: new Date( as any).toISOString()
       })
 
       if (error) throw error

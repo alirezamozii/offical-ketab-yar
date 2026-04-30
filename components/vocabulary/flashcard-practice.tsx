@@ -246,7 +246,7 @@ export function FlashcardPractice({ bookId, mode }: FlashcardPracticeProps) {
                 .from('vocabulary')
                 .update({
                     mastery_level: newMasteryLevel,
-                    last_reviewed_at: new Date().toISOString(),
+                    last_reviewed_at: new Date( as any).toISOString(),
                     next_review_at: nextReviewDate
                 })
                 .eq('id', currentWord.id)

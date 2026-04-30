@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
                 plan_type: planType,  // For compatibility
                 amount: plan.amount,
                 status: 'pending',
-            })
+            } as any)
             .select()
             .single()
 
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
         // Update payment session with authority
         await supabase
             .from('payment_sessions')
-            .update({ authority: payment.authority })
+            .update({ authority: payment.authority } as any)
             .eq('id', paymentSession.id)
 
         return NextResponse.json({

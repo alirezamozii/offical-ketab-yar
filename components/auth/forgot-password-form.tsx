@@ -1,5 +1,6 @@
 'use client'
 
+import { AuthCardHeader } from './auth-card-header'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -87,22 +88,11 @@ export default function ForgotPasswordForm() {
             className="w-full max-w-md"
         >
             <Card className="border-gold/30 shadow-2xl backdrop-blur-sm bg-background/95 dark:bg-background/90">
-                <CardHeader className="space-y-2 text-center pb-4">
-                    <motion.div
-                        initial={{ scale: 0, rotate: -180 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                        className="mx-auto mb-1 flex size-14 md:size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gold-400 via-gold-500 to-gold-600 shadow-xl shadow-gold-500/30"
-                    >
-                        <KeyRound className="size-7 md:size-8 text-white" />
-                    </motion.div>
-                    <CardTitle className="text-3xl md:text-4xl font-bold bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-                        فراموشی رمز عبور
-                    </CardTitle>
-                    <CardDescription className="text-sm md:text-base text-muted-foreground">
-                        لینک بازیابی به ایمیل شما ارسال می‌شود 📧
-                    </CardDescription>
-                </CardHeader>
+                <AuthCardHeader
+                    icon={KeyRound}
+                    title="فراموشی رمز عبور"
+                    description="لینک بازیابی به ایمیل شما ارسال می‌شود 📧"
+                />
 
                 <form onSubmit={handleSubmit}>
                     <CardContent className="space-y-4">

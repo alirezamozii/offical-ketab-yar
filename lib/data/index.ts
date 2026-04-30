@@ -1,163 +1,233 @@
-/**
- * UNIFIED DATA API
- * 
- * This module provides a single interface for data access using Sanity CMS.
- * Agent 1 (SEO) - Optimized for static generation
- * Agent 2 (Performance) - Efficient queries, no mock data overhead
- */
+import type { Database } from '@/types/database.types'
+import { createClient } from '@/lib/supabase/server'
 
-import type { Author, SanityBook, SanityBookListItem } from '@/lib/sanity/types'
-
-// Type exports for compatibility
-export type { Author, SanityBook as Book, SanityBookListItem as BookListItem }
-
-/**
- * Get all published books from Sanity CMS
- */
-export async function getBooks(): Promise<SanityBookListItem[]> {
-    try {
-        const { getAllBooks } = await import('@/lib/sanity/queries')
-        return await getAllBooks()
-    } catch (error) {
-        console.error('Failed to fetch books from Sanity:', error)
-        return []
-    }
-}
-
-/**
- * Get book by slug from Sanity CMS
- */
-async function getBookBySlug(slug: string): Promise<SanityBook | null> {
-    try {
-        const { getBookBySlug: getSanityBookBySlug } = await import('@/lib/sanity/queries')
-        return await getSanityBookBySlug(slug)
-    } catch (error) {
-        console.error('Failed to fetch book from Sanity:', error)
-        return null
-    }
-}
-
-/**
- * Get book by ID from Sanity CMS
- */
-async function getBookById(id: string): Promise<SanityBook | null> {
-    try {
-        const { getBookById: getSanityBookById } = await import('@/lib/sanity/queries')
-        return await getSanityBookById(id)
-    } catch (error) {
-        console.error('Failed to fetch book from Sanity:', error)
-        return null
-    }
-}
-
-/**
- * Get recently added books from Sanity CMS
- */
-async function getRecentlyAddedBooks(limit: number = 12): Promise<SanityBookListItem[]> {
-    try {
-        const { getRecentlyAddedBooks: getSanityRecentBooks } = await import('@/lib/sanity/queries')
-        return await getSanityRecentBooks(limit)
-    } catch (error) {
-        console.error('Failed to fetch recently added books from Sanity:', error)
-        return []
-    }
-}
-
-/**
- * Get highest rated books from Sanity CMS
- */
-async function getHighestRatedBooks(limit: number = 12): Promise<SanityBookListItem[]> {
-    try {
-        const { getFeaturedBooks } = await import('@/lib/sanity/queries')
-        return await getFeaturedBooks(limit)
-    } catch (error) {
-        console.error('Failed to fetch highest rated books from Sanity:', error)
-        return []
-    }
-}
-
-/**
- * Get most read books from Sanity CMS
- */
-export async function getMostReadBooks(limit: number = 12): Promise<SanityBookListItem[]> {
-    try {
-        const { getFeaturedBooks } = await import('@/lib/sanity/queries')
-        return await getFeaturedBooks(limit)
-    } catch (error) {
-        console.error('Failed to fetch most read books from Sanity:', error)
-        return []
-    }
-}
-
-/**
- * Get related books by genre from Sanity CMS
- */
-async function getRelatedBooks(bookId: string, genres: string[], limit: number = 4): Promise<SanityBookListItem[]> {
-    try {
-        const { getBooksByGenre } = await import('@/lib/sanity/queries')
-        // Get books from first genre
-        const books = await getBooksByGenre(genres[0] || '', limit + 1)
-        // Filter out current book
-        return books.filter((book: SanityBookListItem) => book._id !== bookId).slice(0, limit)
-    } catch (error) {
-        console.error('Failed to fetch related books from Sanity:', error)
-        return []
-    }
-}
-
-/**
- * Get author by ID from Sanity CMS
- */
-async function getAuthorById(id: string): Promise<Author | null> {
-    try {
-        const { getAuthorById: getSanityAuthorById } = await import('@/lib/sanity/queries')
-        return await getSanityAuthorById(id)
-    } catch (error) {
-        console.error('Failed to fetch author from Sanity:', error)
-        return null
-    }
-}
-
-/**
- * Get trending/popular books from Sanity CMS
- * Used for "Most Read" and "Highest Rated" sections
- */
-export async function getTrendingBooks(limit: number = 12): Promise<SanityBookListItem[]> {
-    try {
-        const { getFeaturedBooks } = await import('@/lib/sanity/queries')
-        return await getFeaturedBooks(limit)
-    } catch (error) {
-        console.error('Failed to fetch trending books from Sanity:', error)
-        return []
-    }
-}
-
-/**
- * Review type definition
- */
-export interface Review {
-    id: string
-    rating: number
-    comment: string
-    created_at: string
-    helpful_count: number
+// Map Supabase types to our internal types
+export type Book = Database['public']['Tables']['books']['Row']
+export type Author = Database['public']['Tables']['authors']['Row']
+export type Review = Database['public']['Tables']['reviews']['Row'] & {
     profiles?: {
-        full_name?: string
-        avatar_url?: string
+        full_name: string | null
+        avatar_url: string | null
+    }
+}
+
+export type BookListItem = Pick<Book, 'id' | 'title' | 'slug' | 'cover_url' | 'author' | 'rating' | 'review_count' | 'genres' | 'is_premium' | 'level' | 'publication_year'>
+
+/**
+ * Get all published books from Supabase
+ */
+export async function getBooks(): Promise<BookListItem[]> {
+    try {
+        const supabase = await createClient()
+        const { data, error } = await supabase
+            .from('books')
+            .select('id, title, slug, cover_url, author, rating, review_count, genres, is_premium, level, publication_year')
+            .eq('status', 'published')
+            .order('created_at', { ascending: false })
+
+        if (error) throw error
+        return data || []
+    } catch (error) {
+        console.error('Failed to fetch books from Supabase:', error)
+        return []
     }
 }
 
 /**
- * Get reviews by book ID
- * Note: Reviews are stored in Supabase, not Sanity
+ * Get book by slug from Supabase
  */
-async function getReviewsByBookId(_bookId: string): Promise<Review[]> {
+export async function getBookBySlug(slug: string): Promise<Book | null> {
     try {
-        // For now, return empty array since reviews are in Supabase
-        // This will be implemented when we integrate Supabase reviews with Sanity books
-        return []
+        const supabase = await createClient()
+        const { data, error } = await supabase
+            .from('books')
+            .select('*')
+            .eq('slug', slug)
+            .single()
+
+        if (error) throw error
+        return data
     } catch (error) {
-        console.error('Failed to fetch reviews:', error)
+        console.error('Failed to fetch book from Supabase:', error)
+        return null
+    }
+}
+
+/**
+ * Get book by ID from Supabase
+ */
+export async function getBookById(id: string): Promise<Book | null> {
+    try {
+        const supabase = await createClient()
+        const { data, error } = await supabase
+            .from('books')
+            .select('*')
+            .eq('id', id)
+            .single()
+
+        if (error) throw error
+        return data
+    } catch (error) {
+        console.error('Failed to fetch book from Supabase:', error)
+        return null
+    }
+}
+
+/**
+ * Get recently added books from Supabase
+ */
+export async function getRecentlyAddedBooks(limit: number = 12): Promise<BookListItem[]> {
+    try {
+        const supabase = await createClient()
+        const { data, error } = await supabase
+            .from('books')
+            .select('id, title, slug, cover_url, author, rating, review_count, genres, is_premium, level, publication_year')
+            .eq('status', 'published')
+            .order('created_at', { ascending: false })
+            .limit(limit)
+
+        if (error) throw error
+        return data || []
+    } catch (error) {
+        console.error('Failed to fetch recently added books from Supabase:', error)
         return []
     }
 }
+
+/**
+ * Get highest rated books from Supabase
+ */
+export async function getHighestRatedBooks(limit: number = 12): Promise<BookListItem[]> {
+    try {
+        const supabase = await createClient()
+        const { data, error } = await supabase
+            .from('books')
+            .select('id, title, slug, cover_url, author, rating, review_count, genres, is_premium, level, publication_year')
+            .eq('status', 'published')
+            .order('rating', { ascending: false })
+            .limit(limit)
+
+        if (error) throw error
+        return data || []
+    } catch (error) {
+        console.error('Failed to fetch highest rated books from Supabase:', error)
+        return []
+    }
+}
+
+/**
+ * Get most read books from Supabase
+ */
+export async function getMostReadBooks(limit: number = 12): Promise<BookListItem[]> {
+    try {
+        const supabase = await createClient()
+        const { data, error } = await supabase
+            .from('books')
+            .select('id, title, slug, cover_url, author, rating, review_count, genres, is_premium, level, publication_year')
+            .eq('status', 'published')
+            .order('view_count', { ascending: false })
+            .limit(limit)
+
+        if (error) throw error
+        return data || []
+    } catch (error) {
+        console.error('Failed to fetch most read books from Supabase:', error)
+        return []
+    }
+}
+
+/**
+ * Get related books by genre from Supabase
+ */
+export async function getRelatedBooks(bookId: string, genres: string[], limit: number = 4): Promise<BookListItem[]> {
+    try {
+        if (!genres || genres.length === 0) return []
+        
+        const supabase = await createClient()
+        const { data, error } = await supabase
+            .from('books')
+            .select('id, title, slug, cover_url, author, rating, review_count, genres, is_premium, level, publication_year')
+            .neq('id', bookId)
+            .contains('genres', [genres[0]])
+            .limit(limit)
+
+        if (error) throw error
+        return data || []
+    } catch (error) {
+        console.error('Failed to fetch related books from Supabase:', error)
+        return []
+    }
+}
+
+/**
+ * Get author by ID from Supabase
+ */
+export async function getAuthorById(id: string): Promise<Author | null> {
+    try {
+        const supabase = await createClient()
+        const { data, error } = await supabase
+            .from('authors')
+            .select('*')
+            .eq('id', id)
+            .single()
+
+        if (error) throw error
+        return data
+    } catch (error) {
+        console.error('Failed to fetch author from Supabase:', error)
+        return null
+    }
+}
+
+/**
+ * Get trending/popular books from Supabase
+ */
+export async function getTrendingBooks(limit: number = 12): Promise<BookListItem[]> {
+    return getMostReadBooks(limit)
+}
+
+/**
+ * Get reviews by book ID from Supabase
+ */
+export async function getReviewsByBookId(bookId: string): Promise<Review[]> {
+    try {
+        const supabase = await createClient()
+        const { data, error } = await supabase
+            .from('reviews')
+            .select(`
+                *,
+                profiles:user_id (
+                    full_name,
+                    avatar_url
+                )
+            `)
+            .eq('book_id', bookId)
+            .order('created_at', { ascending: false })
+
+        if (error) throw error
+        return (data as any) || []
+    } catch (error) {
+        console.error('Failed to fetch reviews from Supabase:', error)
+        return []
+    }
+}
+
+/**
+ * Get all categories/genres from Supabase
+ */
+export async function getCategories(): Promise<Database['public']['Tables']['categories']['Row'][]> {
+    try {
+        const supabase = await createClient()
+        const { data, error } = await supabase
+            .from('categories')
+            .select('*')
+            .order('name')
+
+        if (error) throw error
+        return data || []
+    } catch (error) {
+        console.error('Failed to fetch categories from Supabase:', error)
+        return []
+    }
+}
+

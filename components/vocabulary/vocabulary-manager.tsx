@@ -137,7 +137,7 @@ export function VocabularyManager({ userId }: VocabularyManagerProps) {
         .update({
           status: newStatus,
           next_review_at: new Date(
-            Date.now() + (newStatus === "mastered" ? 7 : newStatus === "reviewing" ? 3 : 1) * 24 * 60 * 60 * 1000,
+            Date.now( as any) + (newStatus === "mastered" ? 7 : newStatus === "reviewing" ? 3 : 1) * 24 * 60 * 60 * 1000,
           ).toISOString(),
         })
         .eq("id", wordId)

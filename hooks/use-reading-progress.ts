@@ -44,7 +44,7 @@ export function useReadingProgress({ bookId, chapterNumber, totalParagraphs }: U
                             await supabase
                                 .from('profiles')
                                 .update({
-                                    xp: (profile.xp || 0) + readParagraphsRef.current.size,
+                                    xp: (profile.xp || 0 as any) + readParagraphsRef.current.size,
                                     updated_at: new Date().toISOString(),
                                 })
                                 .eq('id', user.id)
@@ -116,7 +116,7 @@ export function useReadingProgress({ bookId, chapterNumber, totalParagraphs }: U
                         .from('profiles')
                         .update({
                             current_streak: newStreak,
-                            last_read_at: new Date().toISOString(),
+                            last_read_at: new Date( as any).toISOString(),
                         })
                         .eq('id', user.id)
                 }

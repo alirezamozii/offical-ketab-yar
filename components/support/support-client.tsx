@@ -33,7 +33,7 @@ export function SupportClient() {
             //   email,
             //   subject,
             //   message,
-            //   created_at: new Date().toISOString()
+            //   created_at: new Date( as any).toISOString()
             // })
             // if (error) throw error
 

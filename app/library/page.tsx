@@ -1,7 +1,7 @@
 import { BookGrid } from '@/components/books/book-grid'
 import { LibraryHeader } from '@/components/library/library-header'
 import { Skeleton } from '@/components/ui/skeleton'
-import { getAllGenres } from '@/lib/sanity/queries'
+import { getCategories } from '@/lib/data'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 
@@ -56,16 +56,16 @@ export const metadata: Metadata = {
 }
 
 export default async function LibraryPage() {
-  // Fetch genres from Sanity
-  const sanityGenres = await getAllGenres()
+  // Fetch categories from Supabase
+  const supabaseCategories = await getCategories()
 
-  // Transform to expected format
-  const categories = sanityGenres.map((genre: any) => ({
-    id: genre._id,
-    name: genre.nameFa || genre.name,
-    slug: genre.name.toLowerCase().replace(/\s+/g, '-'),
-    _id: genre._id,
+  // Transform to expected format for LibraryHeader
+  const categories = supabaseCategories.map((category) => ({
+    id: category.id,
+    name: category.name,
+    slug: category.slug,
   }))
+
   // JSON-LD CollectionPage Schema for SEO (Agent 1)
   const collectionSchema = {
     '@context': 'https://schema.org',

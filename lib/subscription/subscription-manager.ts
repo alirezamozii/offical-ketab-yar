@@ -41,7 +41,7 @@ async function checkPremiumStatus(userId: string): Promise<boolean> {
             // Subscription expired - update status
             await supabase
                 .from('profiles')
-                .update({ subscription_status: 'expired' })
+                .update({ subscription_status: 'expired' } as any)
                 .eq('id', userId)
             return false
         }
@@ -110,7 +110,7 @@ export async function activateFreeTrial(userId: string): Promise<boolean> {
         .update({
             subscription_tier: 'free',
             subscription_status: 'active',
-            subscription_started_at: now.toISOString(),
+            subscription_started_at: now.toISOString( as any),
             subscription_expires_at: expiresAt.toISOString(),
         })
         .eq('id', userId)
@@ -127,7 +127,7 @@ export async function activateFreeTrial(userId: string): Promise<boolean> {
         plan_name: 'رایگان 1 روزه',
         amount: 0,
         status: 'active',
-        started_at: now.toISOString(),
+        started_at: now.toISOString( as any),
         expires_at: expiresAt.toISOString(),
     })
 
@@ -175,7 +175,7 @@ export async function upgradeSubscription(
 
     const { error } = await supabase
         .from('profiles')
-        .update(updateData)
+        .update(updateData as any)
         .eq('id', userId)
 
     if (error) {
@@ -203,7 +203,7 @@ export async function upgradeSubscription(
         amount: planPrices[planId],
         status: 'active',
         stripe_subscription_id: stripeSubscriptionId,
-        started_at: now.toISOString(),
+        started_at: now.toISOString( as any),
         expires_at: expiresAt.toISOString(),
     })
 
@@ -220,7 +220,7 @@ async function cancelSubscription(userId: string): Promise<boolean> {
         .from('profiles')
         .update({
             subscription_status: 'cancelled',
-        })
+        } as any)
         .eq('id', userId)
 
     if (error) {
@@ -233,7 +233,7 @@ async function cancelSubscription(userId: string): Promise<boolean> {
         .from('subscriptions')
         .update({
             status: 'cancelled',
-            cancelled_at: new Date().toISOString(),
+            cancelled_at: new Date( as any).toISOString(),
         })
         .eq('user_id', userId)
         .eq('status', 'active')

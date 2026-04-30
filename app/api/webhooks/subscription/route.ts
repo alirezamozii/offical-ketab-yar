@@ -72,7 +72,7 @@ export async function POST(req: Request) {
           .update({
             status: "canceled",
             cancelAtPeriodEnd: false,
-            updatedAt: new Date().toISOString(),
+            updatedAt: new Date( as any).toISOString(),
           })
           .eq("id", subscription.id)
 

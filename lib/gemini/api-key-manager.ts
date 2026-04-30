@@ -148,7 +148,7 @@ class APIKeyManager {
             await supabase
                 .from('gemini_api_keys')
                 .update({
-                    usage_count: supabase.rpc('increment', { row_id: keyId }),
+                    usage_count: supabase.rpc('increment', { row_id: keyId } as any),
                     last_used_at: new Date().toISOString()
                 })
                 .eq('id', keyId)
@@ -186,7 +186,7 @@ class APIKeyManager {
 
             await supabase
                 .from('gemini_api_keys')
-                .update(updates)
+                .update(updates as any)
                 .eq('id', keyId)
 
             // Invalidate cache
@@ -208,7 +208,7 @@ class APIKeyManager {
                 .update({
                     error_count: 0,
                     is_active: true
-                })
+                } as any)
                 .eq('id', keyId)
 
             // Invalidate cache

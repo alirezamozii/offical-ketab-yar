@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
                 .update({
                     status: 'failed',
                     error_message: verification.error,
-                })
+                } as any)
                 .eq('id', paymentSession.id)
 
             return NextResponse.redirect(
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
                 status: 'completed',
                 ref_id: verification.refId,
                 card_pan: verification.cardPan,
-                verified_at: new Date().toISOString(),
+                verified_at: new Date( as any).toISOString(),
             })
             .eq('id', paymentSession.id)
 

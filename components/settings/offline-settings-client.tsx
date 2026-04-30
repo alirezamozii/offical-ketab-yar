@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { useToast } from '@/components/ui/use-toast'
 import { useOfflineSync } from '@/hooks/use-offline-sync'
-import { usePWAInstall } from '@/hooks/use-pwa-install'
 import {
     deleteBookOffline,
     getOfflineBooks,
@@ -20,7 +19,6 @@ import { motion } from 'framer-motion'
 import {
     AlertCircle,
     BookOpen,
-    Download,
     HardDrive,
     RefreshCw,
     Trash2,
@@ -47,7 +45,6 @@ export function OfflineSettingsClient() {
     const [isLoading, setIsLoading] = useState(true)
     const { toast } = useToast()
     const { isSyncing, queueSize, syncNow } = useOfflineSync()
-    const { isInstallable, isInstalled, promptInstall } = usePWAInstall()
 
     useEffect(() => {
         loadData()
@@ -115,27 +112,6 @@ export function OfflineSettingsClient() {
                     مدیریت کتاب‌های دانلود شده و حافظه دستگاه
                 </p>
             </div>
-
-            {/* PWA Install Card */}
-            {!isInstalled && isInstallable && (
-                <Card className="border-gold/20 bg-gradient-to-br from-gold/5 to-transparent">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Download className="h-5 w-5 text-gold" />
-                            نصب اپلیکیشن
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <p className="text-sm text-muted-foreground">
-                            برای تجربه بهتر و دسترسی سریع‌تر، کتاب‌یار را روی دستگاه خود نصب کنید
-                        </p>
-                        <Button onClick={promptInstall} className="w-full">
-                            <Download className="mr-2 h-4 w-4" />
-                            نصب اپلیکیشن کتاب‌یار
-                        </Button>
-                    </CardContent>
-                </Card>
-            )}
 
             {/* Storage Info */}
             <Card>

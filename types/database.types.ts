@@ -978,11 +978,16 @@ export type Database = {
           correct_count: number | null
           created_at: string | null
           definition: string | null
+          ease_factor: number | null
           id: string
+          incorrect_count: number | null
+          interval_days: number | null
+          last_reviewed_at: string | null
           mastery_level: number | null
           meaning: string | null
           next_review_at: string | null
           page_number: number | null
+          repetitions: number | null
           review_count: number | null
           status: string | null
           updated_at: string | null
@@ -995,11 +1000,16 @@ export type Database = {
           correct_count?: number | null
           created_at?: string | null
           definition?: string | null
+          ease_factor?: number | null
           id?: string
+          incorrect_count?: number | null
+          interval_days?: number | null
+          last_reviewed_at?: string | null
           mastery_level?: number | null
           meaning?: string | null
           next_review_at?: string | null
           page_number?: number | null
+          repetitions?: number | null
           review_count?: number | null
           status?: string | null
           updated_at?: string | null
@@ -1012,11 +1022,16 @@ export type Database = {
           correct_count?: number | null
           created_at?: string | null
           definition?: string | null
+          ease_factor?: number | null
           id?: string
+          incorrect_count?: number | null
+          interval_days?: number | null
+          last_reviewed_at?: string | null
           mastery_level?: number | null
           meaning?: string | null
           next_review_at?: string | null
           page_number?: number | null
+          repetitions?: number | null
           review_count?: number | null
           status?: string | null
           updated_at?: string | null
@@ -1033,6 +1048,134 @@ export type Database = {
           },
           {
             foreignKeyName: "vocabulary_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      book_playlists: {
+        Row: {
+          book_count: number | null
+          cover_image_url: string | null
+          created_at: string | null
+          description: string | null
+          follower_count: number | null
+          id: string
+          is_public: boolean | null
+          name: string
+          updated_at: string | null
+          user_id: string
+          view_count: number | null
+        }
+        Insert: {
+          book_count?: number | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          follower_count?: number | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          updated_at?: string | null
+          user_id: string
+          view_count?: number | null
+        }
+        Update: {
+          book_count?: number | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          follower_count?: number | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_playlists_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playlist_books: {
+        Row: {
+          added_at: string | null
+          book_id: string
+          id: string
+          note: string | null
+          playlist_id: string
+          position: number
+        }
+        Insert: {
+          added_at?: string | null
+          book_id: string
+          id?: string
+          note?: string | null
+          playlist_id: string
+          position: number
+        }
+        Update: {
+          added_at?: string | null
+          book_id?: string
+          id?: string
+          note?: string | null
+          playlist_id?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlist_books_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playlist_books_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "book_playlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playlist_followers: {
+        Row: {
+          created_at: string | null
+          id: string
+          playlist_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          playlist_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          playlist_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlist_followers_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "book_playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playlist_followers_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"

@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
             authority: payment.authority,
             plan_id: planId,
             status: 'pending',
-            created_at: new Date().toISOString(),
+            created_at: new Date( as any).toISOString(),
         })
 
         return NextResponse.json({

@@ -77,7 +77,7 @@ export async function addVocabularyWord(
             page_number: pageNumber,
             level: level || 'beginner',
             status: 'new',
-            next_review_at: new Date().toISOString(),
+            next_review_at: new Date( as any).toISOString(),
         })
         .select()
         .single()
@@ -259,7 +259,7 @@ export async function bulkImportWords(
 
     const { data, error } = await supabase
         .from('user_words')
-        .insert(wordsToInsert)
+        .insert(wordsToInsert as any)
         .select()
 
     if (error) throw error

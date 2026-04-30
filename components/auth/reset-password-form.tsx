@@ -1,5 +1,6 @@
 'use client'
 
+import { AuthCardHeader } from './auth-card-header'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -139,15 +140,11 @@ export default function ResetPasswordForm() {
             className="w-full max-w-md"
         >
             <Card className="border-gold/20 shadow-2xl">
-                <CardHeader className="space-y-1 text-center">
-                    <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-gold-400 to-gold-600 shadow-lg">
-                        <KeyRound className="size-7 text-white" />
-                    </div>
-                    <CardTitle className="text-3xl font-bold">تنظیم رمز عبور جدید</CardTitle>
-                    <CardDescription className="text-base">
-                        رمز عبور جدید خود را وارد کنید
-                    </CardDescription>
-                </CardHeader>
+                <AuthCardHeader
+                    icon={KeyRound}
+                    title="تنظیم رمز عبور جدید"
+                    description="رمز عبور جدید خود را وارد کنید"
+                />
 
                 <form onSubmit={handleSubmit}>
                     <CardContent className="space-y-4">

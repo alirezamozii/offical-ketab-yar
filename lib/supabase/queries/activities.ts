@@ -50,7 +50,7 @@ async function createFriendActivity(data: {
             achievement_id: data.achievement_id || null,
             playlist_id: data.playlist_id || null,
             metadata: data.metadata || {}
-        })
+        } as any)
         .select()
         .single()
 

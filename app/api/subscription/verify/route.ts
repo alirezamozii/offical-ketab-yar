@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
             // Update payment session status
             await supabase
                 .from('payment_sessions')
-                .update({ status: 'failed' })
+                .update({ status: 'failed' } as any)
                 .eq('authority', authority)
 
             return NextResponse.redirect(
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
             .update({
                 status: 'completed',
                 ref_id: verification.refId,
-                verified_at: new Date().toISOString(),
+                verified_at: new Date( as any).toISOString(),
             })
             .eq('authority', authority)
 

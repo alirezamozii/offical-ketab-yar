@@ -1,7 +1,5 @@
 'use client'
 
-import { useGamificationContext } from '@/components/gamification/gamification-provider'
-import { InstallButton } from '@/components/pwa/install-button'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -25,11 +23,7 @@ export function SiteHeader() {
   const pathname = usePathname()
   const router = useRouter()
   const { user, signOut } = useSupabaseAuth()
-  const { level, xp, currentStreak } = useGamificationContext()
   const [libraryHover, setLibraryHover] = useState(false)
-
-  const xpForNextLevel = level * 100
-  const xpProgress = (xp / xpForNextLevel) * 100
 
   const getUserInitials = () => {
     if (!user?.email) return 'U'
@@ -188,57 +182,8 @@ export function SiteHeader() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-3 md:gap-4">
-            {/* PWA Install Button */}
-            <InstallButton />
-
             {user ? (
               <>
-                {/* Gamification Stats */}
-                <div className="hidden lg:flex items-center gap-2">
-                  {/* Streak */}
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass border border-orange-500/20 cursor-pointer"
-                  >
-                    <motion.div
-                      animate={{
-                        scale: [1, 1.15, 1],
-                        rotate: [0, 5, -5, 0]
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      }}
-                    >
-                      <Flame className="h-5 w-5 text-orange-500" />
-                    </motion.div>
-                    <span className="text-base font-bold text-orange-600 dark:text-orange-400">
-                      {currentStreak}
-                    </span>
-                  </motion.div>
-
-                  {/* XP & Level */}
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass border border-primary/30 cursor-pointer"
-                  >
-                    <Zap className="h-5 w-5 text-primary" />
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs font-medium text-muted-foreground leading-none">
-                        سطح {level}
-                      </span>
-                      <Progress
-                        value={xpProgress}
-                        className="h-1.5 w-20"
-                      />
-                    </div>
-                    <span className="text-base font-bold text-primary">
-                      {xp}
-                    </span>
-                  </motion.div>
-                </div>
-
                 <ThemeToggle />
 
                 {/* User Profile Dropdown */}

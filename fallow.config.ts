@@ -4,13 +4,8 @@ export default defineConfig({
     // Entry points for your Next.js application
     entry: [
         'app/**/*.{ts,tsx}',
-        'components/**/*.{ts,tsx}',
-        'lib/**/*.{ts,tsx}',
-        'hooks/**/*.{ts,tsx}',
-        'utils/**/*.{ts,tsx}',
-        'types/**/*.ts',
         'middleware.ts',
-        'next.config.js',
+        'next.config.mjs',
     ],
 
     // Ignore patterns

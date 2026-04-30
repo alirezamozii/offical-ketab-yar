@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
         // Update profile
         const { data: updatedProfile, error: updateError } = await supabase
             .from('profiles')
-            .update(updateData)
+            .update(updateData as any)
             .eq('id', user.id)
             .select()
             .single()

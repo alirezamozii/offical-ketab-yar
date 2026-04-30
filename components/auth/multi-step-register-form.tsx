@@ -1,5 +1,6 @@
 'use client'
 
+import { AuthCardHeader } from './auth-card-header'
 import { AvatarSelector } from '@/components/auth/avatar-selector'
 import { UsernameInput } from '@/components/auth/username-input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -294,40 +295,34 @@ export default function MultiStepRegisterForm() {
             className="w-full max-w-md"
         >
             <Card className="border-gold/30 shadow-2xl backdrop-blur-sm bg-background/95 dark:bg-background/90">
-                <CardHeader className="space-y-2 text-center pb-4">
-                    <motion.div
-                        initial={{ scale: 0, rotate: -180 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                        className="mx-auto mb-1 flex size-14 md:size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gold-400 via-gold-500 to-gold-600 shadow-xl shadow-gold-500/30"
-                    >
-                        <BookOpen className="size-7 md:size-8 text-white" />
-                    </motion.div>
-                    <CardTitle className="text-3xl md:text-4xl font-bold bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-                        ثبت‌نام در کتاب‌یار
-                    </CardTitle>
-                    <CardDescription className="text-sm md:text-base text-muted-foreground">
-                        {currentStep === 1 && 'سفر یادگیری خود را آغاز کنید 🚀'}
-                        {currentStep === 2 && 'اطلاعات پروفایل خود را تکمیل کنید ✨'}
-                        {currentStep === 3 && 'تصویر پروفایل خود را انتخاب کنید 🎨'}
-                    </CardDescription>
-
-                    {/* Step Progress Indicator */}
-                    <div className="flex items-center justify-center gap-2 pt-2">
-                        {[1, 2, 3].map((step) => (
-                            <motion.div
-                                key={step}
-                                initial={false}
-                                animate={{
-                                    scale: currentStep === step ? 1.2 : 1,
-                                    opacity: currentStep >= step ? 1 : 0.3,
-                                }}
-                                className={`h-2 rounded-full transition-all ${currentStep >= step ? 'bg-gold w-8' : 'bg-muted w-2'
-                                    }`}
-                            />
-                        ))}
-                    </div>
-                </CardHeader>
+                <AuthCardHeader
+                    icon={BookOpen}
+                    title="ثبت‌نام در کتاب‌یار"
+                    description={
+                        <div className="space-y-3">
+                            <p>
+                                {currentStep === 1 && 'سفر یادگیری خود را آغاز کنید 🚀'}
+                                {currentStep === 2 && 'اطلاعات پروفایل خود را تکمیل کنید ✨'}
+                                {currentStep === 3 && 'تصویر پروفایل خود را انتخاب کنید 🎨'}
+                            </p>
+                            {/* Step Progress Indicator */}
+                            <div className="flex items-center justify-center gap-2 pt-1">
+                                {[1, 2, 3].map((step) => (
+                                    <motion.div
+                                        key={step}
+                                        initial={false}
+                                        animate={{
+                                            scale: currentStep === step ? 1.2 : 1,
+                                            opacity: currentStep >= step ? 1 : 0.3,
+                                        }}
+                                        className={`h-2 rounded-full transition-all ${currentStep >= step ? 'bg-gold w-8' : 'bg-muted w-2'
+                                            }`}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    }
+                />
 
                 <form onSubmit={(e) => {
                     e.preventDefault()

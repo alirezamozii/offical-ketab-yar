@@ -12,18 +12,13 @@ import { useEffect, useRef, useState } from 'react'
 
 interface BookCardProps {
   book: {
-    id?: string
-    _id?: string
+    id: string
     slug: string
-    title: string | { en: string; fa: string }
-    author?: string | { name: string; slug: string }
-    author_id?: string
-    authors?: { name: string }
-    cover_image?: string | null
-    coverImage?: string | null
+    title: string
+    author: string
+    cover_url?: string | null
     rating?: number | null
-    genre?: string[]
-    genres?: string[]
+    genres?: string[] | null
     read_count?: number
   }
   showReadCount?: boolean
@@ -34,17 +29,17 @@ interface BookCardProps {
 export function BookCard({ book, showReadCount, progress }: BookCardProps) {
   const ref = useRef<HTMLDivElement>(null)
 
-  // Data should already be transformed by parent component
-  const coverImage = book.cover_image || book.coverImage || '/placeholder-book.jpg'
+  // Data is now from Supabase
+  const coverImage = book.cover_url || '/placeholder-book.jpg'
   const bookRating = book.rating || 0
-  const bookGenre = book.genres || book.genre || []
-  const bookId = book.id || book._id || book.slug
+  const bookGenre = book.genres || []
+  const bookId = book.id || book.slug
 
-  // Handle title (Farsi priority)
-  const bookTitle = typeof book.title === 'string' ? book.title : (book.title?.fa || book.title?.en || 'Untitled')
+  // Handle title (Direct string from Supabase)
+  const bookTitle = typeof book.title === 'string' ? book.title : 'Untitled'
 
-  // Handle author
-  const bookAuthor = typeof book.author === 'string' ? book.author : (book.author?.name || 'Unknown Author')
+  // Handle author (Direct string from Supabase)
+  const bookAuthor = typeof book.author === 'string' ? book.author : 'Unknown Author'
 
   // Agent 2 (Performance): Simplified 3D effect - only on desktop, GPU-optimized
   const [enable3D, setEnable3D] = useState(false)
@@ -194,12 +189,10 @@ export function BookCard({ book, showReadCount, progress }: BookCardProps) {
             <p className="text-sm text-warm-muted dark:text-muted-foreground line-clamp-1 font-medium">{bookAuthor}</p>
             {bookGenre.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-1">
-                {bookGenre.slice(0, 2).map((g) => {
-                  const genreName = typeof g === 'string' ? g : (g?.name || g?.nameFa || 'Unknown')
-                  const genreKey = typeof g === 'string' ? g : (g?._id || genreName)
+                {bookGenre.slice(0, 2).map((genreName) => {
                   return (
                     <Badge
-                      key={genreKey}
+                      key={genreName}
                       variant="secondary"
                       className="text-xs px-2.5 py-0.5 bg-gold-500/15 text-gold-800 dark:text-gold-400 border-2 border-gold-500/30 hover:bg-gold-500/25 transition-colors font-semibold"
                     >

@@ -58,21 +58,12 @@ export default function LoginForm() {
             className="w-full max-w-md"
         >
             <Card className="border-gold/30 shadow-2xl backdrop-blur-sm bg-background/95 dark:bg-background/90">
-                <CardHeader className="space-y-2 text-center pb-4">
-                    <motion.div
-                        initial={{ scale: 0, rotate: -180 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                        className="mx-auto mb-1 flex size-14 md:size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gold-400 via-gold-500 to-gold-600 shadow-xl shadow-gold-500/30"
-                    >
-                        <BookOpen className="size-7 md:size-8 text-white" />
-                    </motion.div>
-                    <CardTitle className="text-3xl md:text-4xl font-bold bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-                        خوش آمدید
-                    </CardTitle>
-                    <CardDescription className="text-sm md:text-base text-muted-foreground">
-                        به دنیای کتاب‌های دوزبانه خوش آمدید 📚
-                    </CardDescription>
+                <CardHeader className="space-y-1 text-center">
+                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gold/10">
+                        <BookOpen className="h-6 w-6 text-gold" />
+                    </div>
+                    <CardTitle className="text-2xl font-bold">خوش آمدید</CardTitle>
+                    <CardDescription>به دنیای کتاب‌های دوزبانه خوش آمدید 📚</CardDescription>
                 </CardHeader>
 
                 <form onSubmit={handleSubmit}>
