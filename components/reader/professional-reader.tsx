@@ -358,15 +358,15 @@ export function ProfessionalReader({ book }: ReaderProps) {
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setCurrentLanguage(l => l === 'english' ? 'farsi' : 'english')} className="border px-2">
+            <Button variant="ghost" size="sm" onClick={() => setCurrentLanguage(l => l === 'english' ? 'farsi' : 'english')} className="border px-2" aria-label="Toggle language">
               {currentLanguage === 'english' ? 'EN' : 'FA'}
             </Button>
 
-            <Button variant="ghost" size="sm" onClick={() => setShowSubtitles(!showSubtitles)} className={showSubtitles ? "bg-black/10 dark:bg-white/10" : ""}>
+            <Button variant="ghost" size="sm" onClick={() => setShowSubtitles(!showSubtitles)} className={showSubtitles ? "bg-black/10 dark:bg-white/10" : ""} aria-label="Toggle subtitles" title="Toggle subtitles">
               <Type className="h-4 w-4" />
             </Button>
 
-            <Button variant="ghost" size="sm" onClick={() => { setShowHighlights(!showHighlights); setShowSettings(false); }}>
+            <Button variant="ghost" size="sm" onClick={() => { setShowHighlights(!showHighlights); setShowSettings(false); }} aria-label="Show highlights" title="Show highlights">
               <Highlighter className="h-4 w-4" />
               {highlights.filter(h => h.page === currentPage).length > 0 &&
                 <span className="ml-1 text-xs bg-primary text-primary-foreground px-1.5 rounded-full">
@@ -375,11 +375,11 @@ export function ProfessionalReader({ book }: ReaderProps) {
               }
             </Button>
 
-            <Button variant="ghost" size="sm" onClick={() => setShowChat(!showChat)}>
+            <Button variant="ghost" size="sm" onClick={() => setShowChat(!showChat)} aria-label="AI Chat" title="AI Chat">
               <MessageSquare className="h-4 w-4" />
             </Button>
 
-            <Button variant="ghost" size="sm" onClick={() => { setShowSettings(!showSettings); setShowHighlights(false); }}>
+            <Button variant="ghost" size="sm" onClick={() => { setShowSettings(!showSettings); setShowHighlights(false); }} aria-label="Settings" title="Settings">
               <Settings className="h-4 w-4" />
             </Button>
           </div>
@@ -506,7 +506,7 @@ export function ProfessionalReader({ book }: ReaderProps) {
           >
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold">Settings</h2>
-              <Button variant="ghost" size="icon" onClick={() => setShowSettings(false)}><X /></Button>
+              <Button variant="ghost" size="icon" onClick={() => setShowSettings(false)} aria-label="Close settings" title="Close settings"><X /></Button>
             </div>
             {/* Settings content truncated for brevity - same as before */}
             <div className="space-y-6">
