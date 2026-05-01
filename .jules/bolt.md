@@ -1,0 +1,3 @@
+## 2024-05-19 - Removed unnecessary JSON serialization
+**Learning:** Found unnecessary `JSON.parse(JSON.stringify(books))` in multiple home page components (`recently-added-books.tsx`, `highest-rated-books.tsx`, `most-read-books.tsx`). This adds unnecessary performance overhead and memory usage, as React Server Components can pass plain Javascript objects directly to Client Components without stringification and parsing, provided they are serializable (which they are here: plain arrays of objects).
+**Action:** Remove `JSON.parse(JSON.stringify())` calls and pass the objects directly to Client Components when passing props from Server Components to avoid unnecessary serialization overhead.
