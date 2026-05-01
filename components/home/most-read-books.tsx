@@ -17,14 +17,13 @@ export async function MostReadBooks() {
             author: book.authorName,
         }))
 
-        // Serialize to ensure JSON-safe data for Client Component (Agent 2 - Performance)
-        const serializedBooks = JSON.parse(JSON.stringify(books))
-
+        // We can pass the books array directly since it's already a plain object
+        // Avoid JSON.parse(JSON.stringify(books)) to improve performance by removing unnecessary serialization
         return (
             <BookCarouselSectionClient
                 title="پرخواننده‌ترین کتاب‌ها"
                 description="کتاب‌هایی که بیشترین تعداد خواننده را داشته‌اند"
-                books={serializedBooks}
+                books={books}
                 iconType="trending"
                 viewAllLink="/library?sort=popular"
                 viewAllText="مشاهده همه کتاب‌های محبوب"
