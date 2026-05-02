@@ -133,6 +133,7 @@ export function PlaylistCard({ playlist, userId, isOwner, onUpdate }: PlaylistCa
                             size="icon"
                             onClick={handleFollow}
                             disabled={loading}
+                            aria-label={isFollowing ? 'لغو دنبال کردن پلی‌لیست' : 'دنبال کردن پلی‌لیست'}
                         >
                             <Heart className={`h-4 w-4 ${isFollowing ? 'fill-current' : ''}`} />
                         </Button>
@@ -141,7 +142,7 @@ export function PlaylistCard({ playlist, userId, isOwner, onUpdate }: PlaylistCa
                     {isOwner && (
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
-                                <Button variant="outline" size="icon">
+                                <Button variant="outline" size="icon" aria-label="حذف پلی‌لیست">
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
                             </AlertDialogTrigger>

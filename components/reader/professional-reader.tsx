@@ -506,7 +506,7 @@ export function ProfessionalReader({ book }: ReaderProps) {
           >
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold">Settings</h2>
-              <Button variant="ghost" size="icon" onClick={() => setShowSettings(false)}><X /></Button>
+              <Button variant="ghost" size="icon" onClick={() => setShowSettings(false)} aria-label="Close Settings"><X /></Button>
             </div>
             {/* Settings content truncated for brevity - same as before */}
             <div className="space-y-6">
