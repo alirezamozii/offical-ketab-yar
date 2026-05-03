@@ -248,6 +248,8 @@ export function OfflineSettingsClient() {
                                     <Button
                                         variant="ghost"
                                         size="icon"
+                                        aria-label="حذف کتاب"
+                                        title="حذف کتاب"
                                         onClick={() => handleDeleteBook(book.slug)}
                                         className="flex-shrink-0 text-destructive hover:text-destructive"
                                     >
