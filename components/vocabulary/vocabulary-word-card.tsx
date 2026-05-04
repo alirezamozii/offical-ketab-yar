@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { BookOpen, Check, Trash2, Volume2 } from 'lucide-react'
+import { BookOpen, Check, Loader2, Trash2, Volume2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Word {
@@ -120,6 +120,8 @@ export function VocabularyWordCard({ word, userId }: VocabularyWordCardProps) {
                                     size="sm"
                                     className="h-6 w-6 p-0"
                                     onClick={playPronunciation}
+                                    aria-label="تلفظ کلمه"
+                                    title="تلفظ کلمه"
                                 >
                                     <Volume2 className="w-3 h-3" />
                                 </Button>
@@ -131,8 +133,15 @@ export function VocabularyWordCard({ word, userId }: VocabularyWordCardProps) {
                             size="sm"
                             className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={() => deleteWordMutation.mutate()}
+                            disabled={deleteWordMutation.isPending}
+                            aria-label="حذف کلمه"
+                            title="حذف کلمه"
                         >
-                            <Trash2 className="w-3 h-3 text-destructive" />
+                            {deleteWordMutation.isPending ? (
+                                <Loader2 className="w-3 h-3 animate-spin text-destructive" />
+                            ) : (
+                                <Trash2 className="w-3 h-3 text-destructive" />
+                            )}
                         </Button>
                     </div>
 
