@@ -182,6 +182,7 @@ export function BookCarouselSection({
                                 <Button
                                     onClick={scrollPrev}
                                     size="icon"
+                                    aria-label="اسلاید قبلی"
                                     className="h-12 w-12 rounded-full bg-background/95 backdrop-blur-md border-2 border-gold-500/20 hover:border-gold-500/50 hover:bg-gold-500/10 shadow-xl hover:shadow-2xl transition-all duration-300"
                                 >
                                     <ArrowLeft className="h-5 w-5 text-gold-600" />
@@ -199,6 +200,7 @@ export function BookCarouselSection({
                                 <Button
                                     onClick={scrollNext}
                                     size="icon"
+                                    aria-label="اسلاید بعدی"
                                     className="h-12 w-12 rounded-full bg-background/95 backdrop-blur-md border-2 border-gold-500/20 hover:border-gold-500/50 hover:bg-gold-500/10 shadow-xl hover:shadow-2xl transition-all duration-300"
                                 >
                                     <ArrowRight className="h-5 w-5 text-gold-600" />
