@@ -144,6 +144,7 @@ export function FriendsList({ userId }: FriendsListProps) {
                                     variant="ghost"
                                     size="icon"
                                     disabled={removingId === friend.friend_id}
+                                    aria-label="حذف دوست"
                                 >
                                     <UserMinus className="h-4 w-4" />
                                 </Button>

@@ -183,6 +183,7 @@ export function BookCarouselSection({
                                     onClick={scrollPrev}
                                     size="icon"
                                     className="h-12 w-12 rounded-full bg-background/95 backdrop-blur-md border-2 border-gold-500/20 hover:border-gold-500/50 hover:bg-gold-500/10 shadow-xl hover:shadow-2xl transition-all duration-300"
+                                    aria-label="قبلی"
                                 >
                                     <ArrowLeft className="h-5 w-5 text-gold-600" />
                                 </Button>
@@ -200,6 +201,7 @@ export function BookCarouselSection({
                                     onClick={scrollNext}
                                     size="icon"
                                     className="h-12 w-12 rounded-full bg-background/95 backdrop-blur-md border-2 border-gold-500/20 hover:border-gold-500/50 hover:bg-gold-500/10 shadow-xl hover:shadow-2xl transition-all duration-300"
+                                    aria-label="بعدی"
                                 >
                                     <ArrowRight className="h-5 w-5 text-gold-600" />
                                 </Button>
