@@ -1,0 +1,3 @@
+## 2024-05-17 - Added ARIA labels to ProfessionalReader icon buttons
+**Learning:** Found several icon-only buttons in the ProfessionalReader component (top bar for subtitles, highlights, chat, settings, and back link) that lacked accessible names. When components use Lucide icons without text content or `aria-label`, screen readers may not announce the purpose of the button correctly.
+**Action:** Applied `aria-label` attributes describing the action of the button (e.g. "Toggle settings", "Close settings", "Toggle subtitles") to ensure screen reader compatibility for interactive elements that lack text.
