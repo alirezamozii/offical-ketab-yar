@@ -8,7 +8,7 @@ import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { BookOpen, Eye, Star } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 
 interface BookCardProps {
   book: {
@@ -26,7 +26,8 @@ interface BookCardProps {
   progress?: number
 }
 
-export function BookCard({ book, showReadCount, progress }: BookCardProps) {
+// Agent 2 (Performance): Added React.memo to prevent unnecessary re-renders of cards in grids/carousels
+export const BookCard = memo(function BookCard({ book, showReadCount, progress }: BookCardProps) {
   const ref = useRef<HTMLDivElement>(null)
 
   // Data is now from Supabase
@@ -215,4 +216,4 @@ export function BookCard({ book, showReadCount, progress }: BookCardProps) {
       </Link>
     </motion.div>
   )
-}
+})
