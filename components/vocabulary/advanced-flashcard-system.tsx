@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import React, { useState, useEffect } from 'react'
 
@@ -35,7 +35,12 @@ interface AdvancedFlashcardSystemProps {
   onUpdateStatus: (wordId: string, newStatus: Word['status']) => void
 }
 
-function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus }: AdvancedFlashcardSystemProps) {
+function AdvancedFlashcardSystem({
+  words,
+  userLevel,
+  onComplete,
+  onUpdateStatus,
+}: AdvancedFlashcardSystemProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
   const [shuffledWords, setShuffledWords] = useState<Word[]>([])
@@ -45,7 +50,7 @@ function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus 
     incorrect: 0,
     total: 0,
   })
-  const [reviewMode, setReviewMode] = useState<"all" | "due" | "difficult" | "new">("due")
+  const [reviewMode, setReviewMode] = useState<'all' | 'due' | 'difficult' | 'new'>('due')
   const [progress, setProgress] = useState(0)
   const [confidence, setConfidence] = useState<'low' | 'medium' | 'high' | null>(null)
   const supabase = createClient()
@@ -59,18 +64,18 @@ function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus 
       let filtered = [...words]
 
       // Filter by user level
-      if (userLevel === "beginner") {
-        filtered = filtered.filter(word => word.level === "beginner")
-      } else if (userLevel === "intermediate") {
-        filtered = filtered.filter(word => word.level !== "advanced")
+      if (userLevel === 'beginner') {
+        filtered = filtered.filter(word => word.level === 'beginner')
+      } else if (userLevel === 'intermediate') {
+        filtered = filtered.filter(word => word.level !== 'advanced')
       }
 
       // Filter by review mode
-      if (reviewMode === "due") {
+      if (reviewMode === 'due') {
         filtered = filtered.filter(word => new Date(word.next_review_at) <= new Date())
-      } else if (reviewMode === "difficult") {
-        filtered = filtered.filter(word => word.level === "advanced")
-      } else if (reviewMode === "new") {
+      } else if (reviewMode === 'difficult') {
+        filtered = filtered.filter(word => word.level === 'advanced')
+      } else if (reviewMode === 'new') {
         filtered = filtered.filter(word => word.review_count === 0)
       }
 
@@ -100,7 +105,7 @@ function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus 
       total: 0,
     })
     setConfidence(null)
-    toast.success("جلسه مرور واژگان آغاز شد")
+    toast.success('جلسه مرور واژگان آغاز شد')
   }
 
   // End study session and save stats
@@ -109,24 +114,24 @@ function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus 
       const { data: userData } = await supabase.auth.getUser()
       if (!userData.user) return
 
-      const { error } = await supabase.from("vocabulary_sessions").insert({
+      const { error } = await supabase.from('vocabulary_sessions').insert({
         user_id: userData.user.id,
         words_reviewed: sessionStats.total,
         correct_answers: sessionStats.correct,
         incorrect_answers: sessionStats.incorrect,
-        session_date: new Date( as any).toISOString(),
+        session_date: new Date().toISOString(),
         review_mode: reviewMode,
       })
 
       if (error) throw error
 
       setStudySession(false)
-      toast.success("جلسه مرور واژگان با موفقیت به پایان رسید")
+      toast.success('جلسه مرور واژگان با موفقیت به پایان رسید')
       onComplete()
     } catch (error) {
-      console.error("خطا در ثبت جلسه مرور واژگان:", error)
+      console.error('خطا در ثبت جلسه مرور واژگان:', error)
       setStudySession(false)
-      toast.error("خطا در ثبت جلسه مرور واژگان")
+      toast.error('خطا در ثبت جلسه مرور واژگان')
     }
   }
 
@@ -134,7 +139,7 @@ function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus 
   const handleCorrectAnswer = async () => {
     try {
       const reviewCount = (currentWord.review_count || 0) + 1
-      
+
       // Calculate next review date using spaced repetition
       const nextReviewDays = Math.min(Math.pow(2, reviewCount), 60)
       const nextReviewDate = new Date()
@@ -144,13 +149,13 @@ function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus 
       const newStatus = currentWord.status === 'learning' ? 'reviewing' : 'mastered'
 
       const { error } = await supabase
-        .from("user_words")
+        .from('user_words')
         .update({
           status: newStatus,
-          next_review_at: nextReviewDate.toISOString( as any),
+          next_review_at: nextReviewDate.toISOString(),
           review_count: reviewCount,
         })
-        .eq("id", currentWord.id)
+        .eq('id', currentWord.id)
 
       if (error) throw error
 
@@ -160,12 +165,12 @@ function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus 
         total: sessionStats.total + 1,
       })
 
-      toast.success("پاسخ درست! وضعیت کلمه ارتقا یافت")
+      toast.success('پاسخ درست! وضعیت کلمه ارتقا یافت')
       onUpdateStatus(currentWord.id, newStatus)
       goToNextCard()
     } catch (error) {
-      console.error("خطا در به‌روزرسانی وضعیت کلمه:", error)
-      toast.error("خطا در به‌روزرسانی وضعیت کلمه")
+      console.error('خطا در به‌روزرسانی وضعیت کلمه:', error)
+      toast.error('خطا در به‌روزرسانی وضعیت کلمه')
     }
   }
 
@@ -173,13 +178,13 @@ function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus 
   const handleIncorrectAnswer = async () => {
     try {
       const { error } = await supabase
-        .from("user_words")
+        .from('user_words')
         .update({
           status: 'learning',
-          next_review_at: new Date(Date.now( as any) + 24 * 60 * 60 * 1000).toISOString(),
+          next_review_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
           review_count: (currentWord.review_count || 0) + 1,
         })
-        .eq("id", currentWord.id)
+        .eq('id', currentWord.id)
 
       if (error) throw error
 
@@ -189,12 +194,12 @@ function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus 
         total: sessionStats.total + 1,
       })
 
-      toast.error("پاسخ نادرست! کلمه به وضعیت یادگیری بازگشت")
+      toast.error('پاسخ نادرست! کلمه به وضعیت یادگیری بازگشت')
       onUpdateStatus(currentWord.id, 'learning')
       goToNextCard()
     } catch (error) {
-      console.error("خطا در به‌روزرسانی وضعیت کلمه:", error)
-      toast.error("خطا در به‌روزرسانی وضعیت کلمه")
+      console.error('خطا در به‌روزرسانی وضعیت کلمه:', error)
+      toast.error('خطا در به‌روزرسانی وضعیت کلمه')
     }
   }
 
@@ -242,9 +247,9 @@ function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus 
           <div className="space-y-4 text-center">
             <h3 className="text-xl font-bold">هیچ کلمه‌ای برای مرور وجود ندارد</h3>
             <p className="text-muted-foreground">
-              {reviewMode === "due" 
-                ? "همه کلمات مرور شده‌اند. بعداً دوباره تلاش کنید."
-                : "کلمه‌ای با معیارهای انتخاب شده یافت نشد."}
+              {reviewMode === 'due'
+                ? 'همه کلمات مرور شده‌اند. بعداً دوباره تلاش کنید.'
+                : 'کلمه‌ای با معیارهای انتخاب شده یافت نشد.'}
             </p>
           </div>
         </CardContent>
@@ -259,12 +264,15 @@ function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus 
           <div className="space-y-6">
             <div className="text-center">
               <h3 className="text-xl font-bold">سیستم فلش‌کارت پیشرفته</h3>
-              <p className="text-muted-foreground mt-2">
+              <p className="mt-2 text-muted-foreground">
                 با استفاده از سیستم فلش‌کارت پیشرفته، واژگان خود را به صورت مؤثر مرور کنید.
               </p>
             </div>
 
-            <Tabs value={reviewMode} onValueChange={(value: string) => setReviewMode(value as typeof reviewMode)}>
+            <Tabs
+              value={reviewMode}
+              onValueChange={(value: string) => setReviewMode(value as typeof reviewMode)}
+            >
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="all">همه</TabsTrigger>
                 <TabsTrigger value="due">نیازمند مرور</TabsTrigger>
@@ -288,10 +296,15 @@ function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus 
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Button variant="outline" size="icon" onClick={() => playPronunciation()}>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => playPronunciation()}
+                aria-label="پخش تلفظ"
+              >
                 <Volume2 className="size-4" />
               </Button>
-              <div className="text-muted-foreground text-sm">
+              <div className="text-sm text-muted-foreground">
                 {currentIndex + 1} از {shuffledWords.length}
               </div>
             </div>
@@ -302,20 +315,20 @@ function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus 
             role="button"
             tabIndex={0}
             onClick={() => setIsFlipped(!isFlipped)}
-            onKeyDown={(e) => {
+            onKeyDown={e => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault()
                 setIsFlipped(!isFlipped)
               }
             }}
             className={cn(
-              "relative h-64 w-full cursor-pointer rounded-xl bg-white p-6 shadow-lg transition-transform duration-500",
-              isFlipped && "rotate-y-180"
+              'relative h-64 w-full cursor-pointer rounded-xl bg-white p-6 shadow-lg transition-transform duration-500',
+              isFlipped && 'rotate-y-180'
             )}
           >
             <AnimatePresence initial={false} mode="wait">
               <motion.div
-                key={isFlipped ? "back" : "front"}
+                key={isFlipped ? 'back' : 'front'}
                 initial={{ rotateY: isFlipped ? -90 : 90, opacity: 0 }}
                 animate={{ rotateY: 0, opacity: 1 }}
                 exit={{ rotateY: isFlipped ? 90 : -90, opacity: 0 }}
@@ -328,7 +341,7 @@ function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus 
                       <React.Fragment>
                         <p className="text-2xl font-bold">{currentWord.meaning}</p>
                         {currentWord.explanation && (
-                          <p className="text-muted-foreground text-sm">{currentWord.explanation}</p>
+                          <p className="text-sm text-muted-foreground">{currentWord.explanation}</p>
                         )}
                         {currentWord.example && (
                           <p className="text-sm italic">Example: {currentWord.example}</p>
@@ -353,7 +366,7 @@ function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus 
             <Button variant="outline" onClick={goToPrevCard} disabled={currentIndex === 0}>
               <ArrowLeft className="size-4" />
             </Button>
-            
+
             <div className="flex space-x-2">
               <Button
                 variant="destructive"
@@ -421,7 +434,7 @@ function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus 
           )}
 
           {studySession && (
-            <div className="text-muted-foreground flex justify-between text-sm">
+            <div className="flex justify-between text-sm text-muted-foreground">
               <div>درست: {sessionStats.correct}</div>
               <div>نادرست: {sessionStats.incorrect}</div>
               <div>کل: {sessionStats.total}</div>
