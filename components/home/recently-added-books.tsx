@@ -24,14 +24,14 @@ export async function RecentlyAddedBooks() {
             isPremium: book.isPremium || false,
         }))
 
-        // Serialize to ensure JSON-safe data for Client Component (Agent 2 - Performance)
-        const serializedBooks = JSON.parse(JSON.stringify(books))
-
+        // ⚡ Bolt: Next.js App Router natively serializes plain objects.
+        // Removed JSON.parse(JSON.stringify()) anti-pattern to avoid redundant CPU overhead.
+        // Expected impact: Faster initial render time on the server.
         return (
             <BookCarouselSectionClient
                 title="جدیدترین کتاب‌ها"
                 description="تازه‌ترین کتاب‌های اضافه شده به کتابخانه"
-                books={serializedBooks}
+                books={books}
                 iconType="sparkles"
                 viewAllLink="/library?sort=newest"
                 viewAllText="مشاهده همه کتاب‌های جدید"
