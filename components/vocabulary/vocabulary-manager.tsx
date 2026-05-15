@@ -282,7 +282,7 @@ export function VocabularyManager({ userId }: VocabularyManagerProps) {
                               <div className="p-4">
                                 <div className="mb-2 flex items-center justify-between">
                                   <h3 className="text-lg font-bold">{word.word}</h3>
-                                  <Button variant="ghost" size="icon" onClick={() => playPronunciation(word.word)}>
+                                  <Button variant="ghost" size="icon" onClick={() => playPronunciation(word.word)} aria-label="تلفظ">
                                     <Volume2 className="size-4" />
                                     <span className="sr-only">تلفظ</span>
                                   </Button>
