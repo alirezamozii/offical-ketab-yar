@@ -1,0 +1,3 @@
+## 2026-05-15 - Deduplicating Local Hook State in Repeated Components
+**Learning:** Using `useState` and `useEffect` directly in a hook (e.g., `useLikedBooks`) that gets called by components rendered in a list (like `BookCard`) creates an N+1 query problem. Each card mounts, runs its own effect, and fires an identical network request, flooding the backend and causing major performance degradation.
+**Action:** Use a shared state manager like Zustand to store the state globally. Initialize the data fetch exactly once by wrapping the fetch call in a module-level deduplication Promise, ensuring that even if 20 components mount simultaneously, only one network request is dispatched.
