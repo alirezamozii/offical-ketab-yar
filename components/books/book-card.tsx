@@ -8,7 +8,7 @@ import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { BookOpen, Eye, Star } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 interface BookCardProps {
   book: {
@@ -26,7 +26,7 @@ interface BookCardProps {
   progress?: number
 }
 
-export function BookCard({ book, showReadCount, progress }: BookCardProps) {
+function BookCardComponent({ book, showReadCount, progress }: BookCardProps) {
   const ref = useRef<HTMLDivElement>(null)
 
   // Data is now from Supabase
@@ -49,8 +49,8 @@ export function BookCard({ book, showReadCount, progress }: BookCardProps) {
   const mouseXSpring = useSpring(x, { stiffness: 300, damping: 30 })
   const mouseYSpring = useSpring(y, { stiffness: 300, damping: 30 })
 
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["5deg", "-5deg"])
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-5deg", "5deg"])
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ['5deg', '-5deg'])
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ['-5deg', '5deg'])
 
   // Agent 2: Only enable 3D on desktop (performance)
   useEffect(() => {
@@ -80,28 +80,32 @@ export function BookCard({ book, showReadCount, progress }: BookCardProps) {
   return (
     <motion.div
       ref={ref}
-      style={enable3D ? {
-        rotateX,
-        rotateY,
-        transformStyle: "preserve-3d",
-      } : {}}
+      style={
+        enable3D
+          ? {
+              rotateX,
+              rotateY,
+              transformStyle: 'preserve-3d',
+            }
+          : {}
+      }
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       whileHover={{ scale: 1.05 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-      className={enable3D ? "perspective-1000" : ""}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className={enable3D ? 'perspective-1000' : ''}
     >
       <Link href={`/books/${book.slug}`}>
-        <Card className="group relative overflow-hidden hover:shadow-2xl hover:shadow-gold-500/20 transition-all duration-500 border-2 border-warm hover:border-gold-500/50 cursor-pointer h-full bg-card dark:bg-card/50 dark:border-gold-500/20 dark:hover:border-gold-500/40 backdrop-blur-sm shadow-md hover:shadow-xl">
+        <Card className="border-warm group relative h-full cursor-pointer overflow-hidden border-2 bg-card shadow-md backdrop-blur-sm transition-all duration-500 hover:border-gold-500/50 hover:shadow-2xl hover:shadow-xl hover:shadow-gold-500/20 dark:border-gold-500/20 dark:bg-card/50 dark:hover:border-gold-500/40">
           {/* Shine effect */}
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] translate-y-[-100%] group-hover:translate-x-[100%] group-hover:translate-y-[100%] transition-transform duration-1000" />
+          <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+            <div className="absolute inset-0 translate-x-[-100%] translate-y-[-100%] bg-gradient-to-tr from-transparent via-white/10 to-transparent transition-transform duration-1000 group-hover:translate-x-[100%] group-hover:translate-y-[100%]" />
           </div>
 
           {/* Like button (Agent 3: Collection Psychology) */}
           <div
-            className="absolute top-3 left-3 z-20 opacity-0 group-hover:opacity-100 transition-all duration-300"
-            onClick={(e) => e.preventDefault()}
+            className="absolute left-3 top-3 z-20 opacity-0 transition-all duration-300 group-hover:opacity-100"
+            onClick={e => e.preventDefault()}
           >
             <LikeButton
               book={{
@@ -112,22 +116,22 @@ export function BookCard({ book, showReadCount, progress }: BookCardProps) {
               }}
               variant="ghost"
               size="icon"
-              className="w-9 h-9 rounded-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-lg border border-white/20 hover:bg-white hover:dark:bg-gray-900"
+              className="h-9 w-9 rounded-full border border-white/20 bg-white/95 shadow-lg backdrop-blur-md hover:bg-white dark:bg-gray-900/95 hover:dark:bg-gray-900"
             />
           </div>
 
           <CardContent className="p-0">
-            <div className="relative aspect-[2/3] overflow-hidden bg-gradient-to-br from-warm-100 via-warm-50 to-card dark:from-gray-800 dark:via-gray-850 dark:to-gray-900">
+            <div className="dark:via-gray-850 relative aspect-[2/3] overflow-hidden bg-gradient-to-br from-warm-100 via-warm-50 to-card dark:from-gray-800 dark:to-gray-900">
               <Image
                 src={coverImage}
                 alt={bookTitle}
                 fill
-                className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                 sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
               />
 
               {/* Gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
               {/* Progress bar for continue reading */}
               {progress !== undefined && progress > 0 && (
@@ -145,7 +149,7 @@ export function BookCard({ book, showReadCount, progress }: BookCardProps) {
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.3 }}
-                  className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 backdrop-blur-md border border-white/10"
+                  className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full border border-white/10 bg-black/70 px-3 py-1.5 backdrop-blur-md"
                 >
                   <Star className="h-3.5 w-3.5 fill-gold-400 text-gold-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.5)]" />
                   <span className="text-sm font-bold text-white">{bookRating.toFixed(1)}</span>
@@ -153,15 +157,15 @@ export function BookCard({ book, showReadCount, progress }: BookCardProps) {
               )}
 
               {/* Quick stats - shown on hover */}
-              <div className="absolute top-14 right-3 space-y-2 opacity-0 group-hover:opacity-100 transition-all duration-300 delay-100">
+              <div className="absolute right-3 top-14 space-y-2 opacity-0 transition-all delay-100 duration-300 group-hover:opacity-100">
                 {showReadCount && book.read_count && (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/10 text-xs text-white">
+                  <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/70 px-2.5 py-1 text-xs text-white backdrop-blur-md">
                     <Eye className="h-3 w-3" />
                     <span>{book.read_count}</span>
                   </div>
                 )}
                 {progress !== undefined && progress > 0 && (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/10 text-xs text-white">
+                  <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/70 px-2.5 py-1 text-xs text-white backdrop-blur-md">
                     <BookOpen className="h-3 w-3" />
                     <span>{Math.round(progress)}%</span>
                   </div>
@@ -169,11 +173,11 @@ export function BookCard({ book, showReadCount, progress }: BookCardProps) {
               </div>
 
               {/* CTA Button */}
-              <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out">
+              <div className="absolute bottom-0 left-0 right-0 translate-y-full p-3 transition-transform duration-500 ease-out group-hover:translate-y-0">
                 <Button
-                  className="w-full bg-gradient-to-r from-gold-600 via-gold-500 to-gold-600 hover:from-gold-700 hover:via-gold-600 hover:to-gold-700 text-white shadow-xl shadow-gold-500/30 border-0 h-10 font-semibold"
+                  className="h-10 w-full border-0 bg-gradient-to-r from-gold-600 via-gold-500 to-gold-600 font-semibold text-white shadow-xl shadow-gold-500/30 hover:from-gold-700 hover:via-gold-600 hover:to-gold-700"
                   size="sm"
-                  onClick={(e) => e.preventDefault()}
+                  onClick={e => e.preventDefault()}
                 >
                   <BookOpen className="ml-2 h-4 w-4" />
                   مشاهده جزئیات
@@ -182,19 +186,21 @@ export function BookCard({ book, showReadCount, progress }: BookCardProps) {
             </div>
           </CardContent>
 
-          <CardFooter className="flex flex-col items-start p-4 gap-2.5 bg-gradient-to-b from-card to-warm-50 dark:from-card dark:to-card/80 border-t-2 border-warm dark:border-border/50">
-            <h3 className="font-bold text-base line-clamp-2 text-warm-foreground group-hover:text-gold-600 dark:text-foreground transition-colors leading-snug">
+          <CardFooter className="border-warm flex flex-col items-start gap-2.5 border-t-2 bg-gradient-to-b from-card to-warm-50 p-4 dark:border-border/50 dark:from-card dark:to-card/80">
+            <h3 className="text-warm-foreground line-clamp-2 text-base font-bold leading-snug transition-colors group-hover:text-gold-600 dark:text-foreground">
               {bookTitle}
             </h3>
-            <p className="text-sm text-warm-muted dark:text-muted-foreground line-clamp-1 font-medium">{bookAuthor}</p>
+            <p className="text-warm-muted line-clamp-1 text-sm font-medium dark:text-muted-foreground">
+              {bookAuthor}
+            </p>
             {bookGenre.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-1">
-                {bookGenre.slice(0, 2).map((genreName) => {
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {bookGenre.slice(0, 2).map(genreName => {
                   return (
                     <Badge
                       key={genreName}
                       variant="secondary"
-                      className="text-xs px-2.5 py-0.5 bg-gold-500/15 text-gold-800 dark:text-gold-400 border-2 border-gold-500/30 hover:bg-gold-500/25 transition-colors font-semibold"
+                      className="border-2 border-gold-500/30 bg-gold-500/15 px-2.5 py-0.5 text-xs font-semibold text-gold-800 transition-colors hover:bg-gold-500/25 dark:text-gold-400"
                     >
                       {genreName}
                     </Badge>
@@ -203,7 +209,7 @@ export function BookCard({ book, showReadCount, progress }: BookCardProps) {
                 {bookGenre.length > 2 && (
                   <Badge
                     variant="secondary"
-                    className="text-xs px-2 py-0.5 bg-muted text-muted-foreground border border-border"
+                    className="border border-border bg-muted px-2 py-0.5 text-xs text-muted-foreground"
                   >
                     +{bookGenre.length - 2}
                   </Badge>
@@ -216,3 +222,19 @@ export function BookCard({ book, showReadCount, progress }: BookCardProps) {
     </motion.div>
   )
 }
+
+// Agent 2 (Performance): Memoize to prevent unnecessary re-renders in carousels and grids
+export const BookCard = React.memo(BookCardComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.showReadCount === nextProps.showReadCount &&
+    prevProps.showProgress === nextProps.showProgress &&
+    prevProps.progress === nextProps.progress &&
+    prevProps.book.id === nextProps.book.id &&
+    prevProps.book.slug === nextProps.book.slug &&
+    prevProps.book.title === nextProps.book.title &&
+    prevProps.book.author === nextProps.book.author &&
+    prevProps.book.cover_url === nextProps.book.cover_url &&
+    prevProps.book.rating === nextProps.book.rating &&
+    prevProps.book.read_count === nextProps.book.read_count
+  )
+})
