@@ -1,0 +1,3 @@
+## 2026-05-17 - Memoize highly reused BookCard components in Carousels
+**Learning:** In Next.js App Router, using Client Components with extensive lists or carousels (like `BookCarouselSection`) that re-render frequently can cause severe performance issues if the list items (like `BookCard`) themselves are expensive to render (3D motion effects, multiple icons).
+**Action:** Always wrap highly-reused, complex list item components in `React.memo`, especially if they are nested inside carousels or grids that might update their own states (like scroll indices or hover states). If passing complex props like objects, implement a custom `areEqual` function to avoid unnecessary re-renders from shallow prop mismatch.
