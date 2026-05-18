@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { useDebounce } from '@/hooks/use-debounce'
 
 interface VocabularyWord {
     id: string
@@ -34,6 +35,10 @@ function WordsListContent() {
     const [filteredWords, setFilteredWords] = useState<VocabularyWord[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
+
+    // ⚡ Bolt: Debounce the search query to prevent filtering on every keystroke
+    const debouncedSearchQuery = useDebounce(searchQuery, 300)
+
     const supabase = createClient()
 
     useEffect(() => {
@@ -42,7 +47,7 @@ function WordsListContent() {
 
     useEffect(() => {
         filterWords()
-    }, [words, searchQuery])
+    }, [words, debouncedSearchQuery])
 
     const loadWords = async () => {
         try {
@@ -82,15 +87,15 @@ function WordsListContent() {
     }
 
     const filterWords = () => {
-        if (!searchQuery) {
+        if (!debouncedSearchQuery) {
             setFilteredWords(words)
             return
         }
 
         const filtered = words.filter(w =>
-            w.word.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            w.definition.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            w.translation.includes(searchQuery)
+            w.word.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+            w.definition.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+            w.translation.includes(debouncedSearchQuery)
         )
         setFilteredWords(filtered)
     }
