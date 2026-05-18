@@ -1,0 +1,3 @@
+## 2026-05-18 - Accessible Interactive Cards
+**Learning:** Icon-only interactive elements inside heavily used card components (like playlist cards) are prone to feeling unresponsive during network delays, causing user confusion. Without loading states, users might click multiple times. Without aria-labels, screen reader users miss crucial interactive context.
+**Action:** Always wrap async actions on icon-only buttons with visual loading indicators (e.g. `Loader2` spinner) and ensure they have precise `aria-label` attributes that update dynamically based on the current state (e.g., "Follow" vs "Unfollow").
