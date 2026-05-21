@@ -1,0 +1,3 @@
+## 2026-05-21 - Removed Unnecessary Object Serialization
+**Learning:** In Next.js App Router, passing plain JavaScript objects (without Dates, functions, or undefined values) from Server Components to Client Components does not require using `JSON.parse(JSON.stringify(data))`. The framework handles serialization directly, making manual serialization a pure performance anti-pattern.
+**Action:** Always pass plain objects directly from Server Components to Client Components. Only use serialization workarounds when dealing with types that Next.js cannot natively serialize across the network boundary, though plain objects like those from a database query map typically serialize just fine.
