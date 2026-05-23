@@ -1,0 +1,3 @@
+## 2026-05-23 - Remove redundant JSON.parse(JSON.stringify) for Next.js props
+**Learning:** Passing plain JavaScript objects (without Dates or functions) from Server Components to Client Components in Next.js App Router does not require `JSON.parse(JSON.stringify(data))`. Using it when unnecessary is a performance anti-pattern as it wastes CPU cycles and memory on redundant serialization/deserialization.
+**Action:** Avoid using `JSON.parse(JSON.stringify())` when passing data to Client Components unless explicitly dealing with complex objects like `Date` or custom classes that Next.js cannot serialize natively.
