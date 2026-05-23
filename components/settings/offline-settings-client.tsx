@@ -20,6 +20,7 @@ import {
     AlertCircle,
     BookOpen,
     HardDrive,
+    Loader2,
     RefreshCw,
     Trash2,
 } from 'lucide-react'
@@ -43,6 +44,7 @@ export function OfflineSettingsClient() {
         percentage: 0,
     })
     const [isLoading, setIsLoading] = useState(true)
+    const [deletingId, setDeletingId] = useState<string | null>(null)
     const { toast } = useToast()
     const { isSyncing, queueSize, syncNow } = useOfflineSync()
 
@@ -78,13 +80,15 @@ export function OfflineSettingsClient() {
     }
 
     const handleDeleteBook = async (bookId: string) => {
+        if (deletingId) return;
+        setDeletingId(bookId)
         try {
             await deleteBookOffline(bookId)
             toast({
                 title: 'حذف شد',
                 description: 'کتاب از حافظه آفلاین حذف شد',
             })
-            loadData()
+            await loadData()
         } catch (err) {
             console.error('Failed to delete offline book:', err)
             toast({
@@ -92,6 +96,8 @@ export function OfflineSettingsClient() {
                 description: 'حذف کتاب با مشکل مواجه شد',
                 variant: 'destructive',
             })
+        } finally {
+            setDeletingId(null)
         }
     }
 
@@ -249,9 +255,15 @@ export function OfflineSettingsClient() {
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => handleDeleteBook(book.slug)}
+                                        disabled={deletingId === book.slug}
+                                        aria-label={`حذف ${book.title.fa || book.title.en} از حافظه آفلاین`}
                                         className="flex-shrink-0 text-destructive hover:text-destructive"
                                     >
-                                        <Trash2 className="h-4 w-4" />
+                                        {deletingId === book.slug ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <Trash2 className="h-4 w-4" />
+                                        )}
                                     </Button>
                                 </motion.div>
                             ))}
