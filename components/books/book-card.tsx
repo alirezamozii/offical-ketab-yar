@@ -8,7 +8,7 @@ import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { BookOpen, Eye, Star } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 
 interface BookCardProps {
   book: {
@@ -26,7 +26,7 @@ interface BookCardProps {
   progress?: number
 }
 
-export function BookCard({ book, showReadCount, progress }: BookCardProps) {
+function BookCardInner({ book, showReadCount, progress }: BookCardProps) {
   const ref = useRef<HTMLDivElement>(null)
 
   // Data is now from Supabase
@@ -216,3 +216,7 @@ export function BookCard({ book, showReadCount, progress }: BookCardProps) {
     </motion.div>
   )
 }
+
+// Agent 2 (Performance): Memoize the card to prevent re-renders when parent lists
+// update their state (e.g. hover tracking in BookCarouselSection)
+export const BookCard = memo(BookCardInner)

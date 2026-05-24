@@ -8,6 +8,7 @@ import { motion } from 'framer-motion'
 import { BookOpen, Calendar, Star, User } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { memo } from 'react'
 
 interface BookListItemProps {
     book: BookListItem
@@ -18,7 +19,7 @@ interface BookListItemProps {
  * Agent 3 (Psychology): Premium list view with all book details
  * Agent 2 (Performance): Optimized images and animations
  */
-export function BookListItemComponent({ book }: BookListItemProps) {
+function BookListItemInner({ book }: BookListItemProps) {
     const bookTitleFa = book.title
     const authorName = book.author || 'Unknown Author'
     const coverImage = book.cover_url || '/placeholder-book.png'
@@ -169,3 +170,6 @@ export function BookListItemComponent({ book }: BookListItemProps) {
         </motion.div>
     )
 }
+
+// Agent 2 (Performance): Memoize the card to prevent re-renders when parent lists update
+export const BookListItemComponent = memo(BookListItemInner)
