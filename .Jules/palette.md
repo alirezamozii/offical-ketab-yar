@@ -1,0 +1,3 @@
+## 2024-05-25 - Accessibility improvements for playlist actions
+**Learning:** Icon-only buttons used for primary interactions (like following or deleting a playlist) lack context for screen readers and can be ambiguous without visible labels. Adding dynamic `aria-label` attributes based on state ensures that users relying on assistive technologies understand the action, and providing a visual loading state prevents multiple submissions.
+**Action:** Always add descriptive, state-dependent `aria-label` attributes to icon-only buttons. When the button triggers an async operation, swap the icon with a `Loader2` to provide immediate visual feedback while disabling the button.
