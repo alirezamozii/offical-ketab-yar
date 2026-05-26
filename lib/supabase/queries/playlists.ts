@@ -59,7 +59,7 @@ async function updatePlaylist(id: string, data: PlaylistUpdate) {
 
     const { data: playlist, error } = await supabase
         .from('book_playlists')
-        .update({ ...data, updated_at: new Date( as any).toISOString() })
+        .update({ ...data, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
         .single()
