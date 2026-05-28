@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { deletePlaylist, followPlaylist, unfollowPlaylist, type PlaylistWithBooks } from '@/lib/supabase/queries/playlists'
 import { motion } from 'framer-motion'
-import { Eye, Globe, Heart, List, Lock, Trash2, Users } from 'lucide-react'
+import { Eye, Globe, Heart, List, Loader2, Lock, Trash2, Users } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -133,15 +133,24 @@ export function PlaylistCard({ playlist, userId, isOwner, onUpdate }: PlaylistCa
                             size="icon"
                             onClick={handleFollow}
                             disabled={loading}
+                            aria-label={isFollowing ? `لغو دنبال کردن پلی‌لیست ${playlist.name}` : `دنبال کردن پلی‌لیست ${playlist.name}`}
                         >
-                            <Heart className={`h-4 w-4 ${isFollowing ? 'fill-current' : ''}`} />
+                            {loading ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <Heart className={`h-4 w-4 ${isFollowing ? 'fill-current' : ''}`} />
+                            )}
                         </Button>
                     )}
 
                     {isOwner && (
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
-                                <Button variant="outline" size="icon">
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    aria-label={`حذف پلی‌لیست ${playlist.name}`}
+                                >
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
                             </AlertDialogTrigger>

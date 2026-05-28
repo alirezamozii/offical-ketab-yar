@@ -1,0 +1,3 @@
+## 2026-05-28 - Contextual ARIA labels and loading states for async icon-only buttons
+**Learning:** When using icon-only buttons in lists or cards (e.g. Playlist cards with follow/delete actions), static ARIA labels like 'Delete' are insufficient for screen readers as they lack context about *which* item is being deleted. Furthermore, missing loading states on async actions (like Follow/Unfollow) leads to poor UX as users don't know if their click registered.
+**Action:** Always interpolate the item's name or title into the `aria-label` (e.g., `aria-label={\`حذف پلی‌لیست ${playlist.name}\`}`). For async operations on icon buttons, conditionally replace the icon with a loading spinner (`<Loader2 className="h-4 w-4 animate-spin" />`) while the action is in progress.
