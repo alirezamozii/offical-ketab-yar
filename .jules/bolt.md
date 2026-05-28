@@ -1,0 +1,3 @@
+## 2024-05-28 - Derived State Search Anti-Pattern
+**Learning:** Using `useEffect` + `useState` to manually keep a `filteredItems` array in sync with a search input is a significant performance anti-pattern. It causes a double-render on every keystroke: one for the `setSearchQuery` state update, and a second one when the `useEffect` fires and calls `setFilteredItems`. Additionally, if there is no debouncing, it will block the main thread trying to filter large arrays on every single keystroke.
+**Action:** Always prefer `useMemo` for derived filtering state combined with a `useDebounce` hook. This reduces re-renders to only occur once per keystroke, and delays the actual expensive filtering operation until the user has stopped typing.
