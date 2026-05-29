@@ -22,7 +22,8 @@ import {
     Zap
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+import { useDebounce } from '@/hooks/use-debounce'
 
 const categories = [
     {
@@ -157,15 +158,22 @@ const categories = [
 
 export function HelpClient() {
     const [searchQuery, setSearchQuery] = useState('')
+    // ⚡ Bolt: Debounce the search query to avoid blocking the main thread while typing
+    const debouncedSearchQuery = useDebounce(searchQuery, 300)
 
-    const filteredCategories = categories.map(category => ({
-        ...category,
-        faqs: category.faqs.filter(
-            faq =>
-                faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-    })).filter(category => category.faqs.length > 0)
+    // ⚡ Bolt: Memoize the filtered categories array to avoid expensive recalculations on every render
+    const filteredCategories = useMemo(() => {
+        if (!debouncedSearchQuery) return categories
+
+        return categories.map(category => ({
+            ...category,
+            faqs: category.faqs.filter(
+                faq =>
+                    faq.question.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+                    faq.answer.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+            )
+        })).filter(category => category.faqs.length > 0)
+    }, [debouncedSearchQuery])
 
     // JSON-LD FAQPage Schema for SEO (Agent 1)
     const faqSchema = {
