@@ -1,0 +1,3 @@
+## 2024-05-24 - Optimizing search with useDebounce and useMemo
+**Learning:** The application uses `useState` to store a list, another `useState` to store the search query, and an `useEffect` block or manual map/filter logic during render to derive filtered results. This triggers excessive re-renders during rapid keystrokes, which creates performance bottlenecks.
+**Action:** Introduce `hooks/use-debounce.ts` to decouple the UI search input from the derived list filtering logic. Use `useMemo` and the debounced search query to instantly provide an optimized search filtering process without triggering multiple unnecessary re-renders in list components like `app/vocabulary/words/page.tsx` and `components/help/help-client.tsx`.
