@@ -1,0 +1,3 @@
+## 2024-05-18 - Missing Accessible Names on Async Icon Buttons
+**Learning:** Icon-only buttons used for async actions (like Follow/Unfollow) frequently lack both clear accessible names (ARIA labels) and visual loading states in this app. Relying solely on the context or tooltips is insufficient for screen readers and leaves users uncertain during network delays.
+**Action:** Always provide state-dependent `aria-label` attributes on icon-only buttons (e.g., toggling between 'Follow' and 'Unfollow' based on state) and wrap the icon rendering in a loading condition that displays a spinner like `Loader2` to immediately acknowledge user interaction.
