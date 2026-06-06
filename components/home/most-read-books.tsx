@@ -17,14 +17,15 @@ export async function MostReadBooks() {
             author: book.authorName,
         }))
 
-        // Serialize to ensure JSON-safe data for Client Component (Agent 2 - Performance)
-        const serializedBooks = JSON.parse(JSON.stringify(books))
+        // Performance optimization: removed JSON.parse(JSON.stringify())
+        // In Next.js App Router, plain JS objects passed from Server to Client
+        // Components don't require manual serialization
 
         return (
             <BookCarouselSectionClient
                 title="پرخواننده‌ترین کتاب‌ها"
                 description="کتاب‌هایی که بیشترین تعداد خواننده را داشته‌اند"
-                books={serializedBooks}
+                books={books}
                 iconType="trending"
                 viewAllLink="/library?sort=popular"
                 viewAllText="مشاهده همه کتاب‌های محبوب"
