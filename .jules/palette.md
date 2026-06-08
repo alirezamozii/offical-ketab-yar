@@ -1,0 +1,4 @@
+
+## 2024-06-08 - Added ARIA labels and loading states to vocabulary word actions
+**Learning:** Found that the main interactive items in lists (like the vocabulary words page) lacked semantic context for screen readers on their icon-only buttons (`Trash2`, `Volume2`). It's crucial to append the specific dynamic data (e.g., the exact word name) to the `aria-label` attribute (e.g., `aria-label={"حذف " + word.word}`) rather than generic static text, making list iteration accessible. I also found that simulating isolated components in a temporary page layout works very well for UI verification when mocking complex database flows is difficult.
+**Action:** When working on lists or cards that repeat, always ensure icon-only actions have specific and descriptive `aria-label` attributes tying them to their unique list item. Always wrap async actions for these items with dynamic `Loader2` states.
