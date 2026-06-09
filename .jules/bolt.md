@@ -1,0 +1,3 @@
+## 2024-06-09 - Avoid JSON.parse(JSON.stringify) for Server-to-Client Component data
+**Learning:** Passing plain JavaScript objects (without Dates or functions) from Server Components to Client Components in Next.js App Router does not require manual stringification with `JSON.parse(JSON.stringify(data))`. Doing so is a performance anti-pattern because the App Router already handles serialization for plain objects automatically, so doing it manually just adds CPU overhead and delays rendering.
+**Action:** Next time I see `JSON.parse(JSON.stringify())` used on plain objects passed to Client Components, I will remove it.
