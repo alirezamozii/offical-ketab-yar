@@ -1,0 +1,3 @@
+## 2025-03-09 - Icon-only Button Accessibility
+**Learning:** Found that multiple components (like playlist-card) had icon-only buttons for critical actions like follow and delete that lacked `aria-label`s, making them invisible to screen readers. Additionally, async icon actions lacked visual loading feedback, leaving users unsure if their click was registered.
+**Action:** Always add dynamic and descriptive `aria-label` attributes to icon-only buttons, especially for stateful actions (e.g. "دنبال کردن" vs "لغو دنبال کردن"). Always render a `Loader2` instead of the icon while loading to provide clear visual feedback for async actions.
