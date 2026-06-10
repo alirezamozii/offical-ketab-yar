@@ -1,0 +1,3 @@
+## 2026-06-10 - Unnecessary JSON serialization in Next.js Server Components
+**Learning:** Next.js App Router already natively serializes plain JavaScript objects (including arrays of objects without functions/dates) when passing props from Server Components to Client Components. Manually calling `JSON.parse(JSON.stringify(data))` beforehand is a performance anti-pattern that creates unnecessary runtime parsing and stringification overhead without adding any safety.
+**Action:** Pass plain objects/arrays directly from Server Components to Client Components without manual stringification. Only implement custom serialization if the object contains unsupported types (like `Date` objects or custom classes) that specifically require parsing into string/primitive equivalents.
