@@ -1,0 +1,3 @@
+## 2024-06-13 - Double Renders on Derived State (Lists and Search)
+**Learning:** Derived state, like filtering lists for search inputs or tabs, should not be kept in a separate `useState` and manually synchronized using `useEffect`. This approach causes unnecessary double-renders (one for data update, one for filter sync) and degrades UX on rapid events like keystrokes.
+**Action:** Always prefer `useMemo` for derived lists. When depending on rapid events like search inputs, pair it with a `useDebounce` hook (from `hooks/use-debounce.ts`) to avoid immediate re-evaluations. For discrete UI selections like tabs, `useMemo` alone is sufficient and highly efficient.
