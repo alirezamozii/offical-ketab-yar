@@ -1,0 +1,3 @@
+## 2026-06-13 - Context-Aware Destructive Actions
+**Learning:** When using icon-only buttons for destructive actions (like removing a friend) in lists, providing generic aria-labels like 'Remove' is insufficient for screen readers. Furthermore, because these actions are asynchronous and often lack immediate visual feedback, disabling the button without showing a loading spinner leaves users wondering if the action registered, harming UX.
+**Action:** Always add context-aware ARIA labels (e.g., `Remove ${username} from friends`) to list item actions, and swap the icon for a loading spinner (like `Loader2` with `animate-spin`) while the async mutation is pending to provide immediate, clear feedback.

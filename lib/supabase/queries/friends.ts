@@ -69,7 +69,7 @@ export async function acceptFriendRequest(requestId: string) {
         .from('friendships')
         .update({
             status: 'accepted',
-            responded_at: new Date( as any).toISOString()
+            responded_at: new Date().toISOString()
         })
         .eq('id', requestId)
         .select()
@@ -89,7 +89,7 @@ export async function rejectFriendRequest(requestId: string) {
         .from('friendships')
         .update({
             status: 'rejected',
-            responded_at: new Date( as any).toISOString()
+            responded_at: new Date().toISOString()
         })
         .eq('id', requestId)
         .select()
