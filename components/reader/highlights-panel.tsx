@@ -170,6 +170,7 @@ export function HighlightsPanel({
                                 {/* Page Header */}
                                 <button
                                     onClick={() => togglePage(page)}
+                                    aria-label={isExpanded ? `بستن هایلایت‌های صفحه ${page + 1}` : `باز کردن هایلایت‌های صفحه ${page + 1}`}
                                     className="w-full p-4 flex items-center justify-between hover:bg-gold-100 dark:hover:bg-gold-900/30 transition-colors"
                                 >
                                     <div className="flex items-center gap-3">
