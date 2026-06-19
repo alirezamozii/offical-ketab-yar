@@ -387,6 +387,7 @@ export function FlashcardPractice({ bookId, mode }: FlashcardPracticeProps) {
                                         {dictionaryData?.audioUrl && (
                                             <button
                                                 onClick={playAudio}
+                                                aria-label="پخش تلفظ"
                                                 className="p-3 hover:bg-primary/10 rounded-full transition-colors"
                                             >
                                                 <Volume2 className="h-6 w-6 text-primary" />
@@ -438,6 +439,7 @@ export function FlashcardPractice({ bookId, mode }: FlashcardPracticeProps) {
                                                             <button
                                                                 onClick={translateDefinition}
                                                                 disabled={loadingTranslation}
+                                                                aria-label="ترجمه تعریف"
                                                                 className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
                                                             >
                                                                 {loadingTranslation ? (

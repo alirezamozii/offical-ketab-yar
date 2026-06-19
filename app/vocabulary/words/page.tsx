@@ -211,6 +211,7 @@ function WordsListContent() {
                                                                 toast.error('تلفظ در دسترس نیست')
                                                             })
                                                         }}
+                                                        aria-label="پخش تلفظ"
                                                         className="p-1 hover:bg-gold/20 rounded-full transition-colors"
                                                     >
                                                         <Volume2 className="h-4 w-4 text-gold-600" />

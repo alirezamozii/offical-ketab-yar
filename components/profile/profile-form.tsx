@@ -169,6 +169,7 @@ export function ProfileForm({ user, profile }: ProfileFormProps) {
                     key={avatarUrl}
                     type="button"
                     onClick={() => setSelectedAvatar(avatarUrl)}
+                    aria-label={`انتخاب آواتار ${avatarUrl.split('/').pop()?.replace('.svg', '')}`}
                     className={cn(
                       "relative h-16 w-16 rounded-full overflow-hidden border-2 transition-all hover:scale-110",
                       selectedAvatar === avatarUrl
