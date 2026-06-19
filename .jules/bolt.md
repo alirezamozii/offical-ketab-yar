@@ -1,0 +1,3 @@
+## 2025-02-28 - Missing useMemo for derived state in Next.js/React applications
+**Learning:** Found multiple instances where components map over lists or use search queries, and they manage derived state (like `filteredWords` from `words` and `searchQuery`) using a dedicated `useState` and syncing it via `useEffect`. This is an anti-pattern that causes unnecessary re-renders when the state can be simply derived during the render phase using `useMemo`.
+**Action:** Replace `useState` + `useEffect` combinations for derived state with `useMemo`. If dealing with rapid input changes (like typing in a search bar), implement a debounce hook for the input value to further prevent excessive re-renders during typing.
