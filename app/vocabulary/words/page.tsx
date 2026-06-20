@@ -203,6 +203,7 @@ function WordsListContent() {
                                                         {word.word}
                                                     </h3>
                                                     <button
+                                                        aria-label={`تلفظ کلمه ${word.word}`}
                                                         onClick={() => {
                                                             const audio = new Audio(
                                                                 `https://api.dictionaryapi.dev/media/pronunciations/en/${word.word}-us.mp3`
@@ -261,6 +262,7 @@ function WordsListContent() {
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
+                                                aria-label={`حذف کلمه ${word.word}`}
                                                 onClick={() => deleteWord(word.id)}
                                                 className="hover:bg-red-500/10 hover:text-red-500"
                                             >

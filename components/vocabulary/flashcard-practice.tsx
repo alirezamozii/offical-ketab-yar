@@ -386,6 +386,7 @@ export function FlashcardPractice({ bookId, mode }: FlashcardPracticeProps) {
                                         </h2>
                                         {dictionaryData?.audioUrl && (
                                             <button
+                                                aria-label={`تلفظ کلمه ${currentWord.word}`}
                                                 onClick={playAudio}
                                                 className="p-3 hover:bg-primary/10 rounded-full transition-colors"
                                             >

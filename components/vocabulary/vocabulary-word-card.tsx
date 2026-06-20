@@ -118,6 +118,7 @@ export function VocabularyWordCard({ word, userId }: VocabularyWordCardProps) {
                                 <Button
                                     variant="ghost"
                                     size="sm"
+                                    aria-label={`تلفظ کلمه ${word.word}`}
                                     className="h-6 w-6 p-0"
                                     onClick={playPronunciation}
                                 >
@@ -129,6 +130,7 @@ export function VocabularyWordCard({ word, userId }: VocabularyWordCardProps) {
                         <Button
                             variant="ghost"
                             size="sm"
+                            aria-label={`حذف کلمه ${word.word}`}
                             className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={() => deleteWordMutation.mutate()}
                         >
