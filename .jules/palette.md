@@ -1,0 +1,3 @@
+## 2024-05-24 - Accessible Loading States for Icon Buttons
+**Learning:** Icon-only buttons that trigger async actions often lack proper ARIA labels and visual loading indicators in this app's components, leading to an inaccessible and confusing UX. Providing an immediate visual change (like swapping the icon for a `lucide-react` `Loader2`) alongside standard ARIA descriptions significantly improves usability.
+**Action:** When implementing or updating icon-only buttons (`size="icon"`), always ensure an `aria-label` is present and translated according to the UI context (e.g., Persian for Farsi UIs), and swap the inner icon with a `Loader2 animate-spin` when `loading` is true.
