@@ -250,6 +250,7 @@ export function OfflineSettingsClient() {
                                         size="icon"
                                         onClick={() => handleDeleteBook(book.slug)}
                                         className="flex-shrink-0 text-destructive hover:text-destructive"
+                                        aria-label={`حذف کتاب ${book.title.fa || book.title.en}`}
                                     >
                                         <Trash2 className="h-4 w-4" />
                                     </Button>
