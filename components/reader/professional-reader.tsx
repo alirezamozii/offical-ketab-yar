@@ -9,10 +9,14 @@ import { useReadingProgress } from '@/hooks/use-reading-progress'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  ArrowLeft, ArrowRight, ChevronRight, Highlighter,
+  ArrowLeft,
+  ArrowRight,
+  ChevronRight,
+  Highlighter,
   MessageSquare,
   Settings,
-  Type, X
+  Type,
+  X,
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -22,12 +26,12 @@ import { TextSelectionMenu } from './text-selection-menu'
 
 // --- DYNAMIC IMPORTS ---
 const PhysicsPageTurn = dynamic(
-  () => import('./physics/PhysicsPageTurn').then((mod) => mod.PhysicsPageTurn),
+  () => import('./physics/PhysicsPageTurn').then(mod => mod.PhysicsPageTurn),
   { loading: () => null, ssr: false }
 )
 
 const WordPopupDictionary = dynamic(
-  () => import('./word-popup-dictionary').then((mod) => mod.WordPopupDictionary),
+  () => import('./word-popup-dictionary').then(mod => mod.WordPopupDictionary),
   { loading: () => null, ssr: false }
 )
 
@@ -103,7 +107,7 @@ export function ProfessionalReader({ book }: ReaderProps) {
   const { markParagraphAsRead } = useReadingProgress({
     bookId: book.slug,
     chapterNumber: currentPage,
-    totalParagraphs: getCurrentPageItems().length
+    totalParagraphs: getCurrentPageItems().length,
   })
 
   // Mark read logic
@@ -125,7 +129,7 @@ export function ProfessionalReader({ book }: ReaderProps) {
       headerBorder: 'border-[#e4dcc8]',
       highlight: 'bg-yellow-200', // Solid highlight usually looks better or distinct opacity
       sliderTrack: 'bg-gray-200',
-      sliderRange: 'bg-gold-500'
+      sliderRange: 'bg-gold-500',
     },
     sepia: {
       bg: 'bg-[#f4ecd8]', // Solid
@@ -135,7 +139,7 @@ export function ProfessionalReader({ book }: ReaderProps) {
       headerBorder: 'border-[#d9c8a6]',
       highlight: 'bg-orange-200',
       sliderTrack: 'bg-[#e0d0b0]',
-      sliderRange: 'bg-[#8a6a4b]'
+      sliderRange: 'bg-[#8a6a4b]',
     },
     dark: {
       bg: 'bg-[#1a1814]', // Solid
@@ -145,25 +149,27 @@ export function ProfessionalReader({ book }: ReaderProps) {
       headerBorder: 'border-[#3d3830]',
       highlight: 'bg-gold-900',
       sliderTrack: 'bg-[#2a2620]',
-      sliderRange: 'bg-gold-500'
-    }
+      sliderRange: 'bg-gold-500',
+    },
   }
 
   const currentTheme = themeStyles[theme]
 
   const getCurrentPagePlainText = () => {
     return getCurrentPageItems()
-      .map(item => currentLanguage === 'english' ? item.english : item.farsi)
+      .map(item => (currentLanguage === 'english' ? item.english : item.farsi))
       .join('\n\n')
   }
 
   // Load & Save State (Effects)
   useEffect(() => {
-    if (!book?.slug) return;
+    if (!book?.slug) return
     try {
       const stored = localStorage.getItem(`highlights_${book.slug}`)
       if (stored) setHighlights(JSON.parse(stored))
-    } catch (e) { console.error(e) }
+    } catch (e) {
+      console.error(e)
+    }
 
     try {
       const storedState = localStorage.getItem(`reader_state_${book.slug}`)
@@ -175,15 +181,25 @@ export function ProfessionalReader({ book }: ReaderProps) {
         if (state.lineHeight) setLineHeight(state.lineHeight)
         if (state.showSubtitles !== undefined) setShowSubtitles(state.showSubtitles)
       }
-    } catch (e) { console.error(e) }
+    } catch (e) {
+      console.error(e)
+    }
   }, [book.slug])
 
   useEffect(() => {
-    if (!book?.slug) return;
+    if (!book?.slug) return
     localStorage.setItem(`highlights_${book.slug}`, JSON.stringify(highlights))
-    localStorage.setItem(`reader_state_${book.slug}`, JSON.stringify({
-      currentPage, theme, fontSize, lineHeight, showSubtitles, lastReadAt: Date.now()
-    }))
+    localStorage.setItem(
+      `reader_state_${book.slug}`,
+      JSON.stringify({
+        currentPage,
+        theme,
+        fontSize,
+        lineHeight,
+        showSubtitles,
+        lastReadAt: Date.now(),
+      })
+    )
   }, [highlights, currentPage, theme, fontSize, lineHeight, showSubtitles, book.slug])
 
   useEffect(() => {
@@ -243,13 +259,13 @@ export function ProfessionalReader({ book }: ReaderProps) {
             const baseColors: Record<string, string> = {
               yellow: 'rgba(251, 209, 32, 0.4)',
               orange: 'rgba(252, 156, 74, 0.4)',
-              gold: 'rgba(202, 172, 105, 0.4)'
+              gold: 'rgba(202, 172, 105, 0.4)',
             }
             span.style.backgroundColor = baseColors[highlight.color] || baseColors.yellow
             span.style.borderRadius = '3px'
             range.surroundContents(span)
             break
-          } catch (e) { }
+          } catch (e) {}
         }
       }
     })
@@ -261,14 +277,17 @@ export function ProfessionalReader({ book }: ReaderProps) {
   }, [currentPage, highlights, currentLanguage, showSubtitles, restoreHighlightsToDOM])
 
   // Actions
-  const goToPage = useCallback((page: number) => {
-    if (page < 0 || page >= totalPages || isTransitioning) return
-    setIsTransitioning(true)
-    setTimeout(() => {
-      setCurrentPage(page)
-      setTimeout(() => setIsTransitioning(false), 250)
-    }, 50)
-  }, [totalPages, isTransitioning])
+  const goToPage = useCallback(
+    (page: number) => {
+      if (page < 0 || page >= totalPages || isTransitioning) return
+      setIsTransitioning(true)
+      setTimeout(() => {
+        setCurrentPage(page)
+        setTimeout(() => setIsTransitioning(false), 250)
+      }, 50)
+    },
+    [totalPages, isTransitioning]
+  )
 
   const nextPage = useCallback(() => goToPage(currentPage + 1), [currentPage, goToPage])
   const prevPage = useCallback(() => goToPage(currentPage - 1), [currentPage, goToPage])
@@ -301,9 +320,16 @@ export function ProfessionalReader({ book }: ReaderProps) {
   const addHighlight = (color: string) => {
     if (selectedText && selectedRange) {
       const id = `highlight-${Date.now()}`
-      setHighlights(prev => [...prev, {
-        text: selectedText, page: currentPage, color, id, timestamp: Date.now()
-      }])
+      setHighlights(prev => [
+        ...prev,
+        {
+          text: selectedText,
+          page: currentPage,
+          color,
+          id,
+          timestamp: Date.now(),
+        },
+      ])
       setShowTextMenu(false)
       window.getSelection()?.removeAllRanges()
       toast.success('Highlight saved')
@@ -312,13 +338,13 @@ export function ProfessionalReader({ book }: ReaderProps) {
 
   const handleShowDictionary = () => {
     if (!selectedText || selectedText.trim().length === 0) return
-    const cleanWord = selectedText.trim().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "")
+    const cleanWord = selectedText.trim().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, '')
     if (cleanWord.length > 0) {
       setDictionaryWord(cleanWord)
       setShowDictionary(true)
       setShowTextMenu(false)
     } else {
-      toast.error("Please select a valid word")
+      toast.error('Please select a valid word')
     }
   }
 
@@ -331,55 +357,94 @@ export function ProfessionalReader({ book }: ReaderProps) {
     // z-[9999] = بالاترین لایه ممکن
     // fixed inset-0 = تمام صفحه و ثابت
     // isolate = جلوگیری از تداخل CSS خارجی
-    <div className={cn(
-      "fixed inset-0 z-[9999] w-screen h-screen flex flex-col isolate overflow-hidden",
-      currentTheme.bg,
-      currentTheme.text
-    )}>
-
+    <div
+      className={cn(
+        'fixed inset-0 isolate z-[9999] flex h-screen w-screen flex-col overflow-hidden',
+        currentTheme.bg,
+        currentTheme.text
+      )}
+    >
       {/* --- TOP BAR --- */}
       <motion.header
         initial={{ y: 0 }}
         animate={{ y: showControls ? 0 : -100 }}
         transition={{ duration: 0.3 }}
         className={cn(
-          "absolute top-0 left-0 right-0 z-40 border-b shadow-sm h-16 flex items-center transition-colors duration-500",
+          'absolute left-0 right-0 top-0 z-40 flex h-16 items-center border-b shadow-sm transition-colors duration-500',
           currentTheme.headerBg,
           currentTheme.headerBorder
         )}
       >
-        <div className="w-full max-w-7xl mx-auto px-4 flex items-center justify-between">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4">
           <div className="flex items-center gap-4">
             {/* دکمه بازگشت به سایت اصلی */}
-            <a href={`/books/${book.slug}`} className="flex items-center hover:opacity-70 transition-opacity">
+            <a
+              href={`/books/${book.slug}`}
+              className="flex items-center transition-opacity hover:opacity-70"
+            >
               <ChevronRight className="h-5 w-5" />
-              <span className="font-bold ml-2 truncate max-w-[150px] sm:max-w-xs">{book.title}</span>
+              <span className="ml-2 max-w-[150px] truncate font-bold sm:max-w-xs">
+                {book.title}
+              </span>
             </a>
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setCurrentLanguage(l => l === 'english' ? 'farsi' : 'english')} className="border px-2">
+            <Button
+              aria-label="Toggle language"
+              variant="ghost"
+              size="sm"
+              onClick={() => setCurrentLanguage(l => (l === 'english' ? 'farsi' : 'english'))}
+              className="border px-2"
+            >
               {currentLanguage === 'english' ? 'EN' : 'FA'}
             </Button>
 
-            <Button variant="ghost" size="sm" onClick={() => setShowSubtitles(!showSubtitles)} className={showSubtitles ? "bg-black/10 dark:bg-white/10" : ""}>
+            <Button
+              aria-label="Toggle subtitles"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSubtitles(!showSubtitles)}
+              className={showSubtitles ? 'bg-black/10 dark:bg-white/10' : ''}
+            >
               <Type className="h-4 w-4" />
             </Button>
 
-            <Button variant="ghost" size="sm" onClick={() => { setShowHighlights(!showHighlights); setShowSettings(false); }}>
+            <Button
+              aria-label="Show highlights"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setShowHighlights(!showHighlights)
+                setShowSettings(false)
+              }}
+            >
               <Highlighter className="h-4 w-4" />
-              {highlights.filter(h => h.page === currentPage).length > 0 &&
-                <span className="ml-1 text-xs bg-primary text-primary-foreground px-1.5 rounded-full">
+              {highlights.filter(h => h.page === currentPage).length > 0 && (
+                <span className="ml-1 rounded-full bg-primary px-1.5 text-xs text-primary-foreground">
                   {highlights.filter(h => h.page === currentPage).length}
                 </span>
-              }
+              )}
             </Button>
 
-            <Button variant="ghost" size="sm" onClick={() => setShowChat(!showChat)}>
+            <Button
+              aria-label="Open AI chat"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowChat(!showChat)}
+            >
               <MessageSquare className="h-4 w-4" />
             </Button>
 
-            <Button variant="ghost" size="sm" onClick={() => { setShowSettings(!showSettings); setShowHighlights(false); }}>
+            <Button
+              aria-label="Open settings"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setShowSettings(!showSettings)
+                setShowHighlights(false)
+              }}
+            >
               <Settings className="h-4 w-4" />
             </Button>
           </div>
@@ -388,37 +453,45 @@ export function ProfessionalReader({ book }: ReaderProps) {
 
       {/* --- MAIN CONTENT --- */}
       <div
-        className="flex-1 w-full h-full relative overflow-hidden"
+        className="relative h-full w-full flex-1 overflow-hidden"
         onClick={() => setShowControls(!showControls)}
       >
         <PhysicsPageTurn
           pageKey={currentPage}
-          onPageTurn={(dir) => dir === 'next' ? nextPage() : prevPage()}
+          onPageTurn={dir => (dir === 'next' ? nextPage() : prevPage())}
           theme={theme === 'dark' ? 'dark' : 'light'}
           canGoNext={currentPage < totalPages - 1}
           canGoPrev={currentPage > 0}
-          className="w-full h-full"
+          className="h-full w-full"
         >
-          <div id="reader-content-area" className="w-full h-full overflow-y-auto px-4 pt-20 pb-28 scroll-smooth">
-            <div className="max-w-3xl mx-auto min-h-[80vh]">
+          <div
+            id="reader-content-area"
+            className="h-full w-full overflow-y-auto scroll-smooth px-4 pb-28 pt-20"
+          >
+            <div className="mx-auto min-h-[80vh] max-w-3xl">
               <div
                 ref={pageRef}
                 key={`page-${currentPage}-${theme}`}
                 className={cn(
-                  "prose prose-lg max-w-none transition-opacity duration-300 ease-out",
-                  isTransitioning ? "opacity-0" : "opacity-100"
+                  'prose prose-lg max-w-none transition-opacity duration-300 ease-out',
+                  isTransitioning ? 'opacity-0' : 'opacity-100'
                 )}
                 style={{ fontSize: `${fontSize}px`, lineHeight: lineHeight, color: 'inherit' }}
                 dir={currentLanguage === 'farsi' ? 'rtl' : 'ltr'}
-                onMouseUp={(e) => { e.stopPropagation(); handleTextSelection(); }}
+                onMouseUp={e => {
+                  e.stopPropagation()
+                  handleTextSelection()
+                }}
               >
                 {getCurrentPageItems().length === 0 ? (
-                  <div className="text-center py-20 opacity-50 italic">Page is empty</div>
+                  <div className="py-20 text-center italic opacity-50">Page is empty</div>
                 ) : (
                   getCurrentPageItems().map((item, idx) => (
-                    <div key={idx} className="mb-8 relative group">
+                    <div key={idx} className="group relative mb-8">
                       {item.type === 'heading' ? (
-                        <h3 className="text-2xl font-bold mb-4">{currentLanguage === 'english' ? item.english : item.farsi}</h3>
+                        <h3 className="mb-4 text-2xl font-bold">
+                          {currentLanguage === 'english' ? item.english : item.farsi}
+                        </h3>
                       ) : (
                         <p>{currentLanguage === 'english' ? item.english : item.farsi}</p>
                       )}
@@ -429,7 +502,7 @@ export function ProfessionalReader({ book }: ReaderProps) {
                             animate={{ opacity: 0.75, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
                             className={cn(
-                              "mt-2 text-[0.9em] border-l-2 pl-3",
+                              'mt-2 border-l-2 pl-3 text-[0.9em]',
                               theme === 'dark' ? 'border-gray-700' : 'border-gray-300'
                             )}
                             dir={currentLanguage === 'farsi' ? 'ltr' : 'rtl'}
@@ -442,7 +515,7 @@ export function ProfessionalReader({ book }: ReaderProps) {
                   ))
                 )}
               </div>
-              <div className="mt-12 mb-4 text-center text-sm opacity-50">
+              <div className="mb-4 mt-12 text-center text-sm opacity-50">
                 Page {currentPage + 1} of {totalPages}
               </div>
             </div>
@@ -456,17 +529,23 @@ export function ProfessionalReader({ book }: ReaderProps) {
         animate={{ y: showControls ? 0 : 100 }}
         transition={{ duration: 0.3 }}
         className={cn(
-          "absolute bottom-0 left-0 right-0 z-40 border-t shadow-lg pb-safe transition-colors duration-500",
+          'pb-safe absolute bottom-0 left-0 right-0 z-40 border-t shadow-lg transition-colors duration-500',
           currentTheme.headerBg,
           currentTheme.headerBorder
         )}
       >
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center gap-6">
+        <div className="mx-auto flex max-w-4xl items-center gap-6 px-6 py-4">
           <Button variant="ghost" onClick={prevPage} disabled={currentPage === 0}>
             <ArrowRight className="mr-2 h-4 w-4" /> Previous
           </Button>
           <div className="flex-1">
-            <Slider value={[currentPage]} max={totalPages - 1} step={1} onValueChange={(val) => goToPage(val[0])} className="cursor-pointer" />
+            <Slider
+              value={[currentPage]}
+              max={totalPages - 1}
+              step={1}
+              onValueChange={val => goToPage(val[0])}
+              className="cursor-pointer"
+            />
           </div>
           <Button variant="ghost" onClick={nextPage} disabled={currentPage === totalPages - 1}>
             Next <ArrowLeft className="ml-2 h-4 w-4" />
@@ -478,11 +557,21 @@ export function ProfessionalReader({ book }: ReaderProps) {
       <AnimatePresence>
         {showTextMenu && (
           <TextSelectionMenu
-            position={menuPosition} theme={theme} selectedText={selectedText}
-            onHighlight={addHighlight} onShowDictionary={handleShowDictionary}
+            position={menuPosition}
+            theme={theme}
+            selectedText={selectedText}
+            onHighlight={addHighlight}
+            onShowDictionary={handleShowDictionary}
             onAddToVocabulary={() => toast.success('Added to vocab')}
-            onCopy={() => { navigator.clipboard.writeText(selectedText); toast.success('Copied'); setShowTextMenu(false) }}
-            onAIChat={() => { setShowChat(true); setShowTextMenu(false) }}
+            onCopy={() => {
+              navigator.clipboard.writeText(selectedText)
+              toast.success('Copied')
+              setShowTextMenu(false)
+            }}
+            onAIChat={() => {
+              setShowChat(true)
+              setShowTextMenu(false)
+            }}
             onClose={() => setShowTextMenu(false)}
           />
         )}
@@ -491,8 +580,11 @@ export function ProfessionalReader({ book }: ReaderProps) {
       <AnimatePresence>
         {showDictionary && (
           <WordPopupDictionary
-            word={dictionaryWord} context={getCurrentPagePlainText().slice(0, 100)} theme={theme}
-            onClose={() => setShowDictionary(false)} onSaveWord={() => { }}
+            word={dictionaryWord}
+            context={getCurrentPagePlainText().slice(0, 100)}
+            theme={theme}
+            onClose={() => setShowDictionary(false)}
+            onSaveWord={() => {}}
           />
         )}
       </AnimatePresence>
@@ -500,27 +592,69 @@ export function ProfessionalReader({ book }: ReaderProps) {
       <AnimatePresence>
         {showSettings && (
           <motion.div
-            initial={{ x: -320, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -320, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className={cn("fixed inset-y-0 left-0 w-80 z-[100] shadow-2xl p-6 overflow-y-auto border-r", currentTheme.bg, currentTheme.text)}
+            initial={{ x: -320, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -320, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className={cn(
+              'fixed inset-y-0 left-0 z-[100] w-80 overflow-y-auto border-r p-6 shadow-2xl',
+              currentTheme.bg,
+              currentTheme.text
+            )}
           >
-            <div className="flex justify-between items-center mb-6">
+            <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xl font-bold">Settings</h2>
-              <Button variant="ghost" size="icon" onClick={() => setShowSettings(false)}><X /></Button>
+              <Button
+                aria-label="Close settings"
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowSettings(false)}
+              >
+                <X />
+              </Button>
             </div>
             {/* Settings content truncated for brevity - same as before */}
             <div className="space-y-6">
               <div>
-                <label className="block mb-2 font-medium">Theme</label>
+                <label className="mb-2 block font-medium">Theme</label>
                 <div className="grid grid-cols-3 gap-2">
-                  {['light', 'sepia', 'dark'].map((t) => (
-                    <button key={t} onClick={() => setTheme(t as any)} className={cn("p-3 rounded border capitalize", theme === t ? "ring-2 ring-primary border-primary" : "border-gray-300 opacity-70")}>{t}</button>
+                  {['light', 'sepia', 'dark'].map(t => (
+                    <button
+                      key={t}
+                      onClick={() => setTheme(t as any)}
+                      className={cn(
+                        'rounded border p-3 capitalize',
+                        theme === t
+                          ? 'border-primary ring-2 ring-primary'
+                          : 'border-gray-300 opacity-70'
+                      )}
+                    >
+                      {t}
+                    </button>
                   ))}
                 </div>
               </div>
               <Separator />
-              <div><label className="block mb-2 font-medium">Font Size: {fontSize}px</label><Slider value={[fontSize]} min={12} max={32} step={1} onValueChange={(v) => setFontSize(v[0])} /></div>
-              <div><label className="block mb-2 font-medium">Line Height: {lineHeight}</label><Slider value={[lineHeight]} min={1.2} max={2.4} step={0.1} onValueChange={(v) => setLineHeight(v[0])} /></div>
+              <div>
+                <label className="mb-2 block font-medium">Font Size: {fontSize}px</label>
+                <Slider
+                  value={[fontSize]}
+                  min={12}
+                  max={32}
+                  step={1}
+                  onValueChange={v => setFontSize(v[0])}
+                />
+              </div>
+              <div>
+                <label className="mb-2 block font-medium">Line Height: {lineHeight}</label>
+                <Slider
+                  value={[lineHeight]}
+                  min={1.2}
+                  max={2.4}
+                  step={0.1}
+                  onValueChange={v => setLineHeight(v[0])}
+                />
+              </div>
             </div>
           </motion.div>
         )}
@@ -529,14 +663,20 @@ export function ProfessionalReader({ book }: ReaderProps) {
       <AnimatePresence>
         {showHighlights && (
           <motion.div
-            initial={{ x: 320, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 320, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            initial={{ x: 320, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 320, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className="fixed inset-y-0 right-0 z-[100]"
           >
             <HighlightsPanel
-              highlights={highlights} currentPage={currentPage} theme={theme}
-              onClose={() => setShowHighlights(false)} onDelete={(id) => setHighlights(h => h.filter(x => x.id !== id))}
-              onCopy={(text) => navigator.clipboard.writeText(text)} onJumpToPage={goToPage}
+              highlights={highlights}
+              currentPage={currentPage}
+              theme={theme}
+              onClose={() => setShowHighlights(false)}
+              onDelete={id => setHighlights(h => h.filter(x => x.id !== id))}
+              onCopy={text => navigator.clipboard.writeText(text)}
+              onJumpToPage={goToPage}
             />
           </motion.div>
         )}
@@ -545,13 +685,18 @@ export function ProfessionalReader({ book }: ReaderProps) {
       <AnimatePresence>
         {showChat && (
           <AIChatPanel
-            bookTitle={book.title} bookAuthor={book.author} currentPage={currentPage + 1}
-            currentPageText={getCurrentPagePlainText()} previousPages={[]} selectedText={selectedText}
-            theme={theme} onClose={() => setShowChat(false)} isMobile={isMobile}
+            bookTitle={book.title}
+            bookAuthor={book.author}
+            currentPage={currentPage + 1}
+            currentPageText={getCurrentPagePlainText()}
+            previousPages={[]}
+            selectedText={selectedText}
+            theme={theme}
+            onClose={() => setShowChat(false)}
+            isMobile={isMobile}
           />
         )}
       </AnimatePresence>
-
     </div>
   )
 }
