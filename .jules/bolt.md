@@ -1,0 +1,3 @@
+## 2024-06-26 - Replacing useState+useEffect with useMemo for derived state
+**Learning:** React state (`useState`) should represent the minimal core state of a component. Computing derived state (like a filtered list based on a source list and a search query/tab filter) using `useState` synchronized via `useEffect` is an anti-pattern. It causes double-renders (one render when the source data changes, another when the effect runs to update the filtered list) and makes code harder to follow.
+**Action:** Always prefer `useMemo` for derived states to compute values inline during render and avoid unnecessary render cycles.
