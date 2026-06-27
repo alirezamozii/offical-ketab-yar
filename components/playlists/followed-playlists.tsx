@@ -1,32 +1,21 @@
 'use client'
 
-import { getFollowedPlaylists, type PlaylistWithBooks } from '@/lib/supabase/queries/playlists'
+import { getFollowedPlaylists } from '@/lib/supabase/queries/playlists'
 import { Heart } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { PlaylistCard } from './playlist-card'
+import { useQuery } from '@tanstack/react-query'
 
 interface FollowedPlaylistsProps {
     userId: string
 }
 
 export function FollowedPlaylists({ userId }: FollowedPlaylistsProps) {
-    const [playlists, setPlaylists] = useState<PlaylistWithBooks[]>([])
-    const [loading, setLoading] = useState(true)
-
-    useEffect(() => {
-        loadPlaylists()
-    }, [userId])
-
-    async function loadPlaylists() {
-        try {
-            const data = await getFollowedPlaylists(userId)
-            setPlaylists(data)
-        } catch (error) {
-            console.error('Error loading followed playlists:', error)
-        } finally {
-            setLoading(false)
-        }
-    }
+    // ⚡ Bolt: Use react-query to cache playlist data and prevent re-fetching on tab switches
+    const { data: playlists = [], isLoading: loading, refetch } = useQuery({
+        queryKey: ['followed-playlists', userId],
+        queryFn: () => getFollowedPlaylists(userId),
+        staleTime: 5 * 60 * 1000, // 5 minutes cache
+    })
 
     if (loading) {
         return (
@@ -58,7 +47,7 @@ export function FollowedPlaylists({ userId }: FollowedPlaylistsProps) {
                     playlist={playlist}
                     userId={userId}
                     isOwner={false}
-                    onUpdate={loadPlaylists}
+                    onUpdate={() => refetch()}
                 />
             ))}
         </div>
