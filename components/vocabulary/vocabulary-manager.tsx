@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { Volume2, BookOpen, Check, Clock, RotateCcw } from "lucide-react"
@@ -51,7 +51,6 @@ interface VocabularyManagerProps {
 
 export function VocabularyManager({ userId }: VocabularyManagerProps) {
   const [words, setWords] = useState<DatabaseWord[]>([])
-  const [filteredWords, setFilteredWords] = useState<DatabaseWord[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("all")
   const supabase = createClient()
@@ -108,7 +107,6 @@ export function VocabularyManager({ userId }: VocabularyManagerProps) {
         }))
 
         setWords(formattedWords)
-        setFilteredWords(formattedWords)
       } catch (error) {
         console.error("خطا در دریافت واژگان:", error)
         toast.error("خطا در دریافت واژگان")
@@ -137,7 +135,7 @@ export function VocabularyManager({ userId }: VocabularyManagerProps) {
         .update({
           status: newStatus,
           next_review_at: new Date(
-            Date.now( as any) + (newStatus === "mastered" ? 7 : newStatus === "reviewing" ? 3 : 1) * 24 * 60 * 60 * 1000,
+            Date.now() + (newStatus === "mastered" ? 7 : newStatus === "reviewing" ? 3 : 1) * 24 * 60 * 60 * 1000,
           ).toISOString(),
         })
         .eq("id", wordId)
@@ -157,7 +155,6 @@ export function VocabularyManager({ userId }: VocabularyManagerProps) {
       )
 
       setWords(updatedWords)
-      setFilteredWords(updatedWords)
 
       toast.success(
         `وضعیت کلمه به "${newStatus === "mastered" ? "تسلط" : newStatus === "reviewing" ? "مرور" : "یادگیری"}" تغییر یافت`,
@@ -168,8 +165,8 @@ export function VocabularyManager({ userId }: VocabularyManagerProps) {
     }
   }
 
-  useEffect(() => {
-    setFilteredWords(activeTab === "all" ? words : words.filter((word) => word.status === activeTab))
+  const filteredWords = useMemo(() => {
+    return activeTab === "all" ? words : words.filter((word) => word.status === activeTab)
   }, [activeTab, words])
 
   const formatDate = (dateString: string) => {
