@@ -1,8 +1,8 @@
 'use client'
 
-import { getFollowedPlaylists, type PlaylistWithBooks } from '@/lib/supabase/queries/playlists'
+import { getFollowedPlaylists } from '@/lib/supabase/queries/playlists'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Heart } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { PlaylistCard } from './playlist-card'
 
 interface FollowedPlaylistsProps {
@@ -10,25 +10,17 @@ interface FollowedPlaylistsProps {
 }
 
 export function FollowedPlaylists({ userId }: FollowedPlaylistsProps) {
-    const [playlists, setPlaylists] = useState<PlaylistWithBooks[]>([])
-    const [loading, setLoading] = useState(true)
+    const queryClient = useQueryClient()
 
-    useEffect(() => {
-        loadPlaylists()
-    }, [userId])
+    // ⚡ Bolt: Use React Query to cache playlists data. Since this component is unmounted when switching tabs,
+    // caching the result prevents unnecessary refetching and improves UI responsiveness.
+    const { data: playlists = [], isLoading, refetch } = useQuery({
+        queryKey: ['followed-playlists', userId],
+        queryFn: () => getFollowedPlaylists(userId),
+        staleTime: 5 * 60 * 1000, // 5 minutes
+    })
 
-    async function loadPlaylists() {
-        try {
-            const data = await getFollowedPlaylists(userId)
-            setPlaylists(data)
-        } catch (error) {
-            console.error('Error loading followed playlists:', error)
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[...Array(3)].map((_, i) => (
@@ -58,7 +50,11 @@ export function FollowedPlaylists({ userId }: FollowedPlaylistsProps) {
                     playlist={playlist}
                     userId={userId}
                     isOwner={false}
-                    onUpdate={loadPlaylists}
+                    onUpdate={() => {
+                        refetch()
+                        // Invalidate discover queries in case data changed
+                        queryClient.invalidateQueries({ queryKey: ['discover-playlists', userId] })
+                    }}
                 />
             ))}
         </div>
