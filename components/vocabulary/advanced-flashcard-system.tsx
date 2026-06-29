@@ -288,7 +288,7 @@ function AdvancedFlashcardSystem({ words, userLevel, onComplete, onUpdateStatus 
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Button variant="outline" size="icon" onClick={() => playPronunciation()}>
+              <Button aria-label="تلفظ" variant="outline" size="icon" onClick={() => playPronunciation()}>
                 <Volume2 className="size-4" />
               </Button>
               <div className="text-muted-foreground text-sm">
