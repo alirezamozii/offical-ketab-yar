@@ -22,7 +22,7 @@ import {
     Zap
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 
 const categories = [
     {
@@ -158,14 +158,23 @@ const categories = [
 export function HelpClient() {
     const [searchQuery, setSearchQuery] = useState('')
 
-    const filteredCategories = categories.map(category => ({
-        ...category,
-        faqs: category.faqs.filter(
-            faq =>
-                faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-    })).filter(category => category.faqs.length > 0)
+    // BOLT OPTIMIZATION: Memoize filtered categories and hoist toLowerCase() out of the nested loop
+    const filteredCategories = useMemo(() => {
+        if (!searchQuery) {
+            return categories;
+        }
+
+        const lowerQuery = searchQuery.toLowerCase();
+
+        return categories.map(category => ({
+            ...category,
+            faqs: category.faqs.filter(
+                faq =>
+                    faq.question.toLowerCase().includes(lowerQuery) ||
+                    faq.answer.toLowerCase().includes(lowerQuery)
+            )
+        })).filter(category => category.faqs.length > 0);
+    }, [searchQuery]);
 
     // JSON-LD FAQPage Schema for SEO (Agent 1)
     const faqSchema = {
