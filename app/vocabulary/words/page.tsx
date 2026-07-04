@@ -9,7 +9,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, BookOpen, Search, Trash2, Volume2 } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useState, useMemo } from 'react'
 import { toast } from 'sonner'
 
 interface VocabularyWord {
@@ -31,7 +31,6 @@ function WordsListContent() {
     const bookId = searchParams.get('bookId')
 
     const [words, setWords] = useState<VocabularyWord[]>([])
-    const [filteredWords, setFilteredWords] = useState<VocabularyWord[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const supabase = createClient()
@@ -40,8 +39,21 @@ function WordsListContent() {
         loadWords()
     }, [bookId])
 
-    useEffect(() => {
-        filterWords()
+    // BOLT PERFORMANCE OPTIMIZATION:
+    // Replaced useState/useEffect for derived state with useMemo to prevent double-renders.
+    // Hoisted search query `.toLowerCase()` computation outside the filter loop
+    // to avoid redundant string operations for every item.
+    const filteredWords = useMemo(() => {
+        if (!searchQuery) {
+            return words
+        }
+
+        const lowerQuery = searchQuery.toLowerCase()
+        return words.filter(w =>
+            w.word.toLowerCase().includes(lowerQuery) ||
+            w.definition.toLowerCase().includes(lowerQuery) ||
+            w.translation.includes(searchQuery)
+        )
     }, [words, searchQuery])
 
     const loadWords = async () => {
@@ -79,20 +91,6 @@ function WordsListContent() {
         } finally {
             setLoading(false)
         }
-    }
-
-    const filterWords = () => {
-        if (!searchQuery) {
-            setFilteredWords(words)
-            return
-        }
-
-        const filtered = words.filter(w =>
-            w.word.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            w.definition.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            w.translation.includes(searchQuery)
-        )
-        setFilteredWords(filtered)
     }
 
     const deleteWord = async (id: string) => {
