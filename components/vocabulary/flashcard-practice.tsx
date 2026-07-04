@@ -246,7 +246,7 @@ export function FlashcardPractice({ bookId, mode }: FlashcardPracticeProps) {
                 .from('vocabulary')
                 .update({
                     mastery_level: newMasteryLevel,
-                    last_reviewed_at: new Date( as any).toISOString(),
+                    last_reviewed_at: new Date().toISOString(),
                     next_review_at: nextReviewDate
                 })
                 .eq('id', currentWord.id)
@@ -388,6 +388,7 @@ export function FlashcardPractice({ bookId, mode }: FlashcardPracticeProps) {
                                             <button
                                                 onClick={playAudio}
                                                 className="p-3 hover:bg-primary/10 rounded-full transition-colors"
+                                                aria-label="پخش تلفظ صوتی"
                                             >
                                                 <Volume2 className="h-6 w-6 text-primary" />
                                             </button>
