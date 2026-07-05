@@ -9,7 +9,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, BookOpen, Search, Trash2, Volume2 } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useState, useMemo } from 'react'
 import { toast } from 'sonner'
 
 interface VocabularyWord {
@@ -31,7 +31,6 @@ function WordsListContent() {
     const bookId = searchParams.get('bookId')
 
     const [words, setWords] = useState<VocabularyWord[]>([])
-    const [filteredWords, setFilteredWords] = useState<VocabularyWord[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const supabase = createClient()
@@ -39,10 +38,6 @@ function WordsListContent() {
     useEffect(() => {
         loadWords()
     }, [bookId])
-
-    useEffect(() => {
-        filterWords()
-    }, [words, searchQuery])
 
     const loadWords = async () => {
         try {
@@ -81,19 +76,18 @@ function WordsListContent() {
         }
     }
 
-    const filterWords = () => {
-        if (!searchQuery) {
-            setFilteredWords(words)
-            return
-        }
+    // ⚡ Bolt: Optimize filtering using useMemo to prevent unnecessary re-renders
+    // Hoisted searchQuery conversion to lowercase outside the loop to avoid redundant recalculations
+    const filteredWords = useMemo(() => {
+        if (!searchQuery) return words
 
-        const filtered = words.filter(w =>
-            w.word.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            w.definition.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        const queryLowerCase = searchQuery.toLowerCase()
+        return words.filter(w =>
+            w.word.toLowerCase().includes(queryLowerCase) ||
+            w.definition.toLowerCase().includes(queryLowerCase) ||
             w.translation.includes(searchQuery)
         )
-        setFilteredWords(filtered)
-    }
+    }, [words, searchQuery])
 
     const deleteWord = async (id: string) => {
         try {
