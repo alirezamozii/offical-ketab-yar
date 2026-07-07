@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { getFriends, removeFriend, type Friend } from '@/lib/supabase/queries/friends'
 import { motion } from 'framer-motion'
-import { BookOpen, Flame, Trophy, UserMinus } from 'lucide-react'
+import { BookOpen, Flame, Trophy, UserMinus, Loader2, Users } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -144,8 +144,13 @@ export function FriendsList({ userId }: FriendsListProps) {
                                     variant="ghost"
                                     size="icon"
                                     disabled={removingId === friend.friend_id}
+                                    aria-label={`حذف ${friend.full_name || friend.username || 'کاربر'} از دوستان`}
                                 >
-                                    <UserMinus className="h-4 w-4" />
+                                    {removingId === friend.friend_id ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <UserMinus className="h-4 w-4" />
+                                    )}
                                 </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>

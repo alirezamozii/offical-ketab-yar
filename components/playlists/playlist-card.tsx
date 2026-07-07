@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { deletePlaylist, followPlaylist, unfollowPlaylist, type PlaylistWithBooks } from '@/lib/supabase/queries/playlists'
 import { motion } from 'framer-motion'
-import { Eye, Globe, Heart, List, Lock, Trash2, Users } from 'lucide-react'
+import { Eye, Globe, Heart, List, Lock, Trash2, Users, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -31,6 +31,7 @@ interface PlaylistCardProps {
 export function PlaylistCard({ playlist, userId, isOwner, onUpdate }: PlaylistCardProps) {
     const [isFollowing, setIsFollowing] = useState(playlist.is_following || false)
     const [loading, setLoading] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
 
     async function handleFollow() {
         setLoading(true)
@@ -54,6 +55,7 @@ export function PlaylistCard({ playlist, userId, isOwner, onUpdate }: PlaylistCa
     }
 
     async function handleDelete() {
+        setIsDeleting(true)
         try {
             await deletePlaylist(playlist.id)
             toast.success('پلی‌لیست حذف شد')
@@ -61,6 +63,7 @@ export function PlaylistCard({ playlist, userId, isOwner, onUpdate }: PlaylistCa
         } catch (error) {
             console.error('Error deleting playlist:', error)
             toast.error('خطا در حذف پلی‌لیست')
+            setIsDeleting(false)
         }
     }
 
@@ -133,16 +136,30 @@ export function PlaylistCard({ playlist, userId, isOwner, onUpdate }: PlaylistCa
                             size="icon"
                             onClick={handleFollow}
                             disabled={loading}
+                            aria-label={isFollowing ? `لغو دنبال کردن ${playlist.name}` : `دنبال کردن ${playlist.name}`}
                         >
-                            <Heart className={`h-4 w-4 ${isFollowing ? 'fill-current' : ''}`} />
+                            {loading ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <Heart className={`h-4 w-4 ${isFollowing ? 'fill-current' : ''}`} />
+                            )}
                         </Button>
                     )}
 
                     {isOwner && (
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
-                                <Button variant="outline" size="icon">
-                                    <Trash2 className="h-4 w-4" />
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    disabled={isDeleting}
+                                    aria-label={`حذف ${playlist.name}`}
+                                >
+                                    {isDeleting ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Trash2 className="h-4 w-4" />
+                                    )}
                                 </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
