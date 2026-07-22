@@ -24,12 +24,15 @@
  *
  * Owner: Tests + Monitoring (R2-I).
  */
+import * as Sentry from '@sentry/nextjs'
+
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     await import('../sentry.server.config')
   } else if (process.env.NEXT_RUNTIME === 'edge') {
     await import('../sentry.edge.config')
   }
-  // Browser: @sentry/nextjs auto-loads sentry.client.config.ts via its
-  // injected client entry. No import needed here.
 }
+
+export const onRequestError = Sentry.captureRequestError
+
