@@ -23,6 +23,8 @@ import {
 import type { Metadata } from 'next'
 import { SITE } from '@/lib/site'
 
+export const dynamic = 'force-dynamic'
+
 const SITE_URL = SITE.url
 
 export const metadata: Metadata = {

@@ -6,6 +6,8 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { SITE } from '@/lib/site'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'کتابخانه — مرور کتاب‌های انگلیسی دوزبانه',
   description:

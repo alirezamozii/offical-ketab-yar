@@ -58,6 +58,8 @@ interface PageProps {
 
 const SITE_URL = SITE.url
 
+export const dynamic = 'force-dynamic'
+
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
