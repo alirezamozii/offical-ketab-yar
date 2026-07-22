@@ -1,5 +1,4 @@
 import { db } from '@/lib/db'
-import { getPayloadClient } from '@/lib/payload'
 
 // Re-export the canonical reader types so callers can import them from a
 // single module (`@/lib/data`). The definitions live in `@/lib/reader/types`
@@ -90,25 +89,43 @@ export type ReviewItem = {
   createdAt: string
 }
 
+/** Parse JSON genres field from Prisma (stored as JSON string "[\"Fiction\"]") */
+function parseGenres(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw
+  if (typeof raw === 'string') {
+    try { return JSON.parse(raw) } catch { return [] }
+  }
+  return []
+}
+
+/** Parse JSON notableWorks field from Prisma */
+function parseNotableWorks(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw
+  if (typeof raw === 'string') {
+    try { return JSON.parse(raw) } catch { return [] }
+  }
+  return []
+}
+
+/** Convert a Prisma Book record (with optional Author relation) to BookListItem */
 function toListItem(b: any): BookListItem {
   const author = b.author && typeof b.author === 'object' ? b.author : null
-  const coverImageDoc = b.coverImage && typeof b.coverImage === 'object' ? b.coverImage : null
   return {
     id: b.id,
     slug: b.slug,
     title: b.title,
     author: author?.name ?? '',
-    authorId: author?.id,
+    authorId: author?.id ?? b.authorId,
     authorSlug: author?.slug,
     authorNameFa: author?.nameFa,
     description: b.description || '',
     coverFrom: b.coverFrom || '#b8956a',
     coverTo: b.coverTo || '#6d523a',
     coverAccent: b.coverAccent || '#f4d35e',
-    coverImage: coverImageDoc?.url ?? null,
-    coverImageUrl: coverImageDoc?.url ?? '',
-    coverBlurhash: coverImageDoc?.blurhash ?? '',
-    genres: Array.isArray(b.genres) ? b.genres : [],
+    coverImage: b.coverImage ?? null,
+    coverImageUrl: b.coverImageUrl ?? '',
+    coverBlurhash: b.coverBlurhash ?? '',
+    genres: parseGenres(b.genres),
     level: b.level,
     rating: b.rating ?? 0,
     reviewCount: b.reviewCount ?? 0,
@@ -121,64 +138,68 @@ function toListItem(b: any): BookListItem {
   }
 }
 
+// ---------------------------------------------------------------------------
+// BOOK QUERIES — All use Prisma directly
+// ---------------------------------------------------------------------------
+
 export async function getBooks(): Promise<BookListItem[]> {
-  const payload = await getPayloadClient()
-  const result = await payload.find({
-    collection: 'books',
-    where: {
-      isPublished: {
-        equals: true,
-      },
-    },
-    sort: '-createdAt',
-    limit: 100,
-  })
-  return result.docs.map(toListItem)
+  try {
+    const books = await db.book.findMany({
+      where: { isPublished: true },
+      include: { author: true },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    })
+    return books.map(toListItem)
+  } catch (err) {
+    console.error('[getBooks] DB error:', err)
+    return []
+  }
 }
 
 export async function getRecentlyAddedBooks(limit = 12): Promise<BookListItem[]> {
-  const payload = await getPayloadClient()
-  const result = await payload.find({
-    collection: 'books',
-    where: {
-      isPublished: {
-        equals: true,
-      },
-    },
-    sort: '-createdAt',
-    limit,
-  })
-  return result.docs.map(toListItem)
+  try {
+    const books = await db.book.findMany({
+      where: { isPublished: true },
+      include: { author: true },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    })
+    return books.map(toListItem)
+  } catch (err) {
+    console.error('[getRecentlyAddedBooks] DB error:', err)
+    return []
+  }
 }
 
 export async function getHighestRatedBooks(limit = 12): Promise<BookListItem[]> {
-  const payload = await getPayloadClient()
-  const result = await payload.find({
-    collection: 'books',
-    where: {
-      isPublished: {
-        equals: true,
-      },
-    },
-    sort: '-rating',
-    limit,
-  })
-  return result.docs.map(toListItem)
+  try {
+    const books = await db.book.findMany({
+      where: { isPublished: true },
+      include: { author: true },
+      orderBy: { rating: 'desc' },
+      take: limit,
+    })
+    return books.map(toListItem)
+  } catch (err) {
+    console.error('[getHighestRatedBooks] DB error:', err)
+    return []
+  }
 }
 
 export async function getMostReadBooks(limit = 12): Promise<BookListItem[]> {
-  const payload = await getPayloadClient()
-  const result = await payload.find({
-    collection: 'books',
-    where: {
-      isPublished: {
-        equals: true,
-      },
-    },
-    sort: '-viewCount',
-    limit,
-  })
-  return result.docs.map(toListItem)
+  try {
+    const books = await db.book.findMany({
+      where: { isPublished: true },
+      include: { author: true },
+      orderBy: { viewCount: 'desc' },
+      take: limit,
+    })
+    return books.map(toListItem)
+  } catch (err) {
+    console.error('[getMostReadBooks] DB error:', err)
+    return []
+  }
 }
 
 /**
@@ -197,45 +218,40 @@ export async function getBookOfTheDay(): Promise<BookListItem | null> {
 }
 
 export async function getBookBySlug(slug: string): Promise<BookDetail | null> {
-  const payload = await getPayloadClient()
-  const result = await payload.find({
-    collection: 'books',
-    where: {
-      slug: {
-        equals: slug,
+  try {
+    const book = await db.book.findUnique({
+      where: { slug },
+      include: {
+        author: true,
+        chapters: { orderBy: { order: 'asc' } },
+        reviews: { orderBy: { createdAt: 'desc' }, take: 20 },
       },
-    },
-    limit: 1,
-  })
-  if (result.docs.length === 0) return null
-  const book = result.docs[0]
-  const base = toListItem(book)
-  
-  // Reviews are stored in Prisma linked by bookId
-  const reviews = await db.review.findMany({
-    where: { bookId: String(book.id) },
-    orderBy: { createdAt: 'desc' },
-    take: 20,
-  })
+    })
+    if (!book) return null
+    const base = toListItem(book)
 
-  return {
-    ...base,
-    chapters: (book.chapters || []).map((c: any) => ({
-      id: c.id || c.slug,
-      title: c.title,
-      titleFa: c.titleFa || '',
-      slug: c.slug,
-      order: c.order ?? 0,
-      startPage: c.startPage ?? 1,
-    })),
-    reviews: reviews.map((r) => ({
-      id: r.id,
-      userName: r.userName,
-      userAvatar: r.userAvatar,
-      rating: r.rating,
-      comment: r.comment,
-      createdAt: r.createdAt.toISOString(),
-    })),
+    return {
+      ...base,
+      chapters: (book.chapters || []).map((c) => ({
+        id: c.id,
+        title: c.title,
+        titleFa: c.titleFa || '',
+        slug: c.slug,
+        order: c.order ?? 0,
+        startPage: c.startPage ?? 1,
+      })),
+      reviews: (book.reviews || []).map((r) => ({
+        id: r.id,
+        userName: r.userName,
+        userAvatar: r.userAvatar,
+        rating: r.rating,
+        comment: r.comment,
+        createdAt: r.createdAt.toISOString(),
+      })),
+    }
+  } catch (err) {
+    console.error('[getBookBySlug] DB error:', err)
+    return null
   }
 }
 
@@ -244,54 +260,54 @@ export async function getReaderBook(
   from?: number,
   to?: number,
 ): Promise<ReaderBook | null> {
-  const payload = await getPayloadClient()
-  const result = await payload.find({
-    collection: 'books',
-    where: {
-      slug: {
-        equals: slug,
-      },
-    },
-    limit: 1,
-  })
-  if (result.docs.length === 0) return null
-  const book = result.docs[0]
-  const author = book.author && typeof book.author === 'object' ? book.author : null
-  const coverImageDoc = book.coverImage && typeof book.coverImage === 'object' ? book.coverImage : null
-
-  let pages = book.pages || []
-  if (from !== undefined && to !== undefined) {
-    pages = pages.filter((p: any) => p.pageNumber >= from && p.pageNumber <= to)
-  }
-
-  return {
-    slug: book.slug,
-    title: book.title,
-    author: author?.name ?? '',
-    authorNameFa: author?.nameFa ?? '',
-    authorSlug: author?.slug ?? '',
-    level: book.level,
-    coverImageUrl: coverImageDoc?.url ?? '',
-    coverBlurhash: coverImageDoc?.blurhash ?? '',
-    pageCount: book.pageCount,
-    chapters: (book.chapters || []).map((c: any) => ({
-      id: c.id || c.slug,
-      title: c.title,
-      titleFa: c.titleFa || '',
-      slug: c.slug,
-      order: c.order ?? 0,
-      startPage: c.startPage ?? 1,
-    })),
-    pages: pages.map((p: any) => ({
-      pageNumber: p.pageNumber,
-      items: [
-        {
-          english: p.english,
-          farsi: p.farsi || '',
-          type: (p.type === 'heading' ? 'heading' : 'text') as 'text' | 'heading',
+  try {
+    const book = await db.book.findUnique({
+      where: { slug },
+      include: {
+        author: true,
+        chapters: { orderBy: { order: 'asc' } },
+        pages: {
+          where: from !== undefined && to !== undefined
+            ? { pageNumber: { gte: from, lte: to } }
+            : undefined,
+          orderBy: { pageNumber: 'asc' },
         },
-      ],
-    })),
+      },
+    })
+    if (!book) return null
+
+    return {
+      slug: book.slug,
+      title: book.title,
+      author: book.author?.name ?? '',
+      authorNameFa: book.author?.nameFa ?? '',
+      authorSlug: book.author?.slug ?? '',
+      level: book.level,
+      coverImageUrl: book.coverImageUrl ?? '',
+      coverBlurhash: book.coverBlurhash ?? '',
+      pageCount: book.pageCount,
+      chapters: (book.chapters || []).map((c) => ({
+        id: c.id,
+        title: c.title,
+        titleFa: c.titleFa || '',
+        slug: c.slug,
+        order: c.order ?? 0,
+        startPage: c.startPage ?? 1,
+      })),
+      pages: (book.pages || []).map((p) => ({
+        pageNumber: p.pageNumber,
+        items: [
+          {
+            english: p.english,
+            farsi: p.farsi || '',
+            type: (p.type === 'heading' ? 'heading' : 'text') as 'text' | 'heading',
+          },
+        ],
+      })),
+    }
+  } catch (err) {
+    console.error('[getReaderBook] DB error:', err)
+    return null
   }
 }
 
@@ -300,89 +316,80 @@ export async function getRelatedBooks(
   genres: string[],
   limit = 4,
 ): Promise<BookListItem[]> {
-  const payload = await getPayloadClient()
-  
-  if (!genres.length) {
-    const result = await payload.find({
-      collection: 'books',
+  try {
+    if (!genres.length) {
+      const books = await db.book.findMany({
+        where: {
+          slug: { not: slug },
+          isPublished: true,
+        },
+        include: { author: true },
+        orderBy: { rating: 'desc' },
+        take: limit,
+      })
+      return books.map(toListItem)
+    }
+
+    // Grab a candidate pool and score in-memory by genre overlap
+    const books = await db.book.findMany({
       where: {
-        and: [
-          { slug: { not_equals: slug } },
-          { isPublished: { equals: true } },
-        ],
+        slug: { not: slug },
+        isPublished: true,
       },
-      sort: '-rating',
-      limit,
+      include: { author: true },
+      take: 100,
     })
-    return result.docs.map(toListItem)
+
+    const scored = books
+      .map((b) => ({
+        b,
+        score: parseGenres(b.genres).filter((g: string) => genres.includes(g)).length,
+      }))
+      .sort((a, z) => z.score - a.score)
+      .slice(0, limit)
+
+    return scored.map((s) => toListItem(s.b))
+  } catch (err) {
+    console.error('[getRelatedBooks] DB error:', err)
+    return []
   }
-
-  const result = await payload.find({
-    collection: 'books',
-    where: {
-      and: [
-        { slug: { not_equals: slug } },
-        { isPublished: { equals: true } },
-      ],
-    },
-    limit: 100, // Grab a candidate pool to score in memory
-  })
-
-  const scored = result.docs
-    .map((b: any) => ({
-      b,
-      score: (b.genres || []).filter((g: string) => genres.includes(g)).length,
-    }))
-    .sort((a, z) => z.score - a.score)
-    .slice(0, limit)
-
-  return scored.map((s) => toListItem(s.b))
 }
 
 export async function getAllGenres(): Promise<string[]> {
-  const payload = await getPayloadClient()
-  const result = await payload.find({
-    collection: 'books',
-    limit: 100,
-  })
-  const set = new Set<string>()
-  for (const b of result.docs) {
-    const genres = (b as any).genres || []
-    for (const g of genres) set.add(g)
+  try {
+    const books = await db.book.findMany({
+      select: { genres: true },
+      take: 500,
+    })
+    const set = new Set<string>()
+    for (const b of books) {
+      for (const g of parseGenres(b.genres)) set.add(g)
+    }
+    return Array.from(set).sort()
+  } catch (err) {
+    console.error('[getAllGenres] DB error:', err)
+    return []
   }
-  return Array.from(set).sort()
 }
 
 export async function incrementViewCount(slug: string): Promise<void> {
   try {
-    const payload = await getPayloadClient()
-    const result = await payload.find({
-      collection: 'books',
-      where: { slug: { equals: slug } },
-      limit: 1,
+    await db.book.update({
+      where: { slug },
+      data: { viewCount: { increment: 1 } },
     })
-    if (result.docs.length > 0) {
-      const book = result.docs[0]
-      await payload.update({
-        collection: 'books',
-        id: book.id,
-        data: {
-          viewCount: (book.viewCount || 0) + 1,
-        },
-      })
-    }
   } catch (err) {
     console.error('[incrementViewCount] failed:', err)
   }
 }
 
 export async function getBookById(id: string): Promise<BookListItem | null> {
-  const payload = await getPayloadClient()
   try {
-    const book = await payload.findByID({
-      collection: 'books',
-      id,
+    const book = await db.book.findUnique({
+      where: { id },
+      include: { author: true },
     })
+    if (!book) return null
     return toListItem(book)
   } catch {
     return null
@@ -395,42 +402,44 @@ export async function getBooksByGenre(
   cursor?: string,
 ): Promise<PaginatedResult<BookListItem>> {
   if (!genre) return { items: [], nextCursor: null, hasMore: false }
-  const payload = await getPayloadClient()
-  const offset = cursor ? Number(cursor) : 0
-  
-  const page = Math.floor(offset / limit) + 1
-  
-  const result = await payload.find({
-    collection: 'books',
-    where: {
-      and: [
-        { isPublished: { equals: true } },
-        { genres: { contains: genre } },
-      ],
-    },
-    sort: '-rating',
-    limit: limit + 1,
-    page,
-  })
+  try {
+    const offset = cursor ? Number(cursor) : 0
 
-  const hasMore = result.docs.length > limit
-  const items = hasMore ? result.docs.slice(0, limit) : result.docs
-  const nextCursor = hasMore ? String(offset + limit) : null
+    // We can't use Prisma's `contains` on a JSON string field easily,
+    // so we fetch all published books and filter in-memory.
+    const allBooks = await db.book.findMany({
+      where: { isPublished: true },
+      include: { author: true },
+      orderBy: { rating: 'desc' },
+    })
 
-  return {
-    items: items.map(toListItem),
-    nextCursor,
-    hasMore,
+    const filtered = allBooks.filter((b) =>
+      parseGenres(b.genres).includes(genre),
+    )
+
+    const paginated = filtered.slice(offset, offset + limit + 1)
+    const hasMore = paginated.length > limit
+    const items = hasMore ? paginated.slice(0, limit) : paginated
+    const nextCursor = hasMore ? String(offset + limit) : null
+
+    return {
+      items: items.map(toListItem),
+      nextCursor,
+      hasMore,
+    }
+  } catch (err) {
+    console.error('[getBooksByGenre] DB error:', err)
+    return { items: [], nextCursor: null, hasMore: false }
   }
 }
 
 export async function getBooksCount(): Promise<number> {
-  const payload = await getPayloadClient()
-  const result = await payload.find({
-    collection: 'books',
-    limit: 1,
-  })
-  return result.totalDocs
+  try {
+    return await db.book.count({ where: { isPublished: true } })
+  } catch (err) {
+    console.error('[getBooksCount] DB error:', err)
+    return 0
+  }
 }
 
 export async function searchBooks(
@@ -440,134 +449,141 @@ export async function searchBooks(
 ): Promise<PaginatedResult<BookListItem>> {
   const q = query.trim()
   if (!q) return { items: [], nextCursor: null, hasMore: false }
-  
-  const payload = await getPayloadClient()
-  const result = await payload.find({
-    collection: 'books',
-    where: {
-      and: [
-        { isPublished: { equals: true } },
-        {
-          or: [
-            { title: { like: q } },
-            { description: { like: q } },
-            { 'author.name': { like: q } },
-            { 'author.nameFa': { like: q } },
-          ],
-        },
-      ],
-    },
-    limit: 100,
-  })
-  
-  const ql = q.toLowerCase()
-  const rank = (b: any): number => {
-    let score = 0
-    const author = b.author && typeof b.author === 'object' ? b.author : {}
-    if (b.title.toLowerCase().includes(ql)) score += 3
-    if (author.name?.toLowerCase().includes(ql)) score += 2
-    if (author.nameFa?.includes(q)) score += 2
-    if (b.description?.toLowerCase().includes(ql)) score += 1
-    return score
-  }
-  
-  const sorted = result.docs.sort((a: any, z: any) => {
-    const ra = rank(a)
-    const rz = rank(z)
-    if (rz !== ra) return rz - ra
-    return (z.rating ?? 0) - (a.rating ?? 0)
-  })
 
-  const offset = cursor ? Number(cursor) : 0
-  const paginated = sorted.slice(offset, offset + limit + 1)
-  const hasMore = paginated.length > limit
-  const items = hasMore ? paginated.slice(0, limit) : paginated
-  const nextCursor = hasMore ? String(offset + limit) : null
+  try {
+    const ql = q.toLowerCase()
 
-  return {
-    items: items.map(toListItem),
-    nextCursor,
-    hasMore,
+    const books = await db.book.findMany({
+      where: {
+        isPublished: true,
+        OR: [
+          { title: { contains: q, mode: 'insensitive' } },
+          { description: { contains: q, mode: 'insensitive' } },
+          { author: { name: { contains: q, mode: 'insensitive' } } },
+          { author: { nameFa: { contains: q, mode: 'insensitive' } } },
+        ],
+      },
+      include: { author: true },
+      take: 100,
+    })
+
+    // Rank by relevance
+    const rank = (b: any): number => {
+      let score = 0
+      if (b.title.toLowerCase().includes(ql)) score += 3
+      if (b.author?.name?.toLowerCase().includes(ql)) score += 2
+      if (b.author?.nameFa?.includes(q)) score += 2
+      if (b.description?.toLowerCase().includes(ql)) score += 1
+      return score
+    }
+
+    const sorted = books.sort((a, z) => {
+      const ra = rank(a)
+      const rz = rank(z)
+      if (rz !== ra) return rz - ra
+      return (z.rating ?? 0) - (a.rating ?? 0)
+    })
+
+    const offset = cursor ? Number(cursor) : 0
+    const paginated = sorted.slice(offset, offset + limit + 1)
+    const hasMore = paginated.length > limit
+    const items = hasMore ? paginated.slice(0, limit) : paginated
+    const nextCursor = hasMore ? String(offset + limit) : null
+
+    return {
+      items: items.map(toListItem),
+      nextCursor,
+      hasMore,
+    }
+  } catch (err) {
+    console.error('[searchBooks] DB error:', err)
+    return { items: [], nextCursor: null, hasMore: false }
   }
 }
 
 export async function getRandomBook(): Promise<BookListItem | null> {
-  const payload = await getPayloadClient()
-  const result = await payload.find({
-    collection: 'books',
-    where: {
-      isPublished: { equals: true },
-    },
-    limit: 100,
-  })
-  if (result.docs.length === 0) return null
-  const idx = Math.floor(Math.random() * result.docs.length)
-  return toListItem(result.docs[idx])
+  try {
+    const count = await db.book.count({ where: { isPublished: true } })
+    if (count === 0) return null
+    const skip = Math.floor(Math.random() * count)
+    const books = await db.book.findMany({
+      where: { isPublished: true },
+      include: { author: true },
+      skip,
+      take: 1,
+    })
+    if (books.length === 0) return null
+    return toListItem(books[0])
+  } catch (err) {
+    console.error('[getRandomBook] DB error:', err)
+    return null
+  }
 }
 
 export async function getAuthors(): Promise<AuthorSummary[]> {
-  const payload = await getPayloadClient()
-  const authorsResult = await payload.find({
-    collection: 'authors',
-    limit: 100,
-    sort: '-featured,name',
-  })
-  
-  const authors = await Promise.all(authorsResult.docs.map(async (a: any) => {
-    const booksResult = await payload.find({
-      collection: 'books',
-      where: {
-        and: [
-          { author: { equals: a.id } },
-          { isPublished: { equals: true } },
-        ],
-      },
-      sort: '-createdAt',
-      limit: 100,
+  try {
+    const authors = await db.author.findMany({
+      orderBy: [{ featured: 'desc' }, { name: 'asc' }],
+      take: 100,
     })
-    
-    const items = booksResult.docs.map(toListItem)
-    const genres = Array.from(new Set(items.flatMap((b) => b.genres))).sort()
-    const totalPages = items.reduce((sum, b) => sum + b.pageCount, 0)
-    const rated = items.filter((b) => b.rating > 0)
-    const averageRating =
-      rated.length > 0
-        ? rated.reduce((s, b) => s + b.rating, 0) / rated.length
-        : 0
-    const years = items.map((b) => b.publishedYear).filter((y) => y > 0)
-    const yearsActive =
-      years.length > 0
-        ? { min: Math.min(...years), max: Math.max(...years) }
-        : { min: 0, max: 0 }
 
-    const summary: AuthorSummary = {
-      name: a.name,
-      slug: a.slug,
-      bookCount: items.length,
-      books: items,
-      totalPages,
-      genres,
-      averageRating: Math.round(averageRating * 10) / 10,
-      yearsActive,
-    }
+    const results = await Promise.all(authors.map(async (a) => {
+      const books = await db.book.findMany({
+        where: {
+          authorId: a.id,
+          isPublished: true,
+        },
+        include: { author: true },
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+      })
 
-    return Object.assign(summary, {
-      bio: a.bio || '',
-      bioFa: a.bioFa || '',
-      nameFa: a.nameFa || '',
-      photoUrl: typeof a.photo === 'object' && a.photo ? a.photo.url : '',
-      photoBlurhash: typeof a.photo === 'object' && a.photo ? a.photo.blurhash : '',
-      birthYear: a.birthYear || null,
-      deathYear: a.deathYear || null,
-      nationality: a.nationality || '',
-      nationalityFa: a.nationalityFa || '',
-      flagEmoji: a.flagEmoji || '',
-      era: a.era || '',
-      eraFa: a.eraFa || '',
-      notableWorks: Array.isArray(a.notableWorks) ? a.notableWorks : [],
-      featured: !!a.featured,
-    })
-  }))
+      const items = books.map(toListItem)
+      const genres = Array.from(new Set(items.flatMap((b) => b.genres))).sort()
+      const totalPages = items.reduce((sum, b) => sum + b.pageCount, 0)
+      const rated = items.filter((b) => b.rating > 0)
+      const averageRating =
+        rated.length > 0
+          ? rated.reduce((s, b) => s + b.rating, 0) / rated.length
+          : 0
+      const years = items.map((b) => b.publishedYear).filter((y) => y > 0)
+      const yearsActive =
+        years.length > 0
+          ? { min: Math.min(...years), max: Math.max(...years) }
+          : { min: 0, max: 0 }
 
-  return authors
+      const summary: AuthorSummary = {
+        name: a.name,
+        slug: a.slug,
+        bookCount: items.length,
+        books: items,
+        totalPages,
+        genres,
+        averageRating: Math.round(averageRating * 10) / 10,
+        yearsActive,
+      }
+
+      return Object.assign(summary, {
+        bio: a.bio || '',
+        bioFa: a.bioFa || '',
+        nameFa: a.nameFa || '',
+        photoUrl: a.photoUrl || '',
+        photoBlurhash: a.photoBlurhash || '',
+        birthYear: a.birthYear || null,
+        deathYear: a.deathYear || null,
+        nationality: a.nationality || '',
+        nationalityFa: a.nationalityFa || '',
+        flagEmoji: a.flagEmoji || '',
+        era: a.era || '',
+        eraFa: a.eraFa || '',
+        notableWorks: parseNotableWorks(a.notableWorks),
+        featured: !!a.featured,
+      })
+    }))
+
+    return results
+  } catch (err) {
+    console.error('[getAuthors] DB error:', err)
+    return []
+  }
 }

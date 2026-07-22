@@ -76,11 +76,16 @@ export function dbQuoteToLegacy(q: {
 
 /** Fetch all active quotes, ordered by `displayOrder`. */
 export async function getActiveQuotes(): Promise<CuratedQuote[]> {
-  const rows = await db.quote.findMany({
-    where: { isActive: true },
-    orderBy: [{ displayOrder: 'asc' }, { createdAt: 'asc' }],
-  })
-  return rows.map(dbQuoteToLegacy)
+  try {
+    const rows = await db.quote.findMany({
+      where: { isActive: true },
+      orderBy: [{ displayOrder: 'asc' }, { createdAt: 'asc' }],
+    })
+    return rows.map(dbQuoteToLegacy)
+  } catch (err) {
+    console.error('[getActiveQuotes] DB error:', err)
+    return []
+  }
 }
 
 /** Fetch all quotes (including inactive) — admin panel use. */
@@ -97,15 +102,20 @@ export async function getQuoteBySlug(slug: string) {
 
 /** Quote-of-the-day — deterministic by local date. */
 export async function getQuoteOfTheDayFromDB(date: Date = new Date()): Promise<CuratedQuote | null> {
-  const all = await getActiveQuotes()
-  if (all.length === 0) return null
-  const s = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
-  let h = 2166136261
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i)
-    h = Math.imul(h, 16777619)
+  try {
+    const all = await getActiveQuotes()
+    if (all.length === 0) return null
+    const s = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
+    let h = 2166136261
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i)
+      h = Math.imul(h, 16777619)
+    }
+    return all[Math.abs(h) % all.length]
+  } catch (err) {
+    console.error('[getQuoteOfTheDayFromDB] DB error:', err)
+    return null
   }
-  return all[Math.abs(h) % all.length]
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
