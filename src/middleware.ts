@@ -74,7 +74,6 @@ export function middleware(_request: NextRequest) {
     "base-uri 'self'",
     "frame-ancestors 'none'",
     "form-action 'self'",
-    "upgrade-insecure-requests",
   ].join('; ')
 
   // Forward to the request so Next.js can tag inline runtime scripts
