@@ -195,6 +195,8 @@ export async function generateStaticParams() {
 /** Re-render published posts at most once per hour (ISR). */
 export const revalidate = 3600
 
+export const dynamic = 'force-dynamic'
+
 export default async function BlogPostPage({ params }: PageProps) {
   const { slug } = await params
   const post = await db.blogPost.findUnique({

@@ -2,6 +2,8 @@ import { db } from '@/lib/db'
 import { SITE } from '@/lib/site'
 import type { MetadataRoute } from 'next'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Dynamic sitemap for ketab-yar (max-level SEO).
  *

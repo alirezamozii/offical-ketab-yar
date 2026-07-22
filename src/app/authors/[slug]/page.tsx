@@ -13,6 +13,8 @@ import { getAuthors, type AuthorSummary } from '@/lib/data'
 import { buildAuthorBio } from '@/lib/cms'
 import type { AuthorBio } from '@/lib/authors'
 import { SITE } from '@/lib/site'
+
+export const dynamic = 'force-dynamic'
 import { toPersianDigits } from '@/lib/typography'
 import {
   BookOpen,

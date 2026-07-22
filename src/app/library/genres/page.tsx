@@ -10,6 +10,8 @@ import {
 } from '@/components/ui/breadcrumb'
 import { db } from '@/lib/db'
 import { SITE } from '@/lib/site'
+
+export const dynamic = 'force-dynamic'
 import { BookOpen, Flame, Home } from 'lucide-react'
 import Link from 'next/link'
 import type { Metadata } from 'next'
