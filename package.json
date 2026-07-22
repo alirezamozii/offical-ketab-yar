@@ -26,7 +26,7 @@
     "db:seed:blog": "npx tsx prisma/seed-blog.ts",
     "db:seed:chapters": "npx tsx prisma/seed-chapters.ts",
     "db:seed:dict": "npx tsx prisma/seed-dictionary.ts",
-    "payload:migrate": "bun run scripts/migrate-to-payload.ts",
+    "payload:migrate": "npx tsx scripts/migrate-to-payload.ts",
     "prepare": "husky || true",
     "docker:build": "docker build -t ketab-yar:latest .",
     "docker:up": "docker compose up -d",
