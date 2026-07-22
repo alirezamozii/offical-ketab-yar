@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
-import dynamic from 'next/dynamic'
+import nextDynamic from 'next/dynamic'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SITE } from '@/lib/site'
 
 export const dynamic = 'force-dynamic'
 
-const CollectionsPageClient = dynamic(
+const CollectionsPageClient = nextDynamic(
   () => import('@/components/collections/collections-page-client').then((m) => m.CollectionsPageClient),
   {
     loading: () => <Skeleton className="h-[600px] w-full rounded-2xl animate-pulse bg-muted/40" />,

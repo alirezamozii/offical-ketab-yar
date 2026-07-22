@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import dynamic from 'next/dynamic'
+import nextDynamic from 'next/dynamic'
 import { getActiveQuotes, getQuoteOfTheDayFromDB } from '@/lib/cms'
 import type { CuratedQuote } from '@/lib/quotes'
 import type { BookListItem } from '@/lib/data'
@@ -10,7 +10,7 @@ import { QuotesSkeleton } from '@/components/quotes/quotes-skeleton'
 
 export const dynamic = 'force-dynamic'
 
-const QuotesPageClient = dynamic(
+const QuotesPageClient = nextDynamic(
   () => import('@/components/quotes/quotes-page-client').then((m) => m.QuotesPageClient),
   {
     loading: () => <QuotesSkeleton />,
