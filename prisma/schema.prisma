@@ -1,0 +1,646 @@
+// Ketab-Yar — bilingual book reader with full CMS
+// Lists are stored as JSON-encoded strings and parsed in code.
+//
+// ── Datasource ────────────────────────────────────────────────────────────
+// Both dev and prod use Postgres via DATABASE_URL.
+// Dev:  Postgres via Docker Compose (`docker compose up -d db`)
+// Prod: Postgres via Docker Compose (full stack)
+//
+// Migrations:
+//   `prisma migrate dev --name <name>` — creates a migration and applies it
+//   `prisma migrate deploy`            — applies pending migrations (CI/CD)
+// ───────────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// AUTH — NextAuth.js (Google OAuth + Credentials) with Prisma Adapter
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  username      String?   @unique
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?   // for credential login (owner bootstrap only)
+  role          String    @default("USER") // USER | ADMIN | OWNER
+  banned        Boolean   @default(false)
+  banReason     String?
+  bannedAt      DateTime?
+  onboardingCompleted Boolean @default(false)
+  englishLevel  String?   // A1 | A2 | B1 | B2 | C1 | C2 — set during onboarding
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  reviews         Review[]
+  readingProgress ReadingProgress[]
+  userStats       UserStats?
+  blogPosts       BlogPost[]      @relation("BlogPostAuthor")
+  imageAssets     ImageAsset[]
+  bookDownloads   BookDownload[]
+  readingSessions ReadingSession[]
+  supportTickets  SupportTicket[]
+  votes           Vote[]
+  collections     Collection[]
+  userGoals       UserGoal[]
+  readingHistory  ReadingHistoryDayRow[]
+  achievements    UserAchievement[]
+  vocabularies    Vocabulary[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------------------------------------------------------------------------
+// AUTHORS — full CMS-managed author profiles (no more hardcoded names)
+// ---------------------------------------------------------------------------
+
+model Author {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  name          String
+  nameFa        String   @default("")
+  bio           String   @default("")
+  bioFa         String   @default("")
+  photoUrl      String   @default("")
+  photoBlurhash String   @default("") // base64 tiny placeholder for blur-up
+  birthYear     Int?
+  deathYear     Int?
+  nationality   String   @default("")
+  nationalityFa String   @default("")
+  flagEmoji     String   @default("")
+  era           String   @default("") // Augustan | Romantic | Victorian | Edwardian | Modern | Postmodern
+  eraFa         String   @default("")
+  notableWorks  String   @default("[]") // JSON string[]
+  featured      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  books Book[]
+
+  @@index([slug])
+  @@index([featured])
+}
+
+// ---------------------------------------------------------------------------
+// BOOKS — CMS-managed, linked to Author
+// ---------------------------------------------------------------------------
+
+model Book {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  title         String
+  authorId      String
+  author        Author   @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  description   String   @default("")
+  coverFrom     String   @default("#b8956a") // tailwind gradient from (hex)
+  coverTo       String   @default("#6d523a") // tailwind gradient to (hex)
+  coverAccent   String   @default("#f4d35e") // accent color (hex)
+  // Legacy optional cover image URL — kept for the existing color-extraction
+  // pipeline (/api/books/[slug]/cover). When present, the coverFrom/coverTo/
+  // coverAccent fields are AUTO-EXTRACTED from this image. This field is NOT
+  // shown directly in the orb — only the extracted gradient is.
+  coverImage    String?
+  // New CMS-managed high-quality cover image (shown directly via blur-up).
+  coverImageUrl String   @default("") // uploaded high-quality image
+  coverBlurhash String   @default("") // blur-up placeholder
+  genres        String   @default("[]") // JSON string[]
+  level         String   @default("B1") // CEFR: A1..C2
+  language      String   @default("en")
+  rating        Float    @default(0)
+  reviewCount   Int      @default(0)
+  viewCount     Int      @default(0)
+  pageCount     Int      @default(0)
+  isPremium     Boolean  @default(false)
+  isPublished   Boolean  @default(true)
+  publishedYear Int      @default(1900)
+  allowDownload Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  chapters       Chapter[]
+  pages          BookPage[]
+  reviews        Review[]
+  downloads      BookDownload[]
+
+  @@index([slug])
+  @@index([authorId])
+  @@index([isPublished])
+}
+
+// Chapter (چپتر) — replaces the old "بخش/section" concept
+model Chapter {
+  id          String   @id @default(cuid())
+  bookId      String
+  book        Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  title       String
+  titleFa     String   @default("")
+  slug        String
+  order       Int      @default(0)
+  startPage   Int      @default(1) // 1-indexed page number where chapter begins
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([bookId, slug])
+  @@index([bookId, order])
+}
+
+// BookPage — bilingual content, real page numbers matching the original book
+model BookPage {
+  id         String @id @default(cuid())
+  bookId     String
+  book       Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  pageNumber Int    // 1-indexed, matches the original book's page number
+  english    String
+  farsi      String
+  type       String @default("text") // text | heading | image | quote
+  // For type=image: stores JSON {url, alt, blurhash, caption}
+  // For type=quote: stores JSON {source, attribution}
+  meta       String @default("")
+
+  @@unique([bookId, pageNumber])
+  @@index([bookId, pageNumber])
+}
+
+// ---------------------------------------------------------------------------
+// BLOG — full CMS for publishing articles
+// ---------------------------------------------------------------------------
+
+model BlogPost {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  excerpt     String    @default("")
+  content     String    @default("") // markdown
+  coverUrl    String    @default("")
+  coverBlurhash String  @default("")
+  tags        String    @default("[]") // JSON string[]
+  authorId    String
+  author      User      @relation("BlogPostAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+  viewCount   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([slug])
+  @@index([published, publishedAt])
+  @@index([authorId])
+}
+
+// ---------------------------------------------------------------------------
+// READING — progress, sessions, downloads
+// ---------------------------------------------------------------------------
+
+model Review {
+  id          String   @id @default(cuid())
+  bookId      String
+  book        Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  guestId     String?  // cookie-based identity for anonymous reviewers (H-08)
+  userName    String
+  userAvatar  String   @default("")
+  rating      Int      @default(5)
+  comment     String
+  createdAt   DateTime @default(now())
+  votes       Vote[]
+
+  @@unique([userId, bookId])   // one review per signed-in user per book (H-08)
+  @@unique([guestId, bookId])  // one review per guest per book (H-08)
+  @@index([bookId])
+  @@index([userId])
+  @@index([guestId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Review votes — persisted in the DB (replaces the old db/votes.json file hack
+// that could not survive multi-instance / serverless deployments).
+// One row per (reviewId, guestId) — toggling removes the row.
+// ─────────────────────────────────────────────────────────────────────────────
+model Vote {
+  id        String   @id @default(cuid())
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestId   String?  // cookie-based identity for anonymous voters (nullable per H-08)
+  direction String   // "up" | "down"
+  createdAt DateTime @default(now())
+
+  @@unique([reviewId, guestId]) // one vote per guest per review
+  @@unique([reviewId, userId])  // one vote per signed-in user per review (H-08)
+  @@index([reviewId])
+  @@index([userId])
+  @@index([guestId])
+}
+
+model ReadingProgress {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestId     String?  // for anonymous users (cookie-based) — nullable per H-08
+  bookSlug    String
+  currentPage Int      @default(0)
+  percent     Int      @default(0)
+  lastReadAt  DateTime @default(now())
+
+  @@unique([guestId, bookSlug])
+  @@unique([userId, bookSlug])  // H-08: per-user uniqueness
+  @@index([userId])
+  @@index([guestId])
+}
+
+model ReadingSession {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestId     String?  // nullable per H-08
+  bookSlug    String
+  pagesRead   Int      @default(0)
+  minutesRead Int      @default(0)
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+
+  @@index([userId, startedAt])
+  @@index([guestId, startedAt])
+  @@index([bookSlug])
+}
+
+model BookDownload {
+  id        String   @id @default(cuid())
+  bookId    String
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  format    String   @default("json")
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([bookId])
+}
+
+// ---------------------------------------------------------------------------
+// USER STATS — replaces the old "mock stats" with real per-user aggregates
+// ---------------------------------------------------------------------------
+
+model UserStats {
+  id             String    @id @default(cuid())
+  userId         String?   @unique
+  user           User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestId        String?   @unique  // nullable per H-08 (was @default("guest"))
+  name           String    @default("") // kept for backwards-compat with mock-leaderboard seed
+  totalXP        Int       @default(0)
+  level          Int       @default(1)
+  pagesRead      Int       @default(0)
+  booksCompleted Int       @default(0)
+  streakDays     Int       @default(0)
+  isMock         Boolean   @default(false) // kept for backwards-compat with existing mock leaderboards
+  lastReadAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([totalXP])
+}
+
+// ---------------------------------------------------------------------------
+// IMAGE ASSETS — every uploaded image tracked for cleanup + reuse
+// ---------------------------------------------------------------------------
+
+model ImageAsset {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  filename    String
+  originalUrl String
+  largeUrl    String   @default("")
+  mediumUrl   String   @default("")
+  smallUrl    String   @default("")
+  blurhash    String   @default("")
+  width       Int      @default(0)
+  height      Int      @default(0)
+  mimeType    String   @default("image/jpeg")
+  sizeBytes   Int      @default(0)
+  alt         String   @default("")
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// SUPPORT — incoming support tickets from the /support form
+// ---------------------------------------------------------------------------
+
+model SupportTicket {
+  id        String   @id @default(cuid())
+  // Optional link to an authenticated user. Guests are allowed — we capture
+  // name + email from the form so we can reply without an account.
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name      String
+  email     String
+  subject   String
+  message   String
+  // OPEN | ANSWERED | CLOSED — managed from the admin panel (future).
+  status    String   @default("OPEN")
+  // Optional admin reply captured in the row for the future admin UI.
+  reply     String   @default("")
+  userAgent String   @default("")
+  ipHash    String   @default("") // sha256 of the client IP — for abuse tracking
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([email])
+}
+
+// ---------------------------------------------------------------------------
+// LEGACY: Vocabulary (kept for the existing vocabulary games)
+// ---------------------------------------------------------------------------
+
+model Vocabulary {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestId     String?  // nullable per H-08
+  word        String
+  definition  String   @default("")
+  translation String   @default("")
+  context     String   @default("")
+  bookSlug    String   @default("")
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([guestId])
+}
+
+// ---------------------------------------------------------------------------
+// CMS — dynamic content models (replaces hardcoded *-data.ts dictionaries)
+// ---------------------------------------------------------------------------
+// These tables back the admin CMS so quotes, achievements, goals, and
+// settings can be edited at runtime without a code redeploy. The seed
+// script `prisma/seed-content.ts` reads the legacy `src/lib/*-data.ts`
+// files and upserts them here on first run; admins can then edit / add
+// / remove rows through the `/admin/{quotes,achievements,goals,settings}`
+// panels. The `*-data.ts` files remain as the seed source + TypeScript
+// types/helpers (consumers have been migrated to read from the DB).
+// ---------------------------------------------------------------------------
+
+// Curated bilingual quote gallery. One row per quote; `themes` is a
+// JSON-encoded string[] (stored as text for Prisma portability). `length` is
+// the precomputed bucket ("کوتاه" | "متوسط" | "بلند") so the gallery
+// can filter without re-classifying on every request.
+model Quote {
+  id           String   @id @default(cuid())
+  slug         String   @unique // stable id used as React key + saved-quote ref
+  text         String
+  textFa       String   @default("")
+  bookSlug     String   @default("")
+  bookTitle    String   @default("")
+  bookAuthor   String   @default("")
+  pageNumber   Int      @default(1)
+  themes       String   @default("[]") // JSON string[] (Persian theme tags)
+  length       String   @default("متوسط") // "کوتاه" | "متوسط" | "بلند"
+  displayOrder Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([displayOrder])
+  @@index([bookSlug])
+  @@index([isActive])
+}
+
+// Achievement definitions — what the gallery renders. `rarity` and
+// `category` are free-form strings (the TS union types live in
+// `src/lib/achievements-data.ts`); we keep them as strings for schema
+// portability (Postgres enum migrations are heavier than they're worth).
+model AchievementDef {
+  id           String   @id @default(cuid())
+  slug         String   @unique // matches the IDs in src/lib/achievements-data.ts
+  title        String
+  titleFa      String   @default("")
+  description  String
+  descriptionFa String  @default("")
+  icon         String   @default("🏆") // emoji
+  color        String   @default("") // tailwind gradient classes
+  rarity       String   @default("common") // common | rare | epic | legendary
+  category     String   @default("reading") // reading | vocabulary | streak | level | games
+  xpReward     Int      @default(0)
+  maxProgress  Int      @default(1)
+  unit         String   @default("")
+  displayOrder Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([displayOrder])
+  @@index([category, rarity])
+  @@index([isActive])
+}
+
+// Goal / Milestone definitions. For periodic goals (daily/weekly/monthly),
+// `period` is set; for milestones (one-shot achievements like "pages-100"),
+// `kind` is set. A single table keeps the admin UI simple.
+model GoalDef {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  title         String
+  titleFa       String   @default("")
+  description   String   @default("")
+  descriptionFa String   @default("")
+  icon          String   @default("🎯")
+  target        Int      @default(1)
+  unit          String   @default("pages") // pages | minutes | books | words | days | level
+  period        String   @default("") // "" (milestone) | daily | weekly | monthly
+  kind          String   @default("") // "" (goal) | pages | booksCompleted | streak | vocab | level | readingDays
+  xpReward      Int      @default(0)
+  displayOrder  Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([displayOrder])
+  @@index([period])
+  @@index([kind])
+  @@index([isActive])
+}
+
+// Dynamic app settings (key → JSON value). Replaces hardcoded constants
+// in src/lib/settings-data.ts so admins can tune reader defaults,
+// gamification constants, etc. without a redeploy.
+model SettingDef {
+  id          String   @id @default(cuid())
+  key         String   @unique // e.g. "reader.defaultFontSize", "gamification.firstReadBonus"
+  value       String   @default("{}") // JSON-encoded value (stored as text for portability)
+  category    String   @default("general") // reading | notifications | accessibility | privacy | language | gamification | general
+  description String   @default("")
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+}
+
+// ---------------------------------------------------------------------------
+// SERVER-SYNC — collections + goals + reading history + achievement unlock
+// ---------------------------------------------------------------------------
+// Audit 04 (Database & API) flagged the "server-as-hint-provider" anti-
+// pattern: collections, goals, reading history, and achievement-unlock
+// timestamps lived ONLY in localStorage. The four models below move that
+// state to the DB so it survives device switches / browser clears.
+//
+// Each row is keyed on EITHER `userId` (signed-in) OR `guestId` (anonymous
+// cookie). The `mergeGuestDataToUser(guestId, userId)` helper in
+// `src/lib/merge-guest-data.ts` re-parents guest rows to a user on signin.
+// ---------------------------------------------------------------------------
+
+// A user's collection ("playlist") of book slugs. `bookSlugs` is a JSON
+// string[] for cheap atomic writes (the collection list is small —
+// ≤500 books per collection per the client cap).
+model Collection {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestId     String?  // nullable per H-08
+  name        String
+  description String   @default("")
+  color       String   @default("gold")
+  icon        String   @default("book")
+  bookSlugs   String   @default("[]") // JSON string[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([guestId, name])
+  @@unique([userId, name])  // H-08: per-user uniqueness
+  @@index([userId])
+  @@index([guestId])
+}
+
+// Per-user goal targets for each period. One row per (user, period).
+// Used by /api/goals/sync to persist the client's goal choices.
+model UserGoal {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestId   String?  // nullable per H-08
+  period    String   // daily | weekly | monthly
+  target    Int      @default(10)
+  unit      String   @default("pages") // pages | minutes
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([guestId, period])
+  @@unique([userId, period])  // H-08: per-user uniqueness
+  @@index([userId])
+  @@index([guestId])
+}
+
+// Per-day reading activity, server-owned. Mirrors the localStorage
+// `ky_reading_history` shape so the client can sync bidirectionally.
+// One row per (user, calendar day). `byHour` is a JSON number[24].
+model ReadingHistoryDayRow {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestId   String?  // nullable per H-08
+  date      String   // ISO date key YYYY-MM-DD (local time)
+  pages     Int      @default(0)
+  seconds   Int      @default(0)
+  byHour    String   @default("[]") // JSON number[24]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([guestId, date])
+  @@unique([userId, date])  // H-08: per-user uniqueness
+  @@index([userId, date])
+  @@index([guestId, date])
+}
+
+// Achievement-unlock timestamps. Mirrors the localStorage
+// `ky_achievements_unlocked_at` map. One row per (user, achievement slug).
+//
+// `achievementSlug` is a plain string (not a FK) — if an admin deletes the
+// AchievementDef row, the unlock record is preserved (the slug is stable and
+// the gallery gracefully renders "unknown achievement" for orphan slugs).
+model UserAchievement {
+  id              String   @id @default(cuid())
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestId         String?  // nullable per H-08
+  achievementSlug String
+  unlockedAt      DateTime @default(now())
+
+  @@unique([guestId, achievementSlug])
+  @@unique([userId, achievementSlug])  // H-08: per-user uniqueness
+  @@index([userId])
+  @@index([guestId])
+  @@index([achievementSlug])
+}
+
+// ---------------------------------------------------------------------------
+// DICTIONARY — local English→Persian dictionary for offline lookups
+// ---------------------------------------------------------------------------
+
+model DictionaryEntry {
+  id        String   @id @default(cuid())
+  word      String   @unique
+  wordLower String   @unique
+  persian   String   @default("")
+  pos       String   @default("") // part of speech: noun, verb, adj, etc.
+  phonetic  String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([wordLower])
+}

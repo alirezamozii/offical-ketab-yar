@@ -1,0 +1,131 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Ketab-Yar — production Caddyfile
+#
+# This is the PRODUCTION Caddyfile. The dev Caddyfile (./Caddyfile, listens
+# on :81, has the XTransformPort SSRF hack for sandbox preview iframes) is
+# untouched — do not overwrite it.
+#
+# What this file does:
+#   • {$DOMAIN} is a Caddy env-var interpolation — set DOMAIN in .env /
+#     docker-compose.yml. Caddy auto-issues a Let's Encrypt cert on first
+#     boot, auto-renews it, and redirects HTTP → HTTPS.
+#   • Reverse-proxies everything to app:3000 on the compose network.
+#   • health_uri /api/health/ready → Caddy considers the upstream "down"
+#     if /api/health/ready returns non-200, and returns 502 instead of
+#     forwarding to a broken instance.
+#   • gzip + brotli compression (brotli for modern clients, gzip fallback).
+#   • Static asset caching headers (immutable for _next/static hashed files).
+#   • Security headers as defense-in-depth (Next.js also sets most of these
+#     in next.config.ts — Caddy at the edge is the second layer).
+#   • NO XTransformPort hack — that was sandbox-only.
+# ─────────────────────────────────────────────────────────────────────────────
+
+{
+	# E-mail Let's Encrypt uses for expiry notices. Override via ACME_EMAIL env.
+	email {$ACME_EMAIL}
+
+	# Use Let's Encrypt's staging environment during initial DNS / cert
+	# debugging to avoid the 5-certs-per-week rate limit. Comment out for prod.
+	# acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+
+	# HTTP/3 (QUIC) — Caddy enables this automatically on :443/udp.
+	# (Already exposed in docker-compose.yml.)
+
+	# Default servers block — apply security headers + sane TLS defaults
+	# globally so the {$DOMAIN} block below stays readable.
+	servers {
+		protocols h1 h2 h3
+		trusted_proxies static private_ranges
+	}
+}
+
+# ── Main site ────────────────────────────────────────────────────────────────
+{$DOMAIN} {
+	encode {
+		# Order matters: brotli first (smaller, modern), gzip fallback.
+		zstd
+		gzip
+	}
+
+	# ── Security headers ──────────────────────────────────────────────────────
+	# Defense-in-depth — Next.js also sets most of these. Caddy at the edge
+	# means they're present even on cached responses served by Caddy.
+	header {
+		# Strict-Transport-Security: 2 years + preload. Once you're confident
+		# all subdomains are HTTPS, submit to https://hstspreload.org.
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+
+		# Clickjacking — Next.js sets X-Frame-Options: DENY in next.config.ts
+		# but we mirror it here so cached responses are also protected.
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+
+		# Disable features we don't use. Mirrors the Permissions-Policy
+		# header in next.config.ts.
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), browsing-topics=()"
+
+		# Content-Security-Policy — Next.js already sets a tighter, route-aware
+		# CSP in next.config.ts. We set a permissive fallback here that the
+		# upstream header will OVERRIDE (Next's headers win on the response).
+		# If you want Caddy to be the single source of truth, comment out the
+		# CSP block in next.config.ts and tighten this one instead.
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://internal-api.z.ai; media-src 'self' blob: data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests"
+
+		# CORS — we don't expose a public API, so deny cross-origin reads.
+		# If you later expose /api/public/*, scope this to that path only.
+		# Access-Control-Allow-Origin "https://{$DOMAIN}"
+
+		# Remove identifying headers.
+		-Server
+		-X-Powered-By
+	}
+
+	# ── Static asset caching ──────────────────────────────────────────────────
+	# Next.js hashes _next/static/* filenames, so they're safe to cache
+	# aggressively. The HTML/JSON responses pass through uncached.
+	@static path /_next/static/* /favicon.ico /robots.txt /manifest.json /logo.svg
+	header @static Cache-Control "public, max-age=31536000, immutable"
+
+	# OG images — Next.js already sets s-maxage on these via next.config.ts,
+	# but we reinforce it here at the edge.
+	@og path /api/og/*
+	header @og Cache-Control "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800"
+
+	# Never cache health probes (Caddy could serve a stale 200 from cache
+	# and never detect an outage).
+	@health path /api/health/*
+	header @health Cache-Control "no-store, no-cache, must-revalidate"
+
+	# ── Reverse proxy to the Next.js app ──────────────────────────────────────
+	reverse_proxy app:3000 {
+		# Caddy active health check — every 10s, hit /api/health/ready on
+		# the upstream. If it returns non-2xx, Caddy marks the upstream
+		# down and returns 502 to clients (instead of forwarding to a
+		# broken app instance).
+		health_uri /api/health/ready
+		health_interval 10s
+		health_timeout 5s
+		health_status 2xx
+
+		# Trust upstream's headers (Caddy will already set some). Forward
+		# the real client IP / scheme so Next.js sees the original request.
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+
+		# Flush immediately for streaming responses (SSE, chunked) — Next.js
+		# /api/ai/* routes can stream tokens; without this Caddy buffers.
+		flush_interval -1
+	}
+
+	# ── Logging ───────────────────────────────────────────────────────────────
+	# Combined log format to stdout (Docker captures it). Access logs are
+	# useful for debugging 502s and rate-limit decisions.
+	log {
+		output stdout
+		format console
+		level INFO
+	}
+}

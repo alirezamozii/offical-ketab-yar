@@ -1,0 +1,194 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Ketab-Yar — production docker-compose stack
+#
+# Services:
+#   db      — Postgres 16 (the production database; replaces dev SQLite)
+#   app     — Next.js standalone server (built from ./Dockerfile)
+#   caddy   — edge reverse proxy, automatic HTTPS via Let's Encrypt
+#   backup  — nightly pg_dump cron (optional but recommended)
+#
+# Quick start:
+#   1. Copy .env.example → .env, fill in real values (DOMAIN, NEXTAUTH_SECRET,
+#      POSTGRES_PASSWORD, GOOGLE_CLIENT_*).
+#   2. `docker compose up -d`
+#   3. On first boot only, run migrations against the live DB:
+#        docker compose run --rm app sh -c "bun run db:generate && bunx prisma db push"
+#      (Or — preferred — switch to `prisma migrate deploy` once the schema is
+#       frozen. See audits/08 §3.3.)
+#   4. Seed the book catalog (idempotent — skips books that already exist):
+#        docker compose run --rm app sh -c "bun run db:seed:prod"
+#   5. Visit https://{$DOMAIN}.
+#
+# Backups land in ./backups/ (or the named volume `pg_backups`). Restore:
+#   docker compose exec -T db psql -U "$POSTGRES_USER" "$POSTGRES_DB" < backups/2025-01-01.sql
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Use the modern Compose spec (no `version:` key — it's deprecated and ignored).
+# Requires Docker Compose v2.20+.
+
+services:
+  # ── Postgres 16 ─────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: ketab-yar-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ky}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required — set it in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-ketabyar}
+      # Tuning for small-VPS friendliness. Bump shared_buffers up to 25% of RAM
+      # for a dedicated DB host. These defaults are conservative (256MB total).
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C.UTF-8"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ky} -d ${POSTGRES_DB:-ketabyar}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # Do NOT expose 5432 publicly. Comment this in only for local debugging
+    # from the host (and bind to 127.0.0.1 — never 0.0.0.0 — on a VPS).
+    ports:
+      - "127.0.0.1:5432:5432"
+    networks:
+      - ketab-yar-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Next.js app ────────────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ketab-yar-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Postgres connection string — points at the `db` service on the
+      # internal compose network. `?schema=public` is the default but
+      # explicit is better.
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-ky}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-ketabyar}?schema=public&connection_limit=10&pool_timeout=20"
+      NODE_ENV: production
+      # NextAuth — required. Generate with `openssl rand -base64 32`.
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?NEXTAUTH_SECRET is required — set it in .env}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:?NEXTAUTH_URL is required — e.g. https://your-domain.tld}
+      # Google OAuth — optional. If both unset, Google sign-in is disabled.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      # Owner bootstrap — the email auto-promoted to OWNER on first sign-in.
+      OWNER_EMAIL: ${OWNER_EMAIL:-}
+      # Signup gate. open|closed|invite (see src/lib/env.ts)
+      SIGNUP_MODE: ${SIGNUP_MODE:-open}
+      # Admin whitelist (comma-separated). '*' means anyone can be promoted.
+      ADMIN_EMAIL_WHITELIST: ${ADMIN_EMAIL_WHITELIST:-}
+      # Used by Caddyfile.prod for the auto-HTTPS site block.
+      DOMAIN: ${DOMAIN:?DOMAIN is required — e.g. your-domain.tld}
+    ports:
+      - "3000:3000"
+    # Readiness probe — hits /api/health/ready which pings the DB. Caddy
+    # waits for this before routing traffic (see caddy depends_on below).
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - ketab-yar-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # ── Caddy edge (TLS termination + reverse proxy) ───────────────────────────
+  caddy:
+    image: caddy:2-alpine
+    container_name: ketab-yar-caddy
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "80:80"   # HTTP → redirects to HTTPS (handled by Caddy)
+      - "443:443" # HTTPS with auto Let's Encrypt certs
+      - "443:443/udp" # HTTP/3 (QUIC) — Caddy auto-negotiates
+    volumes:
+      - ./Caddyfile.prod:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data       # TLS certs + ACME state — PERSIST or you'll hit Let's Encrypt rate limits
+      - caddy_config:/config   # Caddy runtime config
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN is required}
+      ACME_EMAIL: ${ACME_EMAIL:-admin@${DOMAIN}}
+    networks:
+      - ketab-yar-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Nightly backup (optional but recommended) ──────────────────────────────
+  # Runs `pg_dump` once a day at 02:00 UTC. Dumps land in the `pg_backups`
+  # named volume; rotate via the `find -mtime +7 -delete` step. To restore:
+  #   docker compose exec -T db psql -U ky ketabyar < /backups/<file>.sql
+  backup:
+    image: postgres:16-alpine
+    container_name: ketab-yar-backup
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ky}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-ketabyar}
+      PGHOST: db
+    volumes:
+      - pg_backups:/backups
+    # Sleep 24h between dumps. (looper.sh pattern — no cron daemon needed.)
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        set -e
+        echo "[backup] starting nightly pg_dump loop (02:00 UTC daily)"
+        while true; do
+          # Sleep until next 02:00 UTC
+          now=$$(date -u +%s)
+          target=$$(date -u -d 'tomorrow 02:00:00' +%s 2>/dev/null || date -u -d 'today 02:00:00' +%s)
+          [ "$$target" -lt "$$now" ] && target=$$(date -u -d 'tomorrow 02:00:00' +%s)
+          sleep_seconds=$$(( target - now ))
+          echo "[backup] next run in $${sleep_seconds}s"
+          sleep $${sleep_seconds}
+          ts=$$(date -u +%Y%m%dT%H%M%SZ)
+          out="/backups/ketabyar-$${ts}.sql.gz"
+          echo "[backup] dumping to $$out"
+          pg_dump -U "$${POSTGRES_USER}" "$${POSTGRES_DB}" | gzip > "$$out"
+          echo "[backup] done: $$out ($$(du -h $$out | cut -f1))"
+          # Rotate: keep last 14 dumps
+          find /backups -name 'ketabyar-*.sql.gz' -mtime +14 -delete
+        done
+    networks:
+      - ketab-yar-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+networks:
+  ketab-yar-net:
+    driver: bridge
+
+volumes:
+  pgdata:        # Postgres data dir — DON'T DELETE, this is your DB
+  caddy_data:    # TLS certs / ACME state — don't delete or you hit LE rate limits
+  caddy_config:  # Caddy autosave
+  pg_backups:    # Nightly pg_dump output (rotates, 14-day retention)

@@ -1,0 +1,84 @@
+# ──────────────────────────────────────────────────────────────────────────
+# Ketab-Yar — .dockerignore
+#
+# Everything listed here is excluded from the Docker build context, which
+# keeps image builds fast, avoids cache-busting on irrelevant changes, and
+# — most importantly — PREVENTS shipping the dev SQLite DB, local uploads,
+# or the cloned reference repo into the production image.
+#
+# (See audits/08-deployment-readiness.md §1 BLOCKER 1: the old build.sh
+# pipeline tarballed db/*.db into the production artifact and ran
+# `prisma db push` against it on every deploy, nuking real user data.)
+# ──────────────────────────────────────────────────────────────────────────
+
+# ── Version control ────────────────────────────────────────────────────────
+.git
+.gitignore
+.gitattributes
+
+# ── Node / Next.js build artifacts ─────────────────────────────────────────
+node_modules
+.next
+out
+build
+dist
+coverage
+*.tsbuildinfo
+
+# ── Dev database (SQLite) — NEVER ship to prod ─────────────────────────────
+db/*.db
+db/*.db-journal
+db/*.db-wal
+db/*.db-shm
+
+# ── Local-only runtime data ────────────────────────────────────────────────
+upload
+download
+db/votes.json
+dev.log
+server.log
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Reference / cloned repos (sandbox-only) ────────────────────────────────
+ketab-yar-clone
+ketab2_extract
+
+# ── Sandbox-only directories (not part of the app) ─────────────────────────
+skills
+examples
+mini-services
+.zscripts
+audits
+tool-results
+scripts
+
+# ── Editor / OS noise ──────────────────────────────────────────────────────
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# ── Docker / CI meta (don't ship into the image) ───────────────────────────
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose.*.yml
+.docker
+
+# ── Env files (compose injects real env at runtime) ────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Docs (kept in repo, not in image) ──────────────────────────────────────
+README.md
+*.md
+!prisma/*.md
+
+# ── Misc ───────────────────────────────────────────────────────────────────
+.next/cache
+.turbo
+.pnp.*

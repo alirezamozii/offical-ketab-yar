@@ -1,0 +1,309 @@
+'use client'
+
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Eye, EyeOff, Sparkles, Volume2 } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { cn } from '@/lib/utils'
+import { useVocabGame } from '@/hooks/reader/use-vocab-game'
+import { GameEmpty, GameLoading } from '@/components/vocabulary/game-states'
+import { GameHud } from '@/components/vocabulary/game-hud'
+import { GameIntro } from '@/components/vocabulary/game-intro'
+import { GameResult } from '@/components/vocabulary/game-result'
+import {
+  diffChars,
+  normalize,
+  shuffle,
+  type VocabWord,
+} from '@/components/vocabulary/game-utils'
+
+interface Question {
+  word: VocabWord
+}
+
+const QUESTIONS_PER_GAME = 10
+const SECONDS_PER_QUESTION = 20
+const XP_PER_CORRECT = 25
+const XP_TIME_BONUS = 2
+
+function buildQuestions(words: VocabWord[]): Question[] {
+  const usable = words.filter(
+    (w) => w.word && w.word.trim() && w.translation && w.translation.trim(),
+  )
+  if (usable.length < 4) return []
+  const pool = shuffle(usable)
+  const count = Math.min(QUESTIONS_PER_GAME, pool.length)
+  return pool.slice(0, count).map((word) => ({ word }))
+}
+
+export function SpellGameClient() {
+  const [showHint, setShowHint] = useState(false)
+  const inputRef = useRef<HTMLInputElement | null>(null)
+
+  function speak(text: string) {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
+    try {
+      window.speechSynthesis.cancel()
+      const u = new SpeechSynthesisUtterance(text)
+      u.lang = 'en-US'
+      u.rate = 0.9
+      window.speechSynthesis.speak(u)
+    } catch {}
+  }
+
+  const game = useVocabGame<Question>({
+    questionsPerGame: QUESTIONS_PER_GAME,
+    secondsPerQuestion: SECONDS_PER_QUESTION,
+    xpPerCorrect: XP_PER_CORRECT,
+    xpTimeBonus: XP_TIME_BONUS,
+    timeoutDelayMs: 1800,
+    wrongDelayMs: 2200,
+    correctDelayMs: 1300,
+    emptyMessage: 'حداقل ۴ واژه با ترجمه لازم است',
+    wordFilter: (w) =>
+      !!(w.word && w.word.trim() && w.translation && w.translation.trim()),
+    buildQuestions,
+    checkCorrect: (q, value) =>
+      normalize(value) === normalize(q.word.word),
+    getWordId: (q) => q.word.id,
+    gameMode: 'spell',
+    onStart: () => {
+      setShowHint(false)
+      setTimeout(() => inputRef.current?.focus(), 300)
+    },
+    onAdvance: () => {
+      setShowHint(false)
+      setTimeout(() => inputRef.current?.focus(), 300)
+    },
+    onWrong: (q) => {
+      // Play the correct word on reveal.
+      speak(q.word.word)
+    },
+  })
+
+  if (game.loading) {
+    return <GameLoading />
+  }
+
+  if (!game.hasEnoughWords) {
+    return (
+      <GameEmpty
+        icon={<Sparkles className="h-7 w-7" />}
+        message={
+          'برای بازی هجی‌کردن حداقل ۴ واژه با ترجمه لازم است. هنگام مطالعه کلمات را ذخیره کنید (معنی خودکار گرفته می‌شود).'
+        }
+      />
+    )
+  }
+
+  if (game.state === 'finished') {
+    const accuracy =
+      game.questions.length > 0
+        ? Math.round((game.score / game.questions.length) * 100)
+        : 0
+    return (
+      <GameResult
+        title="بازی تمام شد!"
+        subtitle={`${game.questions.length} سوال پاسخ داده شد`}
+        stats={[
+          { label: 'امتیاز', value: `${game.score}/${game.questions.length}` },
+          { label: 'دقت', value: `${accuracy}٪` },
+          { label: 'XP', value: `+${game.totalXP}`, highlight: 'gold' },
+          {
+            label: 'یاد گرفته',
+            value: String(game.learnedCount),
+            highlight: 'emerald',
+          },
+        ]}
+        bestMultiplier={game.bestMultiplier}
+        learnedContent={
+          game.learnedCount > 0 ? (
+            <>{game.learnedCount} واژه به سطح «یاد گرفته شد» رسید!</>
+          ) : undefined
+        }
+        onPlayAgain={game.startGame}
+        playAgainLabel="دوباره بازی"
+      />
+    )
+  }
+
+  if (game.state === 'idle') {
+    return (
+      <GameIntro
+        icon={<Sparkles className="h-8 w-8" />}
+        title="بازی هجی‌کردن"
+        description="معنی فارسی را ببین، املای درست انگلیسی را تایپ کن!"
+        stats={[
+          { value: String(QUESTIONS_PER_GAME), label: 'سوال', color: 'gold' },
+          { value: '۳', label: 'جان', color: 'red' },
+          {
+            value: `+${XP_PER_CORRECT}`,
+            label: 'XP هر درست',
+            color: 'emerald',
+          },
+        ]}
+        difficulty={game.difficulty}
+        onDifficultyChange={game.setDifficulty}
+        soundEnabled={game.sound.enabled}
+        onToggleSound={game.sound.toggle}
+        onStart={game.startGame}
+      />
+    )
+  }
+
+  // PLAYING state
+  const q = game.currentQuestion
+  if (!q) return null
+  const showAnswer = game.feedback !== 'none'
+  const diff =
+    showAnswer && game.feedback === 'wrong'
+      ? diffChars(q.word.word, game.picked)
+      : null
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
+      <GameHud
+        lives={game.lives}
+        totalXP={game.totalXP}
+        streak={game.streak}
+        qIndex={game.qIndex}
+        totalQuestions={game.questions.length}
+        timeLeft={game.timeLeft}
+        multiplier={game.multiplier}
+        maxTime={SECONDS_PER_QUESTION}
+        onTickLow={() => game.sound.play('tick')}
+      />
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={game.qIndex}
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -16 }}
+          transition={{ duration: 0.25 }}
+        >
+          {/* Translation prompt */}
+          <div className="mb-6 rounded-2xl border-2 border-border/60 bg-card p-8 text-center shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              املای این کلمه را بنویس
+            </p>
+            <h2 className="mt-4 text-3xl font-extrabold leading-tight sm:text-4xl">
+              {q.word.translation}
+            </h2>
+            <button
+              onClick={() => setShowHint((v) => !v)}
+              className="mt-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            >
+              {showHint ? (
+                <>
+                  <EyeOff className="h-3 w-3" />
+                  پنهان کردن راهنما
+                </>
+              ) : (
+                <>
+                  <Eye className="h-3 w-3" />
+                  نمایش تعریف انگلیسی
+                </>
+              )}
+            </button>
+            {showHint && q.word.definition && (
+              <p
+                className="mt-2 text-sm italic text-muted-foreground"
+                dir="ltr"
+              >
+                {q.word.definition}
+              </p>
+            )}
+          </div>
+
+          {/* Input */}
+          <div className="flex gap-2">
+            <Input
+              ref={inputRef}
+              value={game.picked}
+              onChange={(e) => game.setPicked(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && game.submit()}
+              placeholder="Type the English word..."
+              dir="ltr"
+              disabled={showAnswer}
+              className="text-lg font-bold"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+            <Button
+              onClick={game.submit}
+              disabled={showAnswer || !game.picked.trim()}
+              variant="glow"
+              className="px-6"
+            >
+              تأیید
+            </Button>
+          </div>
+
+          {/* Feedback / reveal */}
+          {showAnswer && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={cn(
+                'mt-4 rounded-xl p-4 text-center',
+                game.feedback === 'correct'
+                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                  : 'bg-red-500/10 text-red-700 dark:text-red-400',
+              )}
+            >
+              <p className="flex items-center justify-center gap-2 font-bold">
+                {game.feedback === 'correct' ? (
+                  `✓ آفرین! +${Math.round(
+                    (XP_PER_CORRECT + game.timeLeft * XP_TIME_BONUS) *
+                      game.multiplier,
+                  )} XP${game.multiplier > 1 ? ` (×${game.multiplier})` : ''}`
+                ) : (
+                  <>
+                    <Volume2 className="h-4 w-4" />
+                    نادرست
+                  </>
+                )}
+              </p>
+              {game.feedback === 'wrong' && (
+                <div className="mt-2">
+                  <p className="text-xs text-muted-foreground">پاسخ درست:</p>
+                  <p
+                    className="text-xl font-bold tracking-wide"
+                    dir="ltr"
+                  >
+                    {q.word.word}
+                  </p>
+                  {/* Char-level diff */}
+                  {diff && (
+                    <p
+                      className="mt-1 text-sm tracking-widest"
+                      dir="ltr"
+                    >
+                      {diff.map((d, i) => (
+                        <span
+                          key={i}
+                          className={cn(
+                            d.status === 'ok' && 'text-muted-foreground',
+                            d.status === 'missing' &&
+                              'text-red-500 underline decoration-red-500/50',
+                            d.status === 'extra' &&
+                              'text-amber-500 line-through',
+                          )}
+                        >
+                          {d.ch === ' ' ? '·' : d.ch}
+                        </span>
+                      ))}
+                    </p>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          )}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  )
+}

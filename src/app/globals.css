@@ -1,0 +1,1024 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Tailwind Typography plugin — activates `prose` / `prose-lg` / `prose-sm`
+   classes used by the reader (reader-page-view.tsx:46), the blog post body
+   (app/blog/[slug]/page.tsx:360), and the admin rich-text + blog editors.
+   Without this plugin, those classes are no-ops (audit 15 P0 #4). */
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================
+   Ketab-Yar theme — warm sepia/bronze, RTL, luxury book feel
+   Light mode = soft sepia cream (NOT pure white).
+   All color vars are HSL channels; wrapped in hsl() below.
+   ============================================================ */
+
+@theme inline {
+  /* Wrap raw HSL channel vars in hsl() so utilities produce valid colors */
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  /* Surface tokens — three-step elevation ramp (background < card < popover) */
+  --color-surface-1: hsl(var(--surface-1));
+  --color-surface-2: hsl(var(--surface-2));
+  --color-surface-3: hsl(var(--surface-3));
+
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+
+  --font-sans: var(--font-vazirmatn), ui-sans-serif, system-ui, sans-serif;
+  --font-persian: var(--font-vazirmatn), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  /* Bronze / beige "gold" palette (raw hex — these are fine as-is) */
+  --color-gold-50: #faf9f7;
+  --color-gold-100: #f5f2ed;
+  --color-gold-200: #ebe4d9;
+  --color-gold-300: #ddd0bd;
+  --color-gold-400: #cdb89a;
+  --color-gold-500: #b8956a;
+  --color-gold-600: #a67f56;
+  --color-gold-700: #8a6847;
+  --color-gold-800: #6d523a;
+  --color-gold-900: #523d2c;
+  --color-gold-950: #3a2b20;
+
+  --color-beige-50: #fdfcfa;
+  --color-beige-100: #f8f6f2;
+  --color-beige-200: #f0ebe3;
+  --color-beige-300: #e5ddd0;
+  --color-beige-400: #d6c9b5;
+  --color-beige-500: #c4b49a;
+}
+
+/* ============================================================
+   LIGHT THEME — soft warm sepia cream (like aged paper)
+   Not pure white. Low saturation, high lightness.
+   ============================================================ */
+:root {
+  --radius: 0.875rem;
+
+  /* Premium motion easing — ease-out-expo for luxury feel */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+
+  /* Base — warm cream paper, ~93% lightness, low saturation */
+  --background: 38 30% 93%;
+  --foreground: 30 25% 16%;
+
+  /* Cards — slightly lighter cream for elevation */
+  --card: 38 35% 96%;
+  --card-foreground: 30 25% 16%;
+
+  --popover: 38 40% 98%;
+  --popover-foreground: 30 25% 16%;
+
+  /* Primary — bronze-gold
+     Darkened from 42% → 34% so text-primary contrast on background
+     passes WCAG AA (4.5:1) for normal text. 42%→38% still measured
+     ~4.16:1 (below AA); 34% measures ~4.97:1 (verified). */
+  --primary: 35 55% 34%;
+  --primary-foreground: 38 40% 97%;
+
+  /* Secondary — soft beige */
+  --secondary: 38 28% 89%;
+  --secondary-foreground: 32 35% 30%;
+
+  /* Muted — very soft sand */
+  --muted: 38 22% 90%;
+  /* Darkened from 42% → 36% so muted-foreground on background passes
+     WCAG AA (4.5:1) for normal text with a safety margin. 38% measured
+     ~5.20:1 (already passing); 36% measures ~5.63:1 (verified). */
+  --muted-foreground: 32 12% 36%;
+
+  /* Accent — warm gold */
+  --accent: 36 50% 88%;
+  --accent-foreground: 32 40% 25%;
+
+  --destructive: 4 70% 50%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 36 24% 82%;
+  --input: 36 28% 91%;
+  --ring: 35 55% 45%;
+
+  /* Surface elevation ramp — background < card < popover */
+  --surface-1: 38 30% 93%;
+  --surface-2: 38 35% 96%;
+  --surface-3: 38 40% 98%;
+
+  --chart-1: 35 55% 45%;
+  --chart-2: 22 65% 52%;
+  --chart-3: 200 55% 48%;
+  --chart-4: 145 42% 42%;
+  --chart-5: 280 40% 55%;
+
+  --sidebar: 38 35% 96%;
+  --sidebar-foreground: 30 25% 16%;
+  --sidebar-primary: 35 55% 42%;
+  --sidebar-primary-foreground: 38 40% 97%;
+  --sidebar-accent: 36 28% 89%;
+  --sidebar-accent-foreground: 30 25% 16%;
+  --sidebar-border: 36 24% 82%;
+  --sidebar-ring: 35 55% 45%;
+
+  /* ============================================================
+     ELEVATION SYSTEM — warm-tinted shadows (not pure black).
+     Light hits from top-left, so shadows fall bottom-right.
+     ============================================================ */
+  --shadow-sm:
+    0 1px 2px hsl(35 45% 30% / 0.06),
+    0 1px 1px hsl(35 45% 30% / 0.04);
+  --shadow-md:
+    0 2px 4px hsl(35 45% 30% / 0.08),
+    0 4px 8px hsl(35 45% 30% / 0.06),
+    0 1px 2px hsl(35 45% 30% / 0.05);
+  --shadow-lg:
+    0 4px 8px hsl(35 45% 30% / 0.10),
+    0 8px 16px hsl(35 45% 30% / 0.08),
+    0 2px 4px hsl(35 45% 30% / 0.05);
+  --shadow-xl:
+    0 8px 16px hsl(35 45% 30% / 0.12),
+    0 16px 32px hsl(35 45% 30% / 0.10),
+    0 4px 8px hsl(35 45% 30% / 0.06);
+  /* Book-specific shadow: directional light from top-left,
+     longer bottom-right drop, slight inset on the right edge
+     to imply spine depth. Warm tinted. */
+  --shadow-book:
+    0 2px 4px hsl(35 50% 25% / 0.10),
+    0 10px 24px -6px hsl(35 50% 25% / 0.22),
+    0 18px 40px -12px hsl(35 50% 25% / 0.18),
+    inset -1px 0 0 hsl(35 50% 25% / 0.10);
+}
+
+/* ============================================================
+   DARK THEME — deep warm charcoal with bronze accents
+   Layered depth, good contrast, never pure black.
+   ============================================================ */
+.dark {
+  /* Base — deep warm charcoal */
+  --background: 26 14% 7%;
+  --foreground: 38 28% 90%;
+
+  /* Cards — elevated warm surface */
+  --card: 26 12% 11%;
+  --card-foreground: 38 28% 90%;
+
+  /* Popover is the LIGHTEST dark surface (correct stacking —
+     popover sits above card visually) */
+  --popover: 26 14% 15%;
+  --popover-foreground: 38 28% 90%;
+
+  /* Primary — warm bronze, brighter for dark */
+  --primary: 38 50% 58%;
+  --primary-foreground: 26 20% 10%;
+
+  --secondary: 26 8% 16%;
+  --secondary-foreground: 38 28% 90%;
+
+  --muted: 26 8% 15%;
+  --muted-foreground: 36 10% 60%;
+
+  --accent: 34 30% 20%;
+  --accent-foreground: 38 28% 90%;
+
+  --destructive: 4 60% 48%;
+  --destructive-foreground: 0 0% 98%;
+
+  /* Border bumped from 19% → 24% lightness, slightly more
+     saturation, so cards stay visually distinct from the
+     background at low ambient light. */
+  --border: 28 12% 24%;
+  --input: 28 10% 18%;
+  --ring: 38 50% 52%;
+
+  /* Surface elevation ramp — background < card < popover */
+  --surface-1: 26 14% 7%;
+  --surface-2: 26 12% 11%;
+  --surface-3: 26 14% 15%;
+
+  --chart-1: 38 50% 58%;
+  --chart-2: 22 60% 56%;
+  --chart-3: 200 50% 52%;
+  --chart-4: 145 40% 48%;
+  --chart-5: 280 38% 58%;
+
+  --sidebar: 26 12% 11%;
+  --sidebar-foreground: 38 28% 90%;
+  --sidebar-primary: 38 50% 58%;
+  --sidebar-primary-foreground: 26 20% 10%;
+  --sidebar-accent: 26 8% 16%;
+  --sidebar-accent-foreground: 38 28% 90%;
+  --sidebar-border: 28 12% 24%;
+  --sidebar-ring: 38 50% 52%;
+
+  /* Dark-mode shadows — desaturated near-black with a hint of
+     warm primary. Same scale, less warm tint than light mode. */
+  --shadow-sm:
+    0 1px 2px hsl(26 30% 2% / 0.40),
+    0 1px 1px hsl(26 30% 2% / 0.30);
+  --shadow-md:
+    0 2px 4px hsl(26 30% 2% / 0.50),
+    0 4px 8px hsl(26 30% 2% / 0.40),
+    0 1px 2px hsl(26 30% 2% / 0.35);
+  --shadow-lg:
+    0 4px 8px hsl(26 30% 2% / 0.55),
+    0 8px 16px hsl(26 30% 2% / 0.45),
+    0 2px 4px hsl(26 30% 2% / 0.40);
+  --shadow-xl:
+    0 8px 16px hsl(26 30% 2% / 0.60),
+    0 16px 32px hsl(26 30% 2% / 0.50),
+    0 4px 8px hsl(26 30% 2% / 0.45);
+  --shadow-book:
+    0 2px 4px hsl(26 30% 2% / 0.55),
+    0 10px 24px -6px hsl(26 30% 2% / 0.70),
+    0 18px 40px -12px hsl(26 30% 2% / 0.60),
+    inset -1px 0 0 hsl(38 50% 58% / 0.08);
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+@layer base {
+  * {
+    @apply border-border;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Touch optimization — remove the 300ms tap delay on interactive elements. */
+  button,
+  a,
+  [role="button"],
+  [role="link"],
+  summary,
+  label {
+    touch-action: manipulation;
+  }
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    /* Prevent layout shift when navigating between short & long pages
+       on platforms with classic scrollbars (Windows/Linux). macOS
+       overlay scrollbars are unaffected. */
+    scrollbar-gutter: stable;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "cv01";
+    /* subtle paper texture for light mode */
+    background-image:
+      radial-gradient(circle at 15% 85%, hsl(var(--primary) / 0.04), transparent 40%),
+      radial-gradient(circle at 85% 15%, hsl(var(--primary) / 0.03), transparent 40%);
+    background-attachment: fixed;
+  }
+  .dark body {
+    background-image:
+      radial-gradient(circle at 15% 85%, hsl(var(--primary) / 0.06), transparent 45%),
+      radial-gradient(circle at 85% 15%, hsl(var(--primary) / 0.04), transparent 45%);
+  }
+  ::selection {
+    background: hsl(var(--primary) / 0.25);
+  }
+  h1, h2, h3, h4 {
+    @apply tracking-tight;
+  }
+
+  /* ============================================================
+     FOCUS-VISIBLE — gold ring, 2px offset, on all interactive
+     elements. Keyboard users get a clear, on-brand focus affordance.
+     (WCAG 2.1 SC 2.4.7 Focus Visible + SC 1.4.11 Non-text Contrast.)
+     The `:focus-visible` selector only matches keyboard / programmatic
+     focus — mouse clicks on buttons/links won't show the ring, which
+     keeps the UI clean for mouse users while keeping keyboard users
+     oriented. `:focus:not(:focus-visible)` clears any legacy outline
+     that components might set inline.
+     ============================================================ */
+  :where(a, button, input, textarea, select, [tabindex], [role="button"], [role="link"], [role="tab"], [role="menuitem"], summary):focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+  :where(a, button, input, textarea, select, [tabindex], [role="button"], [role="link"], [role="tab"], [role="menuitem"], summary):focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Belt-and-braces global fallback — catches any custom interactive
+     element that wasn't in the :where() list above (e.g. contenteditable
+     divs, custom roles added later). Same gold ring. */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+}
+
+/* ============================================================
+   FORCED COLORS / HIGH-CONTRAST — Windows High Contrast mode and
+   macOS "Increase contrast". Adapt borders + outlines so the UI
+   remains legible without breaking brand colors.
+   ============================================================ */
+@media (forced-colors: active) {
+  /* Ensure the focus ring is rendered with the user's chosen highlight
+     color (typically white-on-black or black-on-white) instead of being
+     dropped. The `Highlight` system color is the user's accent. */
+  :focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+  }
+  /* Borders may disappear in forced-colors mode — restore them with the
+     `ButtonBorder` / `CanvasText` system colors on interactive surfaces. */
+  button,
+  a,
+  [role="button"],
+  [role="link"],
+  input,
+  textarea,
+  select {
+    forced-color-adjust: none;
+  }
+}
+
+/* ============================================================
+   SR-ONLY — visually hide an element while keeping it readable by
+   screen readers. Tailwind ships its own `sr-only` utility, but we
+   declare a CSS fallback here too so the class works even if Tailwind
+   isn't fully hydrated yet (e.g. SSR first paint).
+   ============================================================ */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+.sr-only-focusable:focus,
+.sr-only-focusable:focus-visible {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: inherit;
+  border-width: 0;
+}
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+@layer utilities {
+  /* ---------- Warm scrollbar ---------- */
+  .scroll-warm {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary) / 0.4) transparent;
+  }
+  .scroll-warm::-webkit-scrollbar { width: 8px; height: 8px; }
+  .scroll-warm::-webkit-scrollbar-track { background: transparent; }
+  .scroll-warm::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.35);
+    border-radius: 9999px;
+  }
+  .scroll-warm::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.6);
+  }
+  .scroll-hidden::-webkit-scrollbar { display: none; }
+  .scroll-hidden { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+  .mb-safe { margin-bottom: env(safe-area-inset-bottom, 0px); }
+  .text-balance { text-wrap: balance; }
+  .text-pretty { text-wrap: pretty; }
+
+  /* ============================================================
+     MOBILE / TOUCH UTILITIES — billion-dollar-app UX primitives.
+     Apply via className; safe to use on any element.
+     ============================================================ */
+
+  /* iOS safe-area insets — combine with .pb-safe / .pt-safe for full safe-area
+     padding on both sides (used by sticky top bars + bottom sheets). */
+  .safe-area-top { padding-top: env(safe-area-inset-top, 0px); }
+  .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .safe-area-x {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  .safe-area-inset {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  /* Apple HIG: minimum 44×44px tap target on touch devices. */
+  .tap-target { min-width: 44px; min-height: 44px; }
+
+  /* Strip the iOS grey tap-flash. Safe to apply globally (already set on `*`
+     in @layer base; here as a utility for elements that opt out via reset). */
+  .no-tap-highlight { -webkit-tap-highlight-color: transparent; }
+
+  /* Eliminate the 300ms tap delay on interactive elements. */
+  .touch-manipulation { touch-action: manipulation; }
+
+  /* Hide scrollbars on horizontally-scrollable strips (chip rows, tab strips,
+     card carousels) — keeps the UI clean without losing scroll behavior. */
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  /* Contain overscroll inside modals / sheets so a bottom-of-sheet scroll
+     doesn't propagate to the body (prevents accidental pull-to-refresh). */
+  .overscroll-contain { overscroll-behavior: contain; }
+  .overscroll-none { overscroll-behavior: none; }
+
+  /* Mobile horizontal carousel with snap points — pair with overflow-x-auto
+     and `snap-x`. Children should use `snap-start` / `snap-center`. */
+  .snap-x-carousel {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .snap-x-carousel::-webkit-scrollbar { display: none; }
+
+  /* Prevent text selection on long-press (mobile context menus, FABs). */
+  .no-callout {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Dot pattern */
+  .bg-dot-pattern {
+    background-image: radial-gradient(hsl(var(--primary) / 0.15) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
+  /* Perspective for 3D */
+  .perspective-1000 { perspective: 1000px; }
+  .perspective-1500 { perspective: 1500px; }
+
+  /* ---------- Soft book-light: smooth radial glow from bottom-left,
+     like light cast on a page. Layered + blurred for a soft, natural
+     feel — never a hard edge. ---------- */
+  .book-light {
+    position: relative;
+  }
+  .book-light::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(
+      ellipse 120% 90% at 18% 100%,
+      hsl(var(--primary) / 0.16),
+      hsl(var(--primary) / 0.05) 35%,
+      transparent 65%
+    );
+    pointer-events: none;
+    transition: opacity 0.5s var(--ease-out-expo);
+    opacity: 0.7;
+  }
+  .book-light:hover::before {
+    opacity: 1;
+  }
+
+  /* ---------- Paper texture overlay for book covers.
+     Layered tiny radial gradients = subtle "printed paper" noise
+     without an external image. Applied as a child <div> inside the
+     cover (see book-cover.tsx). ---------- */
+  .book-cover-texture {
+    background-image:
+      radial-gradient(circle at 23% 17%, hsl(0 0% 100% / 0.04) 0.5px, transparent 1px),
+      radial-gradient(circle at 67% 83%, hsl(0 0% 0% / 0.05) 0.5px, transparent 1px),
+      radial-gradient(circle at 41% 51%, hsl(0 0% 100% / 0.03) 0.5px, transparent 1px),
+      radial-gradient(circle at 85% 33%, hsl(0 0% 0% / 0.04) 0.5px, transparent 1px),
+      radial-gradient(circle at 12% 79%, hsl(0 0% 100% / 0.025) 0.5px, transparent 1px);
+    background-size: 11px 11px, 13px 13px, 9px 9px, 15px 15px, 7px 7px;
+    mix-blend-mode: overlay;
+  }
+
+  /* ---------- Elevation utilities (warm-tinted shadow scale).
+     Additive — Tailwind's own shadow-* classes still work. ---------- */
+  .shadow-sm-warm { box-shadow: var(--shadow-sm); }
+  .shadow-md-warm { box-shadow: var(--shadow-md); }
+  .shadow-lg-warm { box-shadow: var(--shadow-lg); }
+  .shadow-xl-warm { box-shadow: var(--shadow-xl); }
+  /* Book-cover-specific directional shadow (light from top-left) */
+  .shadow-book { box-shadow: var(--shadow-book); }
+
+  /* ---------- Glassmorphism — frosted-glass cards.
+     Use on small surfaces only (popovers, sticky bars) — blur is
+     GPU-heavy on large areas. ---------- */
+  .glass {
+    background: hsl(var(--card) / 0.72);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid hsl(var(--border) / 0.55);
+    box-shadow:
+      0 4px 16px hsl(35 45% 25% / 0.08),
+      inset 0 1px 0 hsl(0 0% 100% / 0.4);
+  }
+  .dark .glass {
+    background: hsl(var(--surface-2) / 0.72);
+    border: 1px solid hsl(var(--border) / 0.65);
+    box-shadow:
+      0 4px 16px hsl(26 30% 2% / 0.45),
+      inset 0 1px 0 hsl(0 0% 100% / 0.06);
+  }
+  .glass-strong {
+    background: hsl(var(--card) / 0.88);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid hsl(var(--border) / 0.65);
+    box-shadow:
+      0 8px 24px hsl(35 45% 25% / 0.10),
+      inset 0 1px 0 hsl(0 0% 100% / 0.5);
+  }
+  .dark .glass-strong {
+    background: hsl(var(--surface-3) / 0.88);
+    border: 1px solid hsl(var(--border) / 0.75);
+    box-shadow:
+      0 8px 24px hsl(26 30% 2% / 0.55),
+      inset 0 1px 0 hsl(0 0% 100% / 0.08);
+  }
+
+  /* ---------- Gradient utilities for consistent gradient usage ---------- */
+  .gradient-gold {
+    background-image: linear-gradient(135deg,
+      hsl(35 60% 50%) 0%,
+      hsl(38 55% 42%) 50%,
+      hsl(32 60% 38%) 100%);
+  }
+  .gradient-warm {
+    background-image: linear-gradient(135deg,
+      hsl(35 50% 90%) 0%,
+      hsl(38 45% 84%) 50%,
+      hsl(32 40% 78%) 100%);
+  }
+  .dark .gradient-warm {
+    background-image: linear-gradient(135deg,
+      hsl(35 20% 16%) 0%,
+      hsl(38 22% 12%) 50%,
+      hsl(32 18% 9%) 100%);
+  }
+  .gradient-paper {
+    background-image:
+      linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--card) / 0.6) 100%),
+      radial-gradient(circle at 20% 0%, hsl(var(--primary) / 0.04), transparent 50%);
+  }
+
+  /* ---------- Smooth gradient text ---------- */
+  .text-gradient-gold {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(35 60% 55%));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* ---------- Reader typography — optimal long-form defaults.
+     Apply to the reading container. Uses ligatures, contextual
+     alternates, old-style numerals, optical sizing, hanging
+     punctuation (Safari), and prevents orphans/widows. ---------- */
+  .reading-text {
+    font-feature-settings:
+      "kern" 1,
+      "liga" 1,
+      "calt" 1,
+      "onum" 1,
+      "ss01" 1;
+    font-optical-sizing: auto;
+    text-wrap: pretty;
+    letter-spacing: 0.005em;
+    orphans: 2;
+    widows: 2;
+  }
+  @supports (hanging-punctuation: first last) {
+    .reading-text {
+      hanging-punctuation: first last;
+    }
+  }
+  .reading-text p {
+    line-height: 1.85;
+    hyphens: auto;
+  }
+  .reading-text p + p {
+    margin-top: 1em;
+  }
+
+  /* Lazy-load fade-in (used with IntersectionObserver or whileInView) */
+  .fade-in-up {
+    animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---------- Shimmer skeleton ---------- */
+  .shimmer {
+    background: linear-gradient(
+      100deg,
+      hsl(var(--muted)) 30%,
+      hsl(var(--muted) / 0.5) 50%,
+      hsl(var(--muted)) 70%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+  @keyframes shimmer {
+    to { background-position: -200% 0; }
+  }
+
+  /* ---------- Premium motion easing utility ---------- */
+  .ease-out-expo { transition-timing-function: var(--ease-out-expo); }
+  .ease-in-out-quart { transition-timing-function: var(--ease-in-out-quart); }
+
+  /* ---------- BRAND SCROLLBAR — fluid, jelly-like, brand-colored.
+     Uses a gradient thumb (gold → bronze), rounded, with a hover
+     expansion. The track has a very subtle tinted inset.
+     Apply with `.scroll-brand` on any scrollable container. ---------- */
+  .scroll-brand {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary) / 0.5) transparent;
+  }
+  .scroll-brand::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  .scroll-brand::-webkit-scrollbar-track {
+    background: hsl(var(--muted) / 0.3);
+    border-radius: 9999px;
+    margin: 4px;
+  }
+  .scroll-brand::-webkit-scrollbar-thumb {
+    background: linear-gradient(
+      180deg,
+      hsl(35 60% 50% / 0.6),
+      hsl(32 50% 40% / 0.7)
+    );
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    transition: background 0.3s var(--ease-out-expo);
+  }
+  .scroll-brand::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(
+      180deg,
+      hsl(35 65% 55% / 0.8),
+      hsl(32 55% 45% / 0.9)
+    );
+    border: 1px solid transparent;
+    background-clip: padding-box;
+  }
+  .dark .scroll-brand::-webkit-scrollbar-thumb {
+    background: linear-gradient(
+      180deg,
+      hsl(38 50% 58% / 0.5),
+      hsl(35 40% 48% / 0.6)
+    );
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  .dark .scroll-brand::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(
+      180deg,
+      hsl(38 55% 62% / 0.7),
+      hsl(35 45% 52% / 0.8)
+    );
+    border: 1px solid transparent;
+    background-clip: padding-box;
+  }
+
+  /* ---------- Subtle paper texture for card backgrounds.
+     Very faint — only visible on close inspection. Adds depth
+     without being noisy. ---------- */
+  .texture-paper {
+    background-image:
+      radial-gradient(circle at 20% 80%, hsl(var(--primary) / 0.015) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, hsl(var(--primary) / 0.01) 0%, transparent 50%);
+  }
+
+  /* ---------- Subtle grain texture for dark surfaces.
+     Adds a "material" feel to dark cards without an image. ---------- */
+  .texture-grain {
+    position: relative;
+  }
+  .texture-grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-image:
+      radial-gradient(circle at 25% 25%, hsl(0 0% 100% / 0.015) 0.5px, transparent 1px),
+      radial-gradient(circle at 75% 75%, hsl(0 0% 0% / 0.02) 0.5px, transparent 1px);
+    background-size: 8px 8px, 12px 12px;
+    pointer-events: none;
+    opacity: 0.6;
+  }
+
+  /* ---------- Premium stagger animation ---------- */
+  .stagger-in > * {
+    animation: staggerIn 0.5s var(--ease-out-expo) both;
+  }
+  .stagger-in > *:nth-child(1) { animation-delay: 0.02s; }
+  .stagger-in > *:nth-child(2) { animation-delay: 0.06s; }
+  .stagger-in > *:nth-child(3) { animation-delay: 0.10s; }
+  .stagger-in > *:nth-child(4) { animation-delay: 0.14s; }
+  .stagger-in > *:nth-child(5) { animation-delay: 0.18s; }
+  .stagger-in > *:nth-child(6) { animation-delay: 0.22s; }
+  .stagger-in > *:nth-child(7) { animation-delay: 0.26s; }
+  .stagger-in > *:nth-child(8) { animation-delay: 0.30s; }
+  @keyframes staggerIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---------- Scale-in for modals/popovers ---------- */
+  .scale-in {
+    animation: scaleIn 0.25s var(--ease-out-expo) both;
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  /* ---------- Slide-up for bottom sheets ---------- */
+  .slide-up {
+    animation: slideUp 0.35s var(--ease-out-expo) both;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---------- Touch / micro-interaction utilities ---------- */
+
+  /* Disable text selection on UI chrome (header, nav, buttons, chips).
+     NEVER apply to reading content / vocabulary cards — those need
+     to remain selectable for highlighting + copy. */
+  .no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* GPU-acceleration hint for animated elements (cards, pills, modals).
+     Avoid on static elements — wastes memory. */
+  .gpu {
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  /* Generic tap-feedback — paired with framer-motion whileTap on
+     elements that aren't Button-based (chips, nav links). */
+  .tap-feedback {
+    transition: transform 0.15s var(--ease-out-expo);
+  }
+  .tap-feedback:active {
+    transform: scale(0.97);
+  }
+
+  /* ---------- Mobile-only horizontal scroll with hidden scrollbar
+     (used for tab strips that overflow on small screens). ---------- */
+  .scroll-x-mobile {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .scroll-x-mobile::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* ---------- Touch-device detection (CSS-side): disable hover-only
+     effects on coarse pointers (touch screens). Pair with media query
+     `(hover: hover)` in component classes. ---------- */
+  @media (hover: none) and (pointer: coarse) {
+    .hover-only-fine {
+      transition: none !important;
+    }
+    .hover-only-fine:hover {
+      transform: none !important;
+      box-shadow: inherit !important;
+    }
+  }
+
+  /* ---------- Pointer-fine-only utilities — these effects ONLY apply when
+     the user has a real mouse (hover:hover + pointer:fine). Touch devices
+     skip them entirely, avoiding sticky-hover bugs on iOS. Apply via:
+        className="hover:scale-105 hover-only-fine" ---------- */
+  @media (hover: hover) and (pointer: fine) {
+    .hover-only-fine {
+      /* enabled — base class is a no-op; companion hover:* utilities take
+         effect because the media query matched. */
+    }
+  }
+  @media (hover: none) {
+    /* Disable ALL hover: utilities on touch devices when the element opts
+       in via .hover-only-fine. Tailwind's hover: variants still apply
+       structurally, but we kill them with !important to prevent the
+       sticky-hover issue. */
+    .hover-only-fine:hover {
+      transform: none !important;
+      background-color: inherit !important;
+      color: inherit !important;
+      box-shadow: inherit !important;
+      border-color: inherit !important;
+      opacity: inherit !important;
+      filter: none !important;
+    }
+  }
+
+  /* ============================================================
+     PREMIUM POLISH UTILITIES — billion-dollar-app visual depth.
+     Gold/amber-only palette (no indigo/blue).
+     ============================================================ */
+
+  /* Gold text-shadow glow — works on solid-color text. For gradient-clipped
+     text, pair with .drop-glow-gold (filter-based) since text-shadow does
+     not render on transparent text. */
+  .text-glow-gold {
+    text-shadow:
+      0 0 20px rgba(184, 149, 106, 0.4),
+      0 0 40px rgba(184, 149, 106, 0.2);
+  }
+  /* Filter-based glow for gradient-clipped text (drop-shadow respects the
+     visible pixels even when color: transparent + bg-clip-text). */
+  .drop-glow-gold {
+    filter: drop-shadow(0 0 16px rgba(184, 149, 106, 0.45));
+  }
+
+  /* Subtle two-stop gold mesh gradient — adds warmth + depth to flat
+     surfaces. Layer over a solid bg for best effect. */
+  .bg-mesh-gold {
+    background-image:
+      radial-gradient(at 20% 30%, rgba(184, 149, 106, 0.08) 0px, transparent 50%),
+      radial-gradient(at 80% 70%, rgba(138, 104, 71, 0.06) 0px, transparent 50%);
+  }
+
+  /* Gradient gold border — pulled along the inline axis. Pair with a
+     border-width utility (e.g. border-2) so border-image has pixels to fill. */
+  .border-gradient-gold {
+    border-image: linear-gradient(135deg, rgba(184, 149, 106, 0.4), rgba(138, 104, 71, 0.1), rgba(184, 149, 106, 0.4)) 1;
+  }
+
+  /* Triple-layer gold glow shadow — soft halo + tight ring + far scatter.
+     Use on hover for premium cards / CTAs. */
+  .shadow-glow-gold {
+    box-shadow:
+      0 0 0 1px rgba(184, 149, 106, 0.1),
+      0 4px 20px rgba(184, 149, 106, 0.15),
+      0 0 40px rgba(184, 149, 106, 0.08);
+  }
+
+  /* Shimmer sweep — slow diagonal gold light pass. Use as an overlay
+     on hover (absolute inset-0, pointer-events-none). */
+  .animate-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(184, 149, 106, 0.2), transparent);
+    background-size: 200% 100%;
+    animation: shimmerSweep 2s infinite;
+  }
+  @keyframes shimmerSweep {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Premium frosted glass — heavy blur + saturated colors + faint gold
+     hairline border. Replaces lighter glass on hero-tier surfaces. */
+  .glass-premium {
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    background: rgba(23, 23, 23, 0.7);
+    border: 1px solid rgba(184, 149, 106, 0.1);
+  }
+  /* Light-mode variant of premium glass — sepia cream tint. */
+  :is(html:not(.dark)) .glass-premium {
+    background: rgba(255, 250, 240, 0.72);
+    border-color: rgba(184, 149, 106, 0.18);
+  }
+
+  /* Gentle vertical float — used on decorative orbs / book covers. */
+  .animate-float {
+    animation: floatY 6s ease-in-out infinite;
+  }
+  @keyframes floatY {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  /* Very slow icon pulse — subtle "alive" feel on feature icons.
+     4s period, scales 1 → 1.06 → 1 with soft easing. */
+  .animate-pulse-slow {
+    animation: pulseSlow 4s ease-in-out infinite;
+  }
+  @keyframes pulseSlow {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.06); opacity: 0.92; }
+  }
+
+  /* Bouncing chevron — for scroll-down indicators. */
+  .animate-bounce-soft {
+    animation: bounceSoft 2s ease-in-out infinite;
+  }
+  @keyframes bounceSoft {
+    0%, 100% { transform: translateY(0); opacity: 0.6; }
+    50% { transform: translateY(6px); opacity: 1; }
+  }
+
+  /* Shimmer streak — for progress bars. A light band sweeps across the
+     bar from left to right, passes through completely, then loops.
+     Per user feedback: "باید رد شه بره اون رفلکنش دوباره بیاد" —
+     the shimmer must pass through completely and loop, not get stuck.
+
+     Using CSS animation (not framer-motion) for reliability — framer-motion's
+     repeat can stutter on re-render. */
+  @keyframes shimmer-streak {
+    0% { transform: translateX(-100%); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateX(300%); opacity: 0; }
+  }
+}
+
+/* ============================================================
+   Reader highlight colors
+   ============================================================ */
+.reader-highlight {
+  border-radius: 3px;
+  padding: 0 1px;
+}
+.hl-yellow { background: rgba(251, 209, 32, 0.4); }
+.hl-orange { background: rgba(252, 156, 74, 0.4); }
+.hl-gold { background: rgba(202, 172, 105, 0.45); }
+
+/* ============================================================
+   MOTION PREFERENCES — respect reduced motion.
+   Disables smooth scroll, fade-in-up animation, and the
+   book-cover shine sweep (the shine is gated in JS by
+   .motion-reduce-safe on the parent).
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .fade-in-up { animation: none; }
+  .book-light::before { transition: none; }
+  .stagger-in > * { animation: none !important; }
+  .scale-in { animation: none !important; }
+  .slide-up { animation: none !important; }
+  .shimmer { animation: none !important; }
+  .tap-feedback:active { transform: none !important; }
+  /* Premium polish — disable all infinite / shimmer / float / pulse
+     animations under reduced-motion so nothing moves on its own. */
+  .animate-shimmer { animation: none !important; }
+  .animate-float { animation: none !important; }
+  .animate-pulse-slow { animation: none !important; }
+  .animate-bounce-soft { animation: none !important; }
+  .text-glow-gold { text-shadow: none !important; }
+  .drop-glow-gold { filter: none !important; }
+}

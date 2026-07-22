@@ -1,0 +1,28 @@
+{
+  "entry": [
+    "src/app/**/page.tsx",
+    "src/app/**/route.ts",
+    "src/app/**/layout.tsx",
+    "src/app/**/loading.tsx",
+    "src/app/**/error.tsx",
+    "src/app/**/not-found.tsx",
+    "src/instrumentation.ts",
+    "src/middleware.ts",
+    "src/components/**/*.{ts,tsx}",
+    "src/hooks/**/*.{ts,tsx}",
+    "src/lib/**/*.{ts,tsx}",
+    "prisma/seed*.ts"
+  ],
+  "project": ["src/**/*.{ts,tsx}", "prisma/**/*.ts"],
+  "ignore": [
+    "src/test/**",
+    "**/*.test.{ts,tsx}",
+    "**/*.spec.{ts,tsx}",
+    "src/app/sw.ts",
+    "src/app/swe-worker*.js",
+    "node_modules/**",
+    ".next/**"
+  ],
+  "ignoreBinaries": ["ts-node", "prisma"],
+  "ignoreDependencies": []
+}

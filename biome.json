@@ -1,0 +1,33 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "linter": {
+    "enabled": false
+  },
+  "organizeImports": {
+    "enabled": true
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "trailingCommas": "all",
+      "semicolons": "always"
+    }
+  },
+  "files": {
+    "ignore": [
+      "node_modules/**",
+      ".next/**",
+      "dist/**",
+      "coverage/**",
+      "prisma/migrations/**",
+      "*.lock",
+      "bun.lock"
+    ]
+  }
+}
