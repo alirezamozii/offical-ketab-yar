@@ -66,7 +66,6 @@ export const sentryBuildOptions: SentryBuildOptions = {
     deleteSourcemapsAfterUpload: true,
   },
 
-  disableLogger: process.env.NODE_ENV === 'production',
   widenClientFileUpload: true,
   tunnelRoute: '/monitoring',
   silent: process.env.NODE_ENV === 'production',
