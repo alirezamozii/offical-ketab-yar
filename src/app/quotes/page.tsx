@@ -8,6 +8,8 @@ import { getBooks } from '@/lib/data'
 import { SITE } from '@/lib/site'
 import { QuotesSkeleton } from '@/components/quotes/quotes-skeleton'
 
+export const dynamic = 'force-dynamic'
+
 const QuotesPageClient = dynamic(
   () => import('@/components/quotes/quotes-page-client').then((m) => m.QuotesPageClient),
   {

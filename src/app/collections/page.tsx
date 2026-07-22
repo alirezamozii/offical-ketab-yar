@@ -3,6 +3,8 @@ import dynamic from 'next/dynamic'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SITE } from '@/lib/site'
 
+export const dynamic = 'force-dynamic'
+
 const CollectionsPageClient = dynamic(
   () => import('@/components/collections/collections-page-client').then((m) => m.CollectionsPageClient),
   {

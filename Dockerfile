@@ -63,19 +63,20 @@ COPY --from=deps /app/package.json ./package.json
 # node_modules, skills, upload, audits, ketab-yar-clone, etc.)
 COPY . .
 
-# Disable Next.js telemetry during the build.
-ENV NEXT_TELEMETRY_DISABLED=1
+# Disable Next.js telemetry and set build-time placeholders for env validation
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    DATABASE_URL="postgresql://ky:dummy@127.0.0.1:5432/ketabyar?schema=public" \
+    NEXTAUTH_SECRET="development_secret_key_at_least_16_characters_long" \
+    NEXTAUTH_URL="http://127.0.0.1:3000" \
+    PAYLOAD_SECRET="development_secret_key_at_least_16_characters_long" \
+    NODE_OPTIONS="--max-old-space-size=2048"
 
 # Generate the Prisma client (writes to node_modules/.prisma + @prisma/client).
 # This must run before `next build` so the standalone bundler can trace the
 # generated client into the output.
 RUN bun run db:generate
 
-# Build the standalone Next.js app. `output: 'standalone'` in next.config.ts
-# emits .next/standalone/ with server.js + a minimal node_modules tree.
-# We do NOT run `prisma db push` here — see header comment.
-# Use NODE_OPTIONS to give the build headroom on memory-constrained hosts.
-ENV NODE_OPTIONS="--max-old-space-size=2048"
+# Build the standalone Next.js app.
 RUN bun run build
 
 # ── Stage 3: runner ──────────────────────────────────────────────────────────

@@ -2,6 +2,8 @@ import { BlogPageClient } from '@/components/blog/blog-page-client'
 import type { Metadata } from 'next'
 import { SITE } from '@/lib/site'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'بلاگ | کتاب‌یار',
   description:
