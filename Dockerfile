@@ -118,6 +118,9 @@ COPY --from=builder --chown=nextjs:nextjs /app/public ./public
 COPY --from=builder --chown=nextjs:nextjs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nextjs /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder --chown=nextjs:nextjs /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder --chown=nextjs:nextjs /app/node_modules/.bin ./node_modules/.bin
+COPY --from=builder --chown=nextjs:nextjs /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder --chown=nextjs:nextjs /app/node_modules/tsx ./node_modules/tsx
 
 USER nextjs
 
