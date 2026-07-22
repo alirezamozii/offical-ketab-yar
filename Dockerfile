@@ -65,6 +65,7 @@ COPY . .
 
 # Disable Next.js telemetry and set build-time placeholders for env validation
 ENV NEXT_TELEMETRY_DISABLED=1 \
+    NEXT_STANDALONE="true" \
     DATABASE_URL="postgresql://ky:dummy@127.0.0.1:5432/ketabyar?schema=public" \
     NEXTAUTH_SECRET="development_secret_key_at_least_16_characters_long" \
     NEXTAUTH_URL="http://127.0.0.1:3000" \

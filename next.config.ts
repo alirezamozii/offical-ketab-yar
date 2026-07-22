@@ -45,7 +45,11 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  output: process.env.NEXT_STANDALONE === "true" ? "standalone" : undefined,
+  outputFileTracingExcludes: {
+    '*': ['node:*', 'node:inspector', 'node:crypto'],
+  },
+  serverExternalPackages: ["node:inspector", "node:crypto", "node:fs", "node:path", "node:util", "node:events", "node:stream"],
   typescript: {
     // Re-enabled — all type errors have been fixed (tsc --noEmit passes clean).
     // If a future change introduces a type error, the build will now FAIL FAST
