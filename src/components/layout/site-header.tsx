@@ -21,7 +21,7 @@ import {
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useEffect, useRef, useState } from 'react'
-import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
+import { motion, useScroll, useTransform, useSpring, useReducedMotion, AnimatePresence } from 'framer-motion'
 import { signIn, signOut, useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -57,7 +57,7 @@ type NavItem = {
 const NAV: NavItem[] = [
   { href: '/', label: 'خانه', icon: BookOpen, accessKey: 'h' },
   { href: '/library', label: 'کتابخانه', icon: Library, accessKey: 'l' },
-  { href: '/authors', label: 'نوشتگان', icon: Feather, accessKey: 'a' },
+  { href: '/authors', label: 'نویسندگان', icon: Feather, accessKey: 'a' },
   { href: '/blog', label: 'بلاگ', icon: FileText, accessKey: 'g' },
   { href: '/vocabulary', label: 'واژگان', icon: BookMarked, accessKey: 'v' },
   { href: '/dashboard', label: 'داشبورد', icon: Sparkles, accessKey: 'd' },
@@ -80,7 +80,8 @@ export function SiteHeader() {
   // keep using useScrollDirection for it. But the smooth progress bar is
   // now driven by the singleton useScrollProgressScaleX hook which
   // updates the DOM directly — no re-renders, no lag.
-  const { scrolled } = useScrollDirection(8, 120)
+  // useScrollDirection with hysteresis (35px shrink threshold, 5px expand threshold)
+  const { scrolled } = useScrollDirection(35, 120, 5)
   const progressBarRef = useRef<HTMLDivElement>(null)
   useScrollProgressScaleX(progressBarRef, 'right')
   useEffect(() => setMounted(true), [])
@@ -124,28 +125,51 @@ export function SiteHeader() {
     router.push(`/search?q=${encodeURIComponent(q)}`)
   }
 
+  // Continuous progressive scroll-linked spring values (0px to 90px scroll)
+  const { scrollY } = useScroll()
+
+  const springConfig = prefersReduced
+    ? { stiffness: 1000, damping: 50 }
+    : { stiffness: 220, damping: 26, mass: 0.5 }
+
+  const rawScrollProgress = useTransform(scrollY, [0, 90], [0, 1])
+  const scrollSpring = useSpring(rawScrollProgress, springConfig)
+
+  const headerHeight = useTransform(scrollSpring, [0, 1], [80, 64])
+  const logoScale = useTransform(scrollSpring, [0, 1], [1.12, 0.94])
+  const textScale = useTransform(scrollSpring, [0, 1], [1.06, 0.95])
+
+  const borderRadius = useTransform(scrollSpring, [0, 1], ['0rem', '1.5rem'])
+  const top = useTransform(scrollSpring, [0, 1], ['0rem', '1rem'])
+  const width = useTransform(scrollSpring, [0, 1], ['calc(100% - 0rem)', 'calc(100% - 2rem)'])
+
   return (
     <>
-      <header
+      <motion.header
         role="banner"
         aria-label="سرصفحه اصلی"
+        style={{
+          borderRadius,
+          top,
+          width,
+        }}
         className={cn(
-          'no-select sticky top-0 z-40 w-full pt-safe',
-          'border-b border-border/40',
-          'transition-[height,background-color,backdrop-filter] duration-300 ease-out-expo',
-          /* Apple-style glassmorphism — heavier blur + lower opacity bg.
-             Keeps text readable while feeling premium. */
+          'no-select sticky z-40 mx-auto pt-safe border',
+          'transition-[background-color,border-color,backdrop-filter,shadow] duration-400 ease-out-expo',
           'supports-[backdrop-filter]:bg-background/60 supports-[backdrop-filter]:backdrop-blur-xl',
           'supports-[backdrop-saturate]:backdrop-saturate-150',
-          scrolled && 'bg-background/75 shadow-sm shadow-black/5',
+          scrolled 
+            ? 'bg-background/80 shadow-md shadow-black/5 border-border/40'
+            : 'border-transparent border-b-border/40',
         )}
       >
-        {/* Scroll progress bar — gold gradient at the very top.
-            Driven by the singleton useScrollProgressScaleX hook which
-            writes `transform: scaleX(progress)` directly to the DOM —
-            no React state, no re-renders, smooth 60fps on every scroll. */}
-        <div
+        {/* Scroll progress bar — gold gradient at the very top */}
+        <motion.div
           className="absolute inset-x-0 top-0 z-50 h-0.5 overflow-hidden"
+          style={{
+            borderTopLeftRadius: borderRadius,
+            borderTopRightRadius: borderRadius,
+          }}
           aria-hidden
         >
           <div
@@ -155,15 +179,9 @@ export function SiteHeader() {
           />
         </div>
 
-        <div
-          className={cn(
-            'mx-auto flex max-w-7xl items-center justify-between gap-2 px-3',
-            'transition-[height] duration-300 ease-out-expo',
-            'sm:gap-4 sm:px-6',
-            /* Premium taller header — h-20 (80px) default, h-16 (64px) on scroll.
-               Per user feedback: "هدر بزرگ تر مرده بئدیم" */
-            scrolled ? 'h-16' : 'h-20',
-          )}
+        <motion.div
+          style={{ height: headerHeight }}
+          className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 sm:gap-4 sm:px-6"
         >
           {/* Brand */}
           <Link
@@ -173,35 +191,25 @@ export function SiteHeader() {
             title="کتاب‌یار — خانه (Alt+H)"
             className={cn('group flex items-center gap-3', FOCUS_RING)}
           >
-            <span
+            <motion.span
+              style={{ scale: logoScale }}
+              whileHover={{ scale: 1.15 }}
               aria-hidden="true"
               className={cn(
-                'flex items-center justify-center rounded-2xl',
+                'flex h-10 w-10 items-center justify-center rounded-2xl',
                 'bg-gradient-to-br from-gold-400 via-gold-500 to-gold-700 text-white',
-                'shadow-lg shadow-gold-500/30',
-                'ring-1 ring-gold-400/20',
-                'transition-[transform,opacity,colors,border-color,background-color] duration-300 ease-out-expo',
-                'group-hover:scale-110 group-hover:shadow-gold-500/40',
-                scrolled ? 'h-9 w-9' : 'h-11 w-11',
+                'shadow-md shadow-gold-500/30 ring-1 ring-gold-400/30',
+                'will-change-transform',
               )}
             >
-              <BookOpen
-                className={cn(
-                  'transition-[transform,opacity,colors,border-color,background-color] duration-300',
-                  scrolled ? 'h-5 w-5' : 'h-6 w-6',
-                )}
-                strokeWidth={2}
-              />
-            </span>
-            <span
-              className={cn(
-                'font-extrabold tracking-tight text-foreground transition-[transform,opacity,colors,border-color,background-color] duration-300',
-                scrolled ? 'text-lg' : 'text-xl sm:text-2xl',
-              )}
-              style={{ fontFamily: 'var(--font-vazirmatn), system-ui' }}
+              <BookOpen className="h-5 w-5" strokeWidth={2.2} />
+            </motion.span>
+            <motion.span
+              className="font-extrabold tracking-tight text-foreground origin-right will-change-transform text-xl sm:text-2xl"
+              style={{ fontFamily: 'var(--font-vazirmatn), system-ui', scale: textScale }}
             >
               کتاب‌یار
-            </span>
+            </motion.span>
           </Link>
 
           {/* Desktop nav (md+) — compact, 5 items only */}
@@ -241,17 +249,33 @@ export function SiteHeader() {
                     className="h-4 w-4 transition-transform group-hover:scale-110"
                   />
                   {item.label}
+                  {/* Underline indicator with tiny light spark sweep */}
                   <span
                     aria-hidden="true"
                     className={cn(
-                      'absolute inset-x-2 -bottom-px h-0.5 rounded-t-full',
-                      'bg-gradient-to-l from-gold-400 to-gold-700',
+                      'pointer-events-none absolute inset-x-2 -bottom-px h-0.5 overflow-hidden rounded-t-full',
                       'transition-transform duration-300 ease-out-expo',
                       active
                         ? 'scale-x-100'
                         : 'scale-x-0 group-hover:scale-x-100',
                     )}
                     style={{ transformOrigin: 'center' }}
+                  >
+                    {/* Gold gradient line */}
+                    <span className="absolute inset-0 bg-gradient-to-l from-gold-400 via-gold-500 to-gold-700 shadow-[0_0_8px_rgba(205,184,154,0.8)]" />
+
+                    {/* Tiny light spark sweep on hover */}
+                    <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/80 to-transparent transition-transform duration-700 ease-out-expo group-hover:translate-x-full" />
+                  </span>
+
+                  {/* Ambient gold glow backdrop */}
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'pointer-events-none absolute inset-x-2 -bottom-0.5 h-1 rounded-full bg-gold-400/60 blur-[3px]',
+                      'transition-opacity duration-300 ease-out-expo',
+                      active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+                    )}
                   />
                 </Link>
               )
@@ -409,8 +433,8 @@ export function SiteHeader() {
                 مطلبغه پاک کن از هدر". The glow/shimmer animation that was
                 under it is now on the ورود button instead. */}
           </div>
-        </div>
-      </header>
+        </motion.div>
+      </motion.header>
 
       {/* Search overlay — single, header-anchored search per user feedback.
           Slides down from the top with a soft animation. */}

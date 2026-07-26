@@ -107,6 +107,32 @@ export const authorsCollection: CollectionConfig = {
       defaultValue: false,
       admin: { position: 'sidebar' },
     },
+    {
+      name: 'biography',
+      type: 'textarea',
+      admin: { description: 'Long-form English biography (Markdown supported)' },
+    },
+    {
+      name: 'biographyFa',
+      type: 'textarea',
+      admin: { description: 'Long-form Persian biography (Markdown supported)' },
+    },
+    {
+      name: 'tags',
+      type: 'text',
+      hasMany: true,
+      admin: { description: 'Genre/style tags (e.g. رمان, فانتزی, ادبیات کودک)' },
+    },
+    {
+      name: 'website',
+      type: 'text',
+      admin: { description: 'Author\'s official website URL' },
+    },
+    {
+      name: 'wikipedia',
+      type: 'text',
+      admin: { description: 'Author\'s Wikipedia article URL' },
+    },
   ],
   hooks: {
     afterChange: [

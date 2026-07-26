@@ -297,10 +297,14 @@
        on platforms with classic scrollbars (Windows/Linux). macOS
        overlay scrollbars are unaffected. */
     scrollbar-gutter: stable;
+    max-width: 100vw;
+    overflow-x: hidden;
   }
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "ss01", "cv01";
+    max-width: 100vw;
+    overflow-x: hidden;
     /* subtle paper texture for light mode */
     background-image:
       radial-gradient(circle at 15% 85%, hsl(var(--primary) / 0.04), transparent 40%),

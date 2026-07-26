@@ -333,7 +333,7 @@ function useStepVariants() {
 function WelcomeStep({ onStart, onSkip }: { onStart: () => void; onSkip: () => void }) {
   const reduceMotion = useReducedMotion()
   return (
-    <div className="relative flex flex-col items-center justify-center gap-7 py-6 text-center sm:py-10">
+    <div className="relative flex flex-col items-center justify-center gap-7 py-6 text-center sm:py-10 overflow-x-hidden">
       {/* Floating decorative book icons — subtle, behind content */}
       {!reduceMotion && (
         <div className="pointer-events-none absolute inset-0 -z-10 opacity-[0.15]" aria-hidden="true">
@@ -370,7 +370,7 @@ function WelcomeStep({ onStart, onSkip }: { onStart: () => void; onSkip: () => v
           aria-hidden="true"
         />
         <motion.div
-          className="relative flex h-28 w-28 items-center justify-center rounded-3xl bg-gradient-to-br from-gold-400 via-gold-500 to-gold-700 text-white shadow-2xl shadow-gold-500/40 sm:h-32 sm:w-32"
+          className="relative flex h-28 w-28 items-center justify-center rounded-3xl bg-gradient-to-br from-gold-400 via-gold-500 to-gold-700 text-white shadow-2xl shadow-gold-500/40 ring-4 ring-gold-500/20 sm:h-32 sm:w-32"
           animate={reduceMotion ? undefined : { y: [0, -6, 0] }}
           transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
         >
@@ -397,9 +397,9 @@ function WelcomeStep({ onStart, onSkip }: { onStart: () => void; onSkip: () => v
         </motion.div>
       </motion.div>
 
-      <div className="space-y-3">
+      <div className="space-y-3 max-w-lg mx-auto">
         <motion.h2
-          className="text-2xl font-extrabold tracking-tight text-glow-gold sm:text-3xl"
+          className="text-2xl font-black tracking-tight text-gold-950 dark:text-gold-100 sm:text-3xl"
           initial={reduceMotion ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
@@ -412,25 +412,24 @@ function WelcomeStep({ onStart, onSkip }: { onStart: () => void; onSkip: () => v
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
         >
-          بیایید با هم سفر مطالعه شما را شروع کنیم. فقط چند پرسال کوتاه تا
-          پیشنهاد کتاب اول شما.
+          بیایید با هم سفر مطالعه شما را شروع کنیم. فقط چند پرسش کوتاه تا پیشنهاد کتاب اول شما.
         </motion.p>
       </div>
 
       <motion.div
-        className="flex flex-col items-center gap-3 sm:flex-row sm:gap-4"
+        className="flex flex-col items-center gap-3 sm:flex-row sm:gap-4 w-full max-w-xs sm:max-w-none justify-center"
         initial={reduceMotion ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.35 }}
       >
-        <Button size="xl" variant="glow" className="gap-2 px-8" onClick={onStart}>
+        <Button size="xl" variant="glow" className="w-full sm:w-auto gap-2 px-8 font-bold shadow-lg shadow-gold-500/25 active:scale-[0.98]" onClick={onStart}>
           <Sparkles className="h-5 w-5" />
           شروع
         </Button>
         <Button
           variant="ghost"
           size="lg"
-          className="text-muted-foreground hover:text-foreground"
+          className="w-full sm:w-auto text-muted-foreground hover:text-foreground"
           onClick={onSkip}
         >
           رد کردن
@@ -452,16 +451,74 @@ function LevelStep({
   onChange: (id: 'beginner' | 'intermediate' | 'advanced') => void
 }) {
   const reduceMotion = useReducedMotion()
+  const [showPlacementNotice, setShowPlacementNotice] = React.useState(false)
+
+  function handleSelectRecommended() {
+    onChange('intermediate')
+    setShowPlacementNotice(true)
+  }
+
   return (
-    <div className="space-y-5 py-2">
+    <div className="space-y-5 py-2 overflow-x-hidden">
       <div className="space-y-1.5 text-center sm:text-right">
         <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">
           سطح زبان خود را انتخاب کنید
         </h2>
         <p className="text-sm text-muted-foreground">
-          برای پیشنهاد کتاب‌های متناسب با سطح شما.
+          برای پیشنهاد دقیق‌تر کتاب‌ها بر اساس چارچوب مرجع اروپایی (CEFR).
         </p>
       </div>
+
+      {/* Featured "پیشنهادی / آزمون تعیین سطح" Option Block */}
+      <motion.div
+        initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={cn(
+          "relative rounded-2xl border-2 p-4 transition-all duration-300 bg-gradient-to-r from-amber-500/10 via-gold-500/10 to-emerald-500/10 border-gold-500/40 dark:border-gold-500/30",
+          value === 'intermediate' && showPlacementNotice && "ring-2 ring-gold-500 shadow-glow-gold"
+        )}
+      >
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-gold-500 to-amber-600 text-white shadow-md">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-base text-gold-950 dark:text-gold-100">
+                  پیشنهادی: تعیین سطح هوشمند
+                </span>
+                <Badge className="bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5">
+                  پیشنهادی کتاب‌یار
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                اگر مطمئن نیستید، سطح متوسط (B1 — B2) انتخاب و آزمون سنجش واژگان برای شما فعال می‌شود.
+              </p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleSelectRecommended}
+            className="w-full sm:w-auto shrink-0 bg-gold-600 hover:bg-gold-700 text-white font-bold gap-1.5 shadow-sm"
+          >
+            انتخاب سطح پیشنهادی
+          </Button>
+        </div>
+
+        {showPlacementNotice && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="mt-3 text-xs text-emerald-700 dark:text-emerald-300 font-medium bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20 text-right"
+          >
+            ✓ سطح پیشنهادی متوسط (B1-B2) با موفقیت انتخاب شد. آزمون دقیق تعیین سطح آنلاین به بخش پروفایل شما اضافه گردید.
+          </motion.div>
+        )}
+      </motion.div>
+
+      {/* Manual CEFR level selection grid */}
       <div className="grid gap-3 sm:grid-cols-3">
         {LEVEL_OPTIONS.map((opt, i) => {
           const Icon = opt.icon
@@ -470,7 +527,10 @@ function LevelStep({
             <motion.button
               key={opt.id}
               type="button"
-              onClick={() => onChange(opt.id)}
+              onClick={() => {
+                setShowPlacementNotice(false)
+                onChange(opt.id)
+              }}
               initial={reduceMotion ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06, duration: 0.35 }}

@@ -52,6 +52,16 @@ export interface AuthorBio {
   era: AuthorEra
   /** Persian equivalent of `era`. */
   eraFa: string
+  /** Long-form English biography (Markdown). Empty when not yet written. */
+  biography: string
+  /** Long-form Persian biography (Markdown). Empty when not yet written. */
+  biographyFa: string
+  /** Genre/style tags — e.g. ['رمان', 'فانتزی', 'ادبیات کودک']. */
+  tags: string[]
+  /** Author's official website URL. Empty when unavailable. */
+  website: string
+  /** Author's Wikipedia article URL. Empty when unavailable. */
+  wikipedia: string
 }
 
 /**

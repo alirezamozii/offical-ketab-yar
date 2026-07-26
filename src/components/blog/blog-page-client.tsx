@@ -121,7 +121,7 @@ export function BlogPageClient() {
         </h2>
         <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
           ما در حال آماده‌سازی مقالاتی درباره یادگیری زبان با کتاب، معرفی
-          کتاب‌های کلاسیک و نکات مطالعه هستیم. به‌محض انتشار اولین مقاله،
+          برترین کتاب‌ها و نکات مطالعه هستیم. به‌محض انتشار اولین مقاله،
           اینجا قرار می‌گیرد.
         </p>
         <Button asChild variant="glow" className="mt-8 gap-2">
@@ -177,8 +177,8 @@ export function BlogPageClient() {
           یادگیری زبان با کتاب
         </h1>
         <p className="text-sm text-muted-foreground sm:text-base">
-          مقالاتی درباره مطالعه دوزبانه، معرفی کتاب‌های کلاسیک و نکات عملی برای
-          یادگیری زبان انگلیسی.
+          مقالاتی درباره مطالعه دوزبانه، معرفی کتاب‌های برجسته و نکات عملی برای
+          تقویت زبان انگلیسی.
         </p>
       </div>
 

@@ -29,7 +29,7 @@ import { Magnetic } from '@/components/home/magnetic'
  *   6. Mobile-optimized: single column, placeholder hidden on small screens.
  */
 const BENEFITS = [
-  'کتاب‌های کلاسیک انگلیسی — رایگان',
+  'کتاب‌های جذاب انگلیسی — رایگان',
   'ترجمه فارسی کنار هر پاراگراف',
   'چت با هوش مصنوعی، برای وقت‌هایی که تنهایی',
 ]

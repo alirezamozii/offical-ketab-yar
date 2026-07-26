@@ -574,9 +574,9 @@ function SignInForm() {
             className="grid grid-cols-3 gap-2.5"
           >
             {[
-              { icon: Library, label: 'کتاب‌های کلاسیک' },
+              { icon: Library, label: 'کتابخانه دوزبانه' },
               { icon: Sparkles, label: 'هوش مصنوعی' },
-              { icon: Globe, label: 'دوزبانه' },
+              { icon: Globe, label: 'ترجمه فارسی' },
             ].map((item, i) => {
               const Icon = item.icon
               return (

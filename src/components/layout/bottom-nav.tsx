@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Home,
   Library,
+  Feather,
   Languages,
   type LucideIcon,
 } from 'lucide-react'
@@ -46,6 +47,7 @@ type NavItem = {
 const ITEMS_LEFT: NavItem[] = [
   { href: '/', label: 'خانه', icon: Home, accessKey: 'h' },
   { href: '/library', label: 'کتابخانه', icon: Library, accessKey: 'l' },
+  { href: '/authors', label: 'نویسندگان', icon: Feather, accessKey: 'a' },
 ]
 
 const ITEMS_RIGHT: NavItem[] = [

@@ -39,8 +39,9 @@ const DEFAULT_STATE: ScrollState = {
 }
 
 export function useScrollDirection(
-  threshold = 8,
+  threshold = 35,
   hideThreshold = 120,
+  expandThreshold = 5,
 ): ScrollState {
   const [state, setState] = useState<ScrollState>(DEFAULT_STATE)
   // Track the last values in refs so we can diff and only setState
@@ -66,7 +67,10 @@ export function useScrollDirection(
         dir = delta > 0 ? 'down' : 'up'
       }
 
-      const scrolled = y > threshold
+      // Hysteresis: if currently scrolled, only expand when reaching absolute top (y <= expandThreshold).
+      // If currently expanded (at top), only shrink after scrolling past threshold.
+      const currentlyScrolled = lastValues.current.scrolled
+      const scrolled = currentlyScrolled ? y > expandThreshold : y > threshold
       const hidden = y > hideThreshold && dir === 'down'
 
       // Only setState if something actually changed — this is what
@@ -99,7 +103,7 @@ export function useScrollDirection(
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', onScroll)
     }
-  }, [threshold, hideThreshold])
+  }, [threshold, hideThreshold, expandThreshold])
 
   return state
 }

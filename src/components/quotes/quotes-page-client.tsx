@@ -359,7 +359,7 @@ export function QuotesPageClient({
               <span className="text-glow-gold">نقل‌قول‌ها</span>
             </h1>
             <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
-              گالری نقل‌قول‌های برگزیده از کتاب‌های کلاسیک، در کنار
+              گالری نقل‌قول‌های برگزیده از کتاب‌ها، در کنار
               هایلایت‌های خودتان. هر نقل‌قول را می‌توانید ذخیره کنید، به اشتراک
               بگذارید، یا مستقیم به همان صفحه از کتاب بروید.
             </p>

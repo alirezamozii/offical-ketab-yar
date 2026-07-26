@@ -166,9 +166,9 @@ export function SiteFooter() {
               - Mobile: 1 col (brand, then link cols stacked)
               - sm+: 2 col (brand | links-wrapper)
               - md+: 5 col (brand | link-1 | link-2 | link-3 | legal) */}
-        <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-5 md:gap-5">
+        <div className="grid gap-6 lg:grid-cols-5 lg:gap-6">
           {/* Brand column */}
-          <div className="space-y-2.5">
+          <div className="space-y-3 lg:col-span-1">
             <Link
               href="/"
               aria-label="کتاب‌یار — خانه"
@@ -206,44 +206,45 @@ export function SiteFooter() {
             </div>
           </div>
 
-          {/* Link columns — on mobile, render in a 2-col grid to save
-              vertical space. On sm+, they flow into the parent 4-col grid. */}
-          {LINKS.map((col) => (
-            <div key={col.title} className="space-y-2">
-              <h3 className="text-xs font-bold uppercase tracking-wide text-foreground">
-                {col.title}
-              </h3>
-              <ul className="space-y-1.5">
-                {col.items.map((item) => (
-                  <li key={`${col.title}-${item.label}`}>
-                    {item.href === '#top' ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          window.scrollTo({
-                            top: 0,
-                            behavior: 'smooth',
-                          })
-                        }
-                        className={`flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary ${FOCUS_RING}`}
-                        aria-label="بازگشت به بالای صفحه"
-                      >
-                        <ChevronUp className="h-3 w-3" />
-                        {item.label}
-                      </button>
-                    ) : (
-                      <Link
-                        href={item.href}
-                        className={`text-xs text-muted-foreground transition-colors hover:text-primary ${FOCUS_RING}`}
-                      >
-                        {item.label}
-                      </Link>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          {/* Link columns — 2-column grid on mobile (grid-cols-2) for compact, clean layout */}
+          <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-2 md:grid-cols-4 lg:col-span-4">
+            {LINKS.map((col) => (
+              <div key={col.title} className="space-y-2">
+                <h3 className="text-xs font-bold uppercase tracking-wide text-foreground">
+                  {col.title}
+                </h3>
+                <ul className="space-y-2">
+                  {col.items.map((item) => (
+                    <li key={`${col.title}-${item.label}`}>
+                      {item.href === '#top' ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            window.scrollTo({
+                              top: 0,
+                              behavior: 'smooth',
+                            })
+                          }
+                          className={`flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary ${FOCUS_RING}`}
+                          aria-label="بازگشت به بالای صفحه"
+                        >
+                          <ChevronUp className="h-3 w-3" />
+                          {item.label}
+                        </button>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          className={`text-xs text-muted-foreground transition-colors hover:text-primary ${FOCUS_RING}`}
+                        >
+                          {item.label}
+                        </Link>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* ─── Bottom bar ───

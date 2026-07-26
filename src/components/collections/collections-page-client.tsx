@@ -1195,7 +1195,7 @@ function CreateCollectionDialog({
               id="col-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="مثلاً: کلاسیک‌های ادبیات"
+              placeholder="مثلاً: برترین رمان‌ها"
               maxLength={60}
               autoFocus
             />

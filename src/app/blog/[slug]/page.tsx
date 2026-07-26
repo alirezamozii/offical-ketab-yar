@@ -132,7 +132,7 @@ export async function generateMetadata({
       'بلاگ کتاب‌یار',
       'یادگیری زبان انگلیسی',
       'مطالعه دوزبانه',
-      'کتاب کلاسیک',
+      'معرفی کتاب',
     ],
     alternates: { canonical },
     openGraph: {

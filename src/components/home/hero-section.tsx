@@ -231,8 +231,8 @@ export function HeroSection({ booksCount = 0 }: { booksCount?: number } = {}) {
                 <BookOpen aria-hidden="true" className="h-5 w-5 text-gold-600 dark:text-gold-400" />
                 <div className="text-sm">
                   <div className="font-bold">
-                    <span className="sr-only">تعداد کتاب‌های کلاسیک: </span>
-                    {toPersianDigits(booksCount)} کتاب کلاسیک
+                    <span className="sr-only">تعداد کتاب‌های موجود: </span>
+                    {toPersianDigits(booksCount)} کتاب موجود
                   </div>
                   <div className="text-xs text-muted-foreground">انگلیسی دوزبانه</div>
                 </div>

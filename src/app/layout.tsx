@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     template: '%s | کتاب‌یار',
   },
   description:
-    'کتاب‌های کلاسیک انگلیسی را رایگان و دوزبانه بخوانید. ورق زدن واقعی صفحات، دیکشنری هوشمند، واژگان و چت با هوش مصنوعی. یادگیری زبان انگلیسی با کتاب.',
+    'کتاب‌های انگلیسی را رایگان و دوزبانه بخوانید. ورق زدن واقعی صفحات، دیکشنری هوشمند، واژگان و چت با هوش مصنوعی. یادگیری زبان انگلیسی با کتاب.',
   applicationName: 'کتاب‌یار',
   category: 'education',
   // ─── PWA icons (PNG, satisfies Chrome's installability criteria) ──────────
@@ -76,7 +76,7 @@ export const metadata: Metadata = {
     'English books',
     'bilingual reading',
     'learn English with books',
-    'کتاب‌های کلاسیک انگلیسی',
+    'کتاب‌های انگلیسی',
     'آلیس در سرزمین عجایب',
     'ترجمه فارسی کتاب',
     'مطالعه کتاب با AI',
@@ -95,7 +95,7 @@ export const metadata: Metadata = {
     siteName: 'کتاب‌یار',
     title: 'کتاب‌یار - پلتفرم هوشمند مطالعه دوزبانه با AI',
     description:
-      'کتاب‌های کلاسیک انگلیسی را رایگان و دوزبانه بخوانید. ورق زدن واقعی، دیکشنری هوشمند و چت با هوش مصنوعی.',
+      'کتاب‌های انگلیسی را رایگان و دوزبانه بخوانید. ورق زدن واقعی، دیکشنری هوشمند و چت با هوش مصنوعی.',
     images: [
       {
         url: '/logo.svg',
@@ -108,7 +108,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'کتاب‌یار - مطالعه دوزبانه با AI',
-    description: 'کتاب‌های کلاسیک انگلیسی رایگان با مطالعه دوزبانه و هوش مصنوعی',
+    description: 'کتاب‌های انگلیسی رایگان با مطالعه دوزبانه و هوش مصنوعی',
     images: ['/logo.svg'],
   },
   robots: {

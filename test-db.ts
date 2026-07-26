@@ -1,18 +1,24 @@
 import { Client } from 'pg'
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 async function run() {
+  const url = process.env.DATABASE_URL
+  console.log("Testing process.env.DATABASE_URL:", url)
   const client = new Client({
-    connectionString: "postgresql://neondb_owner:npg_g4pKMWyRbEc9@ep-wispy-sound-ascuczxo-pooler.c-4.eu-central-1.aws.neon.tech/neondb?sslmode=require"
+    connectionString: url,
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 10000,
   })
   try {
-    console.log("Connecting...")
     await client.connect()
-    console.log("Connected successfully!")
+    console.log("CONNECTED SUCCESSFULLY TO DATABASE!")
     const res = await client.query('SELECT NOW()')
     console.log("Query result:", res.rows[0])
     await client.end()
   } catch (err) {
-    console.error("Connection failed:", err)
+    console.error("Database connection failed:", err)
   }
 }
 

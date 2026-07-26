@@ -25,6 +25,11 @@ export async function syncAuthorToPrisma(doc: any, operation: 'create' | 'update
       era: doc.era || '',
       eraFa: doc.eraFa || '',
       notableWorks: JSON.stringify(doc.notableWorks || []),
+      biography: doc.biography || '',
+      biographyFa: doc.biographyFa || '',
+      tags: JSON.stringify(doc.tags || []),
+      website: doc.website || '',
+      wikipedia: doc.wikipedia || '',
       featured: !!doc.featured,
     }
 

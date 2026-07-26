@@ -122,6 +122,11 @@ model Author {
   era           String   @default("") // Augustan | Romantic | Victorian | Edwardian | Modern | Postmodern
   eraFa         String   @default("")
   notableWorks  String   @default("[]") // JSON string[]
+  biography     String   @default("") // Long-form English biography (Markdown)
+  biographyFa   String   @default("") // Long-form Persian biography (Markdown)
+  tags          String   @default("[]") // JSON string[] — genre/style tags (e.g. "رمان", "فانتزی")
+  website       String   @default("") // Author's official website URL
+  wikipedia     String   @default("") // Wikipedia article URL
   featured      Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

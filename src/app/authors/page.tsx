@@ -2,6 +2,7 @@ import { AuthorsPageClient, type AuthorWithBio } from '@/components/authors/auth
 import { AuthorsDirectorySkeleton } from '@/components/authors/authors-skeleton'
 import { getAuthors, getBooksCount } from '@/lib/data'
 import { buildAuthorBio } from '@/lib/cms'
+import { safeJsonLd } from '@/lib/json-ld'
 import { SITE } from '@/lib/site'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
@@ -9,20 +10,24 @@ import { Suspense } from 'react'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'نویسندگان',
+  title: 'فهرست نویسندگان برجسته جهان — زندگی‌نامه و بیوگرافی',
   description:
-    'فهرست نویسندگان کلاسیک کتاب‌یار: زندگی‌نامه، ملیت، دوران ادبی و کتاب‌های هر نویسنده در کتابخانهٔ دوزبانه. کاوش کنید در زندگی و آثار نویسندگان بزرگ ادبیات جهان.',
+    'فهرست جامع و بیوگرافی کامل نویسندگان بزرگ ادبیات جهان در کتاب‌یار: لوئیس کارول، چارلز دیکنز، جین آستن، مارک تواین، اسکار وایلد و بیشتر. کاوش زندگی‌نامه دوزبانه، عکس، ملیت، دوران ادبی و دانلود کتاب‌ها.',
   keywords: [
-    'نویسندگان کلاسیک',
+    'نویسندگان برجسته',
     'زندگی‌نامه نویسنده',
-    'فهرست نویسندگان',
+    'بیوگرافی نویسندگان',
+    'فهرست نویسندگان جهان',
     'لوئیس کارول',
     'چارلز دیکنز',
     'جین آستن',
     'مارک تواین',
     'اسکار وایلد',
+    'آرتور کانن دویل',
+    'آگاتا کریستی',
+    'نویسندگان انگلیسی',
     'authors directory',
-    'classic authors biography',
+    'authors biography',
     'victorian novelist',
   ],
   alternates: { canonical: `${SITE.url}/authors` },
@@ -30,13 +35,13 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'fa_IR',
     url: `${SITE.url}/authors`,
-    title: 'فهرست نویسندگان کتاب‌یار — زندگی و آثار نویسندگان کلاسیک',
+    title: 'فهرست و بیوگرافی نویسندگان بزرگ جهان — کتاب‌یار',
     description:
-      'کاوش کنید در زندگی و آثار نویسندگان کلاسیک کتاب‌یار — زندگی‌نامه، ملیت، دوران ادبی و کتاب‌های هر نویسنده.',
+      'کاوش در زندگی و آثار نویسندگان بزرگ جهان همراه با بیوگرافی دوزبانه، ملیت، دوران ادبی و کتاب‌های آن‌ها.',
     siteName: 'کتاب‌یار',
     images: [
       {
-        url: '/api/og?title=Authors&subtitle=Classic%20authors%20directory',
+        url: '/api/og?title=Authors&subtitle=Authors%20directory',
         width: 1200,
         height: 630,
         alt: 'فهرست نویسندگان کتاب‌یار',
@@ -45,10 +50,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'فهرست نویسندگان کتاب‌یار',
+    title: 'فهرست و بیوگرافی نویسندگان بزرگ جهان — کتاب‌یار',
     description:
-      'کاوش در زندگی و آثار نویسندگان کلاسیک کتاب‌یار.',
-    images: ['/api/og?title=Authors&subtitle=Classic%20authors%20directory'],
+      'کاوش در زندگی و آثار نویسندگان بزرگ جهان همراه با بیوگرافی دوزبانه و کتاب‌ها.',
+    images: ['/api/og?title=Authors&subtitle=Authors%20directory'],
   },
   robots: {
     index: true,
@@ -63,25 +68,64 @@ export const metadata: Metadata = {
 }
 
 export default async function AuthorsPage() {
-  // Fetch the catalog + book count in parallel; both are small, fast queries.
   const [authors, totalBooks] = await Promise.all([getAuthors(), getBooksCount()])
 
-  // Merge curated bios into each author record. Authors without a curated
-  // bio get `bio: null` — the client renders them with a graceful fallback
-  // (name + books only, no biography card). The bio fields are read from
-  // the Author DB row (CMS-managed via /admin/authors) — `getAuthors()`
-  // in `src/lib/data/index.ts` attaches them via `Object.assign`, and
-  // `buildAuthorBio()` extracts a typed `AuthorBio` (or `null`) from those.
   const authorsWithBios: AuthorWithBio[] = authors.map((a) => ({
     ...a,
     bio: buildAuthorBio(a),
   }))
 
-  // Total pages across every author (sum of every book's pageCount).
   const totalPages = authors.reduce((sum, a) => sum + a.totalPages, 0)
+
+  // JSON-LD CollectionPage & BreadcrumbList for maximum SEO
+  const collectionLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    '@id': `${SITE.url}/authors#webpage`,
+    url: `${SITE.url}/authors`,
+    name: 'فهرست نویسندگان کتاب‌یار',
+    description: 'بیوگرافی، زندگی‌نامه و آثار نویسندگان بزرگ ادبیات جهان.',
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: authors.length,
+      itemListElement: authors.map((a, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        url: `${SITE.url}/authors/${a.slug}`,
+        name: a.name,
+      })),
+    },
+  }
+
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'خانه',
+        item: SITE.url,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'نویسندگان',
+        item: `${SITE.url}/authors`,
+      },
+    ],
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbLd) }}
+      />
       <Suspense fallback={<AuthorsDirectorySkeleton count={6} />}>
         <AuthorsPageClient
           authors={authorsWithBios}

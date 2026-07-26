@@ -139,3 +139,26 @@ export async function getEffectiveUserId(): Promise<string> {
   const { userId, guestId } = await getEffectiveOwner()
   return userId ?? guestId ?? mintGuestId()
 }
+
+/**
+ * Returns a human-friendly Persian display name for a guest identity,
+ * e.g., "کاربر_۴۲". Converts guestId hash to a deterministic 1..999 number.
+ */
+export function getGuestDisplayName(guestId: string | null | undefined): string {
+  if (!guestId) return 'کاربر_۱'
+  // Simple deterministic hash of guestId string
+  let hash = 0
+  for (let i = 0; i < guestId.length; i++) {
+    hash = (hash << 5) - hash + guestId.charCodeAt(i)
+    hash |= 0
+  }
+  const num = (Math.abs(hash) % 999) + 1
+  // Convert digits to Persian numbers
+  const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹']
+  const persianNum = String(num)
+    .split('')
+    .map((d) => persianDigits[parseInt(d, 10)] || d)
+    .join('')
+  return `کاربر_${persianNum}`
+}
+

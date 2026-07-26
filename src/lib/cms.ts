@@ -296,6 +296,11 @@ export function buildAuthorBio(author: {
   notableWorks?: string[] | string | null
   era?: string | null
   eraFa?: string | null
+  biography?: string | null
+  biographyFa?: string | null
+  tags?: string[] | string | null
+  website?: string | null
+  wikipedia?: string | null
 }): AuthorBio | null {
   // No bio data → signal the caller to render a fallback card.
   if (!author.bio && !author.bioFa && !author.nameFa) return null
@@ -315,6 +320,20 @@ export function buildAuthorBio(author: {
     }
   }
 
+  // Parse tags the same way as notableWorks
+  let tags: string[] = []
+  const rawTags = author.tags
+  if (Array.isArray(rawTags)) {
+    tags = rawTags.map(String)
+  } else if (typeof rawTags === 'string' && rawTags.length > 0) {
+    try {
+      const parsed = JSON.parse(rawTags)
+      if (Array.isArray(parsed)) tags = parsed.map(String)
+    } catch {
+      /* ignore */
+    }
+  }
+
   return {
     name: author.name,
     nameFa: author.nameFa || '',
@@ -328,5 +347,10 @@ export function buildAuthorBio(author: {
     notableWorks,
     era: (author.era || 'Modern') as AuthorEra,
     eraFa: author.eraFa || '',
+    biography: author.biography || '',
+    biographyFa: author.biographyFa || '',
+    tags,
+    website: author.website || '',
+    wikipedia: author.wikipedia || '',
   }
 }

@@ -437,7 +437,12 @@ export async function getBooksCount(): Promise<number> {
   try {
     return await db.book.count({ where: { isPublished: true } })
   } catch (err) {
-    console.error('[getBooksCount] DB error:', err)
+    const isConnErr = err instanceof Error && (err.message.includes("Can't reach database") || err.message.includes('P1001'))
+    if (isConnErr) {
+      console.warn('[getBooksCount] PostgreSQL database is offline.')
+    } else {
+      console.error('[getBooksCount] DB error:', err)
+    }
     return 0
   }
 }
@@ -578,12 +583,22 @@ export async function getAuthors(): Promise<AuthorSummary[]> {
         eraFa: a.eraFa || '',
         notableWorks: parseNotableWorks(a.notableWorks),
         featured: !!a.featured,
+        biography: (a as Record<string, unknown>).biography ? String((a as Record<string, unknown>).biography) : '',
+        biographyFa: (a as Record<string, unknown>).biographyFa ? String((a as Record<string, unknown>).biographyFa) : '',
+        tags: parseNotableWorks((a as Record<string, unknown>).tags as string),
+        website: (a as Record<string, unknown>).website ? String((a as Record<string, unknown>).website) : '',
+        wikipedia: (a as Record<string, unknown>).wikipedia ? String((a as Record<string, unknown>).wikipedia) : '',
       })
     }))
 
     return results
   } catch (err) {
-    console.error('[getAuthors] DB error:', err)
+    const isConnErr = err instanceof Error && (err.message.includes("Can't reach database") || err.message.includes('P1001'))
+    if (isConnErr) {
+      console.warn('[getAuthors] PostgreSQL database is offline. Start Docker Desktop and run `docker compose up -d`.')
+    } else {
+      console.error('[getAuthors] DB error:', err)
+    }
     return []
   }
 }
