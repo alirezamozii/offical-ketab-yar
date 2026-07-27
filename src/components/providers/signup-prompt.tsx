@@ -37,7 +37,7 @@ import { Button } from '@/components/ui/button'
 import { GoogleIcon } from '@/components/icons/google-icon'
 import { BookOpen, X, Sparkles, Clock } from 'lucide-react'
 
-const PAGE_VIEW_THRESHOLD = 4 // show after 4 page views for gentle timing
+const PAGE_VIEW_THRESHOLD = 3 // show after 3 page views
 const SNOOZE_HOURS = 24
 const STORAGE_KEY = 'ky_signup_prompt'
 const PAGE_VIEW_KEY = 'ky_page_views'
@@ -118,7 +118,7 @@ export function SignupPrompt() {
 
     // Show if: threshold reached AND state is pending
     if (views >= PAGE_VIEW_THRESHOLD && state.status === 'pending') {
-      // Gentle 2.5s delay after page transition
+      // Small delay so it doesn't feel jarring
       timer = setTimeout(() => {
         setVisible(true)
         savePromptState({
@@ -126,7 +126,7 @@ export function SignupPrompt() {
           snoozedUntil: Date.now() + SNOOZE_HOURS * 60 * 60 * 1000,
           shownCount: state.shownCount + 1,
         })
-      }, 2500)
+      }, 1500)
     }
 
     return () => {
@@ -161,14 +161,16 @@ export function SignupPrompt() {
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
-        className="gap-0 overflow-hidden rounded-3xl border p-0 sm:max-w-md bg-gradient-to-br from-gold-50 via-white to-gold-100 dark:from-background dark:to-card border-gold-400/50 shadow-2xl shadow-gold-800/40"
+        className="gap-0 overflow-hidden rounded-3xl border p-0 sm:max-w-sm bg-gradient-to-br from-gold-50 to-gold-100 dark:from-background dark:to-card border-gold-400/50 shadow-2xl shadow-gold-800/40"
       >
         <DialogTitle className="sr-only">از کتاب‌یار لذت می‌برید؟</DialogTitle>
         <DialogDescription className="sr-only">
           با ثبت‌نام رایگان، پیشرفت خود را ذخیره کنید، واژگان بسازید و به همه امکانات هوش مصنوعی دسترسی پیدا کنید.
         </DialogDescription>
 
-        {/* Top gradient accent */}
+        {/* Top gradient accent — 5-stop shimmer: gold-500 → gold-700 → gold-800
+            → gold-700 → gold-500. Kept as inline style because Tailwind's
+            via-* only supports 3 stops. */}
         <div
           className="h-1.5 w-full bg-gradient-to-l from-gold-500 via-gold-700 to-gold-800"
         />
@@ -182,76 +184,79 @@ export function SignupPrompt() {
           <X className="h-4 w-4" />
         </button>
 
-        <div className="space-y-5 p-6 text-center sm:p-8">
+        <div className="space-y-4 p-6 text-center sm:p-8">
           {/* Icon */}
           <motion.div
             initial={reduceMotion ? {} : { scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            className="mx-auto inline-flex h-16 w-16 items-center justify-center rounded-2xl text-white bg-gradient-to-br from-gold-500 via-gold-700 to-gold-800 shadow-xl shadow-gold-700/40 ring-4 ring-gold-500/20"
+            className="mx-auto inline-flex h-16 w-16 items-center justify-center rounded-2xl text-white bg-gradient-to-br from-gold-500 via-gold-700 to-gold-800 shadow-lg shadow-gold-700/50"
           >
             <BookOpen className="h-8 w-8" strokeWidth={1.5} />
           </motion.div>
 
           {/* Title */}
-          <div className="space-y-2">
-            <h2 className="text-2xl font-black text-gold-950 dark:text-gold-100">
+          <div className="space-y-1.5">
+            <h2 className="text-xl font-bold text-gold-950 dark:text-gold-100">
               از کتاب‌یار لذت می‌برید؟
             </h2>
-            <p className="text-sm leading-relaxed text-gold-800 dark:text-gold-300 max-w-xs mx-auto">
-              با ثبت‌نام رایگان، تمام پیشرفت مطالعه، واژگان و دستاوردهای شما در حساب کاربری شما ذخیره خواهد شد.
+            <p className="text-sm leading-relaxed text-gold-700 dark:text-gold-300">
+              با ثبت‌نام رایگان، پیشرفت خود را ذخیره کنید، واژگان بسازید و
+              به همه امکانات هوش مصنوعی دسترسی پیدا کنید.
             </p>
           </div>
 
           {/* Benefits */}
-          <div className="flex justify-center gap-4 py-2 bg-gold-500/5 dark:bg-gold-500/10 rounded-2xl p-3 border border-gold-400/20">
-            <div className="text-center flex-1">
+          <div className="flex justify-center gap-4 py-2">
+            <div className="text-center">
               <Sparkles className="mx-auto mb-1 h-5 w-5 text-gold-600 dark:text-gold-400" />
-              <div className="text-[11px] font-bold text-gold-900 dark:text-gold-200">
+              <div className="text-[10px] font-medium text-gold-900 dark:text-gold-200">
                 هوش مصنوعی
               </div>
             </div>
-            <div className="text-center flex-1 border-x border-gold-300/40 dark:border-gold-700/40">
+            <div className="text-center">
               <BookOpen className="mx-auto mb-1 h-5 w-5 text-gold-600 dark:text-gold-400" />
-              <div className="text-[11px] font-bold text-gold-900 dark:text-gold-200">
-                حفظ تمام پیشرفت
+              <div className="text-[10px] font-medium text-gold-900 dark:text-gold-200">
+                ذخیره پیشرفت
               </div>
             </div>
-            <div className="text-center flex-1">
+            <div className="text-center">
               <Clock className="mx-auto mb-1 h-5 w-5 text-gold-600 dark:text-gold-400" />
-              <div className="text-[11px] font-bold text-gold-900 dark:text-gold-200">
-                دسترسی همیشگی
+              <div className="text-[10px] font-medium text-gold-900 dark:text-gold-200">
+                آفلاین
               </div>
             </div>
           </div>
 
-          {/* Actions with strict attention hierarchy */}
-          <div className="space-y-3 pt-1">
-            {/* High Attention: Primary CTA */}
+          {/* Actions */}
+          <div className="space-y-2 pt-2">
             <Button
               onClick={handleSignup}
-              className="h-12 w-full gap-3 border-0 text-base font-bold text-white bg-gradient-to-r from-gold-600 via-gold-700 to-amber-700 hover:from-gold-700 hover:to-amber-800 shadow-lg shadow-gold-700/30 transition-all hover:scale-[1.01] active:scale-[0.99]"
+              className="h-12 w-full gap-3 border-2 text-base font-medium bg-white hover:bg-stone-50 border-gold-300 text-gold-950 dark:text-gold-100"
+              variant="outline"
             >
               <GoogleIcon className="h-5 w-5" />
-              ثبت‌نام و ورود رایگان با گوگل
+              ثبت‌نام رایگان با گوگل
             </Button>
 
-            {/* Medium Attention: Secondary CTA */}
-            <Button
-              onClick={handleLater}
-              variant="outline"
-              className="h-11 w-full text-sm font-semibold border-gold-300/80 text-gold-900 dark:text-gold-200 hover:bg-gold-50 dark:hover:bg-gold-950/40"
-            >
-              بعداً یادآوری کن
-            </Button>
-
-            {/* Low Attention / Low Friction: Tertiary CTA */}
-            <button
-              onClick={handleNever}
-              className="text-xs text-muted-foreground hover:text-gold-700 dark:hover:text-gold-300 underline underline-offset-4 pt-1 transition-colors block mx-auto"
-            >
-              دیگر این پیام را نشان نده
-            </button>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleLater}
+                variant="ghost"
+                size="sm"
+                className="h-11 flex-1 text-xs text-gold-700 dark:text-gold-300"
+              >
+                شاید بعداً
+              </Button>
+              <Button
+                onClick={handleNever}
+                variant="ghost"
+                size="sm"
+                className="h-11 flex-1 text-xs text-gold-700 dark:text-gold-300"
+              >
+                دیگر نشان نده
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

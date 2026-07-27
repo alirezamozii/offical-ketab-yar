@@ -34,6 +34,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
+import { useScrollDirection } from '@/hooks/use-scroll-direction'
 import { useScrollProgressScaleX } from '@/hooks/use-scroll-progress'
 
 type NavItem = {
@@ -65,8 +66,9 @@ export function SiteHeader() {
   const [mounted, setMounted] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [hoveredNav, setHoveredNav] = useState<string | null>(null)
 
+  // Track scroll state: threshold 20px for shrink, 5px expand
+  const { scrolled } = useScrollDirection(20, 120, 5)
   const progressBarRef = useRef<HTMLDivElement>(null)
   useScrollProgressScaleX(progressBarRef, 'right')
   useEffect(() => setMounted(true), [])
@@ -115,57 +117,41 @@ export function SiteHeader() {
     router.push(`/search?q=${encodeURIComponent(q)}`)
   }
 
-  // Continuous fluid water-drop / blob spring physics linked to scroll
+  // Continuous progressive scroll-linked spring values
   const { scrollY } = useScroll()
 
-  // Water-drop spring config with subtle organic bounce
   const springConfig = prefersReduced
     ? { stiffness: 1000, damping: 50 }
-    : { stiffness: 180, damping: 16, mass: 0.6 }
+    : { stiffness: 220, damping: 26, mass: 0.5 }
 
-  const scrollProgress = useTransform(scrollY, [0, 100], [0, 1])
-  const scrollSpring = useSpring(scrollProgress, springConfig)
+  const rawScrollProgress = useTransform(scrollY, [0, 90], [0, 1])
+  const scrollSpring = useSpring(rawScrollProgress, springConfig)
 
-  // Fluid dynamic properties based on scroll position
-  const headerHeight = useTransform(scrollSpring, [0, 1], [74, 58])
-  const logoScale = useTransform(scrollSpring, [0, 1], [1.05, 0.92])
-  const containerMarginTop = useTransform(scrollSpring, [0, 1], [10, 14])
-  const shadowIntensity = useTransform(
-    scrollSpring,
-    [0, 1],
-    ['0 8px 30px rgba(0,0,0,0.08)', '0 16px 40px rgba(0,0,0,0.22)']
-  )
+  const headerHeight = useTransform(scrollSpring, [0, 1], [72, 58])
+  const logoScale = useTransform(scrollSpring, [0, 1], [1.08, 0.92])
 
   return (
     <>
-      {/* Fixed top container shell with smooth floating margin */}
-      <motion.div
-        style={{ paddingTop: containerMarginTop }}
-        className="fixed top-0 inset-x-0 z-50 pointer-events-none px-3 sm:px-6"
-      >
+      {/* Fixed top container shell */}
+      <div className="fixed top-0 inset-x-0 z-50 pointer-events-none px-3 sm:px-6 transition-all duration-500 ease-out-expo">
         <motion.header
           role="banner"
           aria-label="سرصفحه اصلی"
-          style={{ boxShadow: shadowIntensity }}
           className={cn(
-            'pointer-events-auto no-select mx-auto w-full transition-all duration-300 relative',
-            'max-w-6xl lg:max-w-7xl',
-            'rounded-2xl sm:rounded-3xl border border-gold-500/35 dark:border-gold-400/30',
-            'bg-background/80 dark:bg-card/85 backdrop-blur-2xl backdrop-saturate-180',
-            'ring-1 ring-gold-500/25 dark:ring-gold-400/25',
-            // 360-degree ambient perimeter glow ring wrapping the whole header
-            'before:absolute before:-inset-[1.5px] before:rounded-[inherit] before:bg-gradient-to-r before:from-gold-400/35 before:via-amber-500/25 before:to-gold-600/35 before:-z-10 before:blur-[2px] before:opacity-90',
-            'after:absolute after:-inset-1 after:rounded-[inherit] after:bg-gradient-to-b after:from-gold-500/10 after:to-transparent after:-z-20 after:blur-md'
+            'pointer-events-auto no-select mx-auto w-full transition-all duration-500 ease-out-expo overflow-hidden',
+            scrolled
+              ? 'mt-3 sm:mt-4 max-w-5xl lg:max-w-6xl rounded-2xl sm:rounded-3xl border border-border/60 dark:border-white/15 bg-background/80 dark:bg-card/75 backdrop-blur-2xl backdrop-saturate-180 shadow-2xl shadow-black/10 dark:shadow-black/60 ring-1 ring-gold-500/20'
+              : 'mt-0 max-w-7xl rounded-none border-b border-border/30 bg-background/80 dark:bg-background/70 backdrop-blur-xl',
           )}
         >
-          {/* Scroll progress bar — glowing 360-aware gold line at top perimeter */}
+          {/* Scroll progress bar — gold gradient at the very top */}
           <div
-            className="absolute inset-x-0 top-0 z-50 h-[2.5px] overflow-hidden rounded-t-2xl sm:rounded-t-3xl"
+            className="absolute inset-x-0 top-0 z-50 h-0.5 overflow-hidden rounded-t-2xl sm:rounded-t-3xl"
             aria-hidden
           >
             <div
               ref={progressBarRef}
-              className="h-full bg-gradient-to-l from-gold-400 via-gold-500 to-amber-500 shadow-[0_0_12px_rgba(234,179,8,0.95)]"
+              className="h-full bg-gradient-to-l from-gold-400 via-gold-500 to-gold-700"
               style={{ transform: 'scaleX(0)', transformOrigin: 'right' }}
             />
           </div>
@@ -185,13 +171,12 @@ export function SiteHeader() {
               <motion.span
                 style={{ scale: logoScale }}
                 whileHover={{ scale: 1.12 }}
-                whileTap={{ scale: 0.95 }}
                 aria-hidden="true"
                 className={cn(
                   'flex h-10 w-10 items-center justify-center rounded-2xl',
                   'bg-gradient-to-br from-gold-400 via-gold-500 to-gold-700 text-white',
-                  'shadow-lg shadow-gold-500/35 ring-1 ring-gold-300/40',
-                  'will-change-transform'
+                  'shadow-md shadow-gold-500/30 ring-1 ring-gold-400/30',
+                  'will-change-transform',
                 )}
               >
                 <BookOpen className="h-5 w-5" strokeWidth={2.2} />
@@ -204,12 +189,11 @@ export function SiteHeader() {
               </motion.span>
             </Link>
 
-            {/* Desktop Navigation with Animated Glowing Active Pill + Glowing Bottom Line */}
+            {/* Desktop Navigation */}
             <nav
               role="navigation"
               aria-label="ناوبری اصلی"
               className="hidden items-center gap-1 md:flex"
-              onMouseLeave={() => setHoveredNav(null)}
             >
               {NAV.map((item) => {
                 const active =
@@ -217,14 +201,12 @@ export function SiteHeader() {
                     ? pathname === '/'
                     : pathname.startsWith(item.href)
                 const Icon = item.icon
-                const isHovered = hoveredNav === item.href
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     accessKey={item.accessKey}
                     aria-current={active ? 'page' : undefined}
-                    onMouseEnter={() => setHoveredNav(item.href)}
                     title={
                       item.accessKey
                         ? `${item.label} (Alt+${item.accessKey.toUpperCase()})`
@@ -232,46 +214,18 @@ export function SiteHeader() {
                     }
                     className={cn(
                       'group relative flex items-center gap-2 px-3.5 py-1.5 rounded-xl',
-                      'text-sm font-bold transition-colors duration-200',
+                      'text-sm font-bold transition-all duration-200',
                       FOCUS_RING,
                       active
-                        ? 'text-primary dark:text-gold-400'
-                        : 'text-muted-foreground hover:text-foreground'
+                        ? 'bg-primary/10 text-primary shadow-xs'
+                        : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
                     )}
                   >
-                    {/* Hover indicator background pill */}
-                    {isHovered && !active && (
-                      <motion.span
-                        layoutId={prefersReduced ? undefined : 'header-hover-pill'}
-                        className="absolute inset-0 rounded-xl bg-accent/70 dark:bg-white/10 -z-10"
-                        transition={{ type: 'spring', stiffness: 450, damping: 28 }}
-                      />
-                    )}
-
-                    {/* Active tab background pill & glowing bottom accent line */}
-                    {active && (
-                      <>
-                        <motion.span
-                          layoutId={prefersReduced ? undefined : 'header-active-pill'}
-                          className="absolute inset-0 rounded-xl bg-gradient-to-r from-gold-500/20 via-amber-500/20 to-gold-600/15 dark:from-gold-400/25 dark:to-amber-500/20 border border-gold-500/40 dark:border-gold-400/40 -z-10 shadow-sm shadow-gold-500/20"
-                          transition={{ type: 'spring', stiffness: 360, damping: 26, mass: 0.7 }}
-                        />
-                        <motion.span
-                          layoutId={prefersReduced ? undefined : 'header-active-line'}
-                          className="absolute bottom-0 inset-x-2 h-[3px] rounded-full bg-gradient-to-r from-gold-400 via-gold-500 to-amber-400 shadow-[0_0_12px_rgba(234,179,8,1)]"
-                          transition={{ type: 'spring', stiffness: 360, damping: 26, mass: 0.7 }}
-                        />
-                      </>
-                    )}
-
                     <Icon
                       aria-hidden="true"
-                      className={cn(
-                        'h-4 w-4 transition-transform group-hover:scale-110',
-                        active && 'text-gold-500 dark:text-gold-400 drop-shadow-[0_0_6px_rgba(234,179,8,0.6)]'
-                      )}
+                      className="h-4 w-4 transition-transform group-hover:scale-110"
                     />
-                    <span className="relative z-10">{item.label}</span>
+                    {item.label}
                   </Link>
                 )
               })}
@@ -375,8 +329,8 @@ export function SiteHeader() {
                   onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
                   className="group relative inline-flex items-center gap-2 px-4 h-9 sm:h-10 rounded-full font-bold text-xs sm:text-sm overflow-hidden"
                   aria-label="ورود با گوگل"
-                  whileHover={prefersReduced ? undefined : { scale: 1.04 }}
-                  whileTap={prefersReduced ? undefined : { scale: 0.96 }}
+                  whileHover={prefersReduced ? undefined : { scale: 1.03 }}
+                  whileTap={prefersReduced ? undefined : { scale: 0.97 }}
                   style={{
                     background:
                       'linear-gradient(135deg, #b8956a 0%, #8a6847 50%, #6d523a 100%)',
@@ -405,10 +359,10 @@ export function SiteHeader() {
             </div>
           </motion.div>
         </motion.header>
-      </motion.div>
+      </div>
 
       {/* Spacer so page content starts cleanly below the fixed header */}
-      <div className="h-20 sm:h-24" />
+      <div className="h-16 sm:h-20" />
 
       {/* Search overlay */}
       <AnimatePresence>
@@ -463,4 +417,3 @@ export function SiteHeader() {
     </>
   )
 }
-
