@@ -176,7 +176,7 @@ export async function POST(req: NextRequest) {
             reviewCount: updatedBook.reviewCount,
           },
         })
-        console.log(`[Review Sync] Synced book rating/reviewCount back to Payload for ID: ${book.id}`)
+        console.warn(`[Review Sync] Synced book rating/reviewCount back to Payload for ID: ${book.id}`)
       }
     } catch (err) {
       console.error('[Review Sync Error] Failed to sync rating back to Payload:', err)

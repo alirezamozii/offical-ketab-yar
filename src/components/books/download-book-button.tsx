@@ -34,7 +34,7 @@ export function DownloadBookButton({ slug, title, pageCount }: DownloadBookButto
       toast.success('کتاب با موفقیت دانلود شد!', {
         description: 'اکنون می‌توانید این کتاب را به‌صورت کاملاً آفلاین مطالعه کنید.',
       })
-    } catch (err) {
+    } catch {
       toast.error('دانلود ناموفق بود', {
         description: 'لطفاً اتصال خود را بررسی کرده و دوباره تلاش کنید.',
       })
