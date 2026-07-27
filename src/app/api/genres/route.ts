@@ -53,12 +53,10 @@ export async function GET(req: NextRequest) {
       headers: { 'Cache-Control': GENRES_CACHE_CONTROL },
     })
   } catch (err) {
-    console.error('[/api/genres] GET failed:', err)
-    // An empty catalog (fresh install) yields `[]`, not a 500 — only return
-    // 500 for actual DB / cache failures.
-    return NextResponse.json(
-      { error: 'بارگذاری ژانرها ناموفق بود.' },
-      { status: 500 },
-    )
+    console.warn('[/api/genres] DB offline or query error, returning fallback:', err)
+    return NextResponse.json([], {
+      status: 200,
+      headers: { 'x-db-fallback': 'true' },
+    })
   }
 }

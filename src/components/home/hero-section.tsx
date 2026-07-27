@@ -18,6 +18,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Magnetic } from '@/components/home/magnetic'
+import { AnimatedGlowBorder } from '@/components/ui/animated-glow-border'
 
 const VALUE_PILLS = [
   { icon: Languages, label: 'دوزبانه فارسی/انگلیسی' },
@@ -178,11 +179,10 @@ export function HeroSection({ booksCount = 0 }: { booksCount?: number } = {}) {
                   >
                     <Link
                       href="/library"
-                      accessKey="l"
-                      aria-label="شروع رایگان — ورود به کتابخانه (Alt+L)"
-                      title="شروع رایگان (Alt+L)"
+                      aria-label="شروع رایگان — ورود به کتابخانه"
+                      title="شروع رایگان"
                     >
-                      {/* Shimmer sweep on hover — same as CTA button */}
+                      <AnimatedGlowBorder color="rgba(255,255,255,0.9)" thickness={2.5} />
                       <span
                         aria-hidden="true"
                         className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]"

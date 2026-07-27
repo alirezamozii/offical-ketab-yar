@@ -15,42 +15,12 @@
  * ---------------------------------------------------------------
  */
 
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
+import { useScrollProgressScaleX } from '@/hooks/use-scroll-progress'
 
 export function BlogReadingProgress() {
   const barRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    let ticking = false
-
-    function update() {
-      ticking = false
-      const el = barRef.current
-      if (!el) return
-      const scrollTop = window.scrollY
-      const docHeight =
-        document.documentElement.scrollHeight - window.innerHeight
-      const pct = docHeight > 0 ? Math.min(100, (scrollTop / docHeight) * 100) : 0
-      el.style.width = `${pct}%`
-      el.style.opacity = pct > 1 ? '1' : '0'
-    }
-
-    function onScroll() {
-      if (!ticking) {
-        ticking = true
-        requestAnimationFrame(update)
-      }
-    }
-
-    window.addEventListener('scroll', onScroll, { passive: true })
-    window.addEventListener('resize', onScroll, { passive: true })
-    update() // initial
-
-    return () => {
-      window.removeEventListener('scroll', onScroll)
-      window.removeEventListener('resize', onScroll)
-    }
-  }, [])
+  useScrollProgressScaleX(barRef, 'right')
 
   return (
     <div
@@ -59,8 +29,8 @@ export function BlogReadingProgress() {
     >
       <div
         ref={barRef}
-        className="h-full bg-gradient-to-l from-gold-500 via-gold-400 to-gold-600 shadow-[0_0_8px_rgba(184,149,106,0.5)] transition-[width,opacity] duration-75 ease-out"
-        style={{ width: '0%', opacity: 0 }}
+        className="h-full w-full origin-right bg-gradient-to-l from-gold-500 via-gold-400 to-gold-600 shadow-[0_0_8px_rgba(184,149,106,0.5)] gpu-layer"
+        style={{ transform: 'scaleX(0)' }}
       />
     </div>
   )

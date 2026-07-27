@@ -37,8 +37,8 @@ export async function GenresStrip() {
   let genres: { name: string; count: number; views: number }[] = []
   try {
     genres = await getTopGenres()
-  } catch (err) {
-    console.error('[GenresStrip] DB error:', err)
+  } catch {
+    console.warn('[GenresStrip] DB offline or query skipped.')
     return null
   }
 

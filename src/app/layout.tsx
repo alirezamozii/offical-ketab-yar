@@ -19,6 +19,8 @@ import { SITE } from '@/lib/site'
 import type { Metadata, Viewport } from 'next'
 import { Inter, Vazirmatn } from 'next/font/google'
 import { Toaster } from 'sonner'
+import { WebVitals } from '@/components/analytics/WebVitals'
+import { CookieConsent } from '@/components/ui/cookie-consent'
 import './globals.css'
 
 const inter = Inter({
@@ -300,6 +302,8 @@ export default function RootLayout({
               <SignupPrompt />
               <SessionSummaryToast />
               <MilestoneToast />
+              <WebVitals />
+              <CookieConsent />
               <Toaster
                 position="bottom-center"
                 richColors

@@ -12,7 +12,7 @@ import { SiteHeader } from '@/components/layout/site-header'
 const FULLSCREEN = ['/books/read', '/auth', '/onboarding']
 
 function isFullscreen(pathname: string) {
-  return FULLSCREEN.some((p) => pathname.startsWith(p))
+  return FULLSCREEN.some((p) => pathname === p || pathname.startsWith(p + '/'))
 }
 
 /**
@@ -61,6 +61,8 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
     )
   }
 
+  const isHomePage = pathname === '/'
+
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
@@ -76,7 +78,7 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
       >
         {children}
       </main>
-      <SiteFooter />
+      {isHomePage && <SiteFooter />}
       <BottomNav />
     </div>
   )

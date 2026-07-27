@@ -39,12 +39,16 @@ const DictionarySchema = z.object({
 
 // ── Tier 1: Local DB lookup ────────────────────────────────────────────────
 async function lookupLocal(word: string) {
-  const wordLower = word.toLowerCase().trim()
-  const entry = await db.dictionaryEntry.findUnique({
-    where: { wordLower },
-    select: { word: true, persian: true, pos: true, phonetic: true },
-  })
-  return entry
+  try {
+    const wordLower = word.toLowerCase().trim()
+    const entry = await db.dictionaryEntry.findUnique({
+      where: { wordLower },
+      select: { word: true, persian: true, pos: true, phonetic: true },
+    })
+    return entry
+  } catch {
+    return null
+  }
 }
 
 // ── Tier 2: Free Dictionary API (dictionaryapi.dev) ────────────────────────

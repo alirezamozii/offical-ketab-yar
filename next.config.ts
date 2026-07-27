@@ -90,18 +90,19 @@ const nextConfig: NextConfig = {
   },
 
   // Tree-shake barrel exports — big wins on framer-motion, lucide & radix.
-  // (Disabled in dev to reduce memory pressure in constrained sandbox; enabled
-  // implicitly by the bundler in production builds.)
-  experimental: process.env.NODE_ENV === "production"
-    ? {
-        optimizePackageImports: [
-          "framer-motion",
-          "lucide-react",
-          "date-fns",
-          "recharts",
-        ],
-      }
-    : undefined,
+  experimental: {
+    optimizePackageImports: [
+      "framer-motion",
+      "lucide-react",
+      "date-fns",
+      "recharts",
+      "@radix-ui/react-avatar",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-popover",
+      "@radix-ui/react-select",
+    ],
+  },
 
   async headers() {
     return [

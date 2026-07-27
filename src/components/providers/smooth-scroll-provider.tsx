@@ -14,9 +14,11 @@ import { usePathname } from 'next/navigation'
  * When the user navigates away from a reader page, Lenis is re-initialized
  * on the next effect tick (driven by the `pathname` dependency).
  */
+import { useOptimizedScroll } from '@/hooks/use-optimized-scroll'
+
 export function SmoothScrollProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname() || '/'
-  // The reader owns its own scroll container; don't run Lenis there.
+  useOptimizedScroll()
   const isReaderPage = pathname.startsWith('/books/read/')
 
   useEffect(() => {
@@ -25,6 +27,16 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
       '(prefers-reduced-motion: reduce)',
     ).matches
     if (prefersReduced) return
+
+    // Mobile & touch devices handle scrolling natively on the GPU.
+    // Running Lenis JS rAF loop on touch devices hijacks native GPU scroll,
+    // causing severe INP lag (1340ms) and forced reflows on mobile.
+    const isTouchOrMobile =
+      typeof window !== 'undefined' &&
+      ('ontouchstart' in window ||
+        navigator.maxTouchPoints > 0 ||
+        window.innerWidth < 768)
+    if (isTouchOrMobile) return
 
     let lenis: import('lenis').default | null = null
     let rafId: number

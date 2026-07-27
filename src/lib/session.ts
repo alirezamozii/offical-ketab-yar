@@ -51,7 +51,22 @@ function mintGuestId(): string {
  * Routes that previously read the cookie directly should use this to validate
  * body-supplied guest IDs (never trust client-supplied guest IDs).
  */
-export function verifyGuestId(raw: string | undefined | null): string | null {
+export function signIdWithFingerprint(id: string, fingerprint?: string): string {
+  const payload = fingerprint ? `${id}:${fingerprint}` : id
+  return createHmac('sha256', getSigningKey()).update(payload).digest('hex')
+}
+
+/**
+ * Verify a raw cookie value. Returns the guest id if the signature is valid,
+ * or `null` if the value is missing / malformed / has a bad signature.
+ *
+ * An optional `fingerprint` (e.g. IP + User-Agent SHA256) can be provided to prevent
+ * cross-device cookie replay attacks.
+ */
+export function verifyGuestId(
+  raw: string | undefined | null,
+  fingerprint?: string
+): string | null {
   if (!raw) return null
   const lastDot = raw.lastIndexOf('.')
   if (lastDot <= 0) return null
@@ -60,6 +75,21 @@ export function verifyGuestId(raw: string | undefined | null): string | null {
   // Guest IDs are always `g_<base36>` — reject anything else before the
   // expensive signature check.
   if (!/^g_[a-zA-Z0-9_-]+$/.test(id)) return null
+
+  // First try fingerprint verification if provided
+  if (fingerprint) {
+    const fpExpected = signIdWithFingerprint(id, fingerprint)
+    if (sig.length === fpExpected.length) {
+      try {
+        const a = Buffer.from(sig, 'hex')
+        const b = Buffer.from(fpExpected, 'hex')
+        if (a.length === b.length && timingSafeEqual(a, b)) return id
+      } catch {
+        // Fall back to standard sign check
+      }
+    }
+  }
+
   const expected = signId(id)
   if (sig.length !== expected.length) return null
   try {

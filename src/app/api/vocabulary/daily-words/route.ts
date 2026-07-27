@@ -149,10 +149,7 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (err) {
-    console.error('[/api/vocabulary/daily-words] GET failed:', err)
-    return NextResponse.json(
-      { error: 'بارگذاری واژگان روزانه ناموفق بود.' },
-      { status: 500 },
-    )
+    console.warn('[/api/vocabulary/daily-words] DB offline or query error, returning fallback:', err)
+    return NextResponse.json([], { status: 200, headers: { 'x-db-fallback': 'true' } })
   }
 }

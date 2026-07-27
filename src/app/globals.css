@@ -1026,3 +1026,106 @@
   .text-glow-gold { text-shadow: none !important; }
   .drop-glow-gold { filter: none !important; }
 }
+
+/* ============================================================
+   GLOW BORDER ANIMATIONS
+   ============================================================ */
+@keyframes glow-visibility {
+  0%, 65% { opacity: 0; }
+  75%, 90% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ============================================================
+   LIQUID GLASS EFFECT (macOS style)
+   ============================================================ */
+.mac-glass-header {
+  position: relative;
+  isolation: isolate;
+}
+
+.mac-glass-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow: inset 2px 2px 0px -2px rgba(255, 255, 255, 0.7), inset 0 0 3px 1px rgba(255, 255, 255, 0.7);
+  pointer-events: none;
+}
+
+.mac-glass-header::after {
+  content: '';
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  border-radius: inherit;
+  /* Performant standard blur fallback for mobile */
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+          backdrop-filter: blur(12px) saturate(180%);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Only apply the heavy SVG displacement filter on larger desktop screens.
+   Applying this on mobile causes catastrophic scroll lag. */
+@media (min-width: 1024px) {
+  @supports (backdrop-filter: url(#container-glass)) {
+    .mac-glass-header::after {
+      -webkit-backdrop-filter: url(#container-glass) blur(3.5px);
+              backdrop-filter: url(#container-glass) blur(3.5px);
+    }
+  }
+}
+
+.dark .mac-glass-header::before {
+  box-shadow: inset 1.5px 1.5px 0px -1px rgba(184, 149, 106, 0.25), inset 0 0 3px 1px rgba(184, 149, 106, 0.15);
+}
+
+/* ============================================================
+   ZERO-LAG HARDWARE ACCELERATION & ZERO CLS UTILITIES
+   ============================================================ */
+.gpu-layer {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform, opacity;
+}
+
+.cls-preserve-cover {
+  aspect-ratio: 2 / 3;
+  contain: layout intrinsic-size 200px 300px;
+  background-color: var(--color-gold-100);
+}
+
+.cls-preserve-avatar {
+  aspect-ratio: 1 / 1;
+  contain: layout intrinsic-size 48px 48px;
+}
+
+/* ============================================================
+   ZERO-STATE CSS SCROLL VARIABLE & FRUSTUM CULLING UTILITIES
+   ============================================================ */
+.progress-bar-gpu {
+  transform: scaleX(var(--scroll-progress, 0));
+  transform-origin: right;
+  will-change: transform;
+}
+
+.scroll-top-btn-gpu {
+  opacity: calc(var(--scroll-progress, 0) * 10);
+  pointer-events: calc(var(--scroll-progress, 0) * 10 > 1 ? auto : none);
+  transform: translateY(calc((1 - var(--scroll-progress, 0)) * 16px));
+  will-change: opacity, transform;
+}
+
+/* 
+ * Frustum Culling — STRICTLY for fixed aspect-ratio cards/containers only 
+ * (e.g. aspect-[2/3] book covers) to prevent scrollbar jumpiness.
+ */
+.cull-offscreen {
+  content-visibility: auto;
+  contain-intrinsic-size: 200px 300px;
+}
+
+

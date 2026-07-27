@@ -49,7 +49,7 @@ export const BookCard = memo(function BookCard({ book, progress, href, cached }:
     <motion.article
       whileHover={reduceMotion ? undefined : { y: -4 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="group relative block h-full"
+      className="group relative block h-full cull-offscreen"
     >
       <div className="relative h-full overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm transition-[transform,opacity,colors,border-color,background-color] duration-300 ease-out-expo group-hover:border-gold-400/40 hover:shadow-md">
         {/* ─── COVER ─── */}

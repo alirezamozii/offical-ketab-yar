@@ -38,15 +38,28 @@ export function Magnetic({
   const sx = useSpring(x, { stiffness: 250, damping: 18, mass: 0.4 })
   const sy = useSpring(y, { stiffness: 250, damping: 18, mass: 0.4 })
 
-  function onMove(e: React.MouseEvent<HTMLDivElement>) {
+  const rectRef = useRef<DOMRect | null>(null)
+
+  function onEnter() {
     if (reduceMotion || !ref.current) return
-    const r = ref.current.getBoundingClientRect()
+    rectRef.current = ref.current.getBoundingClientRect()
+  }
+
+  function onMove(e: React.MouseEvent<HTMLDivElement>) {
+    if (reduceMotion) return
+    let r = rectRef.current
+    if (!r && ref.current) {
+      r = ref.current.getBoundingClientRect()
+      rectRef.current = r
+    }
+    if (!r) return
     const nx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2)
     const ny = (e.clientY - (r.top + r.height / 2)) / (r.height / 2)
     x.set(nx * strength)
     y.set(ny * strength)
   }
   function onLeave() {
+    rectRef.current = null
     x.set(0)
     y.set(0)
   }
@@ -54,6 +67,7 @@ export function Magnetic({
   return (
     <motion.div
       ref={ref}
+      onMouseEnter={onEnter}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
       style={reduceMotion ? undefined : { x: sx, y: sy }}

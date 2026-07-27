@@ -108,11 +108,8 @@ export function useReaderScroll({
       const el = scrollRef.current
       const node = paragraphRefs.current[idx]
       if (!el || !node) return
-      const elRect = el.getBoundingClientRect()
-      const nodeRect = node.getBoundingClientRect()
-      const delta = nodeRect.top - elRect.top
-      // offset so the paragraph isn't hidden under the top toolbar (~64px) + breathing room
-      el.scrollTo({ top: el.scrollTop + delta - 90, behavior })
+      const targetTop = node.offsetTop
+      el.scrollTo({ top: Math.max(0, targetTop - 90), behavior })
     },
     [],
   )

@@ -36,6 +36,7 @@ export type ReadingFontFamily = 'vazirmatn' | 'serif' | 'sans'
 export type ReadingTheme = 'day' | 'night' | 'sepia' | 'high-contrast'
 export type ReadingLayout = 'paginated' | 'continuous'
 export type ReadingMarginWidth = 'narrow' | 'medium' | 'wide'
+export type ReadingLanguage = 'fa' | 'en' | 'fa-en' | 'en-fa'
 
 export interface ReadingSettings {
   /** Font size in px (14–24). */
@@ -55,6 +56,8 @@ export interface ReadingSettings {
   dropCaps: boolean
   /** Show paragraph numbers in the margin. */
   paragraphNumbers: boolean
+  /** Language and subtitle combination. */
+  language: ReadingLanguage
 }
 
 // ---------------------------------------------------------------------------
@@ -112,21 +115,6 @@ export interface PrivacySettings {
   showInLeaderboard: boolean
 }
 
-// ---------------------------------------------------------------------------
-// Language
-// ---------------------------------------------------------------------------
-
-export type InterfaceLanguage = 'fa' | 'en'
-export type BookLanguagePreference = 'en' | 'fa' | 'both'
-
-export interface LanguageSettings {
-  /** App UI language. */
-  interfaceLanguage: InterfaceLanguage
-  /** Preferred language for book recommendations. */
-  bookLanguagePreference: BookLanguagePreference
-  /** Suggested language for new books the user is shown. */
-  preferredNewBookLanguage: BookLanguagePreference
-}
 
 // ---------------------------------------------------------------------------
 // Combined settings
@@ -137,7 +125,6 @@ export interface UserSettings {
   notifications: NotificationSettings
   accessibility: AccessibilitySettings
   privacy: PrivacySettings
-  language: LanguageSettings
 }
 
 // ---------------------------------------------------------------------------
@@ -154,6 +141,7 @@ export const DEFAULT_READING: ReadingSettings = {
   layout: 'continuous',
   dropCaps: false,
   paragraphNumbers: false,
+  language: 'fa',
 }
 
 export const DEFAULT_NOTIFICATIONS: NotificationSettings = {
@@ -176,24 +164,18 @@ export const DEFAULT_ACCESSIBILITY: AccessibilitySettings = {
 }
 
 export const DEFAULT_PRIVACY: PrivacySettings = {
-  shareStats: true,
+  shareStats: false,
   shareReadingHistory: false,
   publicProfile: false,
-  showInLeaderboard: true,
+  showInLeaderboard: false,
 }
 
-export const DEFAULT_LANGUAGE: LanguageSettings = {
-  interfaceLanguage: 'fa',
-  bookLanguagePreference: 'both',
-  preferredNewBookLanguage: 'en',
-}
 
 export const DEFAULT_SETTINGS: UserSettings = {
   reading: DEFAULT_READING,
   notifications: DEFAULT_NOTIFICATIONS,
   accessibility: DEFAULT_ACCESSIBILITY,
   privacy: DEFAULT_PRIVACY,
-  language: DEFAULT_LANGUAGE,
 }
 
 // ---------------------------------------------------------------------------
@@ -249,7 +231,9 @@ export function getSettings(): UserSettings {
   }
 }
 
-/** Persist `settings` to localStorage (client-only). */
+let syncTimeout: ReturnType<typeof setTimeout> | null = null
+
+/** Persist `settings` to localStorage (client-only) and sync to DB. */
 export function saveSettings(settings: UserSettings): void {
   if (typeof window === 'undefined') return
   try {
@@ -260,6 +244,16 @@ export function saveSettings(settings: UserSettings): void {
         detail: { key: SETTINGS_KEY, value: settings },
       }),
     )
+
+    // Debounce DB sync to avoid spamming the API (e.g., from sliders)
+    if (syncTimeout) clearTimeout(syncTimeout)
+    syncTimeout = setTimeout(() => {
+      fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings }),
+      }).catch(() => {})
+    }, 1500)
   } catch {
     /* quota / private-mode — ignore */
   }

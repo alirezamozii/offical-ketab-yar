@@ -127,15 +127,10 @@ export function ReadingHeatmap() {
                     aria-label={`${formatDate(day.date, 'long')} — ${
                       day.active ? 'روز فعال' : 'بدون فعالیت'
                     }`}
-                    onMouseEnter={(e) => {
-                      const rect = (
-                        e.currentTarget.parentElement?.parentElement as HTMLElement
-                      )?.getBoundingClientRect()
-                      const cellRect = e.currentTarget.getBoundingClientRect()
-                      if (!rect) return
+                    onMouseEnter={() => {
                       setHovered({
-                        x: cellRect.left - rect.left + CELL / 2,
-                        y: cellRect.top - rect.top + CELL + 6,
+                        x: wi * (CELL + GAP) + CELL / 2,
+                        y: di * (CELL + GAP) + CELL + 6,
                         key: day.key,
                         active: day.active,
                         isToday: day.isToday,

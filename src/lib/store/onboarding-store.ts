@@ -13,6 +13,7 @@
 
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { idbStorage } from './storage'
 
 interface OnboardingState {
   step: number
@@ -72,7 +73,7 @@ export const useOnboardingStore = create<OnboardingState>()(
     }),
     {
       name: 'ky_onboarding_state',
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => idbStorage),
       version: 1,
     },
   ),

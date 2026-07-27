@@ -86,7 +86,6 @@ function PermissionBanner({
             type="button"
             size="sm"
             onClick={onEnable}
-            className="bg-gradient-to-r from-gold-500 to-amber-500 text-gold-950 hover:from-gold-600 hover:to-amber-600"
             aria-label="فعال کردن اعلان‌ها"
           >
             فعال کردن

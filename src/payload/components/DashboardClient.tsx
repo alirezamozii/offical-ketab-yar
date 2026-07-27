@@ -72,6 +72,7 @@ export const DashboardClient: React.FC<DashboardClientProps> = ({ initialStats, 
       })
     }, 400)
     return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery])
 
   // Handle Promote

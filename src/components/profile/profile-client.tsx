@@ -24,7 +24,6 @@ import {
   BookOpen,
   CalendarDays,
   Flame,
-  Lock,
   Moon,
   Settings,
   Star,
@@ -424,11 +423,7 @@ export function ProfileClient() {
         </div>
       </DashboardSection>
 
-      {/* Footer note */}
-      <div className="flex items-center justify-center gap-2 border-t border-border/40 pt-6 text-center text-xs text-muted-foreground">
-        <Lock className="h-3.5 w-3.5" />
-        اطلاعات شما فقط به‌صورت محلی و روی این مرورگر ذخیره می‌شود.
-      </div>
+
     </div>
   )
 }

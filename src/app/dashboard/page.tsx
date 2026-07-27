@@ -2,7 +2,7 @@ import { DashboardClient } from '@/components/dashboard/dashboard-client'
 import { StatsExport } from '@/components/dashboard/stats-export'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Settings, User } from 'lucide-react'
+import { Settings } from 'lucide-react'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
@@ -31,16 +31,10 @@ export default function DashboardPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button asChild variant="outline" size="sm" className="gap-2">
-            <Link href="/profile">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">پروفایل من</span>
-              <span className="sm:hidden">پروفایل</span>
-            </Link>
-          </Button>
-          <Button asChild variant="ghost" size="sm" className="gap-2">
             <Link href="/settings">
               <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">تنظیمات</span>
+              <span className="hidden sm:inline">تنظیمات و حساب</span>
+              <span className="sm:hidden">تنظیمات</span>
             </Link>
           </Button>
           <StatsExport />

@@ -113,6 +113,17 @@ export function rateLimitKey(...parts: string[]): string {
 }
 
 /**
+ * Check if a request includes a valid rate-limit bypass header (e.g., for corporate proxies,
+ * load balancers, internal services, or automated testing).
+ */
+export function isRateLimitBypassed(req: Request): boolean {
+  const secret = process.env.RATE_LIMIT_BYPASS_SECRET
+  if (!secret) return false
+  const headerValue = req.headers.get('x-rate-limit-bypass')
+  return headerValue === secret
+}
+
+/**
  * Apply a two-tier rate limit to an AI-ish endpoint: anonymous callers get
  * `anonLimit` requests per minute, authenticated callers get `authLimit`.
  * Returns `null` if the request is allowed, or a `Response` (429) to return
@@ -126,6 +137,10 @@ export async function aiRateLimit(
   req: Request,
   opts: { anonLimit: number; authLimit: number; name: string },
 ): Promise<Response | null> {
+  if (isRateLimitBypassed(req)) {
+    return null
+  }
+
   const { getCurrentUser } = await import('@/lib/auth-session')
   const user = await getCurrentUser().catch(() => null)
   const ipHash = await getClientIpHash(req)
@@ -149,4 +164,5 @@ export async function aiRateLimit(
   }
   return null
 }
+
 

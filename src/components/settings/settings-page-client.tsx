@@ -35,11 +35,11 @@ import {
   BookOpen,
   CheckCircle2,
   ChevronLeft,
+  Clock,
   Database,
   Download,
   Flame,
   Info,
-  Languages,
   Monitor,
   Moon,
   Palette,
@@ -51,7 +51,6 @@ import {
   Trash2,
   Upload,
   Heart,
-  Code2,
   PartyPopper,
   XCircle,
   AlertTriangle,
@@ -66,17 +65,7 @@ import { Slider } from '@/components/ui/slider'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from '@/components/ui/radio-group'
+
 import {
   Tabs,
   TabsContent,
@@ -107,17 +96,14 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { usePersianLocale } from '@/hooks/use-persian-locale'
 import { STORAGE_KEYS, clearAllKyStorage } from '@/lib/storage-keys'
+import { useReaderSettingsStore, type ReaderTheme as ReaderStoreTheme } from '@/lib/store/reader-settings-store'
 import {
-  ACCENT_COLORS,
-  type AccentColor,
-  type BookLanguagePreference,
-  type InterfaceLanguage,
+  type ReadingLanguage,
   type ReadingFontFamily,
   type ReadingLayout,
   type ReadingMarginWidth,
   type ReadingTheme,
   DEFAULT_SETTINGS,
-  useAccentColor,
   useSettings,
 } from '@/lib/settings'
 import { SITE } from '@/lib/site'
@@ -135,13 +121,46 @@ import {
 // Section registry
 // ---------------------------------------------------------------------------
 
+function TimePicker24({ value, onChange, ariaLabel }: { value: string, onChange: (v: string) => void, ariaLabel?: string }) {
+  const [h = '20', m = '00'] = (value || '20:00').split(':')
+  return (
+    <div className="flex h-9 w-32 items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-within:ring-1 focus-within:ring-ring" style={{ direction: 'ltr' }}>
+      <div className="flex items-center gap-0.5 tabular-nums">
+        <select 
+          value={h} 
+          onChange={e => onChange(`${e.target.value}:${m}`)}
+          className="appearance-none bg-transparent outline-none cursor-pointer hover:text-gold-500 transition-colors"
+          aria-label={`${ariaLabel} ساعت`}
+        >
+          {Array.from({length: 24}).map((_, i) => {
+            const val = i.toString().padStart(2, '0')
+            return <option key={val} value={val} className="bg-background text-foreground">{val}</option>
+          })}
+        </select>
+        <span className="text-muted-foreground pb-0.5">:</span>
+        <select 
+          value={m} 
+          onChange={e => onChange(`${h}:${e.target.value}`)}
+          className="appearance-none bg-transparent outline-none cursor-pointer hover:text-gold-500 transition-colors"
+          aria-label={`${ariaLabel} دقیقه`}
+        >
+          {Array.from({length: 60}).map((_, i) => {
+            const val = i.toString().padStart(2, '0')
+            return <option key={val} value={val} className="bg-background text-foreground">{val}</option>
+          })}
+        </select>
+      </div>
+      <Clock className="h-4 w-4 text-muted-foreground" />
+    </div>
+  )
+}
+
 type SectionId =
   | 'reading'
   | 'appearance'
   | 'notifications'
   | 'accessibility'
   | 'privacy'
-  | 'language'
   | 'data'
   | 'about'
 
@@ -158,7 +177,6 @@ const SECTIONS: SectionMeta[] = [
   { id: 'notifications', label: 'اعلان‌ها', icon: Bell, description: 'یادآوری روزانه و هشدارها' },
   { id: 'accessibility', label: 'دسترسی‌پذیری', icon: Accessibility, description: 'حرکت، کنتراست و فوکوس' },
   { id: 'privacy', label: 'حریم خصوصی', icon: Shield, description: 'اشتراک‌گذاری آمار و پروفایل' },
-  { id: 'language', label: 'زبان', icon: Languages, description: 'زبان رابط و ترجیح کتاب' },
   { id: 'data', label: 'داده‌ها', icon: Database, description: 'خروجی، ورود و پاک‌سازی داده' },
   { id: 'about', label: 'درباره', icon: Info, description: 'نسخه، اعتبارها و پیوندها' },
 ]
@@ -207,17 +225,17 @@ function SwitchRow({
   ariaLabel: string
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-xl border border-border/50 bg-card/50 p-4 transition-colors hover:bg-card/80">
-      <div className="space-y-1">
-        <p className="text-sm font-semibold text-foreground">{title}</p>
-        <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
-      </div>
+    <div className="flex items-center gap-4 rounded-xl border border-border/50 bg-card/50 p-4 transition-colors hover:bg-card/80">
       <Switch
         checked={checked}
         onCheckedChange={onChange}
         aria-label={ariaLabel}
         className="shrink-0"
       />
+      <div className="space-y-1">
+        <p className="text-sm font-semibold text-foreground">{title}</p>
+        <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
+      </div>
     </div>
   )
 }
@@ -272,7 +290,8 @@ function SettingCard({
   return (
     <Card className="overflow-hidden border-border/60 bg-card/60 shadow-sm backdrop-blur-sm">
       {(title || action) && (
-        <CardHeader className="flex flex-row items-start justify-between gap-3 border-b border-border/40 pb-4">
+        <CardHeader className="flex flex-row items-start gap-3 border-b border-border/40 pb-4">
+          {action && <div className="shrink-0 pt-0.5">{action}</div>}
           <div className="space-y-1">
             {title && <CardTitle className="text-base font-bold">{title}</CardTitle>}
             {description && (
@@ -281,7 +300,6 @@ function SettingCard({
               </CardDescription>
             )}
           </div>
-          {action}
         </CardHeader>
       )}
       <CardContent className="pt-4">{children}</CardContent>
@@ -298,9 +316,30 @@ function ReadingSection() {
   const locale = usePersianLocale()
   const reduceMotion = useReducedMotion()
   const r = settings.reading
+  const readerStore = useReaderSettingsStore()
 
-  const setReading = <K extends keyof typeof r>(key: K, value: (typeof r)[K]) =>
+  // 2-way sync: Update local settings AND Zustand reader store
+  const setReading = <K extends keyof typeof r>(key: K, value: (typeof r)[K]) => {
     updateSection('reading', key, value)
+
+    if (key === 'fontSize' && typeof value === 'number') {
+      readerStore.setFontSize(value)
+    } else if (key === 'lineHeight' && typeof value === 'number') {
+      readerStore.setLineHeight(value)
+    } else if (key === 'letterSpacing' && typeof value === 'number') {
+      readerStore.setLetterSpacing(value)
+    } else if (key === 'fontFamily' && typeof value === 'string') {
+      readerStore.setFontFamily(value as any)
+    } else if (key === 'theme' && typeof value === 'string') {
+      const themeMap: Record<string, ReaderStoreTheme> = {
+        day: 'light',
+        night: 'dark',
+        sepia: 'sepia',
+        'high-contrast': 'high-contrast',
+      }
+      readerStore.setTheme(themeMap[value] || 'sepia')
+    }
+  }
 
   const previewStyle: React.CSSProperties = {
     fontSize: `${r.fontSize}px`,
@@ -322,38 +361,54 @@ function ReadingSection() {
         description="فونت، فاصله‌گذاری، چیدمان و تم صفحات کتاب را تنظیم کنید."
       />
 
-      {/* Live preview */}
-      <SettingCard title="پیش‌نمایش زنده">
-        <div
-          className="rounded-xl border border-border/40 p-5 transition-[transform,opacity,colors,border-color,background-color]"
-          style={{
-            background: READING_THEME_PREVIEW[r.theme].bg,
-            color: READING_THEME_PREVIEW[r.theme].text,
-          }}
-          dir="rtl"
-        >
-          <p
-            style={previewStyle}
-            className={cn(
-              'transition-[transform,opacity,colors,border-color,background-color]',
-              r.dropCaps &&
-                '[&::first-letter]:float-start [&::first-letter]:me-2 [&::first-letter]:text-5xl [&::first-letter]:font-bold [&::first-letter]:leading-none',
-            )}
+      {/* Live preview — STICKY PINNED so controls update live on scroll */}
+      <div className="sticky top-[88px] z-30 rounded-2xl border border-gold-500/30 bg-background/95 dark:bg-card/95 shadow-2xl backdrop-blur-2xl p-1 transition-all">
+        <SettingCard title="پیش‌نمایش زنده (دوزبانه)">
+          <div
+            className="space-y-2.5 rounded-xl border border-border/40 p-3.5 transition-all"
+            style={{
+              background: READING_THEME_PREVIEW[r.theme].bg,
+              color: READING_THEME_PREVIEW[r.theme].text,
+            }}
           >
-            {r.paragraphNumbers && (
+            {/* Persian Paragraph */}
+            <div dir="rtl">
               <span
-                className="me-2 select-none text-xs align-top opacity-60"
+                className="mb-1 block text-[10px] font-bold uppercase tracking-wider opacity-60"
                 style={{ color: READING_THEME_PREVIEW[r.theme].accent }}
               >
-                {locale.toPersianDigits(1)}
+                فارسی (Persian)
               </span>
-            )}
-            در دل صحرای آرام، نخستین پرتو سپیدهدم بر شن‌های طلایی افتاد و سکوت
-            شب را با زمزمه‌ای نرم شکست. باد، حامل عطر دورِ کوهستان، آهسته بر
-            گونه‌های مسافر گذشت.
-          </p>
-        </div>
-      </SettingCard>
+              <p style={previewStyle} className="transition-colors duration-300">
+                در دل صحرای آرام، نخستین پرتو سپیده دم بر شن‌های طلایی افتاد...
+              </p>
+            </div>
+
+            <Separator className="opacity-30" />
+
+            {/* English Paragraph */}
+            <div dir="ltr">
+              <span
+                className="mb-1 block text-[10px] font-bold uppercase tracking-wider opacity-60"
+                style={{ color: READING_THEME_PREVIEW[r.theme].accent }}
+              >
+                English (Original)
+              </span>
+              <p
+                style={{
+                  fontSize: `${r.fontSize}px`,
+                  lineHeight: r.lineHeight,
+                  letterSpacing: `${r.letterSpacing}em`,
+                  fontFamily: "Georgia, 'Times New Roman', serif",
+                }}
+                className="transition-colors duration-300"
+              >
+                In the quiet heart of the desert, the first beam of dawn fell upon the golden sands...
+              </p>
+            </div>
+          </div>
+        </SettingCard>
+      </div>
 
       {/* Font size */}
       <SettingCard
@@ -536,6 +591,37 @@ function ReadingSection() {
         </div>
       </SettingCard>
 
+      {/* Reading language */}
+      <SettingCard title="زبان مطالعه و زیرنویس" description="زبان متن کتاب و زیرنویس را انتخاب کنید.">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {([
+            { id: 'fa', label: 'فارسی', sub: 'متن اصلی فارسی' },
+            { id: 'en', label: 'انگلیسی', sub: 'متن اصلی انگلیسی' },
+            { id: 'fa-en', label: 'فارسی با زیرنویس انگلیسی', sub: 'متن فارسی، زیرنویس انگلیسی' },
+            { id: 'en-fa', label: 'انگلیسی با زیرنویس فارسی', sub: 'متن انگلیسی، زیرنویس فارسی' },
+          ] as { id: ReadingLanguage; label: string; sub: string }[]).map((l) => {
+            const active = r.language === l.id
+            return (
+              <button
+                key={l.id}
+                type="button"
+                onClick={() => setReading('language', l.id)}
+                aria-pressed={active}
+                className={cn(
+                  'flex flex-col items-start gap-1 rounded-xl border-2 p-3 text-right transition-[transform,opacity,colors,border-color,background-color]',
+                  active
+                    ? 'border-gold-500 bg-gold-500/10 shadow-sm'
+                    : 'border-border/50 bg-card/50 hover:border-gold-500/40 hover:bg-card/80',
+                )}
+              >
+                <span className="text-sm font-semibold text-foreground">{l.label}</span>
+                <span className="text-[11px] text-muted-foreground">{l.sub}</span>
+              </button>
+            )
+          })}
+        </div>
+      </SettingCard>
+
       {/* Layout toggle */}
       <SettingCard title="نوع چیدمان" description="نحوه نمایش صفحات کتاب.">
         <div className="grid grid-cols-2 gap-2">
@@ -562,26 +648,6 @@ function ReadingSection() {
               </button>
             )
           })}
-        </div>
-      </SettingCard>
-
-      {/* Drop caps + paragraph numbers */}
-      <SettingCard title="جزئیات تایپوگرافی">
-        <div className="space-y-2">
-          <SwitchRow
-            title="حرف آغازین بزرگ"
-            description="نمایش حرف اول هر پاراگراف به‌صورت بزرگ و تزئینی."
-            checked={r.dropCaps}
-            onChange={(v) => setReading('dropCaps', v)}
-            ariaLabel="حرف آغازین بزرگ"
-          />
-          <SwitchRow
-            title="شماره‌گذاری پاراگراف‌ها"
-            description="نمایش شماره کنار هر پاراگراف برای ارجاع آسان."
-            checked={r.paragraphNumbers}
-            onChange={(v) => setReading('paragraphNumbers', v)}
-            ariaLabel="شماره‌گذاری پاراگراف‌ها"
-          />
         </div>
       </SettingCard>
 
@@ -618,7 +684,6 @@ function ReadingSection() {
 
 function AppearanceSection() {
   const { resolvedTheme, setTheme } = useTheme()
-  const { color, set } = useAccentColor()
   const [mounted, setMounted] = React.useState(false)
   React.useEffect(() => setMounted(true), [])
 
@@ -676,52 +741,6 @@ function AppearanceSection() {
         </div>
       </SettingCard>
 
-      <SettingCard
-        title="رنگ تاکیدی"
-        description="رنگ اصلی دکمه‌ها، لینک‌ها و عناصر تعاملی."
-      >
-        <div className="flex flex-wrap items-center gap-3">
-          {(Object.keys(ACCENT_COLORS) as AccentColor[]).map((key) => {
-            const c = ACCENT_COLORS[key]
-            const isActive = color === key
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => {
-                  set(key)
-                  toast.success(`رنگ تاکیدی به «${c.label}» تغییر کرد`)
-                }}
-                aria-pressed={isActive}
-                aria-label={`رنگ ${c.label}`}
-                className={cn(
-                  'group flex flex-col items-center gap-1.5',
-                )}
-              >
-                <span
-                  className={cn(
-                    'block h-10 w-10 rounded-full ring-2 ring-offset-2 ring-offset-background transition-[transform,opacity,colors,border-color,background-color]',
-                    isActive ? 'ring-offset-4 scale-110' : 'ring-transparent',
-                  )}
-                  style={{ background: c.swatch, boxShadow: isActive ? `0 0 0 2px ${c.swatch}` : undefined }}
-                />
-                <span
-                  className={cn(
-                    'text-[11px] font-medium transition-colors',
-                    isActive ? 'text-foreground' : 'text-muted-foreground',
-                  )}
-                >
-                  {c.label}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-        <p className="mt-3 text-xs text-muted-foreground">
-          توجه: این گزینه به‌صورت محلی ذخیره می‌شود و در نسخه‌های آینده به‌طور کامل اعمال خواهد شد.
-        </p>
-      </SettingCard>
-
       <div className="flex justify-end">
         <Button
           variant="outline"
@@ -729,7 +748,6 @@ function AppearanceSection() {
           className="gap-1.5"
           onClick={() => {
             setTheme('light')
-            set('gold')
             toast.success('تنظیمات ظاهر بازنشانی شد')
           }}
         >
@@ -893,8 +911,8 @@ function NotificationsSection() {
                 type="button"
                 size="sm"
                 onClick={handleRequestPermission}
-                disabled={requesting || permission === 'denied'}
-                className="gap-1.5 bg-gradient-to-r from-gold-500 to-amber-500 text-gold-950 hover:from-gold-600 hover:to-amber-600"
+                disabled={requesting}
+                className="gap-1.5"
                 aria-label="درخواست مجوز اعلان‌ها"
               >
                 <BellRing className="h-4 w-4" />
@@ -928,7 +946,12 @@ function NotificationsSection() {
             ariaLabel="یادآوری روزانه مطالعه"
           />
           {n.dailyReminder && (
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-border/40 bg-card/40 p-4">
+            <div className="flex items-center gap-4 rounded-xl border border-border/40 bg-card/40 p-4">
+              <TimePicker24
+                value={n.reminderTime}
+                onChange={(val) => setN('reminderTime', val)}
+                ariaLabel="زمان یادآوری"
+              />
               <div>
                 <Label htmlFor="reminder-time" className="text-sm font-semibold">
                   زمان یادآوری
@@ -937,14 +960,6 @@ function NotificationsSection() {
                   ساعت دلخواه خود را برای یادآوری انتخاب کنید.
                 </p>
               </div>
-              <Input
-                id="reminder-time"
-                type="time"
-                value={n.reminderTime}
-                onChange={(e) => setN('reminderTime', e.target.value)}
-                className="w-32"
-                aria-label="زمان یادآوری"
-              />
             </div>
           )}
         </div>
@@ -970,13 +985,10 @@ function NotificationsSection() {
                   زمانی که در صورت نخواندن، هشدار حفظ زنجیره ارسال می‌شود (پیش‌فرض ۲۰:۰۰).
                 </p>
               </div>
-              <Input
-                id="streak-alerts-time"
-                type="time"
+              <TimePicker24
                 value={n.streakAlertsTime}
-                onChange={(e) => setN('streakAlertsTime', e.target.value)}
-                className="w-32"
-                aria-label="زمان هشدار زنجیره"
+                onChange={(val) => setN('streakAlertsTime', val)}
+                ariaLabel="زمان هشدار زنجیره"
               />
             </div>
           )}
@@ -1111,11 +1123,7 @@ function AccessibilitySection() {
         </div>
       </SettingCard>
 
-      <p className="rounded-xl border border-border/40 bg-card/40 p-4 text-xs leading-relaxed text-muted-foreground">
-        <Sparkles className="me-1.5 inline-block h-3.5 w-3.5 text-gold-600" aria-hidden="true" />
-        تنظیمات دسترسی‌پذیری به‌صورت محلی ذخیره می‌شوند و در نسخه‌های آینده به‌طور کامل
-        در کل برنامه اعمال خواهند شد.
-      </p>
+
     </div>
   )
 }
@@ -1177,122 +1185,11 @@ function PrivacySection() {
         </div>
       </SettingCard>
 
-      <p className="flex items-start gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-xs leading-relaxed text-muted-foreground">
-        <Shield className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden="true" />
-        داده‌های شما به‌صورت محلی روی این مرورگر ذخیره می‌شوند. تنظیمات حریم خصوصی
-        برای نسخه‌های آینده با حساب کاربری آماده شده‌اند.
-      </p>
+
     </div>
   )
 }
 
-// ===========================================================================
-// 6. LANGUAGE SECTION
-// ===========================================================================
-
-function LanguageSection() {
-  const { settings, updateSection } = useSettings()
-  const l = settings.language
-
-  const setL = <K extends keyof typeof l>(key: K, value: (typeof l)[K]) =>
-    updateSection('language', key, value)
-
-  const interfaces: { id: InterfaceLanguage; label: string; sub: string }[] = [
-    { id: 'fa', label: 'فارسی', sub: 'Persian — RTL' },
-    { id: 'en', label: 'English', sub: 'انگلیسی — LTR' },
-  ]
-
-  const bookPrefs: { id: BookLanguagePreference; label: string; sub: string }[] = [
-    { id: 'en', label: 'انگلیسی', sub: 'فقط کتاب‌های انگلیسی' },
-    { id: 'fa', label: 'فارسی', sub: 'فقط کتاب‌های فارسی' },
-    { id: 'both', label: 'هر دو', sub: 'انگلیسی و فارسی' },
-  ]
-
-  return (
-    <div className="space-y-5">
-      <SectionHeader
-        icon={Languages}
-        title="زبان"
-        description="زبان رابط کاربری و ترجیح زبان کتاب‌ها را انتخاب کنید."
-      />
-
-      <SettingCard title="زبان رابط کاربری" description="زبان نمایش منوها و متون برنامه.">
-        <RadioGroup
-          value={l.interfaceLanguage}
-          onValueChange={(v) => setL('interfaceLanguage', v as InterfaceLanguage)}
-          className="grid grid-cols-1 gap-2 sm:grid-cols-2"
-        >
-          {interfaces.map((opt) => (
-            <label
-              key={opt.id}
-              htmlFor={`iface-${opt.id}`}
-              className={cn(
-                'flex cursor-pointer items-center gap-3 rounded-xl border-2 p-3 transition-[transform,opacity,colors,border-color,background-color]',
-                l.interfaceLanguage === opt.id
-                  ? 'border-gold-500 bg-gold-500/10'
-                  : 'border-border/50 hover:border-gold-500/40 hover:bg-card/80',
-              )}
-            >
-              <RadioGroupItem value={opt.id} id={`iface-${opt.id}`} />
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold text-foreground">{opt.label}</span>
-                <span className="text-[11px] text-muted-foreground">{opt.sub}</span>
-              </div>
-            </label>
-          ))}
-        </RadioGroup>
-      </SettingCard>
-
-      <SettingCard title="ترجیح زبان کتاب‌ها" description="کدام زبان کتاب برای توصیه‌ها اولویت دارد.">
-        <RadioGroup
-          value={l.bookLanguagePreference}
-          onValueChange={(v) => setL('bookLanguagePreference', v as BookLanguagePreference)}
-          className="grid grid-cols-1 gap-2 sm:grid-cols-3"
-        >
-          {bookPrefs.map((opt) => (
-            <label
-              key={opt.id}
-              htmlFor={`bpref-${opt.id}`}
-              className={cn(
-                'flex cursor-pointer items-center gap-3 rounded-xl border-2 p-3 transition-[transform,opacity,colors,border-color,background-color]',
-                l.bookLanguagePreference === opt.id
-                  ? 'border-gold-500 bg-gold-500/10'
-                  : 'border-border/50 hover:border-gold-500/40 hover:bg-card/80',
-              )}
-            >
-              <RadioGroupItem value={opt.id} id={`bpref-${opt.id}`} />
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold text-foreground">{opt.label}</span>
-                <span className="text-[11px] text-muted-foreground">{opt.sub}</span>
-              </div>
-            </label>
-          ))}
-        </RadioGroup>
-      </SettingCard>
-
-      <SettingCard title="زبان پیشنهادی برای کتاب‌های جدید">
-        <Select
-          value={l.preferredNewBookLanguage}
-          onValueChange={(v) => setL('preferredNewBookLanguage', v as BookLanguagePreference)}
-        >
-          <SelectTrigger className="w-full" aria-label="زبان پیشنهادی برای کتاب‌های جدید">
-            <SelectValue placeholder="انتخاب کنید" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="en">انگلیسی</SelectItem>
-            <SelectItem value="fa">فارسی</SelectItem>
-            <SelectItem value="both">هر دو زبان</SelectItem>
-          </SelectContent>
-        </Select>
-      </SettingCard>
-
-      <p className="rounded-xl border border-border/40 bg-card/40 p-4 text-xs leading-relaxed text-muted-foreground">
-        تغییر زبان رابط کاربری در نسخه‌های آینده به‌طور کامل پشتیبانی خواهد شد.
-        در حال حاضر، رابط کاربری کتاب‌یار به‌صورت پیش‌فرض فارسی است.
-      </p>
-    </div>
-  )
-}
 
 // ===========================================================================
 // 7. DATA SECTION
@@ -1313,15 +1210,33 @@ function DataSection() {
   const [deleting, setDeleting] = React.useState(false)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
-  const refreshStorage = React.useCallback(() => {
+  const refreshStorage = React.useCallback(async () => {
     if (typeof window === 'undefined') return
     let total = 0
+    
+    // 1. Calculate localStorage size
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i)
       if (!k || !k.startsWith('ky_')) continue
       const v = localStorage.getItem(k) ?? ''
       total += k.length + v.length
     }
+    
+    // 2. Calculate IndexedDB size
+    try {
+      const { entries } = await import('idb-keyval')
+      const idbEntries = await entries()
+      for (const [k, v] of idbEntries) {
+        if (typeof k === 'string' && k.startsWith('ky_')) {
+          total += k.length
+          const serialized = typeof v === 'string' ? v : JSON.stringify(v)
+          total += serialized.length
+        }
+      }
+    } catch {
+      // Ignore idb errors silently
+    }
+    
     setStorageBytes(total)
   }, [])
 
@@ -1329,32 +1244,48 @@ function DataSection() {
     refreshStorage()
   }, [refreshStorage])
 
+  const mb = storageBytes / (1024 * 1024)
   const kb = storageBytes / 1024
-  const kbLabel = kb < 1 ? locale.toPersianDigits((kb * 1024).toFixed(0)) + ' بایت' : locale.toPersianDigits(kb.toFixed(1)) + ' کیلوبایت'
+  const sizeLabel = mb >= 1 
+    ? locale.toPersianDigits(mb.toFixed(2)) + ' مگابایت' 
+    : kb < 1 
+      ? locale.toPersianDigits(storageBytes.toString()) + ' بایت' 
+      : locale.toPersianDigits(kb.toFixed(1)) + ' کیلوبایت'
 
-  function handleExport() {
+  async function handleExport() {
     if (typeof window === 'undefined') return
-    const dump: Record<string, unknown> = { _exportedAt: new Date().toISOString(), _app: SITE.nameEn }
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i)
-      if (!k || !k.startsWith('ky_')) continue
-      const raw = localStorage.getItem(k)
-      if (!raw) continue
-      try {
-        dump[k] = JSON.parse(raw)
-      } catch {
-        dump[k] = raw
+    try {
+      const dump: Record<string, unknown> = { _exportedAt: new Date().toISOString(), _app: SITE.nameEn }
+      
+      // 1. Get localStorage keys
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i)
+        if (!k || !k.startsWith('ky_')) continue
+        const raw = localStorage.getItem(k)
+        if (!raw) continue
+        try { dump[k] = JSON.parse(raw) } catch { dump[k] = raw }
       }
+
+      // 2. Get IndexedDB keys
+      const idbEntries = await import('idb-keyval').then(m => m.entries())
+      for (const [k, v] of idbEntries) {
+        if (typeof k === 'string' && k.startsWith('ky_')) {
+          try { dump[k] = typeof v === 'string' ? JSON.parse(v) : v } catch { dump[k] = v }
+        }
+      }
+
+      const blob = new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      const date = new Date().toISOString().slice(0, 10)
+      a.href = url
+      a.download = `ketabyar-backup-${date}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success('داده‌ها در فایل JSON ذخیره شد')
+    } catch {
+      toast.error('خطا در پشتیبان‌گیری')
     }
-    const blob = new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    const date = new Date().toISOString().slice(0, 10)
-    a.href = url
-    a.download = `ketabyar-backup-${date}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-    toast.success('داده‌ها در فایل JSON ذخیره شد')
   }
 
   function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -1367,20 +1298,23 @@ function DataSection() {
       setImportOpen(true)
     }
     reader.readAsText(file)
-    // Reset input so the same file can be re-selected
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  function applyImport() {
+  async function applyImport() {
     try {
       const parsed = JSON.parse(importJson) as Record<string, unknown>
       let count = 0
-      Object.entries(parsed).forEach(([k, v]) => {
-        if (!k.startsWith('ky_')) return
+      const { set } = await import('idb-keyval')
+      
+      for (const [k, v] of Object.entries(parsed)) {
+        if (!k.startsWith('ky_')) continue
         const serialized = typeof v === 'string' ? v : JSON.stringify(v)
+        // Store in both to be safe during migration
         localStorage.setItem(k, serialized)
+        await set(k, serialized)
         count++
-      })
+      }
       refreshStorage()
       setImportOpen(false)
       setImportJson('')
@@ -1391,11 +1325,21 @@ function DataSection() {
     }
   }
 
-  function clearProgress() {
+  async function clearProgress() {
     try {
       localStorage.removeItem(STORAGE_KEYS.progress)
       localStorage.removeItem(STORAGE_KEYS.readingHistory)
       localStorage.removeItem(STORAGE_KEYS.readerSessionHistory)
+      
+      const { del } = await import('idb-keyval')
+      await del(STORAGE_KEYS.progress)
+      await del(STORAGE_KEYS.readingHistory)
+      await del(STORAGE_KEYS.readerSessionHistory)
+
+      if (isAuthed) {
+        await fetch('/api/reading/progress/clear', { method: 'DELETE' })
+      }
+
       refreshStorage()
       toast.success('پیشرفت مطالعه پاک شد')
     } catch {
@@ -1403,7 +1347,7 @@ function DataSection() {
     }
   }
 
-  function clearVocab() {
+  async function clearVocab() {
     try {
       localStorage.removeItem(STORAGE_KEYS.srs)
       localStorage.removeItem(STORAGE_KEYS.vocabCategories)
@@ -1411,6 +1355,19 @@ function DataSection() {
       localStorage.removeItem(STORAGE_KEYS.vocabActivity)
       localStorage.removeItem(STORAGE_KEYS.vocabDailyWordsDate)
       localStorage.removeItem(STORAGE_KEYS.practiceStats)
+
+      const { del } = await import('idb-keyval')
+      await del(STORAGE_KEYS.srs)
+      await del(STORAGE_KEYS.vocabCategories)
+      await del(STORAGE_KEYS.vocabWordMeta)
+      await del(STORAGE_KEYS.vocabActivity)
+      await del(STORAGE_KEYS.vocabDailyWordsDate)
+      await del(STORAGE_KEYS.practiceStats)
+
+      if (isAuthed) {
+        await fetch('/api/vocabulary/clear', { method: 'DELETE' })
+      }
+
       refreshStorage()
       toast.success('واژگان پاک شد')
     } catch {
@@ -1418,13 +1375,22 @@ function DataSection() {
     }
   }
 
-  function clearAll() {
+  async function clearAll() {
     try {
-      const n = clearAllKyStorage()
+      clearAllKyStorage()
+      
+      const { clear } = await import('idb-keyval')
+      await clear()
+
+      if (isAuthed) {
+        await fetch('/api/reading/progress/clear', { method: 'DELETE' })
+        await fetch('/api/vocabulary/clear', { method: 'DELETE' })
+      }
+
       refreshStorage()
       setClearAllOpen(false)
       setConfirmText('')
-      toast.success(`${locale.toPersianDigits(n)} کلید پاک شد`)
+      toast.success('تمام داده‌های محلی و سرور پاک شد')
       setTimeout(() => window.location.reload(), 800)
     } catch {
       toast.error('خطا در پاک‌سازی')
@@ -1524,7 +1490,7 @@ function DataSection() {
             </div>
           </div>
           <Badge variant="secondary" className="tabular-nums">
-            {kbLabel} استفاده شده
+            {sizeLabel} استفاده شده
           </Badge>
         </div>
       </SettingCard>
@@ -1562,7 +1528,16 @@ function DataSection() {
         </div>
         {/* Server-side GDPR data export */}
         <Separator className="my-4" />
-        <div className="flex flex-col gap-3 rounded-xl border border-gold-500/30 bg-gold-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-xl border border-gold-500/30 bg-gold-500/5 p-4 sm:flex-row sm:items-center">
+          <Button
+            variant="outline"
+            className="gap-2 border-gold-500/40 text-gold-700 hover:bg-gold-500/10 dark:text-gold-400 shrink-0"
+            onClick={handleServerExport}
+            disabled={!isAuthed || serverExporting}
+          >
+            <Download className="h-4 w-4" />
+            {serverExporting ? 'در حال آماده‌سازی...' : 'دانلود داده‌های سرور'}
+          </Button>
           <div className="space-y-1">
             <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
               <Shield className="h-4 w-4 text-gold-700 dark:text-gold-400" aria-hidden="true" />
@@ -1579,31 +1554,16 @@ function DataSection() {
               </p>
             )}
           </div>
-          <Button
-            variant="outline"
-            className="gap-2 border-gold-500/40 text-gold-700 hover:bg-gold-500/10 dark:text-gold-400 shrink-0"
-            onClick={handleServerExport}
-            disabled={!isAuthed || serverExporting}
-          >
-            <Download className="h-4 w-4" />
-            {serverExporting ? 'در حال آماده‌سازی...' : 'دانلود داده‌های سرور'}
-          </Button>
         </div>
       </SettingCard>
 
       {/* Danger zone */}
       <SettingCard title="منطقه خطر">
         <div className="space-y-3">
-          <div className="flex flex-col gap-3 rounded-xl border border-border/40 bg-card/40 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-foreground">پاک کردن پیشرفت مطالعه</p>
-              <p className="text-xs text-muted-foreground">
-                تمام پیشرفت خواندن کتاب‌ها و تاریخچه روزانه پاک می‌شود.
-              </p>
-            </div>
+          <div className="flex flex-col gap-3 rounded-xl border border-border/40 bg-card/40 p-4 sm:flex-row sm:items-center">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10">
+                <Button variant="outline" size="sm" className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10 shrink-0">
                   <Trash2 className="h-4 w-4" />
                   پاک‌سازی
                 </Button>
@@ -1626,18 +1586,18 @@ function DataSection() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-          </div>
-
-          <div className="flex flex-col gap-3 rounded-xl border border-border/40 bg-card/40 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold text-foreground">پاک کردن واژگان</p>
+              <p className="text-sm font-semibold text-foreground">پاک کردن پیشرفت مطالعه</p>
               <p className="text-xs text-muted-foreground">
-                همه واژگان ذخیره‌شده، دسته‌بندی‌ها و آمار تمرین پاک می‌شود.
+                تمام پیشرفت خواندن کتاب‌ها و تاریخچه روزانه پاک می‌شود.
               </p>
             </div>
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-xl border border-border/40 bg-card/40 p-4 sm:flex-row sm:items-center">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10">
+                <Button variant="outline" size="sm" className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10 shrink-0">
                   <Trash2 className="h-4 w-4" />
                   پاک‌سازی
                 </Button>
@@ -1660,28 +1620,44 @@ function DataSection() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+            <div>
+              <p className="text-sm font-semibold text-foreground">پاک کردن واژگان</p>
+              <p className="text-xs text-muted-foreground">
+                همه واژگان ذخیره‌شده، دسته‌بندی‌ها و آمار تمرین پاک می‌شود.
+              </p>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-3 rounded-xl border-2 border-destructive/30 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 rounded-xl border-2 border-destructive/30 bg-destructive/5 p-4 sm:flex-row sm:items-center">
+            <Button
+              variant="destructive"
+              size="sm"
+              className="gap-1.5 shrink-0"
+              onClick={() => setClearAllOpen(true)}
+            >
+              <Trash2 className="h-4 w-4" />
+              پاک‌سازی کامل
+            </Button>
             <div>
               <p className="text-sm font-bold text-destructive">پاک کردن همه داده‌ها</p>
               <p className="text-xs text-muted-foreground">
                 تمام داده‌های محلی پاک می‌شود. این عمل قابل بازگشت نیست!
               </p>
             </div>
-            <Button
-              variant="destructive"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => setClearAllOpen(true)}
-            >
-              <Trash2 className="h-4 w-4" />
-              پاک‌سازی کامل
-            </Button>
           </div>
 
           {/* Account self-deletion (GDPR Art. 17) */}
-          <div className="flex flex-col gap-3 rounded-xl border-2 border-destructive/40 bg-destructive/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 rounded-xl border-2 border-destructive/40 bg-destructive/10 p-4 sm:flex-row sm:items-center">
+            <Button
+              variant="destructive"
+              size="sm"
+              className="gap-1.5 shrink-0"
+              disabled={!isAuthed}
+              onClick={() => setDeleteAccountOpen(true)}
+            >
+              <UserX className="h-4 w-4" />
+              حذف حساب
+            </Button>
             <div className="space-y-1">
               <p className="flex items-center gap-2 text-sm font-bold text-destructive">
                 <UserX className="h-4 w-4" aria-hidden="true" />
@@ -1698,16 +1674,6 @@ function DataSection() {
                 </p>
               )}
             </div>
-            <Button
-              variant="destructive"
-              size="sm"
-              className="gap-1.5 shrink-0"
-              disabled={!isAuthed}
-              onClick={() => setDeleteAccountOpen(true)}
-            >
-              <UserX className="h-4 w-4" />
-              حذف حساب
-            </Button>
           </div>
         </div>
       </SettingCard>
@@ -1860,7 +1826,15 @@ function ResetOnboardingRow() {
 
   return (
     <>
-      <div className="flex flex-col items-start justify-between gap-3 rounded-xl border border-border/50 bg-card/50 p-4 sm:flex-row sm:items-center">
+      <div className="flex flex-col items-start gap-3 rounded-xl border border-border/50 bg-card/50 p-4 sm:flex-row sm:items-center">
+        <Button
+          variant="outline"
+          className="gap-2 shrink-0"
+          onClick={() => setOpen(true)}
+        >
+          <PartyPopper className="h-4 w-4" />
+          بازنشانی معرفی
+        </Button>
         <div className="space-y-1">
           <p className="text-sm font-semibold text-foreground">
             اجرای دوباره راهنمای شروع
@@ -1870,14 +1844,6 @@ function ResetOnboardingRow() {
             دوباره از ابتدا نمایش داده می‌شود.
           </p>
         </div>
-        <Button
-          variant="outline"
-          className="gap-2 shrink-0"
-          onClick={() => setOpen(true)}
-        >
-          <PartyPopper className="h-4 w-4" />
-          بازنشانی معرفی
-        </Button>
       </div>
 
       <AlertDialog open={open} onOpenChange={setOpen}>
@@ -1909,17 +1875,6 @@ function ResetOnboardingRow() {
 
 function AboutSection() {
   const locale = usePersianLocale()
-  const techStack = [
-    'Next.js 16',
-    'React 19',
-    'TypeScript',
-    'Tailwind CSS 4',
-    'shadcn/ui',
-    'Framer Motion',
-    'Vazirmatn',
-    'PostgreSQL',
-    'Prisma',
-  ]
 
   return (
     <div className="space-y-5">
@@ -1991,17 +1946,6 @@ function AboutSection() {
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Sparkles className="h-3.5 w-3.5 text-gold-600" aria-hidden="true" />
           ساخته‌شده برای عاشقان کتاب
-        </div>
-      </SettingCard>
-
-      <SettingCard title="تکنولوژی‌ها">
-        <div className="flex flex-wrap gap-2">
-          {techStack.map((t) => (
-            <Badge key={t} variant="secondary" className="gap-1">
-              <Code2 className="h-3 w-3" aria-hidden="true" />
-              {t}
-            </Badge>
-          ))}
         </div>
       </SettingCard>
 
@@ -2111,9 +2055,9 @@ export function SettingsPageClient() {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeSection}
-              initial={reduceMotion ? undefined : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
+              initial={reduceMotion ? undefined : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={reduceMotion ? undefined : { opacity: 0 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             >
               <TabsContent value="reading" className="mt-0 focus-visible:outline-none">
@@ -2130,9 +2074,6 @@ export function SettingsPageClient() {
               </TabsContent>
               <TabsContent value="privacy" className="mt-0 focus-visible:outline-none">
                 <PrivacySection />
-              </TabsContent>
-              <TabsContent value="language" className="mt-0 focus-visible:outline-none">
-                <LanguageSection />
               </TabsContent>
               <TabsContent value="data" className="mt-0 focus-visible:outline-none">
                 <DataSection />

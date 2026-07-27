@@ -247,6 +247,7 @@ export default function GlobalError({
               </svg>
               تلاش دوباره
             </button>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a href="/">
               {/* home icon */}
               <svg

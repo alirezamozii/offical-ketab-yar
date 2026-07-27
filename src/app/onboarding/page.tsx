@@ -148,7 +148,7 @@ export default function OnboardingPage() {
               <Button
                 onClick={() => setStep(2)}
                 size="lg"
-                className="w-full h-14 text-base gap-2 bg-gradient-to-r from-amber-600 to-stone-700 hover:from-amber-700 hover:to-stone-800"
+                className="w-full h-14 text-base gap-2"
               >
                 شروع کنید
                 <ChevronLeft className="w-5 h-5" />
@@ -297,7 +297,7 @@ export default function OnboardingPage() {
                 <Button
                   onClick={finish}
                   disabled={!level || saving}
-                  className="flex-1 h-12 gap-2 bg-gradient-to-r from-amber-600 to-stone-700"
+                  className="flex-1 h-12 gap-2"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                   {saving ? 'در حال ذخیره...' : 'شروع مطالعه'}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
 import { ArrowUp } from 'lucide-react'
 import { useScrollDirection } from '@/hooks/use-scroll-direction'
@@ -34,12 +34,12 @@ export function BackToTop() {
   // scroll hook, bypassing React state entirely.
   const arcRef = useRef<SVGCircleElement>(null)
 
-  useEffect(() => {
-    setVisible(window.scrollY > 500)
-    const onScroll = () => setVisible(window.scrollY > 500)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+  useScrollProgress((_, scrollY) => {
+    const isOver = scrollY > 400
+    if (isOver !== visible) {
+      setVisible(isOver)
+    }
+  })
 
   // Subscribe to the singleton scroll progress system. This writes
   // `strokeDashoffset` directly to the SVG circle element — zero re-renders.

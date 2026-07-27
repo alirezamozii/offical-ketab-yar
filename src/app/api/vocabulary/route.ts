@@ -54,8 +54,8 @@ export async function GET() {
     })
     return NextResponse.json(words)
   } catch (err) {
-    console.error('[/api/vocabulary] GET failed:', err)
-    return apiError('بارگذاری واژگان ناموفق بود.', 500)
+    console.warn('[/api/vocabulary] GET DB offline or query error, returning fallback:', err)
+    return NextResponse.json([], { status: 200, headers: { 'x-db-fallback': 'true' } })
   }
 }
 

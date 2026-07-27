@@ -38,6 +38,7 @@ model User {
   bannedAt      DateTime?
   onboardingCompleted Boolean @default(false)
   englishLevel  String?   // A1 | A2 | B1 | B2 | C1 | C2 — set during onboarding
+  settingsJson  Json?     // Server-side backup of local ky_reader_settings & UI preferences
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -135,6 +136,8 @@ model Author {
 
   @@index([slug])
   @@index([featured])
+  @@index([name])
+  @@index([nameFa])
 }
 
 // ---------------------------------------------------------------------------
@@ -649,3 +652,22 @@ model DictionaryEntry {
 
   @@index([wordLower])
 }
+
+// ---------------------------------------------------------------------------
+// AUDIT LOG — tracking privileged admin & security actions
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  target    String
+  details   Json?
+  ipHash    String?
+  createdAt DateTime @default(now())
+
+  @@index([actorId])
+  @@index([action])
+  @@index([createdAt])
+}
+

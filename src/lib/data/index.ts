@@ -151,8 +151,8 @@ export async function getBooks(): Promise<BookListItem[]> {
       take: 100,
     })
     return books.map(toListItem)
-  } catch (err) {
-    console.error('[getBooks] DB error:', err)
+  } catch {
+    console.warn('[getBooks] DB offline or query skipped.')
     return []
   }
 }
@@ -166,8 +166,8 @@ export async function getRecentlyAddedBooks(limit = 12): Promise<BookListItem[]>
       take: limit,
     })
     return books.map(toListItem)
-  } catch (err) {
-    console.error('[getRecentlyAddedBooks] DB error:', err)
+  } catch {
+    console.warn('[getRecentlyAddedBooks] DB offline or query skipped.')
     return []
   }
 }
@@ -181,8 +181,8 @@ export async function getHighestRatedBooks(limit = 12): Promise<BookListItem[]> 
       take: limit,
     })
     return books.map(toListItem)
-  } catch (err) {
-    console.error('[getHighestRatedBooks] DB error:', err)
+  } catch {
+    console.warn('[getHighestRatedBooks] DB offline or query skipped.')
     return []
   }
 }
@@ -196,8 +196,8 @@ export async function getMostReadBooks(limit = 12): Promise<BookListItem[]> {
       take: limit,
     })
     return books.map(toListItem)
-  } catch (err) {
-    console.error('[getMostReadBooks] DB error:', err)
+  } catch {
+    console.warn('[getMostReadBooks] DB offline or query skipped.')
     return []
   }
 }

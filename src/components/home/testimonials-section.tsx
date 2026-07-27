@@ -191,19 +191,23 @@ export function TestimonialsSection() {
             <ChevronRight className="h-5 w-5" />
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {FEATURE_SCENARIOS.map((s, i) => (
               <button
                 key={s.title}
                 onClick={() => setIndex(i)}
                 aria-label={`سناریوی ${i + 1}`}
-                className={cn(
-                  'h-2 rounded-full transition-[transform,opacity,colors,border-color,background-color] duration-300',
-                  i === index
-                    ? 'w-8 bg-gradient-to-l from-gold-400 to-gold-600'
-                    : 'w-2 bg-border hover:bg-gold-400/40',
-                )}
-              />
+                className="flex h-7 min-w-7 items-center justify-center p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full"
+              >
+                <span
+                  className={cn(
+                    'h-2 rounded-full transition-all duration-300',
+                    i === index
+                      ? 'w-8 bg-gradient-to-l from-gold-400 to-gold-600'
+                      : 'w-2 bg-border hover:bg-gold-400/40',
+                  )}
+                />
+              </button>
             ))}
           </div>
 

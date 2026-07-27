@@ -61,6 +61,7 @@ services:
 
   # ── Next.js app ────────────────────────────────────────────────────────────
   app:
+    image: alirezamoozi/ketabyar:latest
     build:
       context: .
       dockerfile: Dockerfile

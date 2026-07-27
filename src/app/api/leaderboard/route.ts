@@ -113,8 +113,8 @@ async function ensureStatsRow(
         lastReadAt: row.lastReadAt,
       },
     }
-  } catch (err) {
-    console.error('[/api/leaderboard] userStats.upsert failed:', err)
+  } catch {
+    console.warn('[/api/leaderboard] userStats.upsert skipped (DB offline or uninitialized).')
     return {
       ownerId,
       row: {

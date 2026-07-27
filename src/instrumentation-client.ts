@@ -137,3 +137,5 @@ Sentry.init({
     'Failed to fetch',
   ],
 })
+
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

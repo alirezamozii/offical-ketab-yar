@@ -82,8 +82,8 @@ export async function getActiveQuotes(): Promise<CuratedQuote[]> {
       orderBy: [{ displayOrder: 'asc' }, { createdAt: 'asc' }],
     })
     return rows.map(dbQuoteToLegacy)
-  } catch (err) {
-    console.error('[getActiveQuotes] DB error:', err)
+  } catch {
+    console.warn('[getActiveQuotes] DB offline or query skipped.')
     return []
   }
 }
@@ -112,8 +112,8 @@ export async function getQuoteOfTheDayFromDB(date: Date = new Date()): Promise<C
       h = Math.imul(h, 16777619)
     }
     return all[Math.abs(h) % all.length]
-  } catch (err) {
-    console.error('[getQuoteOfTheDayFromDB] DB error:', err)
+  } catch {
+    console.warn('[getQuoteOfTheDayFromDB] DB offline or query skipped.')
     return null
   }
 }

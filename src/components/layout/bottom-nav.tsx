@@ -45,14 +45,14 @@ type NavItem = {
 // به جز سرچ و تم عوض کردن". So we have: Home, Library, [orb], Vocabulary,
 // Dashboard.
 const ITEMS_LEFT: NavItem[] = [
-  { href: '/', label: 'خانه', icon: Home, accessKey: 'h' },
-  { href: '/library', label: 'کتابخانه', icon: Library, accessKey: 'l' },
-  { href: '/authors', label: 'نویسندگان', icon: Feather, accessKey: 'a' },
+  { href: '/', label: 'خانه', icon: Home },
+  { href: '/library', label: 'کتابخانه', icon: Library },
+  { href: '/authors', label: 'نویسندگان', icon: Feather },
 ]
 
 const ITEMS_RIGHT: NavItem[] = [
-  { href: '/vocabulary', label: 'واژگان', icon: Languages, accessKey: 'v' },
-  { href: '/dashboard', label: 'داشبورد', icon: LayoutDashboard, accessKey: 'd', badgeKey: 'dueReviews' },
+  { href: '/vocabulary', label: 'واژگان', icon: Languages },
+  { href: '/dashboard', label: 'داشبورد', icon: LayoutDashboard, badgeKey: 'dueReviews' },
 ]
 
 const FOCUS_RING =
@@ -134,7 +134,6 @@ export function BottomNav() {
     return (
       <li key={item.href} className="flex-1">
         <motion.div
-          aria-hidden="true"
           whileTap={prefersReduced ? undefined : { scale: 0.92 }}
           transition={
             prefersReduced
@@ -145,7 +144,6 @@ export function BottomNav() {
         >
           <Link
             href={item.href}
-            accessKey={item.accessKey}
             aria-current={active ? 'page' : undefined}
             aria-label={
               showBadge

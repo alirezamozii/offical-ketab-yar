@@ -1,46 +1,27 @@
 /**
- * useSyncOnAuth — hydrate server-side data when a user signs in.
+ * useSyncOnAuth — hydrate all server-side data when a user signs in.
  *
- * Problem: collections, goals, and reading history are stored in localStorage
- * for offline-first support. But when a user signs in on a new device, their
- * localStorage is empty — so they see no collections/goals/history even though
- * the server has them.
- *
- * Solution: when `useSession()` reports an authenticated user, fire the
- * `/api/{collections,goals,reading/history}/sync` GET endpoints to hydrate
- * localStorage from the server. This runs once per signin.
- *
- * The sync is one-directional (server → localStorage) on mount. Writes still
- * go to localStorage first (offline-first), then to the server via POST.
- * The merge-on-signin flow (in NextAuth signIn callback) handles the
- * guest → user re-parenting.
- *
- * Usage:
- *   useSyncOnAuth()  // call once, near the app root (inside SessionProvider)
+ * This hook is the heart of the Universal Sync Engine. When a user logs in,
+ * it pulls down *all* their data (Settings, Progress, Vocabularies, History,
+ * Goals, Collections) in a single request and populates the local IndexedDB.
+ * 
+ * This ensures cross-device parity (a user signing in on their phone instantly
+ * gets their laptop's settings and reading progress).
  */
 
 'use client'
 
 import { useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
+import { get, set } from 'idb-keyval'
 
-// Storage keys mirrored from src/lib/storage-keys.ts (kept inline to avoid
-// a circular import — these never change).
-const COLLECTIONS_KEY = 'ky_collections'
-const GOALS_KEY = 'ky_goals'
-const HISTORY_KEY = 'ky_reading_history'
-
-async function hydrate(_key: string, url: string, merge: (server: unknown) => void) {
-  try {
-    const res = await fetch(url, { cache: 'no-store' })
-    if (!res.ok) return
-    const data = await res.json()
-    if (!data || (Array.isArray(data) && data.length === 0)) return
-    merge(data)
-  } catch {
-    // Network error or parse error — silently fall back to localStorage.
-    // The user can still use the app offline; sync will retry next mount.
-  }
+const KEYS = {
+  COLLECTIONS: 'ky_collections',
+  GOALS: 'ky_goals',
+  HISTORY: 'ky_reading_history',
+  SETTINGS: 'ky_reader_settings',
+  PROGRESS: 'ky_progress',
+  VOCABULARY: 'ky_vocabulary_list', // Assuming we have a local key for this
 }
 
 export function useSyncOnAuth() {
@@ -52,61 +33,70 @@ export function useSyncOnAuth() {
     if (hydrated.current) return // only once per session
     hydrated.current = true
 
-    // Hydrate collections: merge server collections into localStorage (server wins
-    // on conflict by slug, since the server is authoritative for signed-in users).
-    hydrate(COLLECTIONS_KEY, '/api/collections/sync', (server) => {
+    async function runUniversalSync() {
       try {
-        const serverCols = (server as Array<{ slug: string; [k: string]: unknown }>) ?? []
-        if (serverCols.length === 0) return
-        const raw = localStorage.getItem(COLLECTIONS_KEY)
-        const local: Array<{ slug: string; [k: string]: unknown }> = raw ? JSON.parse(raw) : []
-        const bySlug = new Map<string, { slug: string; [k: string]: unknown }>()
-        // Local first (lower priority), then server overwrites.
-        for (const c of local) bySlug.set(c.slug, c)
-        for (const c of serverCols) bySlug.set(c.slug, c)
-        localStorage.setItem(COLLECTIONS_KEY, JSON.stringify([...bySlug.values()]))
-        // Notify same-tab listeners that the store changed.
-        window.dispatchEvent(new CustomEvent('ky:storage', { detail: { key: COLLECTIONS_KEY } }))
-      } catch {
-        /* corrupt local — server data will be used on next read */
-      }
-    })
+        const res = await fetch('/api/sync/full', { cache: 'no-store' })
+        if (!res.ok) return
+        const data = await res.json()
+        if (!data) return
 
-    // Hydrate goals.
-    hydrate(GOALS_KEY, '/api/goals/sync', (server) => {
-      try {
-        const serverGoals = server as { goals?: unknown[]; milestones?: unknown[] } | null
-        if (!serverGoals) return
-        // Server returns { goals, milestones } — merge into localStorage,
-        // preserving any local-only goals not yet synced.
-        const raw = localStorage.getItem(GOALS_KEY)
-        const local = raw ? JSON.parse(raw) : { goals: [], milestones: [] }
-        const merged = {
-          goals: [...(local.goals ?? []), ...(serverGoals.goals ?? [])],
-          milestones: [...(local.milestones ?? []), ...(serverGoals.milestones ?? [])],
+        // 1. Hydrate Collections (Merge by slug)
+        if (data.collections?.length > 0) {
+          const raw = await get(KEYS.COLLECTIONS)
+          const local: any[] = raw ? JSON.parse(raw) : []
+          const bySlug = new Map<string, any>()
+          for (const c of local) bySlug.set(c.slug, c)
+          for (const c of data.collections) bySlug.set(c.slug, c)
+          await set(KEYS.COLLECTIONS, JSON.stringify([...bySlug.values()]))
+          window.dispatchEvent(new CustomEvent('ky:storage', { detail: { key: KEYS.COLLECTIONS } }))
         }
-        localStorage.setItem(GOALS_KEY, JSON.stringify(merged))
-        window.dispatchEvent(new CustomEvent('ky:storage', { detail: { key: GOALS_KEY } }))
-      } catch {
-        /* ignore */
-      }
-    })
 
-    // Hydrate reading history.
-    hydrate(HISTORY_KEY, '/api/reading/history/sync', (server) => {
-      try {
-        const serverHistory = (server as Array<{ bookSlug: string; [k: string]: unknown }>) ?? []
-        if (serverHistory.length === 0) return
-        const raw = localStorage.getItem(HISTORY_KEY)
-        const local: Array<{ bookSlug: string; [k: string]: unknown }> = raw ? JSON.parse(raw) : []
-        const bySlug = new Map<string, { bookSlug: string; [k: string]: unknown }>()
-        for (const h of local) bySlug.set(h.bookSlug, h)
-        for (const h of serverHistory) bySlug.set(h.bookSlug, h)
-        localStorage.setItem(HISTORY_KEY, JSON.stringify([...bySlug.values()]))
-        window.dispatchEvent(new CustomEvent('ky:storage', { detail: { key: HISTORY_KEY } }))
-      } catch {
-        /* ignore */
+        // 2. Hydrate Goals (Merge keys)
+        if (data.goals && Object.keys(data.goals).length > 0) {
+          const raw = await get(KEYS.GOALS)
+          const local = raw ? JSON.parse(raw) : {}
+          const merged = { ...local, ...data.goals }
+          await set(KEYS.GOALS, JSON.stringify(merged))
+          window.dispatchEvent(new CustomEvent('ky:storage', { detail: { key: KEYS.GOALS } }))
+        }
+
+        // 3. Hydrate History (Merge by bookSlug)
+        if (data.history?.length > 0) {
+          const raw = await get(KEYS.HISTORY)
+          const local: any[] = raw ? JSON.parse(raw) : []
+          const bySlug = new Map<string, any>()
+          for (const h of local) bySlug.set(h.bookSlug, h)
+          for (const h of data.history) bySlug.set(h.bookSlug, h)
+          await set(KEYS.HISTORY, JSON.stringify([...bySlug.values()]))
+          window.dispatchEvent(new CustomEvent('ky:storage', { detail: { key: KEYS.HISTORY } }))
+        }
+
+        // 4. Hydrate Settings (Server wins on explicit cross-device sync)
+        if (data.settings) {
+          let parsedSettings = data.settings
+          if (typeof parsedSettings === 'string') {
+            try { parsedSettings = JSON.parse(parsedSettings) } catch { /* ignore */ }
+          }
+          await set(KEYS.SETTINGS, JSON.stringify({ state: parsedSettings, version: 1 }))
+          window.dispatchEvent(new CustomEvent('ky:storage', { detail: { key: KEYS.SETTINGS } }))
+        }
+
+        // 5. Hydrate Reading Progress (Merge by bookSlug)
+        if (data.progress?.length > 0) {
+          const raw = await get(KEYS.PROGRESS)
+          const local: any[] = raw ? JSON.parse(raw) : []
+          const bySlug = new Map<string, any>()
+          for (const p of local) bySlug.set(p.bookSlug, p)
+          for (const p of data.progress) bySlug.set(p.bookSlug, p)
+          await set(KEYS.PROGRESS, JSON.stringify([...bySlug.values()]))
+          window.dispatchEvent(new CustomEvent('ky:storage', { detail: { key: KEYS.PROGRESS } }))
+        }
+
+      } catch (err) {
+        console.error('[UniversalSync] Hydration failed. Operating in full offline mode.', err)
       }
-    })
+    }
+
+    runUniversalSync()
   }, [status, session])
 }

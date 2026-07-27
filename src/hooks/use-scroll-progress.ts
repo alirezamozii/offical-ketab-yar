@@ -50,8 +50,13 @@ let listenerAttached = false
 function recompute() {
   rafId = null
   currentScrollY = window.scrollY
-  currentDocHeight =
-    document.documentElement.scrollHeight - window.innerHeight
+  
+  // Cache the document height to prevent severe layout thrashing on every scroll tick.
+  // It will be updated by the resize event listener.
+  if (currentDocHeight === 0) {
+    currentDocHeight = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
+  }
+  
   currentProgress =
     currentDocHeight > 0
       ? Math.min(1, Math.max(0, currentScrollY / currentDocHeight))
@@ -67,11 +72,19 @@ function onScroll() {
   rafId = requestAnimationFrame(recompute)
 }
 
+function onResize() {
+  // Reset cached height so it gets recomputed on the next scroll tick
+  currentDocHeight = 0
+  if (rafId === null) {
+    rafId = requestAnimationFrame(recompute)
+  }
+}
+
 function ensureListener() {
   if (listenerAttached) return
   listenerAttached = true
   window.addEventListener('scroll', onScroll, { passive: true })
-  window.addEventListener('resize', onScroll, { passive: true })
+  window.addEventListener('resize', onResize, { passive: true })
   // Initial compute so subscribers get the starting value immediately.
   recompute()
 }
@@ -81,7 +94,7 @@ function maybeRemoveListener() {
   if (!listenerAttached) return
   listenerAttached = false
   window.removeEventListener('scroll', onScroll)
-  window.removeEventListener('resize', onScroll)
+  window.removeEventListener('resize', onResize)
   if (rafId !== null) {
     cancelAnimationFrame(rafId)
     rafId = null

@@ -55,9 +55,11 @@
  */
 
 import {
+  BackgroundSyncPlugin,
   CacheFirst,
   ExpirationPlugin,
   NetworkFirst,
+  NetworkOnly,
   Serwist,
   StaleWhileRevalidate,
   type PrecacheEntry,
@@ -84,18 +86,25 @@ declare const self: ServiceWorkerGlobalScope & {
 // can precache any URL reachable from the SW's scope.
 // ---------------------------------------------------------------------------
 const HARDCODED_PRECACHE: PrecacheEntry[] = [
-  // Core routes
-  { url: '/', revision: 'v1' },
-  { url: '/library', revision: 'v1' },
+  // Core routes for full offline SPA functionality
+  { url: '/', revision: 'v2' },
+  { url: '/library', revision: 'v2' },
+  { url: '/settings', revision: 'v2' },
+  { url: '/profile', revision: 'v2' },
+  { url: '/stats', revision: 'v2' },
+  { url: '/vocabulary', revision: 'v2' },
+  { url: '/vocabulary/practice', revision: 'v2' },
+  { url: '/leaderboard', revision: 'v2' },
+  
   // The branded offline page — the navigation fallback target.
-  { url: '/offline', revision: 'v1' },
-  // PWA manifest + icons (Chrome reads these from the precache when
-  // rendering the install prompt / app icon).
-  { url: '/manifest.json', revision: 'v1' },
-  { url: '/icons/icon-192.png', revision: 'v1' },
-  { url: '/icons/icon-512.png', revision: 'v1' },
-  { url: '/icons/icon-maskable-512.png', revision: 'v1' },
-  { url: '/apple-touch-icon.png', revision: 'v1' },
+  { url: '/offline', revision: 'v2' },
+  
+  // PWA manifest + icons
+  { url: '/manifest.json', revision: 'v2' },
+  { url: '/icons/icon-192.png', revision: 'v2' },
+  { url: '/icons/icon-512.png', revision: 'v2' },
+  { url: '/icons/icon-maskable-512.png', revision: 'v2' },
+  { url: '/apple-touch-icon.png', revision: 'v2' },
 ]
 
 // ---------------------------------------------------------------------------
@@ -167,6 +176,10 @@ const dictionaryCacheKeyPlugin = {
   },
 }
 
+const bgSyncPlugin = new BackgroundSyncPlugin('ky-sync-queue', {
+  maxRetentionTime: 24 * 60, // Retry for up to 24 Hours (in minutes)
+})
+
 const serwist = new Serwist({
   precacheEntries: [...(self.__SW_MANIFEST || []), ...HARDCODED_PRECACHE],
   skipWaiting: true,
@@ -177,6 +190,19 @@ const serwist = new Serwist({
   navigationPreload: true,
   disableDevLogs: true,
   runtimeCaching: [
+    // ─── NetworkOnly + BackgroundSync: mutations (progress, goals, collections)
+    ...(['POST', 'PUT', 'PATCH', 'DELETE'] as const).map(method => ({
+      matcher: ({ url }: { url: URL }) => {
+        // Exclude dictionary POSTs (handled by StaleWhileRevalidate below)
+        if (url.pathname === '/api/dictionary') return false
+        // Intercept other mutating API calls
+        return url.pathname.startsWith('/api/')
+      },
+      method,
+      handler: new NetworkOnly({
+        plugins: [bgSyncPlugin],
+      }),
+    })),
     // ─── CacheFirst: immutable static assets (NetworkFirst in development to avoid stale dev content) ───
     {
       matcher: STATIC_ASSETS_MATCHER,

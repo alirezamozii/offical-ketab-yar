@@ -16,6 +16,7 @@
 
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { idbStorage } from './storage'
 
 export type ReaderTheme = 'light' | 'sepia' | 'dark' | 'high-contrast'
 export type ReaderFontFamily = 'vazirmatn' | 'serif' | 'sans'
@@ -104,7 +105,7 @@ export const useReaderSettingsStore = create<ReaderSettingsState>()(
     }),
     {
       name: 'ky_reader_settings',
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => idbStorage),
       version: 1,
     },
   ),
