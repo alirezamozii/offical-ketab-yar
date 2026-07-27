@@ -177,7 +177,7 @@ export function SiteHeader() {
             className="h-full bg-gradient-to-l from-gold-400 via-gold-500 to-gold-700"
             style={{ transform: 'scaleX(0)', transformOrigin: 'right' }}
           />
-        </div>
+        </motion.div>
 
         <motion.div
           style={{ height: headerHeight }}

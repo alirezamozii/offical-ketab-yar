@@ -27,5 +27,10 @@ export default async function ReaderRoute({ params }: PageProps) {
 
   incrementViewCount(slug)
 
-  return <ProfessionalReader book={book} />
+  return (
+    <>
+      <h1 className="sr-only">خواندن کتاب {book.title} اثر {book.author}</h1>
+      <ProfessionalReader book={book} />
+    </>
+  )
 }

@@ -14,68 +14,73 @@ function parseGenres(raw: string): string[] {
   }
 }
 
-export async function GenresStrip() {
-  try {
-    const books = await db.book.findMany({
-      select: { genres: true, viewCount: true },
-    })
-    const map = new Map<string, { count: number; views: number }>()
-    for (const b of books) {
-      for (const g of parseGenres(b.genres)) {
-        const cur = map.get(g) || { count: 0, views: 0 }
-        cur.count += 1
-        cur.views += b.viewCount
-        map.set(g, cur)
-      }
+async function getTopGenres() {
+  const books = await db.book.findMany({
+    select: { genres: true, viewCount: true },
+  })
+  const map = new Map<string, { count: number; views: number }>()
+  for (const b of books) {
+    for (const g of parseGenres(b.genres)) {
+      const cur = map.get(g) || { count: 0, views: 0 }
+      cur.count += 1
+      cur.views += b.viewCount
+      map.set(g, cur)
     }
-    const genres = Array.from(map.entries())
-      .map(([name, v]) => ({ name, ...v }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 8)
+  }
+  return Array.from(map.entries())
+    .map(([name, v]) => ({ name, ...v }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8)
+}
 
-    if (genres.length === 0) return null
-
-    return (
-      <LazyReveal>
-        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
-          <SectionHeader
-            icon={Compass}
-            title="بر اساس موضوع"
-            subtitle="کتابی متناسب با سلیقه‌تان پیدا کنید"
-            action={
-              <Link
-                href="/library/genres"
-                className="group/more hidden items-center text-sm font-medium text-primary hover:underline sm:inline-flex"
-                aria-label="همه ژانرها — مرور کامل موضوعات"
-              >
-                همه ژانرها
-                <ChevronLeft className="h-4 w-4 transition-transform duration-300 ease-out-expo group-hover/more:-translate-x-1" />
-              </Link>
-            }
-          />
-          <div className="scroll-x-mobile flex snap-x snap-mandatory gap-4 sm:grid sm:grid-cols-3 sm:snap-none sm:overflow-visible lg:grid-cols-4">
-            {genres.map((g, i) => (
-              <div
-                key={g.name}
-                className="group/genre w-[68%] shrink-0 snap-start motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-out-expo motion-safe:hover:scale-[1.03] motion-safe:hover:saturate-150 sm:w-auto sm:shrink sm:hover:scale-105"
-              >
-                <GenreCard genre={g} index={i} />
-              </div>
-            ))}
-          </div>
-          <div
-            aria-hidden="true"
-            className="mt-3 flex items-center justify-center gap-2 text-xs text-muted-foreground sm:hidden"
-          >
-            <span className="inline-block h-1 w-8 rounded-full bg-gold-400/50" />
-            برای دیدن ژانرهای بیشتر بکشید
-            <ChevronLeft className="h-3.5 w-3.5" />
-          </div>
-        </section>
-      </LazyReveal>
-    )
+export async function GenresStrip() {
+  let genres: { name: string; count: number; views: number }[] = []
+  try {
+    genres = await getTopGenres()
   } catch (err) {
     console.error('[GenresStrip] DB error:', err)
     return null
   }
+
+  if (genres.length === 0) return null
+
+  return (
+    <LazyReveal>
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
+        <SectionHeader
+          icon={Compass}
+          title="بر اساس موضوع"
+          subtitle="کتابی متناسب با سلیقه‌تان پیدا کنید"
+          action={
+            <Link
+              href="/library/genres"
+              className="group/more hidden items-center text-sm font-medium text-primary hover:underline sm:inline-flex"
+              aria-label="همه ژانرها — مرور کامل موضوعات"
+            >
+              همه ژانرها
+              <ChevronLeft className="h-4 w-4 transition-transform duration-300 ease-out-expo group-hover/more:-translate-x-1" />
+            </Link>
+          }
+        />
+        <div className="scroll-x-mobile flex snap-x snap-mandatory gap-4 sm:grid sm:grid-cols-3 sm:snap-none sm:overflow-visible lg:grid-cols-4">
+          {genres.map((g, i) => (
+            <div
+              key={g.name}
+              className="group/genre w-[68%] shrink-0 snap-start motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-out-expo motion-safe:hover:scale-[1.03] motion-safe:hover:saturate-150 sm:w-auto sm:shrink sm:hover:scale-105"
+            >
+              <GenreCard genre={g} index={i} />
+            </div>
+          ))}
+        </div>
+        <div
+          aria-hidden="true"
+          className="mt-3 flex items-center justify-center gap-2 text-xs text-muted-foreground sm:hidden"
+        >
+          <span className="inline-block h-1 w-8 rounded-full bg-gold-400/50" />
+          برای دیدن ژانرهای بیشتر بکشید
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </div>
+      </section>
+    </LazyReveal>
+  )
 }

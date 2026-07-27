@@ -401,7 +401,7 @@ export function useTTS(): UseTTSReturn {
       isFallbackActiveRef.current = true
       playFallback(next)
     }
-  }, [loadChunk, playFallback, startTick, stop])
+  }, [loadChunk, playFallback, startTick])
 
   // Keep playNextChunkRef updated
   useEffect(() => {
@@ -476,7 +476,7 @@ export function useTTS(): UseTTSReturn {
         playFallback(chunks[0])
       }
     },
-    [getAudio, loadChunk, playFallback, startTick, stop],
+    [getAudio, loadChunk, playFallback, startTick],
   )
 
   const pause = useCallback(() => {

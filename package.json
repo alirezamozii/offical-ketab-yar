@@ -118,5 +118,14 @@
     "tw-animate-css": "^1.3.5",
     "typescript": "^5",
     "vitest": "^4.1.10"
+  },
+  "overrides": {
+    "lexical": "0.41.0",
+    "@lexical/link": "0.41.0",
+    "@lexical/react": "0.41.0",
+    "@lexical/selection": "0.41.0",
+    "@lexical/utils": "0.41.0",
+    "@lexical/html": "0.41.0",
+    "@lexical/rich-text": "0.41.0"
   }
 }

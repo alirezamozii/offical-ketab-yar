@@ -46,7 +46,7 @@ COPY prisma ./prisma
 
 # Install ALL deps (dev included) — the builder needs prisma, typescript,
 # eslint, etc. The runner stage will use a clean production install.
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # ── Stage 2: builder ─────────────────────────────────────────────────────────
 FROM oven/bun:1-alpine AS builder

@@ -29,6 +29,7 @@ export const metadata: Metadata = {
 export default function GoalsPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <h1 className="sr-only">اهداف مطالعه کتاب‌یار</h1>
       <GoalsPageLoader />
     </div>
   )

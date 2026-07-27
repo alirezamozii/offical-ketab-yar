@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 export function QuotesSkeleton() {
   return (
     <div className="space-y-10">
+      <h1 className="sr-only">گالری نقل‌قول‌ها و هایلایت‌های کتاب‌یار</h1>
       <span className="sr-only">در حال بارگذاری گالری نقل‌قول‌ها…</span>
 
       {/* Hero skeleton — quote of the day */}
