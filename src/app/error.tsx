@@ -19,7 +19,7 @@ import * as Sentry from '@sentry/nextjs'
  * Sentry: the captured exception is forwarded to Sentry in the same
  * effect, with the Next.js `digest` attached as a tag so the support team
  * can correlate a user-reported digest with the Sentry event. The
- * `beforeSend` hook in `sentry.client.config.ts` scrubs PII (emails, IPs)
+ * `beforeSend` hook in `src/instrumentation-client.ts` scrubs PII (emails, IPs)
  * before upload.
  */
 export default function RootError({

@@ -1,11 +1,12 @@
 /**
- * sentry.client.config.ts
+ * src/instrumentation-client.ts
  * ---------------------------------------------------------------
- * Sentry browser-side initialisation.
+ * Next.js client-side instrumentation hook — runs in the browser
+ * before React hydration begins.
  *
- * Loaded from `src/instrumentation.ts` (or, for the browser, by
- * `@sentry/nextjs`'s automatic client entry) — see the Next.js + Sentry
- * docs: https://docs.sentry.io/platforms/javascript/guides/nextjs/
+ * This replaces the deprecated `sentry.client.config.ts` file per Next.js 15+ / 16
+ * and `@sentry/nextjs` Turbopack compatibility:
+ * https://nextjs.org/docs/app/api-reference/file-conventions/instrumentation-client
  *
  * Configuration highlights:
  *  • DSN comes from `NEXT_PUBLIC_SENTRY_DSN` (public, safe to expose — it
@@ -93,13 +94,11 @@ Sentry.init({
         event.request.url = scrubString(event.request.url)
       }
       if (event.request.headers) {
-        if (event.request.headers) {
         const scrubbed: Record<string, string> = {}
         for (const [k, v] of Object.entries(event.request.headers)) {
           scrubbed[k] = typeof v === 'string' ? scrubString(v) : '[REDACTED]'
         }
         event.request.headers = scrubbed
-      }
       }
       if (event.request.cookies) {
         event.request.cookies = { '[REDACTED]': 'cookies' }

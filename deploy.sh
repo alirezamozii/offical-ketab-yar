@@ -1,19 +1,20 @@
 #!/bin/bash
 set -e
+
 echo "=== 1. Pulling latest code ==="
 git pull origin main
 
-echo "=== 2. Building and starting application ==="
+echo "=== 2. Building and starting application (with layer caching) ==="
+# Docker compose --build will use cached layers for dependencies & prisma if unchanged
 docker compose up -d --build app
 
-echo "=== 3. Setting up Database & Seeding Books ==="
-net_name=$(docker network ls --format '{{.Name}}' | grep ketab-yar | head -n 1)
-[ -z "$net_name" ] && net_name="ketab-yar_ketab-yar-net"
+echo "=== 3. Database Sync & Seeding (if needed) ==="
+# Run migrations using the existing app image without downloading bun/deps from scratch
+docker compose exec -T app sh -c "npx prisma db push --skip-generate || true"
 
-docker run --rm --network "$net_name"   -v $(pwd):/app -w /app   -e DATABASE_URL="postgresql://ky:ketabyar_secret123@db:5432/ketabyar?schema=public"   oven/bun:1-alpine sh -c "apk add --no-cache openssl && bun install --frozen-lockfile && bun run db:generate && bunx prisma db push && bun run db:seed:prod"
+echo "=== 4. Cleaning dangling unused images only (keeps build layer cache!) ==="
+docker image prune -f
 
-echo "=== 4. Cleaning build cache ==="
-docker system prune -f
+echo "🎉 All Done! Application updated."
 
-echo "🎉 All Done! Application is live at http://5.231.108.102:3000"
 

@@ -7,7 +7,7 @@
     "dev:webpack": "next dev --webpack -p 3000 2>&1 | tee dev.log",
     "dev:turbo": "next dev -p 3000 2>&1 | tee dev.log",
     "build:sw": "esbuild src/app/sw.ts --bundle --outfile=public/sw.js --platform=browser --target=es2020 --minify",
-    "build": "npm run build:sw && next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
+    "build": "npm run build:sw && next build --webpack && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
     "build:turbo": "npm run build:sw && next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
     "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "eslint .",

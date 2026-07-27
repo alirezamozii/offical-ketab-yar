@@ -70,7 +70,7 @@ ENV NEXT_TELEMETRY_DISABLED=1 \
     NEXTAUTH_SECRET="development_secret_key_at_least_16_characters_long" \
     NEXTAUTH_URL="http://127.0.0.1:3000" \
     PAYLOAD_SECRET="development_secret_key_at_least_16_characters_long" \
-    NODE_OPTIONS="--max-old-space-size=2048"
+    NODE_OPTIONS="--max-old-space-size=1280"
 
 # Generate the Prisma client (writes to node_modules/.prisma + @prisma/client).
 # This must run before `next build` so the standalone bundler can trace the

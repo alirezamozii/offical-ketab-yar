@@ -61,6 +61,15 @@ import { NextResponse, type NextRequest } from 'next/server'
  */
 
 export function middleware(_request: NextRequest) {
+  // Defensive guard against infinite relative-redirect loops (e.g. /5.231.108.102:3000/5.231.108.102:3000/...)
+  const pathname = _request.nextUrl.pathname
+  if (pathname.includes(':3000') || /^\/(?:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|[a-zA-Z0-9.-]+:\d+)/.test(pathname)) {
+    // Strip repetitive IP:port or domain:port path prefixes
+    const cleanPath = pathname.replace(/^(\/(?:[a-zA-Z0-9.-]+:\d+|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?))+/, '') || '/'
+    const targetUrl = new URL(cleanPath + _request.nextUrl.search, _request.nextUrl.origin)
+    return NextResponse.redirect(targetUrl, 307)
+  }
+
   const nonce = crypto.randomUUID()
   const csp = [
     "default-src 'self'",
