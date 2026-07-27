@@ -34,6 +34,50 @@ const MAX_SIZE = 5 * 1024 * 1024 // 5MB
 const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
 const COVERS_DIR = path.join(process.cwd(), 'public', 'covers')
 
+/**
+ * GET /api/books/[slug]/cover
+ * Fetch cover color extraction attributes and image URL.
+ */
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ slug: string }> },
+) {
+  try {
+    const { slug } = await params
+    const book = await db.book.findUnique({
+      where: { slug },
+      select: {
+        slug: true,
+        coverFrom: true,
+        coverTo: true,
+        coverAccent: true,
+        coverImage: true,
+        coverImageUrl: true,
+        coverBlurhash: true,
+      },
+    })
+
+    if (!book) {
+      return NextResponse.json(
+        { error: 'کتاب مورد نظر یافت نشد.' },
+        { status: 404 },
+      )
+    }
+
+    return NextResponse.json(book, {
+      headers: {
+        'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800',
+      },
+    })
+  } catch (err) {
+    console.error('[cover get] error:', err)
+    return NextResponse.json(
+      { error: 'خطا در دریافت اطلاعات جلد.' },
+      { status: 500 },
+    )
+  }
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
