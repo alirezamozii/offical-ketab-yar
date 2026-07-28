@@ -10,8 +10,6 @@ import { AuthProvider } from '@/components/providers/auth-provider'
 import { NotificationsProvider } from '@/components/providers/notifications-provider'
 import { OnboardingGate } from '@/components/providers/onboarding-gate'
 import { SignupPrompt } from '@/components/providers/signup-prompt'
-import { SessionSummaryToast } from '@/components/reader/session-summary-toast'
-import { MilestoneToast } from '@/components/reader/milestone-toast'
 import { QueryProvider } from '@/components/providers/query-provider'
 import { SmoothScrollProvider } from '@/components/providers/smooth-scroll-provider'
 import { ThemeProvider } from '@/components/providers/theme-provider'
@@ -299,8 +297,6 @@ export default function RootLayout({
               {/* Signup prompt — auto-shown after a guest reads a few pages,
                   nudging them to sign up so their progress is preserved. */}
               <SignupPrompt />
-              <SessionSummaryToast />
-              <MilestoneToast />
               <WebVitals />
               <Toaster
                 position="bottom-center"
