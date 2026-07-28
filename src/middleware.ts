@@ -113,6 +113,6 @@ export const config = {
   //  - *.png, *.svg, *.webp — image assets (served from /public or
   //    next/image; CSP doesn't apply to non-HTML responses).
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.png$|.*\\.svg$|.*\\.webp$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:png|svg|webp|jpg|jpeg|gif|ico|woff|woff2|ttf|eot|css|js)$).*)',
   ],
 }
