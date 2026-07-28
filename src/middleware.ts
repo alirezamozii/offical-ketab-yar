@@ -75,7 +75,7 @@ export function middleware(_request: NextRequest) {
   const csp = [
     "default-src 'self'",
     isDev
-      ? `script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-${nonce}' 'strict-dynamic'`
+      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
       : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https:",

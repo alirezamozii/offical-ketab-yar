@@ -3,7 +3,7 @@
 import { useReader } from '@/components/reader/reader-context'
 import { ParagraphBlock } from '@/components/reader/reader-page-view'
 import { toPersianDigits } from '@/lib/reader/types'
-import { motion, useReducedMotion } from 'framer-motion'
+import { useReducedMotion } from 'framer-motion'
 import { Bookmark, Sparkles } from 'lucide-react'
 
 /**
@@ -136,26 +136,13 @@ export function ReaderContent() {
             const bookmarked = isParagraphBookmarked(i)
             const showNumbers = prefs.showParagraphNumbers
             return (
-              <motion.div
+              <div
                 key={i}
                 data-paragraph-index={i}
                 ref={(el) => {
                   paragraphRefs.current[i] = el
                 }}
-                // Smooth paragraph entrance — fade + slight slide when
-                // the paragraph first scrolls into view. `once: true` so
-                // it only animates the first time (no janky re-trigger).
-                // Skipped entirely under reduced-motion (initial=false).
-                initial={
-                  reduceMotion ? false : { opacity: 0, y: 8 }
-                }
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-10% 0px' }}
-                transition={{
-                  duration: 0.4,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
-                className="group relative scroll-mt-24"
+                className="group relative scroll-mt-24 transition-opacity duration-300"
                 style={{
                   paddingBottom: marginStyle.paragraphGap,
                   scrollSnapAlign:
@@ -234,7 +221,7 @@ export function ReaderContent() {
                     }}
                   />
                 ))}
-              </motion.div>
+              </div>
             )
           })}
 
