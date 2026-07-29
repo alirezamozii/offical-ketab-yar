@@ -1,7 +1,9 @@
+import { SITE } from '@/lib/site'
 import { SearchClient } from '@/components/search/search-client'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
+  alternates: { canonical: `${SITE.url}/search` },
   title: 'جستجو در کتاب‌ها',
   description: 'جستجوی تمام‌متن در محتوای انگلیسی و فارسی کتاب‌ها.',
   robots: {

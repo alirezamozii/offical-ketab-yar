@@ -1,15 +1,9 @@
+import dynamic from 'next/dynamic'
 import { ConditionalLayout } from '@/components/layout/conditional-layout'
 import { safeJsonLd } from '@/lib/json-ld'
-import { CommandPalette } from '@/components/layout/command-palette'
-import { OnboardingTrigger } from '@/components/onboarding/onboarding-trigger'
 import { SkipLink } from '@/components/layout/skip-link'
-import { InstallPrompt } from '@/components/pwa/install-prompt'
-import { RegisterSW } from '@/components/pwa/register-sw'
-import { OfflineBanner } from '@/components/pwa/offline-banner'
 import { AuthProvider } from '@/components/providers/auth-provider'
-import { NotificationsProvider } from '@/components/providers/notifications-provider'
 import { OnboardingGate } from '@/components/providers/onboarding-gate'
-import { SignupPrompt } from '@/components/providers/signup-prompt'
 import { QueryProvider } from '@/components/providers/query-provider'
 import { SmoothScrollProvider } from '@/components/providers/smooth-scroll-provider'
 import { ThemeProvider } from '@/components/providers/theme-provider'
@@ -18,6 +12,35 @@ import type { Metadata, Viewport } from 'next'
 import { Inter, Vazirmatn } from 'next/font/google'
 import { Toaster } from 'sonner'
 import { WebVitals } from '@/components/analytics/WebVitals'
+
+const CommandPalette = dynamic(
+  () => import('@/components/layout/command-palette').then((m) => m.CommandPalette),
+  { ssr: false },
+)
+const OnboardingTrigger = dynamic(
+  () => import('@/components/onboarding/onboarding-trigger').then((m) => m.OnboardingTrigger),
+  { ssr: false },
+)
+const NotificationsProvider = dynamic(
+  () => import('@/components/providers/notifications-provider').then((m) => m.NotificationsProvider),
+  { ssr: false },
+)
+const SignupPrompt = dynamic(
+  () => import('@/components/providers/signup-prompt').then((m) => m.SignupPrompt),
+  { ssr: false },
+)
+const InstallPrompt = dynamic(
+  () => import('@/components/pwa/install-prompt').then((m) => m.InstallPrompt),
+  { ssr: false },
+)
+const RegisterSW = dynamic(
+  () => import('@/components/pwa/register-sw').then((m) => m.RegisterSW),
+  { ssr: false },
+)
+const OfflineBanner = dynamic(
+  () => import('@/components/pwa/offline-banner').then((m) => m.OfflineBanner),
+  { ssr: false },
+)
 import './globals.css'
 
 const inter = Inter({

@@ -1,8 +1,5 @@
-'use client'
-
-import { animate, motion, useInView, useReducedMotion } from 'framer-motion'
 import { BookOpen, Clock, FileText, Users } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { CountUp } from '@/components/ui/count-up'
 
 type Stat = {
   icon: typeof BookOpen
@@ -22,61 +19,12 @@ type StatsBarProps = {
   totalMinutes?: number
 }
 
-function toPersian(n: number): string {
-  return n.toLocaleString('fa-IR')
-}
-
-/**
- * CountUp — animates from 0 → `to` with an ease-in-out (slow → fast → slow)
- * curve as requested in the feedback. The animation re-triggers whenever the
- * element re-enters the viewport so the user always sees it complete even if
- * they scroll past and back quickly.
- */
-function CountUp({ to, duration = 1.4 }: { to: number; duration?: number }) {
-  const ref = useRef<HTMLSpanElement>(null)
-  const inView = useInView(ref, { margin: '-40px' })
-  const [value, setValue] = useState(0)
-  const [hasAnimated, setHasAnimated] = useState(false)
-
-  useEffect(() => {
-    if (!inView) {
-      // Reset when out of view so re-entry re-triggers the animation.
-      if (hasAnimated) {
-        setValue(0)
-        setHasAnimated(false)
-      }
-      return
-    }
-    if (hasAnimated) return
-    if (to <= 1) {
-      setValue(to)
-      setHasAnimated(true)
-      return
-    }
-    // ease-in-out (slow → fast → slow) — cubic-bezier(.4, 0, .2, 1)
-    const controls = animate(0, to, {
-      duration,
-      ease: [0.4, 0, 0.2, 1],
-      onUpdate: (v) => setValue(Math.round(v)),
-      onComplete: () => setHasAnimated(true),
-    })
-    return () => controls.stop()
-  }, [inView, to, duration, hasAnimated])
-
-  return (
-    <span ref={ref} aria-live="polite">
-      {toPersian(value)}
-    </span>
-  )
-}
-
 export function StatsBar({
   booksCount = 0,
   pagesCount = 0,
   totalReads = 0,
   totalMinutes = 0,
 }: StatsBarProps) {
-  const reduceMotion = useReducedMotion()
   // Per user feedback: removed "سطح پیشرفت" (10 progress levels) and
   // "1 هوش مصنوعی" — both were meaningless. Replaced with two real,
   // dynamic metrics driven by database counts: total reads and total
@@ -105,18 +53,10 @@ export function StatsBar({
           {STATS.map((s, i) => {
             const Icon = s.icon
             return (
-              <motion.div
+              <div
                 key={s.label}
-                initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{
-                  duration: 0.45,
-                  delay: i * 0.08,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                whileHover={reduceMotion ? undefined : { y: -3 }}
-                className="group flex items-center gap-3 rounded-xl border border-border/40 bg-card/50 px-4 py-3 backdrop-blur-sm transition-colors hover:border-gold-400/60 hover:bg-gold-500/5"
+                className="group flex items-center gap-3 rounded-xl border border-border/40 bg-card/50 px-4 py-3 backdrop-blur-sm transition-colors hover:border-gold-400/60 hover:bg-gold-500/5 animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both"
+                style={{ animationDelay: `${i * 100}ms` }}
               >
                 <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-gold-500/20 to-gold-700/10 text-gold-700 dark:text-gold-400">
                   <span
@@ -134,7 +74,7 @@ export function StatsBar({
                     {s.label}
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )
           })}
         </div>
@@ -142,3 +82,4 @@ export function StatsBar({
     </section>
   )
 }
+

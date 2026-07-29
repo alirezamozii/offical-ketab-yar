@@ -1,7 +1,9 @@
+import { SITE } from '@/lib/site'
 import { SpellGameClient } from '@/components/vocabulary/spell-game-client'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
+  alternates: { canonical: `${SITE.url}/vocabulary/spell` },
   title: 'بازی هجی‌کردن — املای کلمه را بنویس',
   description:
     'معنی فارسی را ببین و املای درست انگلیسی را تایپ کن. با هر پاسخ درست XP بگیر!',

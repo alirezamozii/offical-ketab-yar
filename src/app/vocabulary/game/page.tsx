@@ -1,7 +1,9 @@
+import { SITE } from '@/lib/site'
 import { VocabGameClient } from '@/components/vocabulary/vocab-game-client'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
+  alternates: { canonical: `${SITE.url}/vocabulary/game` },
   title: 'بازی واژگان',
   description: 'با بازی کردن، واژگان را یاد بگیر و XP بگیر!',
   robots: {

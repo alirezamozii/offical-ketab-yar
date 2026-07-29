@@ -1,0 +1,8 @@
+{"page":"Landing Page","url":"http://localhost:3000/","perfScore":45,"seoScore":73,"cls":"0","lcp":"7.2 s","fcp":"1.2 s","tbt":"1,130 ms","unusedJs":"Est savings of 361 KiB","unusedCss":"N/A"}
+{"page":"Library","url":"http://localhost:3000/library","perfScore":27,"seoScore":100,"cls":"0","lcp":"22.3 s","fcp":"4.5 s","tbt":"15,530 ms","unusedJs":"Est savings of 532 KiB","unusedCss":"N/A"}
+{"page":"Dashboard","url":"http://localhost:3000/dashboard","perfScore":17,"seoScore":66,"cls":"0.397","lcp":"27.2 s","fcp":"1.1 s","tbt":"21,330 ms","unusedJs":"Est savings of 652 KiB","unusedCss":"N/A"}
+{"page":"Bilingual Reader","url":"http://localhost:3000/books/read/alice-in-wonderland","perfScore":41,"seoScore":54,"cls":"0","lcp":"12.5 s","fcp":"1.2 s","tbt":"12,710 ms","unusedJs":"Est savings of 612 KiB","unusedCss":"N/A"}
+{"page":"Authors Directory","url":"http://localhost:3000/authors","perfScore":34,"seoScore":100,"cls":"0.151","lcp":"10.4 s","fcp":"1.4 s","tbt":"7,620 ms","unusedJs":"Est savings of 561 KiB","unusedCss":"N/A"}
+{"page":"Vocabulary Hub","url":"http://localhost:3000/vocabulary","perfScore":42,"seoScore":66,"cls":"0","lcp":"9.1 s","fcp":"1.1 s","tbt":"6,140 ms","unusedJs":"Est savings of 529 KiB","unusedCss":"N/A"}
+{"page":"Reading Stats","url":"http://localhost:3000/stats","perfScore":41,"seoScore":66,"cls":"0","lcp":"15.1 s","fcp":"1.1 s","tbt":"7,690 ms","unusedJs":"Est savings of 707 KiB","unusedCss":"N/A"}
+{"page":"Achievements","url":"http://localhost:3000/achievements","perfScore":41,"seoScore":66,"cls":"0","lcp":"15.4 s","fcp":"1.1 s","tbt":"8,690 ms","unusedJs":"Est savings of 560 KiB","unusedCss":"N/A"}

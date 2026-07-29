@@ -205,9 +205,11 @@ function SectionDivider() {
 /*  Dashboard client — orchestrator                                    */
 /* ------------------------------------------------------------------ */
 export function DashboardClient() {
+  const [isMounted, setIsMounted] = useState(false)
   const [progress, setProgress] = useState<Record<string, ProgressEntry>>({})
 
   useEffect(() => {
+    setIsMounted(true)
     setProgress(getLocalProgress())
   }, [])
 
@@ -243,6 +245,10 @@ export function DashboardClient() {
         (progress[b.slug]?.percent || 0) < 100,
     )
     .sort((a, b) => (progress[b.slug]?.ts || 0) - (progress[a.slug]?.ts || 0))
+
+  if (!isMounted || loading) {
+    return <DashboardClientSkeleton />
+  }
 
   return (
     <div className="space-y-7 sm:space-y-8">
@@ -357,6 +363,61 @@ export function DashboardClient() {
         <ReadingHeatmap />
         <MonthlyStreakCalendar />
       </div>
+    </div>
+  )
+}
+
+function DashboardClientSkeleton() {
+  return (
+    <div className="space-y-8">
+      <span className="sr-only">در حال بارگذاری داشبورد…</span>
+
+      {/* XP bar */}
+      <Skeleton className="h-28 w-full rounded-2xl" />
+
+      {/* Daily challenges */}
+      <Skeleton className="h-40 w-full rounded-2xl" />
+
+      {/* Resume card */}
+      <Skeleton className="h-32 w-full rounded-2xl" />
+
+      {/* Streak + Daily goal — 2-col grid on lg+ */}
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2">
+        <Skeleton className="h-32 rounded-2xl" />
+        <Skeleton className="h-32 rounded-2xl" />
+      </div>
+
+      {/* Continue-reading grid (4 book covers) */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-7 w-32" />
+          <Skeleton className="h-8 w-24 rounded-md" />
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="aspect-[2/3] w-full rounded-2xl" />
+          ))}
+        </div>
+      </section>
+
+      {/* Recommendations */}
+      <Skeleton className="h-48 w-full rounded-2xl" />
+
+      {/* Activity feed */}
+      <section className="space-y-4">
+        <Skeleton className="h-7 w-32" />
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          ))}
+        </div>
+      </section>
+
+      {/* Achievements */}
+      <Skeleton className="h-56 w-full rounded-2xl" />
+
+      {/* Reading heatmap */}
+      <Skeleton className="h-48 w-full rounded-2xl" />
     </div>
   )
 }

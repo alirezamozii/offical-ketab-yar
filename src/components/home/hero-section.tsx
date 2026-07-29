@@ -1,24 +1,18 @@
-'use client'
-
 import { Button } from '@/components/ui/button'
 import { toPersianDigits } from '@/lib/typography'
-import { motion, useReducedMotion } from 'framer-motion'
 import {
   ArrowLeft,
   BookOpen,
   Brain,
-  Dices,
-  ImageIcon,
-  Languages,
   ShieldCheck,
   Sparkles,
   Trophy,
+  ImageIcon,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
 import { Magnetic } from '@/components/home/magnetic'
 import { AnimatedGlowBorder } from '@/components/ui/animated-glow-border'
+import { RandomBookButton } from '@/components/home/random-book-button'
 
 const VALUE_PILLS = [
   { icon: Languages, label: 'دوزبانه فارسی/انگلیسی' },
@@ -27,40 +21,19 @@ const VALUE_PILLS = [
 ]
 
 export function HeroSection({ booksCount = 0 }: { booksCount?: number } = {}) {
-  const reduceMotion = useReducedMotion()
-
-  // Parallax / mouse-tracking hooks removed — were only used by the
-  // floating books that have been deleted per user feedback.
-  // Keeping the section lean and free of dead motion values.
-
   return (
     <section
       aria-labelledby="hero-heading"
       className="relative overflow-hidden bg-gradient-to-br from-gold-50 via-beige-100 to-gold-200/60 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950"
     >
       <div className="pointer-events-none absolute inset-0">
-        {/* Soft, controlled radial highlights — much subtler than before.
-            Two warm orbs instead of aggressive purple/blue AI gradients. */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(184,149,106,0.18),transparent_45%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_75%,rgba(212,175,55,0.12),transparent_45%)]" />
         <div className="absolute inset-0 bg-dot-pattern opacity-30 dark:opacity-20" />
 
-        {/* Slow, periodic glow pulse on the brand mark area.
-            Controlled cadence (8s) and very soft — not a flicker.
-            Disabled under reduced-motion. */}
-        <motion.div
+        <div
           aria-hidden="true"
-          className="absolute right-1/4 top-1/4 h-72 w-72 rounded-full bg-gold-500/10 blur-3xl"
-          animate={
-            reduceMotion
-              ? undefined
-              : { opacity: [0.4, 0.7, 0.4], scale: [1, 1.05, 1] }
-          }
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
+          className="absolute right-1/4 top-1/4 h-72 w-72 rounded-full bg-gold-500/10 blur-3xl animate-pulse"
         />
       </div>
 
@@ -85,22 +58,17 @@ export function HeroSection({ booksCount = 0 }: { booksCount?: number } = {}) {
               (RTL start), not left-aligned. In RTL: text-start = right,
               text-end = left. So we use text-start on desktop. */}
           <div className="space-y-4 text-center lg:text-start">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 rounded-full border border-gold-300/60 bg-beige-200/70 px-4 py-2 dark:border-gold-500/20 dark:bg-gold-500/10"
+            <div
+              className="inline-flex items-center gap-2 rounded-full border border-gold-300/60 bg-beige-200/70 px-4 py-2 dark:border-gold-500/20 dark:bg-gold-500/10 animate-in fade-in slide-in-from-bottom-2 duration-700"
             >
               <Sparkles aria-hidden="true" className="h-4 w-4 text-gold-600 dark:text-gold-400" />
               <span className="text-sm font-semibold text-gold-800 dark:text-gold-300">
                 پلتفرم مطالعه هوشمند با AI
               </span>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.05 }}
-              className="space-y-3"
+            <div
+              className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-75 fill-mode-both"
             >
               <h1
                 id="hero-heading"
@@ -122,14 +90,11 @@ export function HeroSection({ booksCount = 0 }: { booksCount?: number } = {}) {
               <h2 className="text-2xl font-bold leading-snug text-foreground/90 sm:text-3xl lg:text-4xl">
                 انگلیسی را با کتاب، هوش مصنوعی و بازی یاد بگیر
               </h2>
-            </motion.div>
+            </div>
 
             {/* Value-prop pills */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="flex flex-wrap items-center justify-center gap-2 lg:justify-start"
+            <div
+              className="flex flex-wrap items-center justify-center gap-2 lg:justify-start animate-in fade-in slide-in-from-bottom-3 duration-700 delay-100 fill-mode-both"
             >
               {VALUE_PILLS.map((p) => {
                 const Icon = p.icon
@@ -143,23 +108,17 @@ export function HeroSection({ booksCount = 0 }: { booksCount?: number } = {}) {
                   </span>
                 )
               })}
-            </motion.div>
+            </div>
 
-            <motion.p
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="mx-auto max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg lg:mx-0"
+            <p
+              className="mx-auto max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg lg:mx-0 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 fill-mode-both"
             >
               ترجمه پاراگراف به پاراگراف، دیکشنری فوری، چت با هوش مصنوعی و
               سیستم امتیاز و سطح. یادگیری زبان انگلیسی هرگز این‌قدر لذت‌بخش نبوده.
-            </motion.p>
+            </p>
 
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row lg:justify-start"
+            <div
+              className="flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row lg:justify-start animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 fill-mode-both"
             >
               {/* Primary CTA — "شروع رایگان" → /library
                   Per user feedback: added Magnetic + shimmer effects
@@ -202,14 +161,11 @@ export function HeroSection({ booksCount = 0 }: { booksCount?: number } = {}) {
               <Magnetic strength={10} className="w-full sm:w-auto">
                 <RandomBookButton />
               </Magnetic>
-            </motion.div>
+            </div>
 
             {/* Trust microcopy */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground lg:justify-start"
+            <div
+              className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground lg:justify-start animate-in fade-in duration-700 delay-300 fill-mode-both"
             >
               <span className="inline-flex items-center gap-1">
                 <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5 text-gold-600 dark:text-gold-400" />
@@ -219,13 +175,10 @@ export function HeroSection({ booksCount = 0 }: { booksCount?: number } = {}) {
               <span>رایگان</span>
               <span aria-hidden="true">·</span>
               <span>بدون محدودیت زمانی</span>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.35 }}
-              className="flex flex-wrap items-center justify-center gap-6 pt-3 lg:justify-start"
+            <div
+              className="flex flex-wrap items-center justify-center gap-6 pt-3 lg:justify-start animate-in fade-in duration-700 delay-500 fill-mode-both"
             >
               <div className="flex items-center gap-2" aria-live="polite">
                 <BookOpen aria-hidden="true" className="h-5 w-5 text-gold-600 dark:text-gold-400" />
@@ -245,7 +198,7 @@ export function HeroSection({ booksCount = 0 }: { booksCount?: number } = {}) {
                   <div className="text-xs text-muted-foreground">دیکشنری و چت</div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           </div>
 
           {/* Image placeholder — LEFT side on desktop (RTL: visual end).
@@ -257,11 +210,8 @@ export function HeroSection({ booksCount = 0 }: { booksCount?: number } = {}) {
               frame with a subtle gold gradient + icon, so the layout
               looks intentional rather than unfinished.
               Hidden on mobile (saves space, text-only is fine there). */}
-          <motion.div
-            initial={reduceMotion ? false : { opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="relative hidden lg:block"
+          <div
+            className="relative hidden lg:block animate-in fade-in zoom-in-95 duration-1000 delay-300 fill-mode-both"
             aria-label="محل نمایش تصویر برنامه (به‌زودی)"
           >
             <div className="relative aspect-[4/5] w-full max-w-md overflow-hidden rounded-3xl border border-gold-400/30 bg-gradient-to-br from-gold-500/10 via-card to-gold-700/10 shadow-2xl">
@@ -303,7 +253,7 @@ export function HeroSection({ booksCount = 0 }: { booksCount?: number } = {}) {
               <span className="pointer-events-none absolute bottom-4 left-4 h-6 w-6 rounded-bl-lg border-b-2 border-l-2 border-gold-400/40" aria-hidden="true" />
               <span className="pointer-events-none absolute bottom-4 right-4 h-6 w-6 rounded-br-lg border-b-2 border-r-2 border-gold-400/40" aria-hidden="true" />
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
 
@@ -313,47 +263,4 @@ export function HeroSection({ booksCount = 0 }: { booksCount?: number } = {}) {
   )
 }
 
-/**
- * RandomBookButton — "Feeling Lucky"-style CTA. Fetches the full book list
- * from /api/books, picks one at random, and routes the user straight into
- * the reader (/books/read/[slug]) with no intermediate page.
- */
-function RandomBookButton() {
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
-
-  async function pickRandom() {
-    if (loading) return
-    setLoading(true)
-    try {
-      const res = await fetch('/api/books')
-      const books = await res.json()
-      if (!Array.isArray(books) || books.length === 0) {
-        router.push('/library')
-        return
-      }
-      const random = books[Math.floor(Math.random() * books.length)]
-      router.push(`/books/read/${random.slug}`)
-    } catch {
-      router.push('/library')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <Button
-      type="button"
-      size="xl"
-      variant="outline"
-      className="w-full text-base sm:w-auto"
-      onClick={pickRandom}
-      disabled={loading}
-      aria-label="کتاب تصادفی — مستقیم وارد ریدر شوید"
-    >
-      <Dices aria-hidden="true" className={loading ? 'h-5 w-5 animate-spin' : 'h-5 w-5'} />
-      {loading ? 'در حال انتخاب…' : 'کتاب تصادفی'}
-    </Button>
-  )
-}
 

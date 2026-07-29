@@ -1,7 +1,4 @@
-'use client'
-
 import { Button } from '@/components/ui/button'
-import { motion, useReducedMotion } from 'framer-motion'
 import {
   ArrowLeft,
   BookOpen,
@@ -13,21 +10,6 @@ import {
 import Link from 'next/link'
 import { Magnetic } from '@/components/home/magnetic'
 
-/**
- * CTA Section — redesigned per user feedback.
- *
- * Changes:
- *   1. Two-column layout on desktop: text on the right (RTL start),
- *      image placeholder on the left (where the user will later drop
- *      a screenshot/mockup).
- *   2. All text right-aligned (lg:text-start in RTL = right).
- *   3. Removed the old "کتاب کلاسیک انگلیسی خط‌فاصل زبان" copy —
- *      replaced with something that matches the value prop.
- *   4. "چت با هوش مصنوعی" copy → "چت با هوش مصنوعی، برای وقت‌هایی که تنهایی".
- *   5. Cleaner, more premium feel — less visual noise (removed film-grain,
- *      reduced glow blobs), tighter spacing.
- *   6. Mobile-optimized: single column, placeholder hidden on small screens.
- */
 const BENEFITS = [
   'کتاب‌های جذاب انگلیسی — رایگان',
   'ترجمه فارسی کنار هر پاراگراف',
@@ -35,16 +17,10 @@ const BENEFITS = [
 ]
 
 export function CTASection() {
-  const reduceMotion = useReducedMotion()
-
   return (
     <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-80px' }}
-        transition={{ duration: 0.5 }}
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gold-600 via-gold-500 to-gold-700 px-6 py-12 shadow-2xl shadow-gold-500/30 sm:px-10 sm:py-14"
+      <div
+        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gold-600 via-gold-500 to-gold-700 px-6 py-12 shadow-2xl shadow-gold-500/30 sm:px-10 sm:py-14 animate-in fade-in slide-in-from-bottom-8 duration-1000 fill-mode-both"
       >
         {/* Texture — kept subtle */}
         <div className="pointer-events-none absolute inset-0 bg-dot-pattern opacity-15" />
@@ -134,17 +110,9 @@ export function CTASection() {
             </div>
           </div>
 
-          {/* ─── Image placeholder (left side on desktop RTL) ───
-              Per user feedback: "ایتم باید سمت چپ اون کتابای شت پاک کنی یه
-              چا بزار بعدا من عکس میزارم من بعدا خودم اسکرین شات از برنامه
-              میرارم اونجا". The floating books are gone; this is an empty
-              placeholder where the user will drop a screenshot later.
-              Hidden on mobile to save space. */}
-          <motion.div
-            initial={reduceMotion ? false : { opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="relative hidden lg:block"
+          {/* ─── Image placeholder (left side on desktop RTL) ─── */}
+          <div
+            className="relative hidden lg:block animate-in fade-in zoom-in-95 duration-1000 delay-300 fill-mode-both"
             aria-label="محل نمایش تصویر برنامه (به‌زودی)"
           >
             <div className="relative aspect-[4/5] w-full max-w-sm overflow-hidden rounded-2xl border border-white/30 bg-white/10 shadow-2xl backdrop-blur-sm">
@@ -172,9 +140,10 @@ export function CTASection() {
               <span className="pointer-events-none absolute bottom-4 left-4 h-6 w-6 rounded-bl-lg border-b-2 border-l-2 border-white/40" aria-hidden="true" />
               <span className="pointer-events-none absolute bottom-4 right-4 h-6 w-6 rounded-br-lg border-b-2 border-r-2 border-white/40" aria-hidden="true" />
             </div>
-          </motion.div>
+          </div>
         </div>
-      </motion.div>
+      </div>
     </section>
   )
 }
+

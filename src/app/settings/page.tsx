@@ -1,8 +1,10 @@
+import { SITE } from '@/lib/site'
 import dynamic from 'next/dynamic'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
+  alternates: { canonical: `${SITE.url}/settings` },
   title: 'تنظیمات | کتاب‌یار',
   description:
     'تنظیمات برنامه کتاب‌یار: ظاهر، مطالعه، اعلان‌ها، دسترسی‌پذیری، حریم خصوصی، زبان و مدیریت داده.',

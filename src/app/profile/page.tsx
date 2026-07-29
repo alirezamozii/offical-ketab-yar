@@ -1,5 +1,19 @@
 import { redirect } from 'next/navigation'
 
+import type { Metadata } from 'next'
+import { SITE } from '@/lib/site'
+
+export const metadata: Metadata = {
+  title: 'پروفایل',
+  description: 'پروفایل کاربری شما در کتاب‌یار.',
+  alternates: { canonical: `${SITE.url}/profile` },
+  robots: {
+    index: false,
+    follow: false,
+  },
+}
+
+
 /**
  * /profile — MERGED into /dashboard per user feedback.
  *

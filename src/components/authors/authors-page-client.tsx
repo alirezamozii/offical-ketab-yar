@@ -310,39 +310,26 @@ export function AuthorsPageClient({
       {filtered.length === 0 ? (
         <EmptyState query={query} />
       ) : (
-        <motion.div
-          layout
-          className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3"
-        >
-          <AnimatePresence mode="popLayout">
-            {filtered.map((author, idx) => {
-              const isExpanded = expandedSlug === author.slug
-              return (
-                <motion.div
-                  key={author.slug}
-                  layout
-                  initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
-                  transition={{
-                    duration: 0.35,
-                    ease: [0.16, 1, 0.3, 1],
-                    delay: reduceMotion ? 0 : Math.min(idx * 0.03, 0.2),
-                  }}
-                  className={cn(
-                    isExpanded && 'sm:col-span-2 lg:col-span-3 transition-all duration-300',
-                  )}
-                >
-                  <AuthorExpandableCard
-                    author={author}
-                    isExpanded={isExpanded}
-                    onToggle={() => toggleExpand(author.slug)}
-                  />
-                </motion.div>
-              )
-            })}
-          </AnimatePresence>
-        </motion.div>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((author) => {
+            const isExpanded = expandedSlug === author.slug
+            return (
+              <div
+                key={author.slug}
+                className={cn(
+                  'animate-in fade-in duration-300 fill-mode-both',
+                  isExpanded && 'sm:col-span-2 lg:col-span-3 transition-all duration-300',
+                )}
+              >
+                <AuthorExpandableCard
+                  author={author}
+                  isExpanded={isExpanded}
+                  onToggle={() => toggleExpand(author.slug)}
+                />
+              </div>
+            )
+          })}
+        </div>
       )}
     </div>
   )

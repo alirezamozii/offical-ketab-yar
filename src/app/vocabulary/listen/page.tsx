@@ -1,7 +1,9 @@
+import { SITE } from '@/lib/site'
 import { ListenGameClient } from '@/components/vocabulary/listen-game-client'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
+  alternates: { canonical: `${SITE.url}/vocabulary/listen` },
   title: 'بازی شنیداری — تلفظ را بشنو و بنویس',
   description:
     'کلمه را با تلفظ انگلیسی گوش کن و املای درست را تایپ کن. با هر پاسخ درست XP بگیر!',

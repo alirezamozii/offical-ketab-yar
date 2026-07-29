@@ -1,15 +1,17 @@
 import { DashboardClient } from '@/components/dashboard/dashboard-client'
 import { StatsExport } from '@/components/dashboard/stats-export'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Settings } from 'lucide-react'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
+
+
+import { SITE } from '@/lib/site'
 
 export const metadata: Metadata = {
   title: 'داشبورد',
   description: 'پیشرفت مطالعه، آمار و واژگان شما در یک نگاه.',
+  alternates: { canonical: `${SITE.url}/dashboard` },
   robots: {
     index: false,
     follow: false,
@@ -40,9 +42,7 @@ export default function DashboardPage() {
           <StatsExport />
         </div>
       </header>
-      <Suspense fallback={<Skeleton className="h-96 w-full rounded-2xl" />}>
-        <DashboardClient />
-      </Suspense>
+      <DashboardClient />
     </div>
   )
 }

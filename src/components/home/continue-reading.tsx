@@ -4,7 +4,6 @@ import { BookCarousel } from '@/components/books/book-carousel'
 import { SectionHeader } from '@/components/layout/section-header'
 import { Button } from '@/components/ui/button'
 import { BookCover } from '@/components/books/book-cover'
-import { motion, useReducedMotion } from 'framer-motion'
 import { ArrowLeft, BookOpen, BookmarkCheck, Clock, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
@@ -12,7 +11,6 @@ import type { BookListItem } from '@/lib/data'
 import { getLocalProgress } from '@/hooks/reader/use-local-progress'
 
 export function ContinueReading() {
-  const reduceMotion = useReducedMotion()
   const [books, setBooks] = useState<BookListItem[]>([])
   const [progressMap, setProgressMap] = useState<
     Record<string, { percent: number; currentPage: number; totalPages: number; ts: number }>
@@ -60,23 +58,15 @@ export function ContinueReading() {
         subtitle="از جایی که رها کرده‌اید ادامه دهید"
       />
 
-      {/* Prominent resume card for the most recently read book.
-          This is the FIRST thing the user sees on the home page when
-          they have reading history. */}
-      <motion.div
-        initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="group relative mb-6 overflow-hidden rounded-3xl border border-gold-400/40 bg-gradient-to-l from-gold-500/15 via-card to-card p-5 shadow-sm sm:p-6"
+      <div
+        className="group relative mb-6 overflow-hidden rounded-3xl border border-gold-400/40 bg-gradient-to-l from-gold-500/15 via-card to-card p-5 shadow-sm sm:p-6 animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both"
       >
         <div className="pointer-events-none absolute -left-10 -top-10 h-40 w-40 rounded-full bg-gold-500/15 blur-3xl transition-opacity duration-500 group-hover:bg-gold-500/25" />
-        {/* Gilded top hairline */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold-500/60 to-transparent"
         />
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center">
-          {/* Cover */}
           <div className="mx-auto h-40 w-28 shrink-0 overflow-hidden rounded-xl shadow-xl ring-1 ring-border sm:mx-0 sm:h-48 sm:w-32">
             <BookCover
               title={featured.title}
@@ -88,9 +78,6 @@ export function ContinueReading() {
             />
           </div>
 
-          {/* Content — text-end (RTL friendly) so the author name sits
-              on the right side under the title, matching the user's
-              feedback about the wrong-side author name. */}
           <div className="flex-1 space-y-3 text-center sm:text-end">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-gold-500/15 px-3 py-1 text-xs font-bold text-gold-700 dark:text-gold-400">
               <Clock className="h-3.5 w-3.5" />
@@ -102,9 +89,6 @@ export function ContinueReading() {
             >
               {featured.title}
             </h3>
-            {/* Author name — was previously misaligned on the left.
-                Now sits directly under the title in the correct RTL
-                flow (text-end on sm+). */}
             <p
               className="text-sm text-muted-foreground"
               dir="ltr"
@@ -112,13 +96,6 @@ export function ContinueReading() {
               {featured.author}
             </p>
 
-            {/* Progress — fixed: smooth, non-janky fill.
-                The previous version had a janky transition because
-                `width: 0 → ${percent}%` ran on mount even when the
-                element was already at the target. Now we render the
-                bar at its target width from the start and animate a
-                subtle shimmer streak over it for "active reading"
-                feel without the lag. */}
             {featuredProgress && (
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
@@ -135,33 +112,19 @@ export function ContinueReading() {
                     className="relative h-full rounded-full bg-gradient-to-l from-gold-500 to-gold-700 transition-[width] duration-700 ease-out-expo"
                     style={{ width: `${featuredProgress.percent}%` }}
                   >
-                    {/* Shimmer streak — per user feedback: "لیت لنیمشن وقتی
-                        میسریه به راستار چپ یگیررمیکنه لگ یمرنه باید رد شه
-                        بره اون رفلکنش دوباره بیاد" — the shimmer should
-                        pass through completely and loop, not get stuck.
-
-                        Fix: use CSS animation (not framer-motion) with
-                        a keyframe that goes from -100% to 300% in one
-                        smooth pass. This is more reliable than framer-motion's
-                        repeat which can stutter on re-render. */}
-                    {!reduceMotion && (
+                    <span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 overflow-hidden rounded-full"
+                    >
                       <span
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-0 overflow-hidden rounded-full"
-                      >
-                        <span
-                          className="absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent"
-                          style={{
-                            animation: 'shimmer-streak 2.2s ease-in-out 0.4s infinite',
-                          }}
-                        />
-                      </span>
-                    )}
+                        className="absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                        style={{
+                          animation: 'shimmer-streak 2.2s ease-in-out 0.4s infinite',
+                        }}
+                      />
+                    </span>
                   </div>
                 </div>
-                {/* Shorter, simpler copy per user feedback:
-                    old: "دفعه قبل ۴۰٪ خوانده‌اید — از جایی که رها کردید ادامه دهید."
-                    new: "۴۰٪ پیش رفته‌اید — ادامه بده" */}
                 <p className="text-[11px] text-muted-foreground">
                   {featuredProgress.percent.toLocaleString('fa-IR')}٪ پیش رفته‌اید — ادامه بده
                 </p>
@@ -192,9 +155,8 @@ export function ContinueReading() {
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
 
-      {/* Remaining books — compact carousel */}
       {rest.length > 0 && (
         <BookCarousel books={rest} progressMap={restProgressMap} />
       )}
@@ -203,14 +165,8 @@ export function ContinueReading() {
 }
 
 export function EmptyStateCTA() {
-  const reduceMotion = useReducedMotion()
   return (
-    <motion.section
-      initial={reduceMotion ? false : { opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      className="mx-auto max-w-7xl px-4 py-10 sm:px-6"
-    >
+    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both">
       <div className="group/empty flex flex-col items-center gap-4 rounded-2xl border border-dashed border-gold-300/60 bg-gold-500/5 p-8 text-center transition-colors hover:border-gold-400/80 hover:bg-gold-500/[0.08]">
         <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-gold-500/15 text-gold-600">
           <span
@@ -232,6 +188,7 @@ export function EmptyStateCTA() {
           </Link>
         </Button>
       </div>
-    </motion.section>
+    </section>
   )
 }
+

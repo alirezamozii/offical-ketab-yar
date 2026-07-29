@@ -1,7 +1,9 @@
+import { SITE } from '@/lib/site'
 import { VocabularyClient } from '@/components/vocabulary/vocabulary-client'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
+  alternates: { canonical: `${SITE.url}/vocabulary` },
   title: 'واژگان من — ذخیره و تمرین کلمات',
   description:
     'کلماتی که هنگام مطالعه ذخیره کرده‌اید را مرور و تمرین کنید. کلمات روزانه از کتاب‌ها، دسته‌بندی، سیستم تکرار با فاصله (لایتنر ۷ مرحله‌ای) و بازی‌های تعاملی.',
