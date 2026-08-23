@@ -40,7 +40,13 @@ export function ContinueReading() {
       .finally(() => setLoaded(true))
   }, [])
 
-  if (!loaded) return null
+  if (!loaded) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8" aria-hidden="true">
+        <div className="h-36 w-full animate-pulse rounded-3xl border border-border/20 bg-muted/20" />
+      </div>
+    )
+  }
   if (books.length === 0) return null
 
   const featured = books[0]
@@ -59,7 +65,7 @@ export function ContinueReading() {
       />
 
       <div
-        className="group relative mb-6 overflow-hidden rounded-3xl border border-gold-400/40 bg-gradient-to-l from-gold-500/15 via-card to-card p-5 shadow-sm sm:p-6 animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both"
+        className="group relative mb-6 overflow-hidden rounded-3xl border border-gold-400/40 bg-gradient-to-l from-gold-500/15 via-card to-card p-5 shadow-sm sm:p-6"
       >
         <div className="pointer-events-none absolute -left-10 -top-10 h-40 w-40 rounded-full bg-gold-500/15 blur-3xl transition-opacity duration-500 group-hover:bg-gold-500/25" />
         <div
@@ -166,7 +172,7 @@ export function ContinueReading() {
 
 export function EmptyStateCTA() {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both">
+    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
       <div className="group/empty flex flex-col items-center gap-4 rounded-2xl border border-dashed border-gold-300/60 bg-gold-500/5 p-8 text-center transition-colors hover:border-gold-400/80 hover:bg-gold-500/[0.08]">
         <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-gold-500/15 text-gold-600">
           <span

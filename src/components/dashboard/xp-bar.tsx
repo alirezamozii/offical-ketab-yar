@@ -222,8 +222,9 @@ export function XPBar() {
             <motion.div
               key={`bar-${pulseKey}`}
               className="h-full rounded-full bg-gradient-to-l from-gold-400 via-gold-500 to-gold-700"
-              initial={{ width: 0 }}
-              animate={{ width: `${stats.progressPercentage}%` }}
+              style={{ transformOrigin: 'right', width: '100%' }}
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: Math.min(1, Math.max(0, stats.progressPercentage / 100)) }}
               transition={{ duration: 0.7, ease: 'easeOut' }}
             >
               {/* Sheen pulse on gain */}

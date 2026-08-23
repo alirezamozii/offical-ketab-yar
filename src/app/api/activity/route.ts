@@ -28,6 +28,7 @@ export async function GET(_req: NextRequest) {
   // 1. User's own activity from reading progress
   const progress = await db.readingProgress.findMany({
     where: { guestId },
+    select: { bookSlug: true, percent: true, lastReadAt: true },
     take: 5,
     orderBy: { lastReadAt: 'desc' },
   }).catch(() => [])

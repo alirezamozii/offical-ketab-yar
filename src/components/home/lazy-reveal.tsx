@@ -11,7 +11,7 @@ export function LazyReveal({ children, delay = 0, className }: LazyRevealProps) 
   return (
     <div
       className={cn(
-        'animate-in fade-in slide-in-from-bottom-6 duration-700 fill-mode-both',
+        'animate-in fade-in slide-in-from-bottom-6 duration-700 fill-mode-both transform-gpu',
         className
       )}
       style={delay ? { animationDelay: `${delay * 1000}ms` } : undefined}
@@ -37,7 +37,7 @@ export function LazyRevealItem({
   className,
 }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn('animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both', className)}>
+    <div className={cn('animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both transform-gpu', className)}>
       {children}
     </div>
   )

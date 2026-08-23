@@ -144,6 +144,7 @@ export function BottomNav() {
         >
           <Link
             href={item.href}
+            transitionTypes={['slide']}
             aria-current={active ? 'page' : undefined}
             aria-label={
               showBadge

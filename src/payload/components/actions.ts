@@ -1,8 +1,78 @@
 'use server'
 
+import { headers } from 'next/headers'
+import { Prisma } from '@prisma/client'
 import { db } from '../../lib/db'
-import { getPayloadClient } from '../../lib/payload'
 import { slugify } from '../../lib/utils'
+import { revalidateUsers, revalidateBook } from '../../lib/revalidate'
+import { getCurrentUser } from '@/lib/auth-session'
+import {
+  normalizePages,
+  normalizeChapters,
+  parseAuthorNameAndInput,
+  buildBookData,
+} from './action-helpers'
+
+export interface CallerAdminInfo {
+  id: string
+  role: 'owner' | 'admin' | 'editor'
+  email?: string | null
+}
+
+/**
+ * Verify caller is an authorized Admin or Owner in either Payload CMS or NextAuth.
+ */
+async function assertAdminPermission(requireOwner = false): Promise<CallerAdminInfo> {
+  // 1. Check Payload CMS authenticated user
+  try {
+    const { getPayloadClient } = await import('../../lib/payload')
+    const payload = await getPayloadClient()
+    const reqHeaders = await headers()
+    const { user: payloadUser } = await payload.auth({ headers: reqHeaders })
+    if (payloadUser) {
+      const normalizedRole: 'owner' | 'admin' | 'editor' =
+        payloadUser.role === 'owner' ? 'owner' : payloadUser.role === 'admin' ? 'admin' : 'editor'
+      if (requireOwner && normalizedRole !== 'owner') {
+        throw new Error('تنها مالک اصلی پنل (Owner) مجاز به انجام این عملیات است.')
+      }
+      return { id: String(payloadUser.id), role: normalizedRole, email: payloadUser.email }
+    }
+  } catch (err: any) {
+    if (err?.message?.includes('مالک اصلی')) throw err
+  }
+
+  // 2. Check NextAuth session user
+  const nextAuthUser = await getCurrentUser()
+  if (nextAuthUser && !nextAuthUser.banned) {
+    const normalizedRole: 'owner' | 'admin' | 'editor' =
+      nextAuthUser.role === 'OWNER' ? 'owner' : nextAuthUser.role === 'ADMIN' ? 'admin' : 'editor'
+    if (requireOwner && normalizedRole !== 'owner') {
+      throw new Error('تنها مالک اصلی پنل (Owner) مجاز به انجام این عملیات است.')
+    }
+    if (nextAuthUser.role === 'OWNER' || nextAuthUser.role === 'ADMIN') {
+      return { id: nextAuthUser.id, role: normalizedRole, email: nextAuthUser.email }
+    }
+  }
+
+  // In local dev environment, allow fallback if no auth configured
+  if (process.env.NODE_ENV === 'development') {
+    return { id: 'dev-admin', role: 'owner', email: 'alirezakaregar05@gmail.com' }
+  }
+
+  throw new Error('دسترسی غیرمجاز. شما باید به عنوان مدیر وارد شده باشید.')
+}
+
+/**
+ * Get current admin's role ('owner' | 'admin' | 'editor').
+ */
+export async function getCurrentAdminRole(): Promise<'owner' | 'admin' | 'editor'> {
+  try {
+    const caller = await assertAdminPermission(false)
+    return caller.role
+  } catch {
+    return 'owner'
+  }
+}
 
 /**
  * Interface representing dashboard metrics.
@@ -22,27 +92,31 @@ export interface DashboardStats {
  * Fetch operational and user statistics from the Prisma database.
  */
 export async function fetchStats(): Promise<DashboardStats> {
+  await assertAdminPermission(false)
   try {
-    const totalUsers = await db.user.count()
-    const activeUsers = await db.user.count({
-      where: { onboardingCompleted: true },
-    })
-    const totalReadingSessions = await db.readingSession.count()
+    const [
+      totalUsers,
+      activeUsers,
+      totalReadingSessions,
+      readingSessionsAgg,
+      totalDownloads,
+      openTickets,
+    ] = await Promise.all([
+      db.user.count(),
+      db.user.count({ where: { onboardingCompleted: true } }),
+      db.readingSession.count(),
+      db.readingSession.aggregate({
+        _sum: {
+          pagesRead: true,
+          minutesRead: true,
+        },
+      }),
+      db.bookDownload.count(),
+      db.supportTicket.count({ where: { status: 'OPEN' } }),
+    ])
 
-    const readingSessionsAgg = await db.readingSession.aggregate({
-      _sum: {
-        pagesRead: true,
-        minutesRead: true,
-      },
-    })
     const totalPagesRead = readingSessionsAgg._sum.pagesRead || 0
     const totalMinutesRead = readingSessionsAgg._sum.minutesRead || 0
-
-    const totalDownloads = await db.bookDownload.count()
-    const openTickets = await db.supportTicket.count({
-      where: { status: 'OPEN' },
-    })
-
     const averagePagesPerUser = totalUsers > 0 ? Math.round(totalPagesRead / totalUsers) : 0
 
     return {
@@ -75,11 +149,20 @@ export interface ManagedUser {
   banReason: string | null
   bannedAt: Date | null
   createdAt: Date
+  englishLevel: string | null
+  onboardingCompleted: boolean
   stats: {
     reviewsCount: number
     progressCount: number
     downloadsCount: number
     sessionsCount: number
+    vocabulariesCount: number
+    achievementsCount: number
+    xp: number
+    level: number
+    streakDays: number
+    booksCompleted: number
+    totalMinutesRead: number
   }
 }
 
@@ -87,9 +170,10 @@ export interface ManagedUser {
  * Search website users in the Prisma database.
  */
 export async function searchUsers(query: string): Promise<ManagedUser[]> {
+  await assertAdminPermission(false)
   try {
     const q = query.trim()
-    const where: any = {}
+    const where: Prisma.UserWhereInput = {}
     if (q) {
       where.OR = [
         { name: { contains: q, mode: 'insensitive' } },
@@ -113,12 +197,25 @@ export async function searchUsers(query: string): Promise<ManagedUser[]> {
         banReason: true,
         bannedAt: true,
         createdAt: true,
+        englishLevel: true,
+        onboardingCompleted: true,
+        userStats: {
+          select: {
+            totalXP: true,
+            level: true,
+            streakDays: true,
+            booksCompleted: true,
+            pagesRead: true,
+          },
+        },
         _count: {
           select: {
             reviews: true,
             readingProgress: true,
             bookDownloads: true,
             readingSessions: true,
+            vocabularies: true,
+            achievements: true,
           },
         },
       },
@@ -135,11 +232,20 @@ export async function searchUsers(query: string): Promise<ManagedUser[]> {
       banReason: u.banReason,
       bannedAt: u.bannedAt,
       createdAt: u.createdAt,
+      englishLevel: u.englishLevel,
+      onboardingCompleted: u.onboardingCompleted,
       stats: {
         reviewsCount: u._count.reviews,
         progressCount: u._count.readingProgress,
         downloadsCount: u._count.bookDownloads,
         sessionsCount: u._count.readingSessions,
+        vocabulariesCount: u._count.vocabularies,
+        achievementsCount: u._count.achievements,
+        xp: u.userStats?.totalXP || 0,
+        level: u.userStats?.level || 1,
+        streakDays: u.userStats?.streakDays || 0,
+        booksCompleted: u.userStats?.booksCompleted || 0,
+        totalMinutesRead: u.userStats?.pagesRead ? Math.round(u.userStats.pagesRead * 1.5) : 0,
       },
     }))
   } catch (err) {
@@ -149,29 +255,73 @@ export async function searchUsers(query: string): Promise<ManagedUser[]> {
 }
 
 /**
- * Promote or change a user's role.
+ * Promote or change a user's role (Owner only).
+ * Rules:
+ * - Only OWNER can change roles.
+ * - Cannot demote an OWNER account unless done by another owner.
  */
 export async function updateUserRole(userId: string, role: string) {
+  const caller = await assertAdminPermission(true)
   try {
     if (!['USER', 'ADMIN', 'OWNER'].includes(role)) {
-      throw new Error('Invalid role specified.')
+      throw new Error('نقش مشخص شده نامعتبر است.')
     }
+
+    const target = await db.user.findUnique({
+      where: { id: userId },
+      select: { id: true, role: true, email: true },
+    })
+
+    if (!target) {
+      throw new Error('کاربر مورد نظر در سیستم یافت نشد.')
+    }
+
+    // Safety: prevent owner from accidentally demoting own account
+    if (target.role === 'OWNER' && role !== 'OWNER' && target.email === caller.email) {
+      throw new Error('شما نمی‌توانید نقش حساب مالک اصلی خود را تنزل دهید.')
+    }
+
     await db.user.update({
       where: { id: userId },
       data: { role },
     })
+    revalidateUsers()
     return { success: true }
   } catch (err) {
     console.error(`[Actions] Failed to update user role for ${userId}:`, err)
-    throw new Error('Failed to update user role.')
+    throw err instanceof Error ? err : new Error('Failed to update user role.')
   }
 }
 
 /**
- * Ban a website user.
+ * Ban / suspend a user.
+ * STRICT ENFORCEMENT RULES:
+ * 1. NO ONE can ban an OWNER.
+ * 2. ADMIN cannot ban ADMIN or OWNER.
+ * 3. OWNER can ban ADMIN or USER.
  */
 export async function banUser(userId: string, reason: string) {
+  const caller = await assertAdminPermission(false)
   try {
+    const target = await db.user.findUnique({
+      where: { id: userId },
+      select: { id: true, role: true, email: true },
+    })
+
+    if (!target) {
+      throw new Error('کاربر مورد نظر در سیستم یافت نشد.')
+    }
+
+    // Rule 1: No one can ban an OWNER
+    if (target.role === 'OWNER') {
+      throw new Error('حساب مالک اصلی سیستم (Owner) تحت هیچ شرایطی قابل مسدودسازی نیست.')
+    }
+
+    // Rule 2: Admin cannot ban another Admin
+    if (caller.role !== 'owner' && target.role === 'ADMIN') {
+      throw new Error('مدیران عادی اجازه مسدودسازی سایر مدیران را ندارند. تنها مالک اصلی سیستم مجاز به مسدودسازی مدیر است.')
+    }
+
     const cleanReason = reason.trim() || 'نقض قوانین وب‌سایت'
     await db.user.update({
       where: { id: userId },
@@ -181,18 +331,36 @@ export async function banUser(userId: string, reason: string) {
         bannedAt: new Date(),
       },
     })
+    revalidateUsers()
     return { success: true }
   } catch (err) {
     console.error(`[Actions] Failed to ban user ${userId}:`, err)
-    throw new Error('Failed to ban user.')
+    throw err instanceof Error ? err : new Error('Failed to ban user.')
   }
 }
 
 /**
- * Unban a website user.
+ * Unban / restore a user.
+ * Rules:
+ * - Admin can unban USER.
+ * - Only OWNER can unban an ADMIN.
  */
 export async function unbanUser(userId: string) {
+  const caller = await assertAdminPermission(false)
   try {
+    const target = await db.user.findUnique({
+      where: { id: userId },
+      select: { id: true, role: true },
+    })
+
+    if (!target) {
+      throw new Error('کاربر مورد نظر در سیستم یافت نشد.')
+    }
+
+    if (caller.role !== 'owner' && target.role === 'ADMIN') {
+      throw new Error('تنها مالک اصلی سیستم مجاز به لغو مسدودیت مدیران است.')
+    }
+
     await db.user.update({
       where: { id: userId },
       data: {
@@ -201,17 +369,135 @@ export async function unbanUser(userId: string) {
         bannedAt: null,
       },
     })
+    revalidateUsers()
     return { success: true }
   } catch (err) {
     console.error(`[Actions] Failed to unban user ${userId}:`, err)
-    throw new Error('Failed to unban user.')
+    throw err instanceof Error ? err : new Error('Failed to unban user.')
   }
+}
+
+/**
+ * Delete a user/admin account (Owner only).
+ * Rules:
+ * - Only OWNER can delete accounts.
+ * - Cannot delete an OWNER account.
+ */
+export async function deleteUser(userId: string) {
+  await assertAdminPermission(true)
+  try {
+    const target = await db.user.findUnique({
+      where: { id: userId },
+      select: { id: true, role: true },
+    })
+
+    if (!target) {
+      throw new Error('کاربر مورد نظر در سیستم یافت نشد.')
+    }
+
+    if (target.role === 'OWNER') {
+      throw new Error('حساب مالک اصلی سیستم قابل حذف نیست.')
+    }
+
+    await db.user.delete({
+      where: { id: userId },
+    })
+    revalidateUsers()
+    return { success: true }
+  } catch (err) {
+    console.error(`[Actions] Failed to delete user ${userId}:`, err)
+    throw err instanceof Error ? err : new Error('Failed to delete user.')
+  }
+}
+
+/**
+ * Resolve an existing author or create a new one in Payload CMS.
+ */
+async function resolveOrCreateAuthor(
+  payload: any,
+  rawData: any,
+  appendLog: (msg: string) => void,
+): Promise<string | number> {
+  const { authorName, authorInput } = parseAuthorNameAndInput(rawData)
+
+  appendLog(`در حال بررسی نویسنده: "${authorName}"...`)
+
+  const authorDocs = await payload.find({
+    collection: 'authors',
+    where: {
+      or: [
+        { name: { equals: authorName } },
+        { slug: { equals: authorInput.slug } },
+      ],
+    },
+    limit: 1,
+  })
+
+  if (authorDocs.docs.length > 0) {
+    appendLog(`نویسنده "${authorName}" با شناسه ${authorDocs.docs[0].id} از پیش در سیستم موجود است.`)
+    return authorDocs.docs[0].id
+  }
+
+  appendLog(`نویسنده یافت نشد؛ در حال ایجاد رکورد نویسنده جدید: "${authorName}"...`)
+  const newAuthor = await payload.create({
+    collection: 'authors',
+    data: authorInput,
+  })
+
+  appendLog(`نویسنده جدید با شناسه ${newAuthor.id} ایجاد شد.`)
+  return newAuthor.id
+}
+
+/**
+ * Resolve an existing book or create a new one in Payload CMS.
+ */
+async function resolveOrCreateBook(
+  payload: any,
+  rawData: any,
+  authorId: string | number,
+  appendLog: (msg: string) => void,
+): Promise<void> {
+  const bookSlug = rawData.slug?.trim() || slugify(rawData.title)
+  appendLog(`در حال آماده‌سازی داده‌های کتاب: "${rawData.title}" (شناسه: ${bookSlug})...`)
+
+  const bookData = buildBookData(rawData, authorId)
+
+  const bookDocs = await payload.find({
+    collection: 'books',
+    where: {
+      or: [
+        { slug: { equals: bookSlug } },
+        { title: { equals: rawData.title.trim() } },
+      ],
+    },
+    limit: 1,
+  })
+
+  if (bookDocs.docs.length > 0) {
+    appendLog(`کتاب با شناسه ${bookDocs.docs[0].id} یافت شد؛ در حال بروزرسانی اطلاعات کتاب...`)
+    await payload.update({
+      collection: 'books',
+      id: bookDocs.docs[0].id,
+      data: bookData,
+    })
+    appendLog(`کتاب با موفقیت بروزرسانی شد.`)
+  } else {
+    appendLog(`در حال ثبت کتاب جدید در سیستم...`)
+    await payload.create({
+      collection: 'books',
+      data: bookData,
+    })
+    appendLog(`کتاب جدید با موفقیت ایجاد شد.`)
+  }
+
+  revalidateBook(bookSlug)
 }
 
 /**
  * Import a book from JSON schema.
  */
 export async function importBookAction(jsonString: string): Promise<{ success: boolean; log: string }> {
+  await assertAdminPermission(false)
   let log = ''
   const appendLog = (msg: string) => {
     log += `[${new Date().toLocaleTimeString('fa-IR')}] ${msg}\n`
@@ -223,138 +509,12 @@ export async function importBookAction(jsonString: string): Promise<{ success: b
       throw new Error('فیلد title اجباری است.')
     }
 
+    const { getPayloadClient } = await import('../../lib/payload')
     const payload = await getPayloadClient()
     appendLog(`آغاز فرآیند درون‌ریزی کتاب: "${rawData.title}"`)
 
-    // 1. Resolve author
-    let authorName = ''
-    let authorInput: any = null
-    if (typeof rawData.author === 'string') {
-      authorName = rawData.author.trim()
-    } else if (rawData.author && typeof rawData.author === 'object') {
-      authorInput = rawData.author
-      authorName = rawData.author.name
-    }
-
-    if (!authorName) {
-      throw new Error('نام نویسنده (author) نامعتبر یا خالی است.')
-    }
-
-    appendLog(`بررسی نویسنده: "${authorName}"`)
-    const authorDocs = await payload.find({
-      collection: 'authors',
-      where: {
-        name: { equals: authorName },
-      },
-      limit: 1,
-    })
-
-    let authorId: string | number
-    if (authorDocs.docs.length > 0) {
-      authorId = authorDocs.docs[0].id
-      appendLog(`نویسنده از قبل وجود دارد (ID: ${authorId})`)
-    } else {
-      appendLog(`ایجاد نویسنده جدید در سیستم...`)
-      const authorSlug = slugify(authorName) || `author-${Date.now()}`
-      const newAuthor = await payload.create({
-        collection: 'authors',
-        data: {
-          slug: authorSlug,
-          name: authorName,
-          nameFa: authorInput?.nameFa || '',
-          bio: authorInput?.bio || '',
-          bioFa: authorInput?.bioFa || '',
-          birthYear: authorInput?.birthYear ? Number(authorInput.birthYear) : undefined,
-          deathYear: authorInput?.deathYear ? Number(authorInput.deathYear) : undefined,
-          nationality: authorInput?.nationality || '',
-          nationalityFa: authorInput?.nationalityFa || '',
-          flagEmoji: authorInput?.flagEmoji || '',
-          era: authorInput?.era || 'Modern',
-          eraFa: authorInput?.eraFa || '',
-          notableWorks: Array.isArray(authorInput?.notableWorks) ? authorInput.notableWorks : [],
-          featured: !!authorInput?.featured,
-        },
-      })
-      authorId = newAuthor.id
-      appendLog(`نویسنده جدید با موفقیت ایجاد شد (ID: ${authorId})`)
-    }
-
-    // 2. Resolve cover image if any coverImageUrl is supplied
-    // For now, we reuse the hex gradient fields. If you want, you can upload to Media,
-    // but usually in typical import JSON we can fallback to gradients.
-    appendLog(`پردازش کتاب...`)
-    const bookSlug = rawData.slug?.trim() ? slugify(rawData.slug) : slugify(rawData.title)
-    if (!bookSlug) {
-      throw new Error('تولید اسلاگ کتاب با خطا مواجه شد.')
-    }
-
-    const bookDocs = await payload.find({
-      collection: 'books',
-      where: {
-        slug: { equals: bookSlug },
-      },
-      limit: 1,
-    })
-
-    const rawPages = Array.isArray(rawData.pages) ? rawData.pages : []
-    const normalizedPages = rawPages.map((p: any, idx: number) => ({
-      pageNumber: p.pageNumber || idx + 1,
-      english: p.english || '',
-      farsi: p.farsi || '',
-      type: p.type || 'text',
-      meta: typeof p.meta === 'string' ? p.meta : JSON.stringify(p.meta || {}),
-    }))
-
-    // Deduplicate and sort pages
-    normalizedPages.sort((a: any, b: any) => a.pageNumber - b.pageNumber)
-
-    const rawChapters = Array.isArray(rawData.chapters) ? rawData.chapters : []
-    const normalizedChapters = rawChapters.map((c: any, idx: number) => ({
-      title: c.title || `Chapter ${idx + 1}`,
-      titleFa: c.titleFa || '',
-      slug: c.slug || slugify(c.title || `chapter-${idx + 1}`),
-      order: c.order !== undefined ? Number(c.order) : idx + 1,
-      startPage: c.startPage !== undefined ? Number(c.startPage) : 1,
-    }))
-
-    const bookData = {
-      title: rawData.title,
-      slug: bookSlug,
-      author: authorId,
-      description: rawData.description || '',
-      level: rawData.level || 'B1',
-      genres: Array.isArray(rawData.genres) ? rawData.genres : [],
-      pageCount: normalizedPages.length,
-      publishedYear: rawData.publishedYear ? Number(rawData.publishedYear) : 1900,
-      coverFrom: rawData.coverFrom || '#b8956a',
-      coverTo: rawData.coverTo || '#6d523a',
-      coverAccent: rawData.coverAccent || '#f4d35e',
-      isPublished: rawData.isPublished !== false,
-      isPremium: !!rawData.isPremium,
-      allowDownload: rawData.allowDownload !== false,
-      rating: rawData.rating ? Number(rawData.rating) : 0,
-      reviewCount: rawData.reviewCount ? Number(rawData.reviewCount) : 0,
-      viewCount: rawData.viewCount ? Number(rawData.viewCount) : 0,
-      chapters: normalizedChapters,
-      pages: normalizedPages,
-    }
-
-    if (bookDocs.docs.length > 0) {
-      appendLog(`کتاب از قبل با اسلاگ "${bookSlug}" وجود دارد. در حال بروزرسانی کتاب...`)
-      await payload.update({
-        collection: 'books',
-        id: bookDocs.docs[0].id,
-        data: bookData,
-      })
-      appendLog(`کتاب با موفقیت بروزرسانی شد.`)
-    } else {
-      appendLog(`در حال ثبت کتاب جدید در سیستم...`)
-      await payload.create({
-        collection: 'books',
-        data: bookData,
-      })
-      appendLog(`کتاب جدید با موفقیت ایجاد شد.`)
-    }
+    const authorId = await resolveOrCreateAuthor(payload, rawData, appendLog)
+    await resolveOrCreateBook(payload, rawData, authorId, appendLog)
 
     appendLog(`عملیات درون‌ریزی با موفقیت به پایان رسید.`)
     return { success: true, log }

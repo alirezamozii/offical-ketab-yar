@@ -178,7 +178,7 @@ export const BookCard = memo(function BookCard({ book, progress, href, cached }:
         className="absolute inset-0 z-10 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         aria-label={`مشاهده ${book.title}${book.author ? ` — ${book.author}` : ''}`}
       >
-        <span className="sr-only">مشاهده کتاب</span>
+        <span className="sr-only">مشاهده {book.title}</span>
       </Link>
     </motion.article>
   )

@@ -48,7 +48,7 @@ interface PracticeStats {
   bestStreak: number
 }
 
-function loadStats(): PracticeStats {
+export function loadStats(): PracticeStats {
   if (typeof window === 'undefined')
     return { totalSessions: 0, totalAnswered: 0, totalCorrect: 0, bestStreak: 0 }
   try {
@@ -61,13 +61,13 @@ function loadStats(): PracticeStats {
   }
 }
 
-function saveStats(s: PracticeStats) {
+export function saveStats(s: PracticeStats) {
   try {
     localStorage.setItem(STATS_KEY, JSON.stringify(s))
   } catch {}
 }
 
-function shuffle<T>(arr: T[]): T[] {
+export function shuffle<T>(arr: T[]): T[] {
   const a = [...arr]
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
@@ -77,7 +77,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 /** Build a deck with due-words first, then fill with others up to size. */
-function buildDeck(
+export function buildDeck(
   words: VocabWord[],
   dueIds: Set<string>,
   size: number,
@@ -87,6 +87,211 @@ function buildDeck(
   const others = shuffle(words.filter((w) => !dueIds.has(w.id)))
   const deck = [...due, ...others].slice(0, Math.min(size, words.length))
   return deck
+}
+
+function FlashcardCard({
+  flipped,
+  current,
+  known,
+  onFlip,
+  onSpeak,
+}: {
+  flipped: boolean
+  current: VocabWord
+  known: boolean
+  onFlip: () => void
+  onSpeak: (w: string) => void
+}) {
+  return (
+    <div
+      className="group relative h-72 cursor-pointer perspective-1000"
+      onClick={onFlip}
+    >
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={flipped ? 'back' : 'front'}
+          initial={{ rotateY: -90, opacity: 0 }}
+          animate={{ rotateY: 0, opacity: 1 }}
+          exit={{ rotateY: 90, opacity: 0 }}
+          transition={{ duration: 0.25 }}
+          className={cn(
+            'flex h-full w-full flex-col items-center justify-center rounded-3xl border-2 p-8 text-center shadow-xl',
+            flipped
+              ? 'border-gold-400 bg-gradient-to-br from-gold-500/10 to-gold-700/10'
+              : 'border-border bg-card',
+          )}
+        >
+          {!flipped ? (
+            <>
+              <span className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                English
+              </span>
+              <h2
+                className="text-3xl font-extrabold sm:text-4xl"
+                dir="ltr"
+              >
+                {current.word}
+              </h2>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onSpeak(current.word)
+                }}
+                className="mt-4 flex h-10 w-10 items-center justify-center rounded-full bg-gold-500/15 text-gold-600 transition-transform hover:scale-110 dark:text-gold-400"
+                aria-label="تلفظ"
+              >
+                <Volume2 className="h-5 w-5" />
+              </button>
+              <p className="mt-6 text-xs text-muted-foreground">
+                برای دیدن ترجمه کلیک کنید
+              </p>
+            </>
+          ) : (
+            <>
+              <span className="mb-2 text-xs font-bold uppercase tracking-widest text-gold-600 dark:text-gold-400">
+                فارسی
+              </span>
+              <p className="text-2xl font-bold leading-relaxed">
+                {current.translation || '—'}
+              </p>
+              {current.definition && (
+                <p
+                  className="mt-3 max-w-md text-sm text-muted-foreground"
+                  dir="ltr"
+                >
+                  {current.definition}
+                </p>
+              )}
+              {known && (
+                <span className="mt-4 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  <Check className="h-3 w-3" />
+                  یاد گرفتم
+                </span>
+              )}
+            </>
+          )}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  )
+}
+
+function FlashcardControls({
+  index,
+  total,
+  isKnown,
+  onPrev,
+  onNext,
+  onMarkKnown,
+  onMarkUnknown,
+}: {
+  index: number
+  total: number
+  isKnown: boolean
+  onPrev: () => void
+  onNext: () => void
+  onMarkKnown: () => void
+  onMarkUnknown: () => void
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <Button variant="outline" onClick={onPrev} disabled={index === 0}>
+          <ArrowRight className="h-4 w-4" />
+          قبلی
+        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={onMarkUnknown}
+            variant="outline"
+            className="gap-2"
+            title="نمی‌دانم — سطح یادگیری به ۱ بازمی‌گردد (کلید ←)"
+            aria-keyshortcuts="ArrowLeft 1"
+          >
+            <X className="h-4 w-4" />
+            نمی‌دانم
+          </Button>
+          <Button
+            onClick={onMarkKnown}
+            variant={isKnown ? 'default' : 'secondary'}
+            className="gap-2"
+            title="یاد گرفتم — سطح یادگیری بالا می‌رود (کلید →)"
+            aria-keyshortcuts="ArrowRight 2"
+          >
+            <Check className="h-4 w-4" />
+            {isKnown ? 'یاد گرفتم' : 'تمرین کن'}
+          </Button>
+        </div>
+        <Button onClick={onNext} disabled={index + 1 >= total}>
+          بعدی
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+      </div>
+
+      <p className="text-center text-[11px] text-muted-foreground" dir="rtl">
+        <kbd className="rounded border border-border bg-card px-1.5 py-0.5 text-[10px]">Space</kbd>{' '}
+        برای برگرداندن کارت ·{' '}
+        <kbd className="rounded border border-border bg-card px-1.5 py-0.5 text-[10px]">→</kbd>{' '}
+        می‌دانم ·{' '}
+        <kbd className="rounded border border-border bg-card px-1.5 py-0.5 text-[10px]">←</kbd>{' '}
+        نمی‌دانم
+      </p>
+    </div>
+  )
+}
+
+function QuizCard({ word, onSpeak }: { word: string; onSpeak: (w: string) => void }) {
+  return (
+    <div className="rounded-3xl border-2 border-border bg-card p-8 text-center shadow-xl">
+      <span className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+        معنی این کلمه چیست؟
+      </span>
+      <h2 className="text-3xl font-extrabold sm:text-4xl" dir="ltr">
+        {word}
+      </h2>
+      <button
+        onClick={() => onSpeak(word)}
+        className="mt-3 flex h-9 w-9 items-center justify-center rounded-full bg-gold-500/15 text-gold-600 transition-transform hover:scale-110 dark:text-gold-400"
+        aria-label="تلفظ"
+      >
+        <Volume2 className="h-4 w-4" />
+      </button>
+    </div>
+  )
+}
+
+function CelebrationToast({
+  celebration,
+  onClose,
+}: {
+  celebration: VocabWord
+  onClose: () => void
+}) {
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0, y: -20, scale: 0.9 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -20, scale: 0.9 }}
+        className="fixed inset-x-0 top-6 z-50 mx-auto w-fit"
+        onClick={onClose}
+      >
+        <div className="flex items-center gap-3 rounded-2xl border border-emerald-400/50 bg-card px-5 py-3 shadow-2xl">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-white">
+            <PartyPopper className="h-5 w-5" />
+          </span>
+          <div>
+            <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
+              این واژه را یاد گرفتی! 🎉
+            </p>
+            <p className="text-xs text-muted-foreground" dir="ltr">
+              {celebration.word}
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  )
 }
 
 export function PracticeClient() {
@@ -421,119 +626,22 @@ export function PracticeClient() {
       {/* Flashcard mode */}
       {mode === 'flashcard' && current && (
         <div className="space-y-4">
-          <div
-            className="group relative h-72 cursor-pointer perspective-1000"
-            onClick={() => setFlipped((f) => !f)}
-          >
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={flipped ? 'back' : 'front'}
-                initial={{ rotateY: -90, opacity: 0 }}
-                animate={{ rotateY: 0, opacity: 1 }}
-                exit={{ rotateY: 90, opacity: 0 }}
-                transition={{ duration: 0.25 }}
-                className={cn(
-                  'flex h-full w-full flex-col items-center justify-center rounded-3xl border-2 p-8 text-center shadow-xl',
-                  flipped
-                    ? 'border-gold-400 bg-gradient-to-br from-gold-500/10 to-gold-700/10'
-                    : 'border-border bg-card',
-                )}
-              >
-                {!flipped ? (
-                  <>
-                    <span className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                      English
-                    </span>
-                    <h2
-                      className="text-3xl font-extrabold sm:text-4xl"
-                      dir="ltr"
-                    >
-                      {current.word}
-                    </h2>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        speak(current.word)
-                      }}
-                      className="mt-4 flex h-10 w-10 items-center justify-center rounded-full bg-gold-500/15 text-gold-600 transition-transform hover:scale-110 dark:text-gold-400"
-                      aria-label="تلفظ"
-                    >
-                      <Volume2 className="h-5 w-5" />
-                    </button>
-                    <p className="mt-6 text-xs text-muted-foreground">
-                      برای دیدن ترجمه کلیک کنید
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <span className="mb-2 text-xs font-bold uppercase tracking-widest text-gold-600 dark:text-gold-400">
-                      فارسی
-                    </span>
-                    <p className="text-2xl font-bold leading-relaxed">
-                      {current.translation || '—'}
-                    </p>
-                    {current.definition && (
-                      <p
-                        className="mt-3 max-w-md text-sm text-muted-foreground"
-                        dir="ltr"
-                      >
-                        {current.definition}
-                      </p>
-                    )}
-                    {knownIds.has(current.id) && (
-                      <span className="mt-4 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                        <Check className="h-3 w-3" />
-                        یاد گرفتم
-                      </span>
-                    )}
-                  </>
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          <div className="flex items-center justify-between gap-3">
-            <Button variant="outline" onClick={prev} disabled={index === 0}>
-              <ArrowRight className="h-4 w-4" />
-              قبلی
-            </Button>
-            <div className="flex gap-2">
-              <Button
-                onClick={markUnknown}
-                variant="outline"
-                className="gap-2"
-                title="نمی‌دانم — سطح یادگیری به ۱ بازمی‌گردد (کلید ←)"
-                aria-keyshortcuts="ArrowLeft 1"
-              >
-                <X className="h-4 w-4" />
-                نمی‌دانم
-              </Button>
-              <Button
-                onClick={markKnown}
-                variant={knownIds.has(current.id) ? 'default' : 'secondary'}
-                className="gap-2"
-                title="یاد گرفتم — سطح یادگیری بالا می‌رود (کلید →)"
-                aria-keyshortcuts="ArrowRight 2"
-              >
-                <Check className="h-4 w-4" />
-                {knownIds.has(current.id) ? 'یاد گرفتم' : 'تمرین کن'}
-              </Button>
-            </div>
-            <Button onClick={next} disabled={index + 1 >= deck.length}>
-              بعدی
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Keyboard hint — discoverable but unobtrusive */}
-          <p className="text-center text-[11px] text-muted-foreground" dir="rtl">
-            <kbd className="rounded border border-border bg-card px-1.5 py-0.5 text-[10px]">Space</kbd>{' '}
-            برای برگرداندن کارت ·{' '}
-            <kbd className="rounded border border-border bg-card px-1.5 py-0.5 text-[10px]">→</kbd>{' '}
-            می‌دانم ·{' '}
-            <kbd className="rounded border border-border bg-card px-1.5 py-0.5 text-[10px]">←</kbd>{' '}
-            نمی‌دانم
-          </p>
+          <FlashcardCard
+            flipped={flipped}
+            current={current}
+            known={knownIds.has(current.id)}
+            onFlip={() => setFlipped((f) => !f)}
+            onSpeak={speak}
+          />
+          <FlashcardControls
+            index={index}
+            total={deck.length}
+            isKnown={knownIds.has(current.id)}
+            onPrev={prev}
+            onNext={next}
+            onMarkKnown={markKnown}
+            onMarkUnknown={markUnknown}
+          />
         </div>
       )}
 
@@ -546,24 +654,7 @@ export function PracticeClient() {
             </div>
           ) : (
             <>
-              <div className="rounded-3xl border-2 border-border bg-card p-8 text-center shadow-xl">
-                <span className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  معنی این کلمه چیست؟
-                </span>
-                <h2
-                  className="text-3xl font-extrabold sm:text-4xl"
-                  dir="ltr"
-                >
-                  {current.word}
-                </h2>
-                <button
-                  onClick={() => speak(current.word)}
-                  className="mt-3 flex h-9 w-9 items-center justify-center rounded-full bg-gold-500/15 text-gold-600 transition-transform hover:scale-110 dark:text-gold-400"
-                  aria-label="تلفظ"
-                >
-                  <Volume2 className="h-4 w-4" />
-                </button>
-              </div>
+              <QuizCard word={current.word} onSpeak={speak} />
 
               <div className="grid gap-3 sm:grid-cols-2">
                 {quizOptions.map((opt, i) => {
@@ -657,32 +748,12 @@ export function PracticeClient() {
         </Button>
       </div>
 
-      {/* Box-5 celebration toast */}
-      <AnimatePresence>
-        {celebration && (
-          <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.9 }}
-            className="fixed inset-x-0 top-6 z-50 mx-auto w-fit"
-            onClick={() => setCelebration(null)}
-          >
-            <div className="flex items-center gap-3 rounded-2xl border border-emerald-400/50 bg-card px-5 py-3 shadow-2xl">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-white">
-                <PartyPopper className="h-5 w-5" />
-              </span>
-              <div>
-                <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
-                  این واژه را یاد گرفتی! 🎉
-                </p>
-                <p className="text-xs text-muted-foreground" dir="ltr">
-                  {celebration.word}
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {celebration && (
+        <CelebrationToast
+          celebration={celebration}
+          onClose={() => setCelebration(null)}
+        />
+      )}
     </div>
   )
 }

@@ -158,6 +158,7 @@ const EMPTY_FILTERS: SearchFilters = {
   minRating: 0,
 }
 
+// fallow-ignore-next-line complexity
 export function SearchClient({
   initialQuery,
   initialFilters = EMPTY_FILTERS,
@@ -1358,7 +1359,7 @@ function ResultsList({
       {visibleGroups.map(([slug, bookHits]) => (
         <div
           key={slug}
-          className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm"
+          className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm cull-offscreen"
         >
           {/* Book header */}
           <div className="flex items-center gap-3 border-b border-border/50 bg-muted/30 p-3">

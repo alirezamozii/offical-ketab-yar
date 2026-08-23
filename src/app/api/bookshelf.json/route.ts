@@ -31,7 +31,16 @@ export async function GET() {
   const books = await db.book
     .findMany({
       orderBy: { createdAt: 'desc' },
-      include: {
+      select: {
+        slug: true,
+        genres: true,
+        rating: true,
+        title: true,
+        description: true,
+        authorId: true,
+        publishedYear: true,
+        pageCount: true,
+        reviewCount: true,
         author: { select: { name: true } },
         reviews: {
           orderBy: { createdAt: 'desc' },

@@ -20,7 +20,7 @@ export function CTASection() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
       <div
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gold-600 via-gold-500 to-gold-700 px-6 py-12 shadow-2xl shadow-gold-500/30 sm:px-10 sm:py-14 animate-in fade-in slide-in-from-bottom-8 duration-1000 fill-mode-both"
+        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gold-600 via-gold-500 to-gold-700 px-6 py-12 shadow-2xl shadow-gold-500/30 sm:px-10 sm:py-14 animate-in fade-in slide-in-from-bottom-8 duration-1000 fill-mode-both transform-gpu"
       >
         {/* Texture — kept subtle */}
         <div className="pointer-events-none absolute inset-0 bg-dot-pattern opacity-15" />

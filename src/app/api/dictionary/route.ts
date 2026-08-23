@@ -156,6 +156,46 @@ async function lookupWiktionary(
   }
 }
 
+export function determineSource(local: any, freeApi: any, _wiktionary?: any): string {
+  if (local && freeApi) return 'local+api+wiktionary'
+  if (local) return 'local'
+  if (freeApi) return 'api+wiktionary'
+  return 'wiktionary'
+}
+
+export function deduplicateMeanings(
+  freeApiMeanings: Array<{ pos: string; definitionEn: string; example?: string }> | undefined,
+  wiktionaryMeanings: Array<{ pos: string; definitionEn: string; example?: string }> | undefined,
+): Array<{ pos: string; definitionEn: string; example?: string }> {
+  const meanings = [...(freeApiMeanings || [])]
+  if (wiktionaryMeanings) {
+    for (const wm of wiktionaryMeanings) {
+      if (!meanings.some((m) => m.definitionEn === wm.definitionEn)) {
+        meanings.push(wm)
+      }
+    }
+  }
+  return meanings
+}
+
+export function mergeMeaningsAndBuildResponse(word: string, local: any, freeApi: any, wiktionary: any) {
+  const meanings = deduplicateMeanings(freeApi?.meanings, wiktionary?.extraMeanings)
+  const source = determineSource(local, freeApi, wiktionary)
+
+  return NextResponse.json(
+    {
+      word,
+      persian: local?.persian || '',
+      pos: local?.pos || freeApi?.meanings?.[0]?.pos || meanings[0]?.pos || '',
+      phonetic: local?.phonetic || freeApi?.phonetic || '',
+      audioUrl: freeApi?.audioUrl || null,
+      meanings,
+      source,
+    },
+    { headers: { 'Cache-Control': DICT_CACHE_CONTROL } },
+  )
+}
+
 export async function POST(req: NextRequest) {
   const blocked = await aiRateLimit(req, { anonLimit: 40, authLimit: 120, name: 'dictionary' })
   if (blocked) return blocked
@@ -165,48 +205,20 @@ export async function POST(req: NextRequest) {
 
   const { word, context } = parsed.data
 
-  // ── Tier 1: Local DB (instant, free) ──
+  // Tier 1: Local DB
   const local = await lookupLocal(word)
 
-  // ── Tier 2: Free Dictionary API + Wiktionary (parallel, both free) ──
+  // Tier 2: Free API + Wiktionary
   const [freeApi, wiktionary] = await Promise.all([
     lookupFreeDictionaryApi(word),
     lookupWiktionary(word),
   ])
 
-  // If we have local Persian OR free API OR Wiktionary, merge them
   if (local || freeApi || wiktionary) {
-    // Merge meanings: prefer free API, append Wiktionary extras if any
-    const meanings = [...(freeApi?.meanings || [])]
-    if (wiktionary?.extraMeanings) {
-      for (const wm of wiktionary.extraMeanings) {
-        if (!meanings.some((m) => m.definitionEn === wm.definitionEn)) {
-          meanings.push(wm)
-        }
-      }
-    }
-    return NextResponse.json(
-      {
-        word,
-        persian: local?.persian || '',
-        pos: local?.pos || freeApi?.meanings?.[0]?.pos || meanings[0]?.pos || '',
-        phonetic: local?.phonetic || freeApi?.phonetic || '',
-        audioUrl: freeApi?.audioUrl || null,
-        meanings,
-        source:
-          local && freeApi
-            ? 'local+api+wiktionary'
-            : local
-              ? 'local'
-              : freeApi
-                ? 'api+wiktionary'
-                : 'wiktionary',
-      },
-      { headers: { 'Cache-Control': DICT_CACHE_CONTROL } },
-    )
+    return mergeMeaningsAndBuildResponse(word, local, freeApi, wiktionary)
   }
 
-  // ── Tier 3: Z-AI SDK fallback (for words not in local DB or free API) ──
+  // Tier 3: AI fallback
   const result = await aiDictionary(word, context ?? '')
   if (!result) {
     return NextResponse.json(

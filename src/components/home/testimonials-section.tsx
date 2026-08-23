@@ -4,7 +4,7 @@ export function TestimonialsSection() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
       {/* Header */}
-      <div className="mb-10 space-y-3 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="mb-10 space-y-3 text-center">
         <span className="inline-block rounded-full bg-gold-500/15 px-3 py-1 text-xs font-bold text-gold-700 dark:text-gold-400">
           تجربه استفاده
         </span>

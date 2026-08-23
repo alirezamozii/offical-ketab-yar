@@ -1,4 +1,1 @@
-/* THIS FILE WAS GENERATED AUTOMATICALLY BY PAYLOAD. */
-/* DO NOT MODIFY IT BECAUSE IT WILL BE UNDONE. */
-
-export const importMap = {}
+export { importMap } from '@/app/(payload)/admin/importMap'

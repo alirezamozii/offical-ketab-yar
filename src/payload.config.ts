@@ -32,9 +32,12 @@ export default buildConfig({
     components: {
       views: {
         dashboard: {
-          Component: '/payload/components/Dashboard#Dashboard',
+          Component: '@/payload/components/Dashboard#Dashboard',
         },
       },
+      afterNavLinks: [
+        '@/payload/components/QuickPanelNavLinks#QuickPanelNavLinks',
+      ],
     },
     // Persian RTL support will be added via custom components later
     disable: false,
@@ -54,14 +57,14 @@ export default buildConfig({
     },
   },
 
-  // Collections — content types managed by Payload
+  // Collections — content types managed by Payload in logical workflow order
   collections: [
-    UsersCollection,
-    booksCollection,
     authorsCollection,
+    booksCollection,
     blogPostsCollection,
     quotesCollection,
     mediaCollection,
+    UsersCollection,
   ],
 
   // Database — Postgres using the same DATABASE_URL as Prisma
@@ -69,6 +72,7 @@ export default buildConfig({
     pool: {
       connectionString: process.env.DATABASE_URL,
     },
+    schemaName: 'payload',
     push: true,
   }),
 

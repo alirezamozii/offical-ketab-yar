@@ -15,17 +15,8 @@ import { notFound, redirect } from 'next/navigation'
 import { NextResponse } from 'next/server'
 import { authOptions } from './auth'
 
-export type SessionUser = {
-  id: string
-  name?: string | null
-  email?: string | null
-  image?: string | null
-  role: string
-  username?: string | null
-  banned?: boolean
-  onboardingCompleted?: boolean
-  englishLevel?: string | null
-}
+import { type SessionUser } from './auth-types'
+export type { SessionUser }
 
 export async function getSession() {
   return getServerSession(authOptions)

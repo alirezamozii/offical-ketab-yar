@@ -1,6 +1,6 @@
 import { BookCover } from '@/components/books/book-cover'
 import { Button } from '@/components/ui/button'
-import { getBooks, type BookListItem } from '@/lib/data'
+import { getBookOfTheDay } from '@/lib/data'
 import { toPersianDigits } from '@/lib/typography'
 import { BookOpen, CalendarDays, Clock, Sparkles, Star } from 'lucide-react'
 import Link from 'next/link'
@@ -26,24 +26,9 @@ function readingTimeEstimate(pageCount: number): string {
   return `حدود ${toPersianDigits(hours)} ساعت و ${toPersianDigits(rem)} دقیقه`
 }
 
-/** Deterministic daily index based on the YYYY-MM-DD date string. */
-function dailyIndex(total: number): number {
-  if (total === 0) return 0
-  const now = new Date()
-  const dateStr = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`
-  // Simple deterministic hash → stable per day, varies across days.
-  let hash = 0
-  for (let i = 0; i < dateStr.length; i++) {
-    hash = (hash * 31 + dateStr.charCodeAt(i)) | 0
-  }
-  return Math.abs(hash) % total
-}
-
 export async function BookOfTheDay() {
-  const books = await getBooks()
-  if (books.length === 0) return null
-
-  const book: BookListItem = books[dailyIndex(books.length)]
+  const book = await getBookOfTheDay()
+  if (!book) return null
 
   return (
     <section className="relative overflow-hidden border-y border-gold-500/20 bg-gradient-to-br from-gold-50/80 via-card to-gold-100/40 dark:from-gold-900/10 dark:via-card dark:to-gold-800/5">

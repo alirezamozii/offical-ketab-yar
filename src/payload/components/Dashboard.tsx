@@ -1,11 +1,14 @@
 import { Gutter } from '@payloadcms/ui/elements/Gutter'
 import { DashboardClient } from './DashboardClient'
-import { fetchStats, searchUsers } from './actions'
+import { fetchStats, searchUsers, getCurrentAdminRole } from './actions'
 
 export const Dashboard = async () => {
-  // Fetch initial data on the server
-  const initialStats = await fetchStats()
-  const initialUsers = await searchUsers('')
+  // Fetch initial data concurrently on the server
+  const [initialStats, initialUsers, currentAdminRole] = await Promise.all([
+    fetchStats(),
+    searchUsers(''),
+    getCurrentAdminRole(),
+  ])
 
   return (
     <div className="dashboard-wrapper" style={{ padding: '1rem 0' }}>
@@ -20,7 +23,11 @@ export const Dashboard = async () => {
         }}>
           پیشخوان مدیریت و کنترل پنل کتاب‌یار
         </h1>
-        <DashboardClient initialStats={initialStats} initialUsers={initialUsers} />
+        <DashboardClient 
+          initialStats={initialStats} 
+          initialUsers={initialUsers} 
+          currentAdminRole={currentAdminRole}
+        />
       </Gutter>
     </div>
   )

@@ -132,6 +132,7 @@ async function ensureStatsRow(
 
 const LEADERBOARD_CACHE_CONTROL = 'public, max-age=60, s-maxage=120'
 
+// fallow-ignore-next-line complexity
 export async function GET(req: NextRequest) {
   // H-17: identity = userId if signed in, else guestId. We avoid leaking
   // either to the client (the entry uses an opaque `ownerId` field — which

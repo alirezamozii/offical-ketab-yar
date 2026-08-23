@@ -63,23 +63,12 @@ function freqColor(band: string): string {
   return '#a8523c'
 }
 
-export function WordPopupDictionary({
-  word: wordProp,
-  context,
-  theme,
-  bookSlug,
-  open,
-  onClose,
-  onSaved,
-}: WordPopupDictionaryProps) {
+export function useWordPopupState(wordProp: string, context?: string, bookSlug?: string, onSaved?: () => void) {
   const [word, setWord] = useState(wordProp)
   const [loading, setLoading] = useState(true)
   const [result, setResult] = useState<DictionaryResult | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const dark = theme === 'dark'
-  const s = THEME_STYLES[theme]
 
-  // If the parent passes a new word, switch to it.
   useEffect(() => {
     setWord(wordProp)
   }, [wordProp])
@@ -138,12 +127,40 @@ export function WordPopupDictionary({
       .catch(() => toast.error('افزودن ناموفق بود'))
   }
 
-  /** Click a related word / synonym / antonym → re-query the dictionary for it. */
   function navigateToWord(w: string) {
     const clean = w.trim()
     if (!clean || clean.toLowerCase() === word.toLowerCase()) return
     setWord(clean)
   }
+
+  return {
+    word,
+    loading,
+    result,
+    error,
+    speak,
+    addToVocab,
+    navigateToWord,
+  }
+}
+
+export function WordPopupDictionary({
+  word: wordProp,
+  context,
+  theme,
+  bookSlug,
+  open,
+  onClose,
+  onSaved,
+}: WordPopupDictionaryProps) {
+  const { word, loading, result, error, speak, addToVocab, navigateToWord } = useWordPopupState(
+    wordProp,
+    context,
+    bookSlug,
+    onSaved,
+  )
+  const dark = theme === 'dark'
+  const s = THEME_STYLES[theme]
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>

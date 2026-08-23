@@ -37,10 +37,14 @@ export function useOptimizedScroll() {
       }
     }
 
-    handleScroll()
+    // Schedule initial layout calculation in requestAnimationFrame to prevent forced reflow on initial mount
+    const initialRaf = window.requestAnimationFrame(() => {
+      handleScroll()
+    })
     window.addEventListener('scroll', handleScroll, { passive: true })
     window.addEventListener('resize', handleScroll, { passive: true })
     return () => {
+      window.cancelAnimationFrame(initialRaf)
       window.removeEventListener('scroll', handleScroll)
       window.removeEventListener('resize', handleScroll)
     }

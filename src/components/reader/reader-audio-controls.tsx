@@ -27,7 +27,7 @@
 import { Button } from '@/components/ui/button'
 import { AudioWaveBars } from '@/components/reader/audio-wave-bars'
 import { useReader } from '@/components/reader/reader-context'
-import { useTTSContext } from '@/hooks/use-tts'
+import { useTTSContext } from '@/hooks/tts-provider'
 import { toPersianDigits } from '@/lib/reader/types'
 import { useReducedMotion } from 'framer-motion'
 import { Loader2, Square, Volume2, VolumeX } from 'lucide-react'

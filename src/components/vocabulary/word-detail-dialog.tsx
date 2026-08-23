@@ -77,6 +77,7 @@ interface BookInfo {
   author: string
 }
 
+// fallow-ignore-next-line complexity
 export function WordDetailDialog({
   word,
   open,

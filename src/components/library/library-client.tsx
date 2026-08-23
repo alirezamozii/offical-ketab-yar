@@ -95,7 +95,7 @@ function statusOf(slug: string, progress: ProgressMap): StatusValue {
   return 'reading'
 }
 
-export function LibraryClient({ initial }: { initial: BookListItem[] }) {
+export function useLibraryFilters(initial: BookListItem[]) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [q, setQ] = useState(searchParams.get('q') || '')
@@ -111,11 +111,8 @@ export function LibraryClient({ initial }: { initial: BookListItem[] }) {
   const [genre, setGenre] = useState<string>(searchParams.get('genre') || '')
   const [level, setLevel] = useState<string>(searchParams.get('level') || '')
   const [sort, setSort] = useState<string>(searchParams.get('sort') || 'recent')
-  /** Minimum rating threshold (0 = all). Client-side filter — depends on
-   *  book.rating which is already in BookListItem, no API change needed. */
   const [minRating, setMinRating] = useState<number>(0)
 
-  // Client-only state (not URL-synced)
   const [view, setView] = useState<ViewMode>('grid')
   const [status, setStatus] = useState<StatusValue>('all')
   const [progressMap, setProgressMap] = useState<ProgressMap>({})
@@ -123,12 +120,10 @@ export function LibraryClient({ initial }: { initial: BookListItem[] }) {
   const [mounted, setMounted] = useState(false)
   const [filtersOpenMobile, setFiltersOpenMobile] = useState(false)
 
-  // Re-read progress when invoked (e.g. on mount or when window refocuses)
   const refreshProgress = useCallback(() => {
     setProgressMap(getLocalProgress())
   }, [])
 
-  // TanStack Queries
   const { data: popularGenres = [] } = useQuery<string[]>({
     queryKey: ['genres', 'popular'],
     queryFn: async () => {
@@ -156,7 +151,6 @@ export function LibraryClient({ initial }: { initial: BookListItem[] }) {
     staleTime: 30_000,
   })
 
-  // Restore client-only prefs from localStorage on mount
   useEffect(() => {
     setMounted(true)
     try {
@@ -175,7 +169,6 @@ export function LibraryClient({ initial }: { initial: BookListItem[] }) {
     return () => window.removeEventListener('focus', refreshProgress)
   }, [refreshProgress])
 
-  // Persist prefs
   useEffect(() => {
     if (!mounted) return
     try {
@@ -189,7 +182,6 @@ export function LibraryClient({ initial }: { initial: BookListItem[] }) {
     } catch {}
   }, [status, mounted])
 
-  // Keep URL in sync with the URL-synced filters (shareable + back-button)
   useEffect(() => {
     const params = new URLSearchParams()
     if (q) params.set('q', q)
@@ -201,15 +193,10 @@ export function LibraryClient({ initial }: { initial: BookListItem[] }) {
     router.replace(next, { scroll: false })
   }, [q, genre, level, sort, router])
 
-  // Reset "visible" count whenever the underlying book set changes
   useEffect(() => {
     setVisible(PAGE_SIZE)
   }, [q, genre, level, sort, status, minRating])
 
-
-
-  // Apply reading-status + min-rating filter (client-side, depends on
-  // progressMap + book.rating which are already available)
   const filteredBooks = useMemo(() => {
     let arr = books
     if (status !== 'all') {
@@ -285,6 +272,52 @@ export function LibraryClient({ initial }: { initial: BookListItem[] }) {
 
   const showSkeleton = loading && filteredBooks.length === 0
   const showEmpty = !loading && filteredBooks.length === 0
+
+  return {
+    q, setQ,
+    genre, setGenre,
+    level, setLevel,
+    sort, setSort,
+    minRating, setMinRating,
+    view, setView,
+    status, setStatus,
+    progressMap,
+    visible, setVisible,
+    filtersOpenMobile, setFiltersOpenMobile,
+    popularGenres,
+    loading,
+    filteredBooks,
+    visibleBooks,
+    hasMore,
+    clearAll,
+    activeFilters,
+    showSkeleton,
+    showEmpty,
+  }
+}
+
+export function LibraryClient({ initial }: { initial: BookListItem[] }) {
+  const {
+    q, setQ,
+    genre, setGenre,
+    level, setLevel,
+    sort, setSort,
+    minRating, setMinRating,
+    view, setView,
+    status, setStatus,
+    progressMap,
+    visible, setVisible,
+    filtersOpenMobile, setFiltersOpenMobile,
+    popularGenres,
+    loading,
+    filteredBooks,
+    visibleBooks,
+    hasMore,
+    clearAll,
+    activeFilters,
+    showSkeleton,
+    showEmpty,
+  } = useLibraryFilters(initial)
 
   return (
     <div className="space-y-5">

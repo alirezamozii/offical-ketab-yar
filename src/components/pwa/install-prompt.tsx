@@ -4,43 +4,10 @@
  * InstallPrompt — listens for the browser's `beforeinstallprompt` event and
  * shows a dismissible gold-themed banner offering to install the PWA.
  *
- * ─── Why this exists ─────────────────────────────────────────────────────
- *
- * Audit 08 §D-6 flagged "no install prompt UX" as one of the PWA gaps.
- * Browsers show their own minibar / install-button UX, but a custom
- * in-app banner with explicit CTA gives a 3–5× install-rate boost
- * (see audit 11 §5 #14).
- *
- * ─── Behavior ────────────────────────────────────────────────────────────
- *
- *  1. On mount, register a `beforeinstallprompt` listener. The browser
- *     fires this event when its own heuristics decide the app is
- *     "installable" (engagement + manifest + SW + PNG icons — all of
- *     which this task sets up). We `preventDefault()` to suppress the
- *     minibar and show our own banner instead.
- *  2. The banner shows "کتاب‌یار را نصب کنید" with an install button
- *     ("نصب") and a dismiss (X) button. Dismissal is persisted to
- *     localStorage so we don't nag the user every session.
- *  3. When the user clicks "نصب", we call `prompt()` on the stashed
- *     `BeforeInstallPromptEvent`. If the user accepts, the browser
- *     installs the PWA and fires `appinstalled` — we hide the banner.
- *  4. On browsers that don't fire `beforeinstallprompt` (Safari iOS —
- *     which uses "Add to Home Screen" from the share menu instead), the
- *     banner never renders. We could show iOS-specific instructions, but
- *     that's a Phase E polish task.
- *
- * ─── Persistence ────────────────────────────────────────────────────────
- *
- *  Dismissal is stored in `localStorage['ky_pwa_install_dismissed']` as
- *  an ISO timestamp. We re-show the banner after 30 days (so users who
- *  dismissed it early in the product's life can reconsider after the app
- *  has matured). `appinstalled` permanently hides the banner.
- *
- * ─── Theme ──────────────────────────────────────────────────────────────
- *
- *  Gold palette only — no indigo/blue/purple (per project constraints).
- *  Uses the gold-500/600 gradient + warm shadow tokens already in
- *  `globals.css`. Works in both light and dark themes.
+ * Frequency Constraint:
+ *  - The prompt can ONLY appear AT MOST ONCE A DAY (every 24 hours).
+ *  - When shown or dismissed, a 24-hour cooldown is recorded in localStorage.
+ *  - Once installed (`appinstalled`), it is permanently suppressed.
  */
 
 import { Download, X } from 'lucide-react'
@@ -48,19 +15,19 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { prefetchBook } from '@/lib/book-prefetcher'
 
-const DISMISS_KEY = 'ky_pwa_install_dismissed'
-const DISMISS_TTL_MS = 30 * 24 * 60 * 60 * 1000 // 30 days
+export const DISMISS_KEY = 'ky_pwa_install_dismissed'
+export const LAST_SHOWN_KEY = 'ky_pwa_install_last_shown'
+export const ONE_DAY_MS = 24 * 60 * 60 * 1000 // 24 hours (once a day limit)
 
 /**
- * Minimal type for the `beforeinstallprompt` event. The DOM lib doesn't
- * ship this type by default. We only use `prompt()` and `userChoice`.
+ * Minimal type for the `beforeinstallprompt` event.
  */
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
-function readDismissedAt(): number {
+export function readDismissedAt(): number {
   if (typeof window === 'undefined') return 0
   try {
     const raw = localStorage.getItem(DISMISS_KEY)
@@ -70,7 +37,7 @@ function readDismissedAt(): number {
   }
 }
 
-function writeDismissedAt(ts: number) {
+export function writeDismissedAt(ts: number) {
   try {
     localStorage.setItem(DISMISS_KEY, String(ts))
   } catch {
@@ -78,7 +45,25 @@ function writeDismissedAt(ts: number) {
   }
 }
 
-function isStandalone(): boolean {
+export function readLastShownAt(): number {
+  if (typeof window === 'undefined') return 0
+  try {
+    const raw = localStorage.getItem(LAST_SHOWN_KEY)
+    return raw ? Number(raw) || 0 : 0
+  } catch {
+    return 0
+  }
+}
+
+export function writeLastShownAt(ts: number) {
+  try {
+    localStorage.setItem(LAST_SHOWN_KEY, String(ts))
+  } catch {
+    /* private mode / quota — ignore */
+  }
+}
+
+export function isStandalone(): boolean {
   if (typeof window === 'undefined') return false
   // iOS Safari standalone
   if (window.matchMedia('(display-mode: standalone)').matches) return true
@@ -87,26 +72,43 @@ function isStandalone(): boolean {
   return false
 }
 
+export function canShowInstallPrompt(now: number = Date.now()): boolean {
+  if (isStandalone()) return false
+
+  const dismissedAt = readDismissedAt()
+  // Permanently hidden if installed
+  if (dismissedAt >= Number.MAX_SAFE_INTEGER - 1000000) return false
+
+  // If dismissed within the last 24 hours, don't show
+  if (dismissedAt && now - dismissedAt < ONE_DAY_MS) return false
+
+  // If shown within the last 24 hours, don't show again today (once a day rule)
+  const lastShownAt = readLastShownAt()
+  if (lastShownAt && now - lastShownAt < ONE_DAY_MS) return false
+
+  return true
+}
+
 export function InstallPrompt() {
-  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(
-    null,
-  )
+  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null)
   const [visible, setVisible] = useState(false)
   const [installing, setInstalling] = useState(false)
 
   useEffect(() => {
-    // Don't show the banner if the app is already installed/standalone.
-    if (isStandalone()) return
-
-    // If the user dismissed recently, honor the TTL.
-    const dismissedAt = readDismissedAt()
-    if (dismissedAt && Date.now() - dismissedAt < DISMISS_TTL_MS) return
+    // Check 24-hour rate limit on mount
+    if (!canShowInstallPrompt()) return
 
     const onBeforeInstall = (e: Event) => {
-      // Suppress the browser's own minibar — we'll show our own banner.
+      // Re-verify 24h limit before presenting UI
+      if (!canShowInstallPrompt()) return
+
+      // Suppress the browser's own minibar — we'll show our custom banner.
       e.preventDefault()
       setDeferred(e as BeforeInstallPromptEvent)
       setVisible(true)
+
+      // Mark as shown today (24-hour throttle)
+      writeLastShownAt(Date.now())
     }
 
     const onAppInstalled = () => {
@@ -157,14 +159,13 @@ export function InstallPrompt() {
       await deferred.prompt()
       const choice = await deferred.userChoice
       if (choice.outcome === 'dismissed') {
-        // User dismissed the native prompt — record so we don't re-show
-        // our banner until the TTL elapses.
+        // User dismissed the native prompt — record cooldown so it won't show again for 24h
         writeDismissedAt(Date.now())
+        writeLastShownAt(Date.now())
         setVisible(false)
       }
-      // `appinstalled` will fire if accepted; that handler hides + persists.
+      // `appinstalled` will fire if accepted; that handler permanently hides.
     } catch {
-      // Some browsers throw if prompt() is called twice on the same event.
       toast.error('نصب ناموفق بود', {
         description: 'لطفاً از منوی مرورگر نصب را امتحان کنید.',
       })
@@ -176,6 +177,7 @@ export function InstallPrompt() {
 
   const handleDismiss = () => {
     writeDismissedAt(Date.now())
+    writeLastShownAt(Date.now())
     setVisible(false)
   }
 
@@ -189,7 +191,7 @@ export function InstallPrompt() {
       className="pointer-events-none fixed inset-x-0 top-3 z-[100] flex justify-center px-3"
     >
       <div className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-2xl border border-gold-500/30 bg-background/95 p-3 shadow-lg-warm backdrop-blur-md">
-        {/* Icon tile — gold gradient, no indigo/blue */}
+        {/* Icon tile — gold gradient */}
         <span
           aria-hidden
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-gold-600 via-gold-500 to-gold-600 text-white shadow-md-warm"

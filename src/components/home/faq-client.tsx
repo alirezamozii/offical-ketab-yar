@@ -92,8 +92,6 @@ export function FaqAccordion({ items }: { items: FaqItem[] }) {
       {items.map((item, i) => (
         <div
           key={item.question}
-          className="animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both"
-          style={{ animationDelay: `${i * 100}ms` }}
         >
           <AccordionItem
             item={item}

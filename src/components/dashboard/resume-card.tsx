@@ -117,8 +117,9 @@ export function ResumeCard() {
             <div className="relative h-2 w-full overflow-hidden rounded-full bg-muted">
               <motion.div
                 className="h-full rounded-full bg-gradient-to-r from-gold-400 to-gold-600"
-                initial={{ width: 0 }}
-                animate={{ width: `${progress.percent}%` }}
+                style={{ transformOrigin: 'right', width: '100%' }}
+                initial={reduceMotion ? false : { scaleX: 0 }}
+                animate={{ scaleX: Math.min(1, Math.max(0, progress.percent / 100)) }}
                 transition={{ duration: 0.6, ease: 'easeOut' }}
               >
                 {/* shimmer streak (disabled under reduced motion) */}

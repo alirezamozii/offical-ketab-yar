@@ -225,7 +225,7 @@ function AchievementCard({
         ease: [0.22, 1, 0.36, 1],
       }}
       whileHover={reduceMotion ? undefined : { y: -5 }}
-      className="group relative"
+      className="group relative cull-offscreen"
     >
       <button
         type="button"
@@ -389,10 +389,11 @@ function AchievementCard({
                     'h-full rounded-full bg-gradient-to-l',
                     rarity.border,
                   )}
+                  style={{ transformOrigin: 'right', width: '100%' }}
                   initial={
-                    reduceMotion ? false : { width: 0 }
+                    reduceMotion ? false : { scaleX: 0 }
                   }
-                  animate={{ width: `${ach.progressPct}%` }}
+                  animate={{ scaleX: ach.progressPct / 100 }}
                   transition={{ duration: 0.7, ease: 'easeOut', delay: 0.1 }}
                 />
               </div>

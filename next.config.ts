@@ -46,6 +46,12 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: process.env.NEXT_STANDALONE === "true" ? "standalone" : undefined,
+  productionBrowserSourceMaps: false,
+  logging: {
+    fetches: {
+      fullUrl: true,
+    },
+  },
   outputFileTracingExcludes: {
     '*': ['node:*', 'node:inspector', 'node:crypto'],
   },
@@ -91,6 +97,9 @@ const nextConfig: NextConfig = {
 
   // Tree-shake barrel exports — big wins on framer-motion, lucide & radix.
   experimental: {
+    serverActions: {
+      bodySizeLimit: '50mb',
+    },
     optimizePackageImports: [
       "framer-motion",
       "lucide-react",

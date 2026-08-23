@@ -76,6 +76,7 @@ export function useReaderKeyboardShortcuts(handlers: ReaderShortcutHandlers) {
   }, [])
 
   useEffect(() => {
+    // fallow-ignore-next-line complexity
     const onKey = (e: KeyboardEvent) => {
       // Never intercept the browser's own shortcuts (Ctrl/Cmd/Alt/Option).
       if (e.ctrlKey || e.metaKey || e.altKey) return

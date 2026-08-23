@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { STORAGE_KEYS } from '@/lib/storage-keys'
 
 const KEY = STORAGE_KEYS.favorites
@@ -72,7 +72,13 @@ export function useFavorites() {
     [],
   )
 
-  const list = Object.values(favorites).sort((a, b) => b.addedAt - a.addedAt)
+  const list = useMemo(
+    () => Object.values(favorites).sort((a, b) => b.addedAt - a.addedAt),
+    [favorites],
+  )
 
-  return { favorites, list, isFavorite, toggle, loaded }
+  return useMemo(
+    () => ({ favorites, list, isFavorite, toggle, loaded }),
+    [favorites, list, isFavorite, toggle, loaded],
+  )
 }

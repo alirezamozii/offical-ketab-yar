@@ -423,9 +423,10 @@ export function DailyChallenges() {
         <AnimatePresence>
           {allDone && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
+              initial={{ opacity: 0, scaleY: 0 }}
+              animate={{ opacity: 1, scaleY: 1 }}
+              exit={{ opacity: 0, scaleY: 0 }}
+              style={{ transformOrigin: 'top' }}
               className="mt-3 overflow-hidden"
             >
               <div

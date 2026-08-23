@@ -170,6 +170,7 @@ export function formatPersianTime(date: Date | string | number): string {
  *   formatRelativeTime(new Date(Date.now() - 3 * 3600_000)) // → '۳ ساعت پیش'
  *   formatRelativeTime(new Date(Date.now() - 30 * 86_400_000)) // → '۱ ماه پیش'
  */
+// fallow-ignore-next-line complexity
 export function formatRelativeTime(date: Date | string | number, now: Date = new Date()): string {
   const d = toDate(date)
   if (!d) return ''

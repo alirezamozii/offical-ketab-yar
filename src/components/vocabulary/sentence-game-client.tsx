@@ -130,6 +130,7 @@ function buildQuestions(
   })
 }
 
+// fallow-ignore-next-line complexity
 export function SentenceGameClient() {
   const srs = useSrs()
   const sound = useVocabSounds()

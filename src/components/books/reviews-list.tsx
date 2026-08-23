@@ -139,32 +139,31 @@ export function ReviewsList({
     voteMutation.mutate({ reviewId, direction })
   }
 
+function computeReviewHelpfulness(reviewId: string, votes: Record<string, { up: number; down: number }>) {
+  const v = votes[reviewId]
+  return v ? v.up - v.down : 0
+}
+
+function compareReviews(a: ReviewWithVote, b: ReviewWithVote, sort: 'newest' | 'highest' | 'lowest' | 'helpful', votes: Record<string, any>) {
+  if (sort === 'newest') {
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  }
+  if (sort === 'highest' || sort === 'lowest') {
+    const dir = sort === 'highest' ? -1 : 1
+    if (b.rating !== a.rating) return dir * (b.rating - a.rating)
+    const ha = computeReviewHelpfulness(a.id, votes)
+    const hb = computeReviewHelpfulness(b.id, votes)
+    if (hb !== ha) return hb - ha
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  }
+  const ha = computeReviewHelpfulness(a.id, votes)
+  const hb = computeReviewHelpfulness(b.id, votes)
+  if (hb !== ha) return hb - ha
+  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+}
+
   const sorted = useMemo(() => {
-    const arr = [...reviews]
-    arr.sort((a, b) => {
-      if (sort === 'newest') {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      }
-      if (sort === 'highest' || sort === 'lowest') {
-        const dir = sort === 'highest' ? -1 : 1
-        if (b.rating !== a.rating) return dir * (b.rating - a.rating)
-        // tie-break by helpfulness
-        const va = votes[a.id]
-        const vb = votes[b.id]
-        const ha = va ? va.up - va.down : 0
-        const hb = vb ? vb.up - vb.down : 0
-        if (hb !== ha) return hb - ha
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      }
-      // helpful (default)
-      const va = votes[a.id]
-      const vb = votes[b.id]
-      const ha = va ? va.up - va.down : 0
-      const hb = vb ? vb.up - vb.down : 0
-      if (hb !== ha) return hb - ha
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    })
-    return arr
+    return [...reviews].sort((a, b) => compareReviews(a, b, sort, votes))
   }, [reviews, sort, votes])
 
   return (
@@ -354,8 +353,9 @@ export function RatingDistribution({
           <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
             <motion.div
               className="h-full rounded-full bg-gradient-to-l from-gold-400 to-gold-600"
-              initial={reduceMotion ? false : { width: 0 }}
-              animate={{ width: `${pct}%` }}
+              style={{ transformOrigin: 'right', width: '100%' }}
+              initial={reduceMotion ? false : { scaleX: 0 }}
+              animate={{ scaleX: pct / 100 }}
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             />
           </div>

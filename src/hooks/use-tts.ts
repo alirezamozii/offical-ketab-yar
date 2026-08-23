@@ -35,6 +35,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -596,22 +597,40 @@ export function useTTS(): UseTTSReturn {
     }
   }, [cancelTick])
 
-  return {
-    speak,
-    stop,
-    pause,
-    resume,
-    isPlaying,
-    isPaused,
-    isLoading,
-    error,
-    progress,
-    durationSec,
-    elapsedSec,
-    currentText,
-    chunkIndex,
-    totalChunks,
-  }
+  return useMemo(
+    () => ({
+      speak,
+      stop,
+      pause,
+      resume,
+      isPlaying,
+      isPaused,
+      isLoading,
+      error,
+      progress,
+      durationSec,
+      elapsedSec,
+      currentText,
+      chunkIndex,
+      totalChunks,
+    }),
+    [
+      speak,
+      stop,
+      pause,
+      resume,
+      isPlaying,
+      isPaused,
+      isLoading,
+      error,
+      progress,
+      durationSec,
+      elapsedSec,
+      currentText,
+      chunkIndex,
+      totalChunks,
+    ],
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -627,5 +646,3 @@ export function useTTS(): UseTTSReturn {
 // Re-exported for ergonomic single-import usage:
 //   import { useTTS, TTSProvider, useTTSContext } from '@/hooks/use-tts'
 // ---------------------------------------------------------------------------
-
-export { TTSProvider, useTTSContext, useTTSOrStandalone } from './tts-provider'

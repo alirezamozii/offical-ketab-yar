@@ -18,7 +18,7 @@
 
 import { Button } from '@/components/ui/button'
 import { AudioWaveBars } from '@/components/reader/audio-wave-bars'
-import { useTTSContext } from '@/hooks/use-tts'
+import { useTTSContext } from '@/hooks/tts-provider'
 import { useReader } from '@/components/reader/reader-context'
 import { toPersianDigits } from '@/lib/reader/types'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'

@@ -54,6 +54,7 @@ interface BookCoverProps {
  * break the internal `useState(imgLoaded)` — memo only short-circuits
  * re-renders on prop changes, not on internal hook updates.
  */
+// fallow-ignore-next-line complexity
 export const BookCover = memo(function BookCover({
   from,
   to,

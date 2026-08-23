@@ -50,7 +50,19 @@ export async function GET(
   try {
     const post = await db.blogPost.findUnique({
       where: { slug },
-      include: {
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        excerpt: true,
+        content: true,
+        coverUrl: true,
+        coverBlurhash: true,
+        tags: true,
+        published: true,
+        publishedAt: true,
+        updatedAt: true,
+        viewCount: true,
         author: {
           select: { id: true, name: true, username: true, image: true },
         },

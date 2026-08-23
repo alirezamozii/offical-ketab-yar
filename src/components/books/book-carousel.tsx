@@ -53,17 +53,28 @@ export function BookCarousel({
     el.scrollBy({ left: -dir * amount, behavior: 'smooth' })
   }, [])
 
+  // State refs to eliminate unnecessary setState calls on every scroll tick.
+  const prevCanScrollPrev = useRef(false)
+  const prevCanScrollNext = useRef(true)
+
   /** Update arrow visibility based on scroll position. */
   const updateArrows = useCallback(() => {
     const el = scroller.current
     if (!el) return
     const { scrollLeft, scrollWidth, clientWidth } = el
-    // In RTL, scrollLeft can be negative or positive depending on browser.
-    // Normalize: maxScroll = scrollWidth - clientWidth.
     const maxScroll = scrollWidth - clientWidth
     const absLeft = Math.abs(scrollLeft)
-    setCanScrollPrev(absLeft > 4)
-    setCanScrollNext(absLeft < maxScroll - 4)
+    const nextPrev = absLeft > 4
+    const nextNext = absLeft < maxScroll - 4
+
+    if (prevCanScrollPrev.current !== nextPrev) {
+      prevCanScrollPrev.current = nextPrev
+      setCanScrollPrev(nextPrev)
+    }
+    if (prevCanScrollNext.current !== nextNext) {
+      prevCanScrollNext.current = nextNext
+      setCanScrollNext(nextNext)
+    }
   }, [])
 
   // ── Drag-to-scroll handlers ─────────────────────────────────────────

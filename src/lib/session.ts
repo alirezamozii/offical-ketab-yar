@@ -103,7 +103,7 @@ export function verifyGuestId(
 }
 
 /** Sign a guest id into the `<id>.<sig>` cookie form. */
-function signGuestCookie(id: string): string {
+export function signGuestCookie(id: string): string {
   return `${id}.${signId(id)}`
 }
 

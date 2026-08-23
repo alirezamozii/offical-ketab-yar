@@ -1064,8 +1064,9 @@ function MilestonesTimelineCard({
           <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
             <motion.div
               className="h-full rounded-full bg-gradient-to-r from-gold-400 to-gold-600"
-              initial={reduceMotion ? false : { width: 0 }}
-              animate={{ width: `${nextMilestone.pct}%` }}
+              style={{ transformOrigin: 'right', width: '100%' }}
+              initial={reduceMotion ? false : { scaleX: 0 }}
+              animate={{ scaleX: Math.min(1, Math.max(0, nextMilestone.pct / 100)) }}
               transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             />
           </div>

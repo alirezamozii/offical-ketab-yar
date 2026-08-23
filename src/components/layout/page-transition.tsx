@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from 'framer-motion'
 import { usePathname } from 'next/navigation'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
 /**
  * Module-level flag — persists across template re-mounts (which happen on
@@ -34,14 +34,16 @@ export function PageTransition({ children }: { children: ReactNode }) {
   // `isFirstLoad` is true only on the first ever mount (SSR + initial
   // client hydration). On subsequent navigations the template remounts,
   // but the module-level flag is already true → isFirstLoad=false → animate.
-  const [isFirstLoad] = useState(() => {
-    if (typeof window === 'undefined') return true // SSR: never animate
-    if (hasMountedGlobally) return false
-    hasMountedGlobally = true
-    return true
-  })
+  const [mounted, setMounted] = useState(false)
 
-  const shouldAnimate = !isFirstLoad
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const shouldAnimate = mounted && hasMountedGlobally
+  if (mounted && !hasMountedGlobally) {
+    hasMountedGlobally = true
+  }
 
   return (
     <motion.div

@@ -2,8 +2,7 @@ import configPromise from '@/payload.config'
 import '@payloadcms/next/css'
 import '@/payload/custom.css'
 import { RootLayout, handleServerFunctions } from '@payloadcms/next/layouts'
-import React from 'react'
-import { importMap } from '@/payload/importMap'
+import { importMap } from './importMap'
 
 const serverFunction = async function (args: any) {
   'use server'
@@ -16,7 +15,12 @@ const serverFunction = async function (args: any) {
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <RootLayout config={configPromise} importMap={importMap} serverFunction={serverFunction}>
+    <RootLayout
+      config={configPromise}
+      importMap={importMap}
+      serverFunction={serverFunction}
+      htmlProps={{ suppressHydrationWarning: true }}
+    >
       {children}
     </RootLayout>
   )

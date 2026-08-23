@@ -50,13 +50,12 @@ export function StatsBar({
     <section className="border-y border-border/40 bg-gradient-to-b from-gold-500/5 via-transparent to-transparent">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-6">
-          {STATS.map((s, i) => {
+          {STATS.map((s) => {
             const Icon = s.icon
             return (
               <div
                 key={s.label}
-                className="group flex items-center gap-3 rounded-xl border border-border/40 bg-card/50 px-4 py-3 backdrop-blur-sm transition-colors hover:border-gold-400/60 hover:bg-gold-500/5 animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both"
-                style={{ animationDelay: `${i * 100}ms` }}
+                className="group flex items-center gap-3 rounded-xl border border-border/40 bg-card/50 px-4 py-3 backdrop-blur-sm transition-colors hover:border-gold-400/60 hover:bg-gold-500/5"
               >
                 <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-gold-500/20 to-gold-700/10 text-gold-700 dark:text-gold-400">
                   <span

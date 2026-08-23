@@ -84,7 +84,6 @@ export function AuthorsPageClient({
   totalPages,
 }: AuthorsPageClientProps) {
   const locale = usePersianLocale()
-  const reduceMotion = useReducedMotion()
 
   const [query, setQuery] = useState('')
   const [eraFilter, setEraFilter] = useState<AuthorEra | 'all'>('all')
@@ -317,7 +316,7 @@ export function AuthorsPageClient({
               <div
                 key={author.slug}
                 className={cn(
-                  'animate-in fade-in duration-300 fill-mode-both',
+                  'animate-in fade-in duration-300 fill-mode-both cull-offscreen',
                   isExpanded && 'sm:col-span-2 lg:col-span-3 transition-all duration-300',
                 )}
               >
@@ -343,6 +342,113 @@ interface AuthorExpandableCardProps {
   author: AuthorWithBio
   isExpanded: boolean
   onToggle: () => void
+}
+
+function AuthorExpandedDetails({ author, bio, locale }: { author: AuthorWithBio; bio: any; locale: any }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scaleY: 0.95 }}
+      animate={{ opacity: 1, scaleY: 1 }}
+      exit={{ opacity: 0, scaleY: 0.95 }}
+      style={{ transformOrigin: 'top' }}
+      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+      className="mt-5 space-y-6 border-t border-border/60 pt-5"
+    >
+      {/* Biography */}
+      <div>
+        <h4 className="flex items-center gap-2 text-sm font-bold text-foreground mb-2">
+          <Sparkles className="h-4 w-4 text-gold-600 dark:text-gold-400" />
+          زندگی‌نامه و بیوگرافی
+        </h4>
+        <p className="text-sm leading-relaxed text-foreground/90">
+          {bio?.bioFa || bio?.bio || 'اطلاعات بیشتری ثبت نشده است.'}
+        </p>
+
+        {bio?.biographyFa && (
+          <div className="mt-3 rounded-xl border border-border/40 bg-muted/30 p-4 text-xs leading-relaxed text-muted-foreground whitespace-pre-line">
+            {bio.biographyFa}
+          </div>
+        )}
+      </div>
+
+      {/* Notable works & tags */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {bio && bio.notableWorks.length > 0 && (
+          <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
+            <h5 className="mb-2 text-xs font-semibold text-muted-foreground">
+              آثار شاخص:
+            </h5>
+            <ul className="space-y-1" dir="ltr">
+              {bio.notableWorks.map((w: string) => (
+                <li key={w} className="text-xs text-foreground/80 flex items-center gap-1.5">
+                  <span className="h-1 w-1 rounded-full bg-gold-500" />
+                  {w}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {bio && bio.tags.length > 0 && (
+          <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
+            <h5 className="mb-2 flex items-center gap-1 text-xs font-semibold text-muted-foreground">
+              <Tag className="h-3 w-3" />
+              برچسب‌ها و سبک نگارش:
+            </h5>
+            <div className="flex flex-wrap gap-1.5">
+              {bio.tags.map((t: string) => (
+                <span
+                  key={t}
+                  className="rounded-md border border-border/60 bg-background/80 px-2 py-0.5 text-xs text-foreground"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* External Links */}
+      {(bio?.wikipedia || bio?.website) && (
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          {bio.wikipedia && (
+            <Button asChild variant="outline" size="sm" className="h-7 text-xs gap-1">
+              <a href={bio.wikipedia} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-3 w-3" />
+                ویکی‌پدیا
+              </a>
+            </Button>
+          )}
+          {bio.website && (
+            <Button asChild variant="outline" size="sm" className="h-7 text-xs gap-1">
+              <a href={bio.website} target="_blank" rel="noopener noreferrer">
+                <Globe className="h-3 w-3" />
+                وبگاه رسمی
+              </a>
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Books in Library */}
+      <div>
+        <h4 className="mb-3 flex items-center gap-1.5 text-sm font-bold text-foreground">
+          <Library className="h-4 w-4 text-gold-600 dark:text-gold-400" />
+          کتاب‌ها در کتابخانه کتاب‌یار
+          <span className="text-xs font-normal text-muted-foreground">
+            ({locale.toPersianDigits(author.books.length)})
+          </span>
+        </h4>
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {author.books.map((b) => (
+            <BookCard key={b.slug} book={b} />
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  )
 }
 
 function AuthorExpandableCard({
@@ -508,109 +614,7 @@ function AuthorExpandableCard({
 
       {/* Expanded Content Section */}
       <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-5 space-y-6 border-t border-border/60 pt-5"
-          >
-            {/* Biography */}
-            <div>
-              <h4 className="flex items-center gap-2 text-sm font-bold text-foreground mb-2">
-                <Sparkles className="h-4 w-4 text-gold-600 dark:text-gold-400" />
-                زندگی‌نامه و بیوگرافی
-              </h4>
-              <p className="text-sm leading-relaxed text-foreground/90">
-                {bio?.bioFa || bio?.bio || 'اطلاعات بیشتری ثبت نشده است.'}
-              </p>
-
-              {bio?.biographyFa && (
-                <div className="mt-3 rounded-xl border border-border/40 bg-muted/30 p-4 text-xs leading-relaxed text-muted-foreground whitespace-pre-line">
-                  {bio.biographyFa}
-                </div>
-              )}
-            </div>
-
-            {/* Notable works & tags */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {bio && bio.notableWorks.length > 0 && (
-                <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
-                  <h5 className="mb-2 text-xs font-semibold text-muted-foreground">
-                    آثار شاخص:
-                  </h5>
-                  <ul className="space-y-1" dir="ltr">
-                    {bio.notableWorks.map((w) => (
-                      <li key={w} className="text-xs text-foreground/80 flex items-center gap-1.5">
-                        <span className="h-1 w-1 rounded-full bg-gold-500" />
-                        {w}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {bio && bio.tags.length > 0 && (
-                <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
-                  <h5 className="mb-2 flex items-center gap-1 text-xs font-semibold text-muted-foreground">
-                    <Tag className="h-3 w-3" />
-                    برچسب‌ها و سبک نگارش:
-                  </h5>
-                  <div className="flex flex-wrap gap-1.5">
-                    {bio.tags.map((t) => (
-                      <span
-                        key={t}
-                        className="rounded-md border border-border/60 bg-background/80 px-2 py-0.5 text-xs text-foreground"
-                      >
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* External Links */}
-            {(bio?.wikipedia || bio?.website) && (
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                {bio.wikipedia && (
-                  <Button asChild variant="outline" size="sm" className="h-7 text-xs gap-1">
-                    <a href={bio.wikipedia} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-3 w-3" />
-                      ویکی‌پدیا
-                    </a>
-                  </Button>
-                )}
-                {bio.website && (
-                  <Button asChild variant="outline" size="sm" className="h-7 text-xs gap-1">
-                    <a href={bio.website} target="_blank" rel="noopener noreferrer">
-                      <Globe className="h-3 w-3" />
-                      وبگاه رسمی
-                    </a>
-                  </Button>
-                )}
-              </div>
-            )}
-
-            {/* Books in Library */}
-            <div>
-              <h4 className="mb-3 flex items-center gap-1.5 text-sm font-bold text-foreground">
-                <Library className="h-4 w-4 text-gold-600 dark:text-gold-400" />
-                کتاب‌ها در کتابخانه کتاب‌یار
-                <span className="text-xs font-normal text-muted-foreground">
-                  ({locale.toPersianDigits(author.books.length)})
-                </span>
-              </h4>
-
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                {author.books.map((b) => (
-                  <BookCard key={b.slug} book={b} />
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
+        {isExpanded && <AuthorExpandedDetails author={author} bio={bio} locale={locale} />}
       </AnimatePresence>
 
       {/* Footer controls */}

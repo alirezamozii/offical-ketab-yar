@@ -206,7 +206,7 @@ export function BlogPageClient() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-40px' }}
                 transition={{ duration: 0.4, delay: i * 0.05 }}
-                className="group py-6"
+                className="group py-6 cull-offscreen"
               >
                 <Link
                   href={`/blog/${post.slug}`}

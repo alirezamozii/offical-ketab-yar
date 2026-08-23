@@ -8,6 +8,7 @@ import {
   Sparkles,
   Trophy,
   ImageIcon,
+  Languages,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Magnetic } from '@/components/home/magnetic'
@@ -59,7 +60,7 @@ export function HeroSection({ booksCount = 0 }: { booksCount?: number } = {}) {
               text-end = left. So we use text-start on desktop. */}
           <div className="space-y-4 text-center lg:text-start">
             <div
-              className="inline-flex items-center gap-2 rounded-full border border-gold-300/60 bg-beige-200/70 px-4 py-2 dark:border-gold-500/20 dark:bg-gold-500/10 animate-in fade-in slide-in-from-bottom-2 duration-700"
+              className="inline-flex items-center gap-2 rounded-full border border-gold-300/60 bg-beige-200/70 px-4 py-2 dark:border-gold-500/20 dark:bg-gold-500/10"
             >
               <Sparkles aria-hidden="true" className="h-4 w-4 text-gold-600 dark:text-gold-400" />
               <span className="text-sm font-semibold text-gold-800 dark:text-gold-300">
@@ -68,7 +69,7 @@ export function HeroSection({ booksCount = 0 }: { booksCount?: number } = {}) {
             </div>
 
             <div
-              className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-75 fill-mode-both"
+              className="space-y-3"
             >
               <h1
                 id="hero-heading"
@@ -94,7 +95,7 @@ export function HeroSection({ booksCount = 0 }: { booksCount?: number } = {}) {
 
             {/* Value-prop pills */}
             <div
-              className="flex flex-wrap items-center justify-center gap-2 lg:justify-start animate-in fade-in slide-in-from-bottom-3 duration-700 delay-100 fill-mode-both"
+              className="flex flex-wrap items-center justify-center gap-2 lg:justify-start"
             >
               {VALUE_PILLS.map((p) => {
                 const Icon = p.icon
@@ -111,14 +112,14 @@ export function HeroSection({ booksCount = 0 }: { booksCount?: number } = {}) {
             </div>
 
             <p
-              className="mx-auto max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg lg:mx-0 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 fill-mode-both"
+              className="mx-auto max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg lg:mx-0"
             >
               ترجمه پاراگراف به پاراگراف، دیکشنری فوری، چت با هوش مصنوعی و
               سیستم امتیاز و سطح. یادگیری زبان انگلیسی هرگز این‌قدر لذت‌بخش نبوده.
             </p>
 
             <div
-              className="flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row lg:justify-start animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 fill-mode-both"
+              className="flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row lg:justify-start"
             >
               {/* Primary CTA — "شروع رایگان" → /library
                   Per user feedback: added Magnetic + shimmer effects
@@ -165,7 +166,7 @@ export function HeroSection({ booksCount = 0 }: { booksCount?: number } = {}) {
 
             {/* Trust microcopy */}
             <div
-              className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground lg:justify-start animate-in fade-in duration-700 delay-300 fill-mode-both"
+              className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground lg:justify-start"
             >
               <span className="inline-flex items-center gap-1">
                 <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5 text-gold-600 dark:text-gold-400" />
@@ -178,7 +179,7 @@ export function HeroSection({ booksCount = 0 }: { booksCount?: number } = {}) {
             </div>
 
             <div
-              className="flex flex-wrap items-center justify-center gap-6 pt-3 lg:justify-start animate-in fade-in duration-700 delay-500 fill-mode-both"
+              className="flex flex-wrap items-center justify-center gap-6 pt-3 lg:justify-start"
             >
               <div className="flex items-center gap-2" aria-live="polite">
                 <BookOpen aria-hidden="true" className="h-5 w-5 text-gold-600 dark:text-gold-400" />

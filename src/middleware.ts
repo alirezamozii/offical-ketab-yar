@@ -70,8 +70,8 @@ export function middleware(_request: NextRequest) {
     return NextResponse.redirect(targetUrl, 307)
   }
 
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
   const isDev = process.env.NODE_ENV === 'development'
-  const nonce = crypto.randomUUID()
   const csp = [
     "default-src 'self'",
     isDev

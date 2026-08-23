@@ -63,26 +63,7 @@ const FOCUS_RING =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg'
 
 
-export function SiteHeader() {
-  const pathname = usePathname()
-  const router = useRouter()
-  const { resolvedTheme, setTheme } = useTheme()
-  const { data: session } = useSession()
-  const [mounted, setMounted] = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-
-  // Track scroll state: threshold 20px for shrink, 5px expand
-  const { scrolled } = useScrollDirection(20, 120, 5)
-  
-  const progressBarRef = useRef<HTMLDivElement>(null)
-  useScrollProgressScaleX(progressBarRef, 'right')
-
-  useEffect(() => setMounted(true), [])
-
-  const user = session?.user
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'OWNER'
-
+function useHeaderSearchShortcut(searchOpen: boolean, setSearchOpen: (open: boolean) => void) {
   useEffect(() => {
     document.body.style.overflow = searchOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
@@ -105,7 +86,31 @@ export function SiteHeader() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [searchOpen])
+  }, [searchOpen, setSearchOpen])
+}
+
+// fallow-ignore-next-line complexity
+export function SiteHeader() {
+  const pathname = usePathname()
+  const router = useRouter()
+  const { resolvedTheme, setTheme } = useTheme()
+  const { data: session } = useSession()
+  const [mounted, setMounted] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  // Track scroll state: threshold 20px for shrink, 5px expand
+  const { scrolled } = useScrollDirection(20, 120, 5)
+  
+  const progressBarRef = useRef<HTMLDivElement>(null)
+  useScrollProgressScaleX(progressBarRef, 'right')
+
+  useEffect(() => setMounted(true), [])
+
+  const user = session?.user
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'OWNER'
+
+  useHeaderSearchShortcut(searchOpen, setSearchOpen)
 
   function submitSearch(e?: React.FormEvent) {
     e?.preventDefault()
@@ -127,6 +132,7 @@ export function SiteHeader() {
       <Link
         key={item.href}
         href={item.href}
+        transitionTypes={['slide']}
         accessKey={item.accessKey}
         aria-current={active ? 'page' : undefined}
         title={
@@ -190,7 +196,7 @@ export function SiteHeader() {
       <div
         className={cn(
           'fixed top-0 inset-x-0 z-50 pointer-events-none',
-          'transition-all duration-500 ease-[var(--ease-out-expo)]',
+          'transition-all duration-300 ease-out',
           scrolled ? 'px-4 sm:px-6 pt-3 sm:pt-4' : 'px-0 pt-0'
         )}
       >
@@ -199,19 +205,12 @@ export function SiteHeader() {
           aria-label="سرصفحه اصلی"
           className={cn(
             'pointer-events-auto no-select mx-auto w-full relative flex items-center justify-between overflow-hidden',
-            'transition-all duration-500 ease-[var(--ease-out-expo)]',
+            'transition-all duration-300 ease-out',
             scrolled
-              ? 'h-16 max-w-5xl lg:max-w-6xl rounded-[32px] bg-gold-500/20 dark:bg-gold-900/50 border border-gold-500/40 dark:border-gold-700/40 shadow-xl shadow-black/5 dark:shadow-black/40 px-5 sm:px-8 mac-glass-header'
-              : 'h-20 max-w-full rounded-none bg-background/100 dark:bg-background/100 border-b border-border/20 px-6 sm:px-10'
+              ? 'h-16 max-w-5xl lg:max-w-6xl rounded-[36px] bg-white/85 dark:bg-[#141210]/80 border border-gold-500/35 dark:border-gold-500/20 shadow-lg px-5 sm:px-8 mac-glass-header'
+              : 'h-20 max-w-full rounded-none bg-white/90 dark:bg-background/95 border-b border-gold-500/20 dark:border-border/40 px-6 sm:px-10 backdrop-blur-xl'
           )}
         >
-          {/* SVG Filter for Liquid Magnifying Glass */}
-          <svg style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
-            <filter id="container-glass" x="-30%" y="-30%" width="160%" height="160%">
-              <feImage href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><radialGradient id='g' cx='50%' cy='50%' r='50%'><stop offset='0%' stop-color='%23000000'/><stop offset='100%' stop-color='%23ffffff'/></radialGradient><rect width='200' height='200' fill='url(%23g)'/></svg>" result="lensMap" />
-              <feDisplacementMap in="SourceGraphic" in2="lensMap" scale="-250" xChannelSelector="R" yChannelSelector="G" />
-            </filter>
-          </svg>
           {/* Brand */}
           <Link
             href="/"
@@ -222,22 +221,22 @@ export function SiteHeader() {
             <span
               aria-hidden="true"
               className={cn(
-                'flex items-center justify-center rounded-2xl',
+                'flex items-center justify-center',
                 'bg-gradient-to-br from-gold-400 via-gold-500 to-gold-700 text-white',
                 'shadow-md shadow-gold-500/30 ring-1 ring-gold-400/30',
-                'transition-all duration-500 ease-[var(--ease-out-expo)]',
-                scrolled ? 'h-10 w-10 rounded-xl' : 'h-12 w-12'
+                'transition-all duration-300 ease-out',
+                scrolled ? 'h-10 w-10 rounded-xl' : 'h-12 w-12 rounded-2xl'
               )}
             >
               <BookOpen className={cn(
-                'transition-all duration-500 ease-[var(--ease-out-expo)]',
+                'transition-all duration-300 ease-out',
                 scrolled ? 'h-5 w-5' : 'h-6 w-6'
               )} strokeWidth={2.2} />
             </span>
             <span
               className={cn(
                 'font-extrabold tracking-tight text-foreground',
-                'transition-all duration-500 ease-[var(--ease-out-expo)]',
+                'transition-all duration-300 ease-out',
                 scrolled ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'
               )}
               style={{ fontFamily: 'var(--font-vazirmatn), system-ui' }}

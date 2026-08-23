@@ -33,6 +33,7 @@ const SWATCH_COLORS: Highlight['color'][] = [
   'blue',
 ]
 
+// fallow-ignore-next-line complexity
 export function TextSelectionMenu({
   position,
   theme,

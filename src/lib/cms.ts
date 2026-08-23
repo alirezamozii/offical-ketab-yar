@@ -16,6 +16,7 @@
  *     churn.
  */
 
+import { cache } from 'react'
 import { db } from '@/lib/db'
 import type {
   CuratedQuote,
@@ -74,19 +75,37 @@ export function dbQuoteToLegacy(q: {
   }
 }
 
+function withTimeout<T>(promise: Promise<T>, ms = 100, fallback: T): Promise<T> {
+  let timer: NodeJS.Timeout
+  const timeout = new Promise<T>((resolve) => {
+    timer = setTimeout(() => resolve(fallback), ms)
+  })
+  return Promise.race([
+    promise.then((res) => {
+      clearTimeout(timer)
+      return res
+    }),
+    timeout,
+  ]).catch(() => fallback)
+}
+
 /** Fetch all active quotes, ordered by `displayOrder`. */
-export async function getActiveQuotes(): Promise<CuratedQuote[]> {
+export const getActiveQuotes = cache(async function getActiveQuotes(): Promise<CuratedQuote[]> {
   try {
-    const rows = await db.quote.findMany({
-      where: { isActive: true },
-      orderBy: [{ displayOrder: 'asc' }, { createdAt: 'asc' }],
-    })
+    const rows = await withTimeout(
+      db.quote.findMany({
+        where: { isActive: true },
+        orderBy: [{ displayOrder: 'asc' }, { createdAt: 'asc' }],
+      }),
+      1000,
+      [],
+    )
     return rows.map(dbQuoteToLegacy)
   } catch {
     console.warn('[getActiveQuotes] DB offline or query skipped.')
     return []
   }
-}
+})
 
 /** Fetch all quotes (including inactive) — admin panel use. */
 export async function getAllQuotes() {

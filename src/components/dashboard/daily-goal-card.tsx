@@ -157,8 +157,9 @@ export function DailyGoalCard() {
                 ? 'bg-gradient-to-r from-emerald-400 to-teal-500'
                 : 'bg-gradient-to-r from-gold-400 to-gold-600',
             )}
-            initial={{ width: 0 }}
-            animate={{ width: `${goalProgress}%` }}
+            style={{ transformOrigin: 'right', width: '100%' }}
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: Math.min(1, Math.max(0, goalProgress / 100)) }}
             transition={{ duration: 0.6, ease: 'easeOut' }}
           />
         </div>

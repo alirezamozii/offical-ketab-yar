@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { db } from '@/lib/db'
 
 // Re-export the canonical reader types so callers can import them from a
@@ -138,69 +139,129 @@ function toListItem(b: any): BookListItem {
   }
 }
 
-// ---------------------------------------------------------------------------
-// BOOK QUERIES — All use Prisma directly
-// ---------------------------------------------------------------------------
+// Optimized select object for book lists — excludes long-form markdown fields (e.g. author.biography, bioFa)
+const bookSelect = {
+  id: true,
+  slug: true,
+  title: true,
+  authorId: true,
+  description: true,
+  coverFrom: true,
+  coverTo: true,
+  coverAccent: true,
+  coverImage: true,
+  coverImageUrl: true,
+  coverBlurhash: true,
+  genres: true,
+  level: true,
+  rating: true,
+  reviewCount: true,
+  viewCount: true,
+  pageCount: true,
+  isPremium: true,
+  isPublished: true,
+  publishedYear: true,
+  allowDownload: true,
+  author: {
+    select: {
+      id: true,
+      name: true,
+      nameFa: true,
+      slug: true,
+    },
+  },
+} as const
 
-export async function getBooks(): Promise<BookListItem[]> {
+// Helper to prevent database connection retries from hanging page render
+function withTimeout<T>(promise: Promise<T>, ms = 100, fallback: T): Promise<T> {
+  let timer: NodeJS.Timeout
+  const timeout = new Promise<T>((resolve) => {
+    timer = setTimeout(() => resolve(fallback), ms)
+  })
+  return Promise.race([
+    promise.then((res) => {
+      clearTimeout(timer)
+      return res
+    }),
+    timeout,
+  ]).catch(() => fallback)
+}
+
+export const getBooks = cache(async function getBooks(): Promise<BookListItem[]> {
   try {
-    const books = await db.book.findMany({
-      where: { isPublished: true },
-      include: { author: true },
-      orderBy: { createdAt: 'desc' },
-      take: 100,
-    })
+    const books = await withTimeout(
+      db.book.findMany({
+        where: { isPublished: true },
+        select: bookSelect,
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+      }),
+      1000,
+      [],
+    )
     return books.map(toListItem)
   } catch {
     console.warn('[getBooks] DB offline or query skipped.')
     return []
   }
-}
+})
 
-export async function getRecentlyAddedBooks(limit = 12): Promise<BookListItem[]> {
+export const getRecentlyAddedBooks = cache(async function getRecentlyAddedBooks(limit = 12): Promise<BookListItem[]> {
   try {
-    const books = await db.book.findMany({
-      where: { isPublished: true },
-      include: { author: true },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-    })
+    const books = await withTimeout(
+      db.book.findMany({
+        where: { isPublished: true },
+        select: bookSelect,
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+      }),
+      1000,
+      [],
+    )
     return books.map(toListItem)
   } catch {
     console.warn('[getRecentlyAddedBooks] DB offline or query skipped.')
     return []
   }
-}
+})
 
-export async function getHighestRatedBooks(limit = 12): Promise<BookListItem[]> {
+export const getHighestRatedBooks = cache(async function getHighestRatedBooks(limit = 12): Promise<BookListItem[]> {
   try {
-    const books = await db.book.findMany({
-      where: { isPublished: true },
-      include: { author: true },
-      orderBy: { rating: 'desc' },
-      take: limit,
-    })
+    const books = await withTimeout(
+      db.book.findMany({
+        where: { isPublished: true },
+        select: bookSelect,
+        orderBy: { rating: 'desc' },
+        take: limit,
+      }),
+      1000,
+      [],
+    )
     return books.map(toListItem)
   } catch {
     console.warn('[getHighestRatedBooks] DB offline or query skipped.')
     return []
   }
-}
+})
 
-export async function getMostReadBooks(limit = 12): Promise<BookListItem[]> {
+export const getMostReadBooks = cache(async function getMostReadBooks(limit = 12): Promise<BookListItem[]> {
   try {
-    const books = await db.book.findMany({
-      where: { isPublished: true },
-      include: { author: true },
-      orderBy: { viewCount: 'desc' },
-      take: limit,
-    })
+    const books = await withTimeout(
+      db.book.findMany({
+        where: { isPublished: true },
+        select: bookSelect,
+        orderBy: { viewCount: 'desc' },
+        take: limit,
+      }),
+      1000,
+      [],
+    )
     return books.map(toListItem)
   } catch {
     console.warn('[getMostReadBooks] DB offline or query skipped.')
     return []
   }
-}
+})
 
 /**
  * Deterministic "Book of the Day" — picks a different book each day based on
@@ -267,9 +328,10 @@ export async function getReaderBook(
         author: true,
         chapters: { orderBy: { order: 'asc' } },
         pages: {
-          where: from !== undefined && to !== undefined
-            ? { pageNumber: { gte: from, lte: to } }
-            : undefined,
+          where:
+            from !== undefined && to !== undefined
+              ? { pageNumber: { gte: from, lte: to } }
+              : undefined,
           orderBy: { pageNumber: 'asc' },
         },
       },
@@ -323,7 +385,7 @@ export async function getRelatedBooks(
           slug: { not: slug },
           isPublished: true,
         },
-        include: { author: true },
+        select: bookSelect,
         orderBy: { rating: 'desc' },
         take: limit,
       })
@@ -336,7 +398,7 @@ export async function getRelatedBooks(
         slug: { not: slug },
         isPublished: true,
       },
-      include: { author: true },
+      select: bookSelect,
       take: 100,
     })
 
@@ -387,7 +449,7 @@ export async function getBookById(id: string): Promise<BookListItem | null> {
   try {
     const book = await db.book.findUnique({
       where: { id },
-      include: { author: true },
+      select: bookSelect,
     })
     if (!book) return null
     return toListItem(book)
@@ -405,12 +467,12 @@ export async function getBooksByGenre(
   try {
     const offset = cursor ? Number(cursor) : 0
 
-    // We can't use Prisma's `contains` on a JSON string field easily,
-    // so we fetch all published books and filter in-memory.
+    // Fetch candidate pool (bounded to 200 to protect RAM)
     const allBooks = await db.book.findMany({
       where: { isPublished: true },
-      include: { author: true },
+      select: bookSelect,
       orderBy: { rating: 'desc' },
+      take: 200,
     })
 
     const filtered = allBooks.filter((b) =>
@@ -468,7 +530,7 @@ export async function searchBooks(
           { author: { nameFa: { contains: q, mode: 'insensitive' } } },
         ],
       },
-      include: { author: true },
+      select: bookSelect,
       take: 100,
     })
 
@@ -513,7 +575,7 @@ export async function getRandomBook(): Promise<BookListItem | null> {
     const skip = Math.floor(Math.random() * count)
     const books = await db.book.findMany({
       where: { isPublished: true },
-      include: { author: true },
+      select: bookSelect,
       skip,
       take: 1,
     })
@@ -530,20 +592,18 @@ export async function getAuthors(): Promise<AuthorSummary[]> {
     const authors = await db.author.findMany({
       orderBy: [{ featured: 'desc' }, { name: 'asc' }],
       take: 100,
+      include: {
+        books: {
+          where: { isPublished: true },
+          select: bookSelect,
+          orderBy: { createdAt: 'desc' },
+          take: 100,
+        },
+      },
     })
 
-    const results = await Promise.all(authors.map(async (a) => {
-      const books = await db.book.findMany({
-        where: {
-          authorId: a.id,
-          isPublished: true,
-        },
-        include: { author: true },
-        orderBy: { createdAt: 'desc' },
-        take: 100,
-      })
-
-      const items = books.map(toListItem)
+    return authors.map((a) => {
+      const items = a.books.map(toListItem)
       const genres = Array.from(new Set(items.flatMap((b) => b.genres))).sort()
       const totalPages = items.reduce((sum, b) => sum + b.pageCount, 0)
       const rated = items.filter((b) => b.rating > 0)
@@ -589,9 +649,7 @@ export async function getAuthors(): Promise<AuthorSummary[]> {
         website: (a as Record<string, unknown>).website ? String((a as Record<string, unknown>).website) : '',
         wikipedia: (a as Record<string, unknown>).wikipedia ? String((a as Record<string, unknown>).wikipedia) : '',
       })
-    }))
-
-    return results
+    })
   } catch (err) {
     const isConnErr = err instanceof Error && (err.message.includes("Can't reach database") || err.message.includes('P1001'))
     if (isConnErr) {
