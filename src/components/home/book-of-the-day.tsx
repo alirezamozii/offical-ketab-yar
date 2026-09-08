@@ -32,14 +32,14 @@ export async function BookOfTheDay() {
 
   return (
     <section className="relative overflow-hidden border-y border-gold-500/20 bg-gradient-to-br from-gold-50/80 via-card to-gold-100/40 dark:from-gold-900/10 dark:via-card dark:to-gold-800/5">
-      {/* Ambient gold glow */}
+      {/* Ambient gold glow — GPU-accelerated radial gradient */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-20 left-1/4 h-64 w-64 rounded-full bg-gold-500/15 blur-3xl"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -bottom-20 right-1/4 h-64 w-64 rounded-full bg-amber-400/10 blur-3xl"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle at 35% 0%, rgba(212,175,55,0.12) 0%, transparent 60%), radial-gradient(circle at 75% 100%, rgba(251,191,36,0.08) 0%, transparent 60%)',
+        }}
       />
 
       <div className="relative mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
@@ -54,7 +54,7 @@ export async function BookOfTheDay() {
               <Sparkles className="h-4 w-4 text-gold-500" />
             </h2>
             <p className="text-xs text-muted-foreground">
-              پیشنهاد ویژه کتاب‌یار برای امروز
+              پیشنهاد ویژه بوکزی برای امروز
             </p>
           </div>
         </div>
@@ -129,13 +129,13 @@ export async function BookOfTheDay() {
             {/* CTA */}
             <div className="flex flex-wrap gap-2">
               <Button asChild variant="glow" size="sm" className="gap-1.5">
-                <Link href={`/books/read/${book.slug}`}>
+                <Link href={`/books/read/${book.slug}`} prefetch={false}>
                   <BookOpen className="h-4 w-4" />
                   شروع مطالعه
                 </Link>
               </Button>
               <Button asChild variant="outline" size="sm">
-                <Link href={`/books/${book.slug}`}>جزئیات بیشتر</Link>
+                <Link href={`/books/${book.slug}`} prefetch={false}>جزئیات بیشتر</Link>
               </Button>
             </div>
           </div>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { Prisma } from '@prisma/client'
-import { getOrCreateGuestId } from '@/lib/session'
+import { getEffectiveOwner } from '@/lib/session'
 import { cache, TTL } from '@/lib/cache'
 
 function parseGenres(raw: string): string[] {
@@ -81,19 +81,23 @@ function toListItem(b: RecRow) {
  * The browser may cache briefly; the in-process L1 cache (in cache.wrap below)
  * is keyed on the guest id so it never cross-contaminates.
  */
-const REC_CACHE_CONTROL = 'private, max-age=120, s-maxage=300'
+const REC_CACHE_CONTROL = 'private, no-store'
 
 export async function GET(req: NextRequest) {
-  const { id: guestId } = await getOrCreateGuestId()
+  const owner = await getEffectiveOwner()
+  const where = owner.userId ? { userId: owner.userId } : { guestId: owner.guestId! }
   const url = new URL(req.url)
-  const limit = Math.min(Number(url.searchParams.get('limit')) || 6, 12)
-  const cacheKey = `rec:${guestId}:${limit}`
+  const requestedLimit = Number(url.searchParams.get('limit'))
+  const limit = Number.isInteger(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 12) : 6
+  const ownerKey = owner.userId ? `u:${owner.userId}` : `g:${owner.guestId}`
+  const cacheKey = `rec:${ownerKey}:${limit}`
 
   try {
     const payload = await cache.wrap(cacheKey, async () => {
       // 1. gather the user's reading history
       const progress = await db.readingProgress.findMany({
-        where: { guestId },
+        where,
+        select: { bookSlug: true },
       })
       const readSlugs = new Set(progress.map((p) => p.bookSlug))
 

@@ -26,7 +26,7 @@
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useSession, signIn } from 'next-auth/react'
-import { motion, useReducedMotion } from 'framer-motion'
+
 import {
   Dialog,
   DialogContent,
@@ -98,7 +98,6 @@ const SKIP_PREFIXES = ['/auth', '/api', '/admin', '/onboarding']
 export function SignupPrompt() {
   const pathname = usePathname()
   const { data: session, status } = useSession()
-  const reduceMotion = useReducedMotion()
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -163,7 +162,7 @@ export function SignupPrompt() {
         aria-describedby={undefined}
         className="gap-0 overflow-hidden rounded-3xl border p-0 sm:max-w-sm bg-gradient-to-br from-gold-50 to-gold-100 dark:from-background dark:to-card border-gold-400/50 shadow-2xl shadow-gold-800/40"
       >
-        <DialogTitle className="sr-only">از کتاب‌یار لذت می‌برید؟</DialogTitle>
+        <DialogTitle className="sr-only">از بوکزی لذت می‌برید؟</DialogTitle>
         <DialogDescription className="sr-only">
           با ثبت‌نام رایگان، پیشرفت خود را ذخیره کنید، واژگان بسازید و به همه امکانات هوش مصنوعی دسترسی پیدا کنید.
         </DialogDescription>
@@ -186,19 +185,16 @@ export function SignupPrompt() {
 
         <div className="space-y-4 p-6 text-center sm:p-8">
           {/* Icon */}
-          <motion.div
-            initial={reduceMotion ? {} : { scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+          <div
             className="mx-auto inline-flex h-16 w-16 items-center justify-center rounded-2xl text-white bg-gradient-to-br from-gold-500 via-gold-700 to-gold-800 shadow-lg shadow-gold-700/50"
           >
             <BookOpen className="h-8 w-8" strokeWidth={1.5} />
-          </motion.div>
+          </div>
 
           {/* Title */}
           <div className="space-y-1.5">
             <h2 className="text-xl font-bold text-gold-950 dark:text-gold-100">
-              از کتاب‌یار لذت می‌برید؟
+              از بوکزی لذت می‌برید؟
             </h2>
             <p className="text-sm leading-relaxed text-gold-700 dark:text-gold-300">
               با ثبت‌نام رایگان، پیشرفت خود را ذخیره کنید، واژگان بسازید و

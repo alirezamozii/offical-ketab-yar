@@ -63,9 +63,8 @@ function AuthorCardSkeleton() {
         <Skeleton className="h-3 w-full" />
         <Skeleton className="h-3 w-5/6" />
       </div>
-      <div className="mt-4 flex items-center justify-between border-t border-border/40 pt-4">
-        <Skeleton className="h-8 w-36 rounded-md" />
-        <Skeleton className="h-4 w-20" />
+      <div className="mt-4 border-t border-border/40 pt-4">
+        <Skeleton className="h-10 w-full rounded-xl" />
       </div>
     </div>
   )

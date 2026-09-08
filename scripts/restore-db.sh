@@ -4,8 +4,8 @@
 # Restores the database from a backup file.
 #
 # Usage:
-#   ./scripts/restore-db.sh backups/ketabyar-20260717T020000Z.db
-#   ./scripts/restore-db.sh backups/ketabyar-20260717T020000Z.sql.gz
+#   ./scripts/restore-db.sh backups/bookzi-20260717T020000Z.db
+#   ./scripts/restore-db.sh backups/bookzi-20260717T020000Z.sql.gz
 # ---------------------------------------------------------------
 set -euo pipefail
 

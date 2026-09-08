@@ -35,7 +35,7 @@ function slugifyAuthor(name: string): string {
 
 
 async function main() {
-  console.log('🌱 Seeding Ketab-Yar database...')
+  console.log('🌱 Seeding Bookzi (بوکزی) database...')
 
   // Clean slate — delete in dependency order to avoid cascade friction.
   await prisma.userStats.deleteMany()

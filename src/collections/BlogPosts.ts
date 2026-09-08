@@ -8,6 +8,7 @@
 
 import type { CollectionConfig } from 'payload'
 import { slugify } from '../lib/utils'
+import { canDeleteContent } from '../payload/access'
 
 export const blogPostsCollection: CollectionConfig = {
   slug: 'blogPosts',
@@ -33,7 +34,7 @@ export const blogPostsCollection: CollectionConfig = {
     },
     create: ({ req: { user } }) => Boolean(user),
     update: ({ req: { user } }) => Boolean(user),
-    delete: ({ req: { user } }) => Boolean(user),
+    delete: ({ req: { user } }) => canDeleteContent(user),
   },
   versions: {
     drafts: {
@@ -69,7 +70,7 @@ export const blogPostsCollection: CollectionConfig = {
       name: 'content',
       label: 'متن کامل مقاله',
       type: 'richText',
-      admin: { description: 'متن کامل به همراه تیترها، نقل‌قول‌ها و تصاویر' },
+      admin: { description: 'متن کامل به همراه تیترها، کوت‌ها و تصاویر' },
     },
     {
       name: 'cover',

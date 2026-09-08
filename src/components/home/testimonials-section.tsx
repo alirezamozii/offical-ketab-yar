@@ -1,4 +1,4 @@
-import { TestimonialsCarousel } from '@/components/home/testimonials-carousel'
+import { DeferredTestimonialsCarousel } from '@/components/home/deferred-testimonials-carousel'
 
 export function TestimonialsSection() {
   return (
@@ -9,14 +9,14 @@ export function TestimonialsSection() {
           تجربه استفاده
         </span>
         <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-          با کتاب‌یار چه‌کار می‌توان کرد؟
+          با بوکزی چه‌کار می‌توان کرد؟
         </h2>
         <p className="mx-auto max-w-2xl text-xs text-muted-foreground sm:text-sm">
-          یک نگاه سریع به کارهایی که هر روز می‌توانید با کتاب‌یار انجام دهید.
+          یک نگاه سریع به کارهایی که هر روز می‌توانید با بوکزی انجام دهید.
         </p>
       </div>
 
-      <TestimonialsCarousel />
+      <DeferredTestimonialsCarousel />
     </section>
   )
 }

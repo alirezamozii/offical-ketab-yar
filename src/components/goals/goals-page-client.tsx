@@ -1613,11 +1613,12 @@ export function GoalsPageClient() {
       )
       // Persist to the server (best-effort validation).
       try {
-        await fetch('/api/goals', {
+        const response = await fetch('/api/goals/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ goals: updated }),
         })
+        if (!response.ok) throw new Error(`Goal sync failed: ${response.status}`)
       } catch {
         /* the API is best-effort; localStorage is the source of truth */
       }

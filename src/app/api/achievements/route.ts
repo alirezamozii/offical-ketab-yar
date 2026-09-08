@@ -121,7 +121,7 @@ export async function GET() {
 
     return NextResponse.json(payload, {
       headers: {
-        'Cache-Control': 'private, max-age=30',
+        'Cache-Control': 'private, no-store',
       },
     })
   } catch (err) {

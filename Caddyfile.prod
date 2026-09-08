@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Ketab-Yar — production Caddyfile
+# Bookzi (بوکزی) — production Caddyfile
 #
 # This is the PRODUCTION Caddyfile. The dev Caddyfile (./Caddyfile, listens
 # on :81, has the XTransformPort SSRF hack for sandbox preview iframes) is
@@ -65,13 +65,6 @@
 		# header in next.config.ts.
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), browsing-topics=()"
 
-		# Content-Security-Policy — Next.js already sets a tighter, route-aware
-		# CSP in next.config.ts. We set a permissive fallback here that the
-		# upstream header will OVERRIDE (Next's headers win on the response).
-		# If you want Caddy to be the single source of truth, comment out the
-		# CSP block in next.config.ts and tighten this one instead.
-		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://internal-api.z.ai; media-src 'self' blob: data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests"
-
 		# CORS — we don't expose a public API, so deny cross-origin reads.
 		# If you later expose /api/public/*, scope this to that path only.
 		# Access-Control-Allow-Origin "https://{$DOMAIN}"
@@ -84,8 +77,11 @@
 	# ── Static asset caching ──────────────────────────────────────────────────
 	# Next.js hashes _next/static/* filenames, so they're safe to cache
 	# aggressively. The HTML/JSON responses pass through uncached.
-	@static path /_next/static/* /favicon.ico /robots.txt /manifest.json /logo.svg
+	@static path /_next/static/*
 	header @static Cache-Control "public, max-age=31536000, immutable"
+
+	@publicStatic path /favicon.ico /robots.txt /manifest.json /logo.svg /icons/*
+	header @publicStatic Cache-Control "public, max-age=3600, must-revalidate"
 
 	# OG images — Next.js already sets s-maxage on these via next.config.ts,
 	# but we reinforce it here at the edge.

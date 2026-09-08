@@ -19,21 +19,22 @@ export function AnimatedGlowBorder({
   return (
     <div 
       className={cn(
-        "pointer-events-none absolute inset-0 z-10 rounded-[inherit] overflow-hidden", 
-        "opacity-0 animate-[glow-visibility_8s_ease-in-out_infinite]",
+        "pointer-events-none absolute inset-0 z-10 rounded-[inherit] overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-300", 
         className
       )}
       style={{
         padding: `${thickness}px`,
+        contentVisibility: 'auto',
         WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
         WebkitMaskComposite: 'xor',
         maskComposite: 'exclude',
       }}
     >
       <div 
-        className="absolute left-1/2 top-1/2 h-[300%] w-[300%] -translate-x-1/2 -translate-y-1/2 animate-[spin_3s_linear_infinite]"
+        className="absolute left-1/2 top-1/2 h-[300%] w-[300%] -translate-x-1/2 -translate-y-1/2 motion-safe:group-hover:animate-[spin_3s_linear_infinite]"
         style={{
-          background: `conic-gradient(from 0deg, transparent 50%, ${color} 100%)`
+          background: `conic-gradient(from 0deg, transparent 50%, ${color} 100%)`,
+          willChange: 'transform',
         }}
       />
     </div>

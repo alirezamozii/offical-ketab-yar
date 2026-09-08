@@ -123,11 +123,14 @@ export const WordBookEditor: React.FC<WordBookEditorProps> = ({
     const start = ref.selectionStart
     const end = ref.selectionEnd
     const fieldName: 'english' | 'farsi' = target === 'en' ? 'english' : 'farsi'
+    const currentVal = target === 'en' ? (currentPage.english || '') : (currentPage.farsi || '')
+    const selected = currentVal.substring(start, end)
+    const nextVal = currentVal.substring(0, start) + prefix + selected + suffix + currentVal.substring(end)
     handleUpdatePage(fieldName, nextVal)
 
     setTimeout(() => {
       ref.focus()
-      ref.setSelectionRange(start + prefix.length, start + prefix.length + (selected.length || 4))
+      ref.setSelectionRange(start + prefix.length, start + prefix.length + (selected.length || 0))
     }, 40)
   }
 

@@ -89,12 +89,15 @@ export async function GET(request: Request) {
     })
   } catch (err) {
     console.error('[/api/quotes] GET failed:', err)
+    const { SEED_QUOTES } = await import('@/lib/cms')
     return NextResponse.json(
       {
-        error:
-          'سرویس نقل‌قول‌ها در حال حاضر در دسترس نیست. لطفاً کمی بعد تلاش کنید.',
+        quotes: SEED_QUOTES,
+        quoteOfTheDay: SEED_QUOTES[0] ?? null,
+        total: SEED_QUOTES.length,
+        filtered: SEED_QUOTES.length,
       },
-      { status: 500, headers: { 'Cache-Control': 'no-store' } },
+      { headers: { 'Cache-Control': CACHE_CONTROL } },
     )
   }
 }

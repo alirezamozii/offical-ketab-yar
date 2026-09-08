@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect } from 'react'
-import * as Sentry from '@sentry/nextjs'
 
 /**
  * Global error boundary — the last line of defense.
@@ -40,15 +39,19 @@ export default function GlobalError({
     })
     // Forward to Sentry — this is the last-line-of-defense boundary, so
     // capture even errors that broke the layout itself.
-    Sentry.captureException(error, {
-      tags: {
-        boundary: 'global-error',
-        digest: error.digest ?? 'no-digest',
-      },
-      extra: {
-        url: typeof window !== 'undefined' ? window.location.href : 'SSR',
-      },
-    })
+    if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+      void import('@sentry/nextjs').then((Sentry) => {
+        Sentry.captureException(error, {
+          tags: {
+            boundary: 'global-error',
+            digest: error.digest ?? 'no-digest',
+          },
+          extra: {
+            url: typeof window !== 'undefined' ? window.location.href : 'SSR',
+          },
+        })
+      })
+    }
   }, [error])
 
   // Inline styles — we cannot rely on Tailwind globals.css being applied
@@ -63,7 +66,7 @@ export default function GlobalError({
   return (
     <html lang="fa" dir="rtl">
       <head>
-        <title>مشکلی پیش آمد | کتاب‌یار</title>
+        <title>مشکلی پیش آمد | بوکزی</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {/* Inline CSS — self-contained, no external dependency. */}
         <style>{`
@@ -197,7 +200,7 @@ export default function GlobalError({
       <body>
         <main role="alert" className="card">
           <span className="glow" aria-hidden="true" />
-          <span className="brand">کتاب‌یار</span>
+          <span className="brand">بوکزی</span>
 
           <div className="icon-tile" aria-hidden="true">
             {/* Inline SVG so we don't depend on lucide-react bundling here

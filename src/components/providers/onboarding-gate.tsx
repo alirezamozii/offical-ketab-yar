@@ -20,7 +20,7 @@ import { useSession } from 'next-auth/react'
 const SKIP_PREFIXES = ['/onboarding', '/auth', '/api', '/admin', '/offline']
 const SKIP_EXACT = ['/onboarding']
 
-export function OnboardingGate({ children }: { children: React.ReactNode }) {
+export function OnboardingGate({ children }: { children?: React.ReactNode } = {}) {
   const pathname = usePathname()
   const router = useRouter()
   const { data: session, status } = useSession()
@@ -40,5 +40,5 @@ export function OnboardingGate({ children }: { children: React.ReactNode }) {
     }
   }, [session, status, pathname, router])
 
-  return <>{children}</>
+  return children ? <>{children}</> : null
 }

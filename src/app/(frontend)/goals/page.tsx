@@ -3,12 +3,12 @@ import { GoalsPageLoader } from '@/components/goals/goals-page-loader'
 import { SITE } from '@/lib/site'
 
 export const metadata: Metadata = {
-  title: 'اهداف مطالعه | کتاب‌یار',
+  title: 'اهداف مطالعه | بوکزی',
   description:
     'اهداف روزانه، هفتگی و ماهانه مطالعه خود را تنظیم کنید، پیشرفت خود را در نمودارها و تقویم استمرار دنبال کنید و دستاوردهای مطالعه را ببینید.',
   alternates: { canonical: `${SITE.url}/goals` },
   openGraph: {
-    title: 'اهداف مطالعه | کتاب‌یار',
+    title: 'اهداف مطالعه | بوکزی',
     description:
       'اهداف روزانه، هفتگی و ماهانه مطالعه — نمودار سرعت، تقویم استمرار، توزیع زمانی و دستاوردها.',
     type: 'website',
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 export default function GoalsPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <h1 className="sr-only">اهداف مطالعه کتاب‌یار</h1>
+      <h1 className="sr-only">اهداف مطالعه بوکزی</h1>
       <GoalsPageLoader />
     </div>
   )

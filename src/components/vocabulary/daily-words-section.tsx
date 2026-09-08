@@ -19,7 +19,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { usePersianLocale } from '@/hooks/use-persian-locale'
-import { motion, useReducedMotion } from 'framer-motion'
 import {
   BookOpen,
   CalendarDays,
@@ -50,6 +49,44 @@ interface SavedWord {
   bookSlug: string
 }
 
+const FALLBACK_DAILY_WORDS: DailyWord[] = [
+  {
+    word: 'curious',
+    context: 'Alice was beginning to get very tired of sitting by her sister on the bank, and of having nothing to do.',
+    bookSlug: 'alice-in-wonderland',
+    bookTitle: "Alice's Adventures in Wonderland",
+    bookAuthor: 'Lewis Carroll',
+  },
+  {
+    word: 'affection',
+    context: 'It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.',
+    bookSlug: 'pride-and-prejudice',
+    bookTitle: 'Pride and Prejudice',
+    bookAuthor: 'Jane Austen',
+  },
+  {
+    word: 'essential',
+    context: 'It is only with the heart that one can see rightly; what is essential is invisible to the eye.',
+    bookSlug: 'the-little-prince',
+    bookTitle: 'The Little Prince',
+    bookAuthor: 'Antoine de Saint-Exupéry',
+  },
+  {
+    word: 'restless',
+    context: 'So we beat on, boats against the current, borne back ceaselessly into the past.',
+    bookSlug: 'the-great-gatsby',
+    bookTitle: 'The Great Gatsby',
+    bookAuthor: 'F. Scott Fitzgerald',
+  },
+  {
+    word: 'generous',
+    context: 'No one is useless in this world who lightens the burdens of another.',
+    bookSlug: 'a-christmas-carol',
+    bookTitle: 'A Christmas Carol',
+    bookAuthor: 'Charles Dickens',
+  },
+]
+
 export function DailyWordsSection({
   savedWords,
   onSaved,
@@ -58,9 +95,8 @@ export function DailyWordsSection({
   onSaved?: () => void
 }) {
   const { toPersianDigits, formatDate } = usePersianLocale()
-  const reduceMotion = useReducedMotion()
-  const [daily, setDaily] = useState<DailyWord[]>([])
-  const [loading, setLoading] = useState(true)
+  const [daily, setDaily] = useState<DailyWord[]>(FALLBACK_DAILY_WORDS)
+  const [loading, setLoading] = useState(false)
   const [addingWord, setAddingWord] = useState<string | null>(null)
   // words just saved in this session (so the button flips immediately)
   const [justSaved, setJustSaved] = useState<Set<string>>(new Set())
@@ -68,14 +104,14 @@ export function DailyWordsSection({
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
     fetch('/api/vocabulary/daily-words')
-      .then((r) => (r.ok ? r.json() : []))
-      .then((d: DailyWord[]) => {
-        if (!cancelled) setDaily(d)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: DailyWord[] | null) => {
+        if (!cancelled && Array.isArray(d) && d.length > 0) {
+          setDaily(d)
+        }
       })
-      .catch(() => !cancelled && setDaily([]))
-      .finally(() => !cancelled && setLoading(false))
+      .catch(() => {})
     return () => {
       cancelled = true
     }
@@ -193,11 +229,8 @@ export function DailyWordsSection({
               savedWordsLower.has(dw.word.toLowerCase())
             const isAdding = addingWord === dw.word
             return (
-              <motion.div
+              <div
                 key={`${dw.word}-${dw.bookSlug}`}
-                initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: reduceMotion ? 0 : i * 0.05, duration: 0.3 }}
                 className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-card p-4 shadow-sm transition-shadow hover:shadow-md"
               >
                 <div className="flex items-start justify-between gap-2">
@@ -260,7 +293,7 @@ export function DailyWordsSection({
                     {isSaved ? 'اضافه شد' : 'یاد بگیر'}
                   </Button>
                 </div>
-              </motion.div>
+              </div>
             )
           })}
         </div>

@@ -584,7 +584,7 @@ export function buildShareText(p: StatsPayload): string {
   const personality = p.personality.title
 
   const lines: string[] = []
-  lines.push(`📚 سال من در کتاب‌ها — کتاب‌یار`)
+  lines.push(`📚 سال من در کتاب‌ها — بوکزی`)
   lines.push(``)
   lines.push(`📖 ${books} کتاب تمام شد`)
   lines.push(`📄 ${pages} صفحه خواندم`)
@@ -593,6 +593,6 @@ export function buildShareText(p: StatsPayload): string {
   if (longest > 0) lines.push(`🔥 طولانی‌ترین استمرار: ${longest} روز`)
   lines.push(`✨ شخصیت مطالعه‌ای من: ${personality}`)
   lines.push(``)
-  lines.push(`شما هم سال خود را مرور کنید: ketabyar.ir/stats`)
+  lines.push(`شما هم سال خود را مرور کنید: bookzi.ir/stats`)
   return lines.join('\n')
 }

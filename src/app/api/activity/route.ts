@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getOrCreateGuestId } from '@/lib/session'
+import { getEffectiveOwner } from '@/lib/session'
 
 interface ActivityItem {
   id: string
@@ -11,23 +11,15 @@ interface ActivityItem {
   isCurrentUser: boolean
 }
 
-const MOCK_USERS = [
-  { name: 'آرش رضایی', action: 'کتاب جدیدی شروع کرد', book: 'The Time Machine' },
-  { name: 'سارا کریمی', action: 'به سطح ۱۰ رسید', book: '' },
-  { name: 'محمد حسینی', action: 'یک بازی واژگان انجام داد', book: '' },
-  { name: 'نگار احمدی', action: 'کتابی را تمام کرد', book: 'Peter Pan' },
-  { name: 'رضا نوری', action: '۵ واژه جدید یاد گرفت', book: '' },
-  { name: 'فاطمه علوی', action: 'نظری ثبت کرد', book: 'Pride and Prejudice' },
-]
-
-export async function GET(_req: NextRequest) {
-  const { id: guestId } = await getOrCreateGuestId()
+export async function GET() {
+  const owner = await getEffectiveOwner()
+  const where = owner.userId ? { userId: owner.userId } : { guestId: owner.guestId! }
   const items: ActivityItem[] = []
   const now = Date.now()
 
   // 1. User's own activity from reading progress
   const progress = await db.readingProgress.findMany({
-    where: { guestId },
+    where,
     select: { bookSlug: true, percent: true, lastReadAt: true },
     take: 5,
     orderBy: { lastReadAt: 'desc' },
@@ -67,7 +59,7 @@ export async function GET(_req: NextRequest) {
 
   // 2. User's vocabulary count
   const vocabCount = await db.vocabulary.count({
-    where: { guestId },
+    where,
   }).catch(() => 0)
 
   if (vocabCount > 0) {
@@ -82,7 +74,7 @@ export async function GET(_req: NextRequest) {
   }
 
   // 3. User's XP/level
-  const stats = await db.userStats.findUnique({ where: { guestId } }).catch(() => null)
+  const stats = await db.userStats.findUnique({ where }).catch(() => null)
   if (stats && stats.totalXP > 0) {
     items.push({
       id: 'self-level',
@@ -94,26 +86,10 @@ export async function GET(_req: NextRequest) {
     })
   }
 
-  // 4. Mock social activity (other users)
-  const mockCount = 6
-  for (let i = 0; i < mockCount; i++) {
-    const user = MOCK_USERS[i % MOCK_USERS.length]
-    const ts = now - (i + 1) * 7200_000 - Math.random() * 3600_000
-    const msg = user.book
-      ? `${user.name} ${user.action}: «${user.book}»`
-      : `${user.name} ${user.action}`
-    items.push({
-      id: `mock-${i}`,
-      type: 'social',
-      message: msg,
-      timestamp: ts,
-      icon: '👥',
-      isCurrentUser: false,
-    })
-  }
-
   // Sort by timestamp descending
   items.sort((a, b) => b.timestamp - a.timestamp)
 
-  return NextResponse.json({ items: items.slice(0, 15) })
+  return NextResponse.json({ items: items.slice(0, 15) }, {
+    headers: { 'Cache-Control': 'private, no-store' },
+  })
 }

@@ -502,7 +502,7 @@ export const EpubBatchStudio: React.FC<EpubBatchStudioProps> = ({ onBookCreated 
       if (res.success) {
         setStatusMessage({
           type: 'success',
-          text: `کتاب «${parsedBook.title}» با موفقیت در پایگاه داده کتاب‌یار ذخیره شد!`,
+          text: `کتاب «${parsedBook.title}» با موفقیت در پایگاه داده بوکزی ذخیره شد!`,
         })
         if (onBookCreated) onBookCreated(parsedBook.slug)
       } else {

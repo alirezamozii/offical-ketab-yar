@@ -26,7 +26,7 @@ import * as React from 'react'
 import { errorMessage } from '@/lib/error'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import Link from 'next/link'
-import { useTheme } from 'next-themes'
+import { useThemeToggle } from '@/hooks/use-theme-toggle'
 import { toast } from 'sonner'
 import {
   Accessibility,
@@ -506,7 +506,7 @@ function ReadingSection() {
               >
                 <span className="text-xs font-semibold text-foreground">{f.label}</span>
                 <span className="text-base text-foreground/80" style={{ fontFamily: f.stack }}>
-                  کتاب‌یار — Abc
+                  بوکزی — Abc
                 </span>
               </button>
             )
@@ -683,7 +683,7 @@ function ReadingSection() {
 // ===========================================================================
 
 function AppearanceSection() {
-  const { resolvedTheme, setTheme } = useTheme()
+  const { resolvedTheme, theme, toggleTheme } = useThemeToggle()
   const [mounted, setMounted] = React.useState(false)
   React.useEffect(() => setMounted(true), [])
 
@@ -699,7 +699,7 @@ function AppearanceSection() {
     { id: 'system', label: 'سیستم', icon: Monitor, bg: 'linear-gradient(135deg, #faf8f3 50%, #1a1814 50%)', text: '#a67f56' },
   ]
 
-  const active = mounted ? resolvedTheme : 'light'
+  const active = mounted ? (theme === 'system' ? 'system' : resolvedTheme) : 'light'
 
   return (
     <div className="space-y-5">
@@ -718,7 +718,7 @@ function AppearanceSection() {
               <button
                 key={t.id}
                 type="button"
-                onClick={() => setTheme(t.id)}
+                onClick={(e) => toggleTheme(t.id, e)}
                 aria-pressed={isActive}
                 aria-label={`تم ${t.label}`}
                 className={cn(
@@ -746,8 +746,8 @@ function AppearanceSection() {
           variant="outline"
           size="sm"
           className="gap-1.5"
-          onClick={() => {
-            setTheme('light')
+          onClick={(e) => {
+            toggleTheme('light', e)
             toast.success('تنظیمات ظاهر بازنشانی شد')
           }}
         >
@@ -1279,7 +1279,7 @@ function DataSection() {
       const a = document.createElement('a')
       const date = new Date().toISOString().slice(0, 10)
       a.href = url
-      a.download = `ketabyar-backup-${date}.json`
+      a.download = `bookzi-backup-${date}.json`
       a.click()
       URL.revokeObjectURL(url)
       toast.success('داده‌ها در فایل JSON ذخیره شد')
@@ -1422,7 +1422,7 @@ function DataSection() {
       const a = document.createElement('a')
       const date = new Date().toISOString().slice(0, 10)
       a.href = url
-      a.download = `ketabyar-data-${date}.json`
+      a.download = `bookzi-data-${date}.json`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -1880,7 +1880,7 @@ function AboutSection() {
     <div className="space-y-5">
       <SectionHeader
         icon={Info}
-        title="درباره کتاب‌یار"
+        title="درباره بوکزی"
         description="اطلاعات نسخه، اعتبارها و پیوندهای مفید."
       />
 
@@ -1939,7 +1939,7 @@ function AboutSection() {
 
       <SettingCard title="اعتبارها">
         <p className="text-sm leading-relaxed text-muted-foreground">
-          کتاب‌یار با عشق و باور به قدرت خواندن ساخته شده است. متون دوزبانه این
+          بوکزی با عشق و باور به قدرت خواندن ساخته شده است. متون دوزبانه این
           پلتفرم از منابع آزاد گردآوری شده و برای تجربه‌ای روان بهینه شده‌اند.
         </p>
         <Separator className="my-3" />
@@ -1993,7 +1993,7 @@ export function SettingsPageClient() {
               تنظیمات
             </h1>
             <p className="text-sm text-muted-foreground">
-              همه ترجیحات برنامه کتاب‌یار در یک جا — ظاهر، مطالعه، اعلان‌ها و داده.
+              همه ترجیحات برنامه بوکزی در یک جا — ظاهر، مطالعه، اعلان‌ها و داده.
             </p>
           </div>
         </div>

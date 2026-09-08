@@ -65,7 +65,7 @@ export default function ReaderError({
 
       {/* Brand wordmark */}
       <span className="mb-8 text-gradient-gold text-sm font-bold tracking-wide">
-        کتاب‌یار
+        بوکزی
       </span>
 
       {/* Icon */}

@@ -145,7 +145,7 @@ export function GettingStartedGuide({ ready: _ready }: GettingStartedGuideProps 
           </span>
           <div>
             <h2 className="text-lg font-extrabold leading-tight text-foreground sm:text-xl">
-              شروع کار با کتاب‌یار
+              شروع کار با بوکزی
             </h2>
             <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
               ۴ قدم ساده تا شروع ماجراجویی دوزبانه شما

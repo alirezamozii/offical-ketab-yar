@@ -1154,7 +1154,7 @@ function CreateCollectionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg gap-0 p-0 sm:rounded-2xl">
+      <DialogContent showCloseButton={false} className="max-w-lg gap-0 p-0 overflow-hidden rounded-3xl border shadow-2xl">
         {/* Header */}
         <div
           className={cn(

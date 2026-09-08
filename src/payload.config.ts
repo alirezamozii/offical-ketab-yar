@@ -25,6 +25,12 @@ import { quotesCollection } from './collections/Quotes'
 import { mediaCollection } from './collections/Media'
 import { UsersCollection } from './collections/Users'
 
+const payloadSecret = process.env.PAYLOAD_SECRET
+const isProductionBuild = process.env.NEXT_PHASE === 'phase-production-build'
+if (process.env.NODE_ENV === 'production' && !isProductionBuild && (!payloadSecret || payloadSecret.length < 32)) {
+  throw new Error('PAYLOAD_SECRET must be set to at least 32 characters in production')
+}
+
 export default buildConfig({
   // Admin panel — mounted at /admin (Payload's default)
   admin: {
@@ -73,6 +79,8 @@ export default buildConfig({
       connectionString: process.env.DATABASE_URL,
     },
     schemaName: 'payload',
+    // Payload owns its isolated `payload` schema. Keep schema sync enabled
+    // until the project adopts Payload's own migration runner.
     push: true,
   }),
 
@@ -80,7 +88,9 @@ export default buildConfig({
   editor: lexicalEditor(),
 
   // Secret — used for Payload's internal JWT auth
-  secret: process.env.PAYLOAD_SECRET || process.env.NEXTAUTH_SECRET || 'dev-payload-secret',
+  secret: payloadSecret || (isProductionBuild
+    ? 'build-only-payload-secret-not-used-at-runtime'
+    : 'dev-payload-secret-change-before-production'),
 
   // Typescript — generate types automatically
   typescript: {

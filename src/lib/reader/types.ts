@@ -59,6 +59,8 @@ export interface ReaderBook {
   }>
 }
 
+export type HighlightColor = 'yellow' | 'orange' | 'gold' | 'green' | 'pink' | 'blue'
+
 export interface Highlight {
   id: string
   /**
@@ -68,7 +70,7 @@ export interface Highlight {
    */
   page: number
   text: string
-  color: 'yellow' | 'orange' | 'gold' | 'green' | 'pink' | 'blue'
+  color: HighlightColor
   /** Optional user note attached to the highlight. */
   note?: string
   timestamp: number
@@ -119,7 +121,7 @@ export const DEFAULT_PREFERENCES: ReadingPreferences = {
   autoScrollInterval: 15,
   columnWidth: 'normal',
   margin: 'normal',
-  readingRhythm: 'free',
+  readingRhythm: 'snap',
   layout: 'continuous',
   fontFamily: 'vazirmatn',
   showParagraphNumbers: false,
@@ -183,16 +185,16 @@ export const THEME_STYLES: Record<
   light: {
     bg: '#faf8f3',
     text: '#2a2a2a',
-    accent: '#a67f56',
+    accent: '#734d26',
     border: '#e4dcc8',
-    muted: '#6b6354',
+    muted: '#595043',
   },
   sepia: {
     bg: '#f4ecd8',
-    text: '#5f4b32',
-    accent: '#8a6a4b',
+    text: '#3d2e1d',
+    accent: '#66482f',
     border: '#d9c8a6',
-    muted: '#7a6650',
+    muted: '#5e4835',
   },
   dark: {
     bg: '#1a1814',

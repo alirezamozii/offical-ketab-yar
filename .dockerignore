@@ -1,5 +1,5 @@
 # ──────────────────────────────────────────────────────────────────────────
-# Ketab-Yar — .dockerignore
+# Bookzi (بوکزی) — .dockerignore
 #
 # Everything listed here is excluded from the Docker build context, which
 # keeps image builds fast, avoids cache-busting on irrelevant changes, and
@@ -43,6 +43,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # ── Reference / cloned repos (sandbox-only) ────────────────────────────────
+bookzi-clone
 ketab-yar-clone
 ketab2_extract
 
@@ -53,7 +54,6 @@ mini-services
 .zscripts
 audits
 tool-results
-scripts
 
 # ── Editor / OS noise ──────────────────────────────────────────────────────
 .vscode

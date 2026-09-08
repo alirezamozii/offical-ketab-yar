@@ -41,7 +41,6 @@ type ScrollCallback = (progress: number, scrollY: number) => void
 // ── Module-level singleton state ─────────────────────────────────────────
 // Lives outside React so all subscribers share ONE listener.
 let currentScrollY = 0
-let currentDocHeight = 0
 let currentProgress = 0
 const subscribers = new Set<ScrollCallback>()
 let rafId: number | null = null
@@ -49,18 +48,21 @@ let listenerAttached = false
 
 function recompute() {
   rafId = null
+  if (typeof window === 'undefined') return
+
   currentScrollY = window.scrollY
-  
-  // Cache the document height to prevent severe layout thrashing on every scroll tick.
-  // It will be updated by the resize event listener.
-  if (currentDocHeight === 0) {
-    currentDocHeight = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
-  }
-  
+  const scrollHeight = Math.max(
+    document.documentElement.scrollHeight,
+    document.body?.scrollHeight || 0,
+  )
+  const clientHeight = window.innerHeight || document.documentElement.clientHeight || 0
+  const maxScroll = Math.max(0, scrollHeight - clientHeight)
+
   currentProgress =
-    currentDocHeight > 0
-      ? Math.min(1, Math.max(0, currentScrollY / currentDocHeight))
+    maxScroll > 0
+      ? Math.min(1, Math.max(0, currentScrollY / maxScroll))
       : 0
+
   // Broadcast to all subscribers. Direct callback, no React state.
   for (const cb of subscribers) {
     cb(currentProgress, currentScrollY)
@@ -73,28 +75,28 @@ function onScroll() {
 }
 
 function onResize() {
-  // Reset cached height so it gets recomputed on the next scroll tick
-  currentDocHeight = 0
   if (rafId === null) {
     rafId = requestAnimationFrame(recompute)
   }
 }
 
 function ensureListener() {
-  if (listenerAttached) return
+  if (listenerAttached || typeof window === 'undefined') return
   listenerAttached = true
   window.addEventListener('scroll', onScroll, { passive: true })
   window.addEventListener('resize', onResize, { passive: true })
-  // Initial compute so subscribers get the starting value immediately.
-  recompute()
+  document.addEventListener('visibilitychange', onResize, { passive: true })
+  if (typeof window !== 'undefined' && window.scrollY > 0) {
+    requestAnimationFrame(recompute)
+  }
 }
 
 function maybeRemoveListener() {
-  if (subscribers.size > 0) return
-  if (!listenerAttached) return
+  if (subscribers.size > 0 || !listenerAttached || typeof window === 'undefined') return
   listenerAttached = false
   window.removeEventListener('scroll', onScroll)
   window.removeEventListener('resize', onResize)
+  document.removeEventListener('visibilitychange', onResize)
   if (rafId !== null) {
     cancelAnimationFrame(rafId)
     rafId = null
@@ -110,10 +112,6 @@ function maybeRemoveListener() {
  * every render.
  */
 export function useScrollProgress(callback: ScrollCallback) {
-  // Keep the latest callback in a ref so we can update it without
-  // re-subscribing. This lets callers pass inline functions safely.
-  // Updated inside the effect (not during render) to satisfy the
-  // react-hooks/refs lint rule.
   const cbRef = useRef<ScrollCallback>(callback)
 
   useEffect(() => {
@@ -124,9 +122,11 @@ export function useScrollProgress(callback: ScrollCallback) {
     ensureListener()
     const sub: ScrollCallback = (p, y) => cbRef.current(p, y)
     subscribers.add(sub)
-    // Immediately push the current value so the subscriber doesn't
-    // show a stale 0 until the next scroll event.
+    // Initial emit without forcing synchronous reflow
     sub(currentProgress, currentScrollY)
+    if (typeof window !== 'undefined' && window.scrollY > 0) {
+      requestAnimationFrame(recompute)
+    }
     return () => {
       subscribers.delete(sub)
       maybeRemoveListener()
@@ -153,6 +153,9 @@ export function useScrollProgressScaleX(
     }
     subscribers.add(sub)
     sub(currentProgress, currentScrollY)
+    if (typeof window !== 'undefined' && window.scrollY > 0) {
+      requestAnimationFrame(recompute)
+    }
     return () => {
       subscribers.delete(sub)
       maybeRemoveListener()

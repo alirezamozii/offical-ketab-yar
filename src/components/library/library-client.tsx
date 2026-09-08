@@ -14,13 +14,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet'
+import dynamic from 'next/dynamic'
+
+const MobileFiltersDrawer = dynamic(
+  () => import('@/components/library/mobile-filters-drawer').then((mod) => mod.MobileFiltersDrawer),
+  { ssr: false }
+)
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import {
   BookOpen,
@@ -34,7 +33,7 @@ import {
   X,
 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { BookListItem } from '@/lib/data'
 import {
@@ -76,7 +75,8 @@ const RATING_OPTIONS: { value: number; label: string }[] = [
 type StatusValue = (typeof STATUS_OPTIONS)[number]['value']
 type ViewMode = 'grid' | 'list'
 
-const PAGE_SIZE = 12
+const PAGE_SIZE_DESKTOP = 12
+const PAGE_SIZE_MOBILE = 6
 
 const VIEW_KEY = STORAGE_KEYS.libraryView
 const STATUS_KEY = STORAGE_KEYS.libraryStatus
@@ -116,7 +116,7 @@ export function useLibraryFilters(initial: BookListItem[]) {
   const [view, setView] = useState<ViewMode>('grid')
   const [status, setStatus] = useState<StatusValue>('all')
   const [progressMap, setProgressMap] = useState<ProgressMap>({})
-  const [visible, setVisible] = useState(PAGE_SIZE)
+  const [visible, setVisible] = useState(PAGE_SIZE_DESKTOP)
   const [mounted, setMounted] = useState(false)
   const [filtersOpenMobile, setFiltersOpenMobile] = useState(false)
 
@@ -132,6 +132,7 @@ export function useLibraryFilters(initial: BookListItem[]) {
       const gs = await res.json()
       return gs.map((g: any) => g.name)
     },
+    enabled: filtersOpenMobile || Boolean(genre),
     staleTime: 24 * 60 * 60 * 1000,
   })
 
@@ -147,42 +148,33 @@ export function useLibraryFilters(initial: BookListItem[]) {
       if (!res.ok) throw new Error('Failed to fetch books')
       return res.json() as Promise<BookListItem[]>
     },
+    enabled: Boolean(debouncedQ || genre || level || (sort && sort !== 'recent')),
     initialData: initial,
-    staleTime: 30_000,
+    staleTime: 60_000,
   })
 
   useEffect(() => {
     setMounted(true)
     try {
       const v = localStorage.getItem(VIEW_KEY) as ViewMode | null
-      if (v === 'grid' || v === 'list') setView(v)
+      if (v && (v === 'grid' || v === 'list') && v !== view) setView(v)
     } catch {}
     try {
       const s = localStorage.getItem(STATUS_KEY) as StatusValue | null
-      if (s && STATUS_OPTIONS.some((o) => o.value === s)) setStatus(s)
+      if (s && STATUS_OPTIONS.some((o) => o.value === s) && s !== status) setStatus(s)
     } catch {}
-    refreshProgress()
-  }, [refreshProgress])
+    const p = getLocalProgress()
+    if (Object.keys(p).length > 0) {
+      setProgressMap(p)
+    }
+  }, [])
 
+  const isInitialMount = useRef(true)
   useEffect(() => {
-    window.addEventListener('focus', refreshProgress)
-    return () => window.removeEventListener('focus', refreshProgress)
-  }, [refreshProgress])
-
-  useEffect(() => {
-    if (!mounted) return
-    try {
-      localStorage.setItem(VIEW_KEY, view)
-    } catch {}
-  }, [view, mounted])
-  useEffect(() => {
-    if (!mounted) return
-    try {
-      localStorage.setItem(STATUS_KEY, status)
-    } catch {}
-  }, [status, mounted])
-
-  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
     const params = new URLSearchParams()
     if (q) params.set('q', q)
     if (genre) params.set('genre', genre)
@@ -194,7 +186,8 @@ export function useLibraryFilters(initial: BookListItem[]) {
   }, [q, genre, level, sort, router])
 
   useEffect(() => {
-    setVisible(PAGE_SIZE)
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640
+    setVisible(isMobile ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP)
   }, [q, genre, level, sort, status, minRating])
 
   const filteredBooks = useMemo(() => {
@@ -365,78 +358,25 @@ export function LibraryClient({ initial }: { initial: BookListItem[] }) {
           </SelectContent>
         </Select>
 
-        {/* Mobile filter button */}
-        <Sheet open={filtersOpenMobile} onOpenChange={setFiltersOpenMobile}>
-          <SheetTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-9 gap-1.5 rounded-lg sm:hidden"
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              فیلتر
-              {activeFilters.length > 0 && (
-                <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                  {activeFilters.length}
-                </span>
-              )}
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="bottom" aria-describedby={undefined} className="max-h-[88vh] overflow-y-auto p-0">
-            <SheetHeader className="border-b border-border px-5 py-4">
-              <SheetTitle className="flex items-center gap-2 text-base font-bold">
-                <Filter className="h-4 w-4 text-primary" />
-                فیلترها
-              </SheetTitle>
-            </SheetHeader>
-            <div className="p-5 space-y-4">
-              {/* Status pills */}
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-muted-foreground">وضعیت مطالعه</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {STATUS_OPTIONS.map((opt) => (
-                    <Chip key={opt.value} active={status === opt.value} onClick={() => setStatus(opt.value)}>
-                      {opt.label}
-                    </Chip>
-                  ))}
-                </div>
-              </div>
-              {/* Rating chips */}
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-muted-foreground">حداقل امتیاز</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {RATING_OPTIONS.map((r) => (
-                    <Chip key={r.value} active={minRating === r.value} onClick={() => setMinRating(r.value)}>
-                      {r.label}
-                    </Chip>
-                  ))}
-                </div>
-              </div>
-              {/* Genre chips */}
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-muted-foreground">ژانر</p>
-                <div className="flex flex-wrap gap-1.5">
-                  <Chip active={!genre} onClick={() => setGenre('')}>همه</Chip>
-                  {(popularGenres.length > 0 ? popularGenres : GENRES).map((g) => (
-                    <Chip key={g} active={genre === g} onClick={() => setGenre(genre === g ? '' : g)}>
-                      {g}
-                    </Chip>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="sticky bottom-0 flex items-center justify-between gap-2 border-t border-border bg-card/95 px-5 py-3 backdrop-blur-md">
-              <Button variant="ghost" size="sm" onClick={clearAll} disabled={activeFilters.length === 0} className="gap-1.5">
-                <X className="h-4 w-4" />
-                پاک کردن
-              </Button>
-              <Button size="sm" variant="glow" onClick={() => setFiltersOpenMobile(false)} className="flex-1 max-w-[60%]">
-                نمایش {filteredBooks.length.toLocaleString('fa-IR')} کتاب
-              </Button>
-            </div>
-          </SheetContent>
-        </Sheet>
+        {/* Mobile filter button & drawer */}
+        <MobileFiltersDrawer
+          open={filtersOpenMobile}
+          onOpenChange={setFiltersOpenMobile}
+          activeFiltersCount={activeFilters.length}
+          status={status}
+          setStatus={setStatus}
+          minRating={minRating}
+          setMinRating={setMinRating}
+          genre={genre}
+          setGenre={setGenre}
+          popularGenres={popularGenres}
+          genres={GENRES}
+          statusOptions={STATUS_OPTIONS}
+          ratingOptions={RATING_OPTIONS}
+          activeFilters={activeFilters}
+          clearAll={clearAll}
+          filteredCount={filteredBooks.length}
+        />
 
         {/* Desktop: inline status + rating + view toggle */}
         <div className="hidden sm:flex items-center gap-2">
@@ -517,7 +457,7 @@ export function LibraryClient({ initial }: { initial: BookListItem[] }) {
 
       {/* Body: skeleton / empty / grid / list */}
       {showSkeleton ? (
-        <LibrarySkeleton count={PAGE_SIZE} view={view} />
+        <LibrarySkeleton count={PAGE_SIZE_DESKTOP} view={view} />
       ) : showEmpty ? (
         <LibraryEmptyState
           hasFilters={activeFilters.length > 0}
@@ -569,7 +509,7 @@ export function LibraryClient({ initial }: { initial: BookListItem[] }) {
           <Button
             variant="outline"
             size="lg"
-            onClick={() => setVisible((v) => v + PAGE_SIZE)}
+            onClick={() => setVisible((v) => v + (typeof window !== 'undefined' && window.innerWidth < 640 ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP))}
             className="gap-2"
           >
             <Plus className="h-4 w-4" />

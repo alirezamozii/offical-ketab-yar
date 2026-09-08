@@ -95,9 +95,11 @@ export async function GET(req: NextRequest) {
       },
     })
 
-    // Empty DB (fresh install) → return an empty array, not an error.
+    // Empty DB (fresh install) → return fallback words
     if (pages.length === 0) {
-      return NextResponse.json([])
+      return NextResponse.json(FALLBACK_DAILY_WORDS, {
+        headers: { 'Cache-Control': 'public, max-age=3600' },
+      })
     }
 
     const pool = [...pages]
@@ -143,13 +145,60 @@ export async function GET(req: NextRequest) {
       })
     }
 
+    if (out.length === 0) {
+      return NextResponse.json(FALLBACK_DAILY_WORDS, {
+        headers: { 'Cache-Control': 'public, max-age=3600' },
+      })
+    }
+
     return NextResponse.json(out, {
       headers: {
-        'Cache-Control': 'private, max-age=300', // cache 5 min per session
+        'Cache-Control': 'private, no-store',
       },
     })
   } catch (err) {
     console.warn('[/api/vocabulary/daily-words] DB offline or query error, returning fallback:', err)
-    return NextResponse.json([], { status: 200, headers: { 'x-db-fallback': 'true' } })
+    return NextResponse.json(FALLBACK_DAILY_WORDS, {
+      status: 200,
+      headers: { 'x-db-fallback': 'true', 'Cache-Control': 'public, max-age=3600' },
+    })
   }
 }
+
+const FALLBACK_DAILY_WORDS = [
+  {
+    word: 'curious',
+    context: 'Alice was beginning to get very tired of sitting by her sister on the bank, and of having nothing to do.',
+    bookSlug: 'alice-in-wonderland',
+    bookTitle: "Alice's Adventures in Wonderland",
+    bookAuthor: 'Lewis Carroll',
+  },
+  {
+    word: 'affection',
+    context: 'It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.',
+    bookSlug: 'pride-and-prejudice',
+    bookTitle: 'Pride and Prejudice',
+    bookAuthor: 'Jane Austen',
+  },
+  {
+    word: 'essential',
+    context: 'It is only with the heart that one can see rightly; what is essential is invisible to the eye.',
+    bookSlug: 'the-little-prince',
+    bookTitle: 'The Little Prince',
+    bookAuthor: 'Antoine de Saint-Exupéry',
+  },
+  {
+    word: 'restless',
+    context: 'So we beat on, boats against the current, borne back ceaselessly into the past.',
+    bookSlug: 'the-great-gatsby',
+    bookTitle: 'The Great Gatsby',
+    bookAuthor: 'F. Scott Fitzgerald',
+  },
+  {
+    word: 'generous',
+    context: 'No one is useless in this world who lightens the burdens of another.',
+    bookSlug: 'a-christmas-carol',
+    bookTitle: 'A Christmas Carol',
+    bookAuthor: 'Charles Dickens',
+  },
+]

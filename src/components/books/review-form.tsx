@@ -11,7 +11,6 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { motion, useReducedMotion } from 'framer-motion'
 import { Loader2, Sparkles, Star, X } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -49,7 +48,6 @@ export function ReviewForm({ bookSlug, onSubmitted }: ReviewFormProps) {
   const [hover, setHover] = useState(0)
   const [comment, setComment] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const reduceMotion = useReducedMotion()
 
   const len = comment.length
   const counterTone =
@@ -203,9 +201,8 @@ export function ReviewForm({ bookSlug, onSubmitted }: ReviewFormProps) {
                       onClick={() => setRating(n)}
                       onKeyDown={(e) => onStarKey(e, n)}
                       className={cn(
-                        'relative transition-transform duration-200 ease-out-expo tap-target',
-                        !reduceMotion && 'hover:scale-110',
-                        !reduceMotion && active && 'scale-105',
+                        'relative transition-transform duration-200 ease-out-expo tap-target hover:scale-110',
+                        active && 'scale-105',
                       )}
                     >
                       <Star
@@ -223,14 +220,12 @@ export function ReviewForm({ bookSlug, onSubmitted }: ReviewFormProps) {
                   <span className="tabular-nums">{displayRating}</span>
                   <span className="text-muted-foreground/50">از</span>
                   <span className="tabular-nums">۵</span>
-                  <motion.span
+                  <span
                     key={ratingLabel}
-                    initial={reduceMotion ? undefined : { opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
                     className="rounded-full bg-gold-500/15 px-2 py-0.5 text-xs font-semibold text-gold-700 dark:text-gold-300"
                   >
                     {ratingLabel}
-                  </motion.span>
+                  </span>
                 </span>
               </div>
               {/* 5-bucket progress hint — a 5-segment bar that fills

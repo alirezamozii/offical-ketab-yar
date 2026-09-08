@@ -32,7 +32,7 @@ export function BlogShareButton({ slug, title }: BlogShareButtonProps) {
     typeof window !== 'undefined'
       ? `${window.location.origin}/blog/${slug}`
       : `/blog/${slug}`
-  const text = `«${title}» — مقاله کتاب‌یار درباره یادگیری زبان با کتاب`
+  const text = `«${title}» — مقاله بوکزی درباره یادگیری زبان با کتاب`
 
   async function copyLink() {
     try {

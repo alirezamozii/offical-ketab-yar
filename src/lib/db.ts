@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
+  dbOfflineUntil?: number
 }
 
 /**
@@ -40,3 +41,67 @@ function getDb(): PrismaClient {
 }
 
 export const db = getDb()
+
+export function isDbOffline(): boolean {
+  if (process.env.DB_OFFLINE === 'true' || process.env.DB_OFFLINE === '1') {
+    return true
+  }
+  return (
+    typeof globalForPrisma.dbOfflineUntil === 'number' &&
+    Date.now() < globalForPrisma.dbOfflineUntil
+  )
+}
+
+export function tripDbOffline(cooldownMs = 30000) {
+  globalForPrisma.dbOfflineUntil = Date.now() + cooldownMs
+}
+
+export function resetDbOffline() {
+  globalForPrisma.dbOfflineUntil = 0
+}
+
+export async function safeQuery<T>(
+  queryFn: () => Promise<T>,
+  fallback: T,
+  timeoutMs = 250,
+): Promise<T> {
+  if (isDbOffline()) {
+    return fallback
+  }
+
+  let timer: NodeJS.Timeout | undefined
+  const timeout = new Promise<T>((resolve) => {
+    timer = setTimeout(() => {
+      tripDbOffline(15000)
+      resolve(fallback)
+    }, timeoutMs)
+  })
+
+  try {
+    const queryPromise = queryFn()
+      .then((res) => {
+        resetDbOffline()
+        return res
+      })
+      .catch((err: unknown) => {
+        const msg = (err as { message?: string })?.message || ''
+        const code = (err as { code?: string })?.code || ''
+        if (code === 'P1001' || msg.includes("Can't reach database server")) {
+          tripDbOffline(30000)
+        }
+        return fallback
+      })
+
+    const result = await Promise.race([queryPromise, timeout])
+    return result
+  } catch (err: unknown) {
+    const msg = (err as { message?: string })?.message || ''
+    const code = (err as { code?: string })?.code || ''
+    if (code === 'P1001' || msg.includes("Can't reach database server")) {
+      tripDbOffline(30000)
+    }
+    return fallback
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
+}

@@ -21,7 +21,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, isDbOffline, tripDbOffline } from '@/lib/db'
 
 const CACHE_CONTROL = 'public, max-age=60, s-maxage=300'
 
@@ -58,6 +58,20 @@ export async function GET(req: NextRequest) {
     ? Math.min(limitParam, MAX_PAGE_SIZE)
     : PAGE_SIZE
 
+  if (isDbOffline()) {
+    return NextResponse.json(
+      {
+        ok: true,
+        posts: [],
+        page,
+        limit,
+        total: 0,
+        totalPages: 1,
+      },
+      { headers: { 'Cache-Control': 'no-store' } },
+    )
+  }
+
   try {
     const now = new Date()
     const where = {
@@ -65,7 +79,7 @@ export async function GET(req: NextRequest) {
       publishedAt: { lte: now },
     }
 
-    const [total, rows] = await Promise.all([
+    const [totalResult, rowsResult] = await Promise.allSettled([
       db.blogPost.count({ where }),
       db.blogPost.findMany({
         where,
@@ -89,6 +103,12 @@ export async function GET(req: NextRequest) {
         },
       }),
     ])
+
+    if (totalResult.status === 'rejected') throw totalResult.reason
+    if (rowsResult.status === 'rejected') throw rowsResult.reason
+
+    const total = totalResult.value
+    const rows = rowsResult.value
 
     const posts = rows.map((r) => ({
       id: r.id,
@@ -116,10 +136,22 @@ export async function GET(req: NextRequest) {
       { headers: { 'Cache-Control': CACHE_CONTROL } },
     )
   } catch (err) {
+    const msg = (err as { message?: string })?.message || ''
+    const code = (err as { code?: string })?.code || ''
+    if (code === 'P1001' || msg.includes("Can't reach database server")) {
+      tripDbOffline(30000)
+    }
     console.error('[/api/blog] GET failed:', err)
     return NextResponse.json(
-      { ok: false, error: 'سرویس بلاگ در حال حاضر در دسترس نیست.' },
-      { status: 500, headers: { 'Cache-Control': 'no-store' } },
+      {
+        ok: true,
+        posts: [],
+        page,
+        limit,
+        total: 0,
+        totalPages: 1,
+      },
+      { headers: { 'Cache-Control': 'no-store' } },
     )
   }
 }

@@ -57,7 +57,7 @@ import {
   X,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -105,8 +105,12 @@ export function WordDetailDialog({
 
   // useVocabMeta with the current word's bookSlug so system book-categories
   // appear automatically. We pass just the one word to keep the auto-derive
-  // list small.
-  const meta = useVocabMeta(word ? [word] : undefined)
+  // list small and reference-stable.
+  const wordsForMeta = useMemo(
+    () => (word ? [word] : undefined),
+    [word],
+  )
+  const meta = useVocabMeta(wordsForMeta)
 
   // Fetch book title when word changes (if it has a bookSlug).
   useEffect(() => {
@@ -130,16 +134,26 @@ export function WordDetailDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `meta` is intentionally omitted: we only refetch when `word.bookSlug` changes; `meta.ensureBookCategory` is a stable callback.
   }, [word?.bookSlug])
 
-  // Reset TTS playback + editing state when the dialog closes / word changes.
+  // Reset TTS playback + editing state when the dialog closes (only on true -> false transition).
+  const prevOpenRef = useRef(open)
+  const stopTTS = tts.stop
   useEffect(() => {
-    if (!open) {
+    if (prevOpenRef.current && !open) {
       setEditing(false)
       setNewSynonym('')
       setNewAntonym('')
       setNewCategory('')
-      tts.stop()
+      stopTTS()
     }
-  }, [open, tts])
+    prevOpenRef.current = open
+  }, [open, stopTTS])
+
+  // Cleanup TTS on unmount
+  useEffect(() => {
+    return () => {
+      stopTTS()
+    }
+  }, [stopTTS])
 
   // Sync the edit fields when entering edit mode.
   useEffect(() => {

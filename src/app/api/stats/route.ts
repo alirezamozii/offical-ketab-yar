@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getOrCreateGuestId } from '@/lib/session'
+import { getEffectiveOwner } from '@/lib/session'
 import { calculateLevel } from '@/lib/gamification'
 import {
   computeAchievementStates,
@@ -43,7 +43,8 @@ import {
  */
 export async function GET() {
   try {
-    const { id } = await getOrCreateGuestId()
+    const owner = await getEffectiveOwner()
+    const where = owner.userId ? { userId: owner.userId } : { guestId: owner.guestId! }
 
     // Fetch achievement defs from the CMS DB (admin-editable). Replaces the
     // legacy `ACHIEVEMENT_DEFS` constant — the DB is now the single source
@@ -54,16 +55,16 @@ export async function GET() {
       getActiveAchievementDefs(),
       db.userStats
         .upsert({
-          where: { guestId: id },
+          where,
           update: {},
-          create: { guestId: id },
+          create: where,
         })
         .catch((err) => {
           console.error('[/api/stats] userStats.upsert failed:', err)
           return null
         }),
       db.vocabulary
-        .count({ where: { guestId: id } })
+        .count({ where })
         .catch((err) => {
           console.error('[/api/stats] vocabulary.count failed:', err)
           return 0
@@ -152,7 +153,7 @@ export async function GET() {
 
     return NextResponse.json(payload, {
       headers: {
-        'Cache-Control': 'private, max-age=30',
+        'Cache-Control': 'private, no-store',
       },
     })
   } catch (err) {

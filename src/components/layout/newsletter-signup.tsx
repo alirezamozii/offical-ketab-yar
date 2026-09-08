@@ -22,7 +22,6 @@
  * ---------------------------------------------------------------
  */
 
-import { motion, useReducedMotion } from 'framer-motion'
 import { ArrowLeft, CheckCircle2, Loader2, Mail } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
@@ -37,7 +36,6 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 type Status = 'idle' | 'loading' | 'success' | 'error'
 
 export function NewsletterSignup() {
-  const reduceMotion = useReducedMotion()
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<Status>('idle')
   const [errorMsg, setErrorMsg] = useState('')
@@ -97,16 +95,13 @@ export function NewsletterSignup() {
   // Success state — compact confirmation
   if (status === 'success') {
     return (
-      <motion.div
-        initial={reduceMotion ? false : { opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-400"
+      <div
+        className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-400 animate-in fade-in-0 slide-in-from-bottom-1.5 duration-300 motion-reduce:transition-none"
         role="status"
       >
         <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
         <span>عضو خبرنامه شدید! ✨</span>
-      </motion.div>
+      </div>
     )
   }
 
@@ -114,7 +109,7 @@ export function NewsletterSignup() {
     <div className="space-y-1.5">
       <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground/80">
         <Mail className="h-3.5 w-3.5 text-gold-600 dark:text-gold-400" aria-hidden="true" />
-        خبرنامه کتاب‌یار
+        خبرنامه بوکزی
       </div>
       <p className="text-[11px] leading-relaxed text-muted-foreground">
         از کتاب‌ها و مطالب جدید باخبر شوید.

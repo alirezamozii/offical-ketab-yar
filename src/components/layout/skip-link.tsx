@@ -1,5 +1,3 @@
-'use client'
-
 /**
  * SkipLink — accessibility affordance for keyboard & screen-reader users.
  *

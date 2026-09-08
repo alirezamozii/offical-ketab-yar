@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button'
-import { toPersianDigits } from '@/lib/typography'
 import {
   ArrowLeft,
   BookOpen,
@@ -21,7 +20,7 @@ const VALUE_PILLS = [
   { icon: Trophy, label: 'بازی‌وارسازی' },
 ]
 
-export function HeroSection({ booksCount = 0 }: { booksCount?: number } = {}) {
+export function HeroSection(_props: { booksCount?: number } = {}) {
   return (
     <section
       aria-labelledby="hero-heading"
@@ -34,171 +33,105 @@ export function HeroSection({ booksCount = 0 }: { booksCount?: number } = {}) {
 
         <div
           aria-hidden="true"
-          className="absolute right-1/4 top-1/4 h-72 w-72 rounded-full bg-gold-500/10 blur-3xl animate-pulse"
+          className="pointer-events-none absolute right-1/4 top-1/4 h-80 w-80 rounded-full bg-gold-500/10 blur-3xl dark:bg-gold-500/5 transform-gpu"
         />
       </div>
 
-      {/* Hero layout — MUST fit above the fold (header + hero in one viewport)
-          on desktop. Per user feedback: "الان اینروی که باید بکم اسکرول کنم"
-          — drastically reduced top/bottom padding so everything fits.
-          On a 900px-tall viewport: h-14 header (56px) + hero content needs
-          to fit in ~844px. Reduced from pt-28/pb-24 to pt-12/pb-8 on lg. */}
-      <div className="relative mx-auto max-w-7xl px-4 pb-8 pt-12 sm:px-6 md:pb-12 md:pt-16 lg:pb-16 lg:pt-20">
-        {/* Two-column layout per user feedback:
-            "تو دستکتاپ زاست چین کن من بعدا سمت چپ لی اوت اینا هالی باشه
-             من بعدا یه عکسی از مسکات ما میزارم فعلا درست نشده ولی دوتایی
-             لی اوت توبر عکسه"
-            → On desktop: text on the right (RTL start), image placeholder
-              on the left. On mobile: single column, text only (image
-              hidden to save space). The placeholder is where the user
-              will later drop a screenshot/mockup of the app. */}
+      <div className="relative mx-auto max-w-7xl px-4 pb-8 pt-8 sm:px-6 md:pb-12 md:pt-14 lg:pb-16 lg:pt-20">
         <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
-          {/* Copy — text content (right side on desktop RTL).
-              Per user feedback: "این مانا جاستیفای ار راست مشن از چپن
-              درست کن همشونو" — all text/elements must be RIGHT-aligned
-              (RTL start), not left-aligned. In RTL: text-start = right,
-              text-end = left. So we use text-start on desktop. */}
-          <div className="space-y-4 text-center lg:text-start">
-            <div
-              className="inline-flex items-center gap-2 rounded-full border border-gold-300/60 bg-beige-200/70 px-4 py-2 dark:border-gold-500/20 dark:bg-gold-500/10"
-            >
-              <Sparkles aria-hidden="true" className="h-4 w-4 text-gold-600 dark:text-gold-400" />
-              <span className="text-sm font-semibold text-gold-800 dark:text-gold-300">
-                پلتفرم مطالعه هوشمند با AI
-              </span>
+          <div className="space-y-3.5 text-center lg:space-y-4 lg:text-start">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-gold-300/50 bg-gold-500/10 px-3 py-1 text-xs font-semibold text-gold-800 backdrop-blur-md dark:border-gold-500/20 dark:text-gold-300">
+              <Sparkles aria-hidden="true" className="h-3.5 w-3.5 text-gold-600 dark:text-gold-400" />
+              <span>پلتفرم هوشمند مطالعه دوزبانه</span>
             </div>
 
-            <div
-              className="space-y-3"
-            >
+            <div className="space-y-1 sm:space-y-2">
               <h1
                 id="hero-heading"
-                className="text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl"
+                className="text-4xl font-black leading-tight tracking-tight sm:text-6xl lg:text-7xl text-foreground"
               >
-                {/* Brand wordmark with a *very* subtle, slow gold glow —
-                    one calm pulse every 6s, not the previous aggressive
-                    random flicker. */}
                 <span className="relative inline-block">
                   <span
                     aria-hidden="true"
-                    className="absolute -inset-2 rounded-full bg-gold-400/20 blur-2xl motion-safe:animate-pulse-slow"
+                    className="pointer-events-none absolute -inset-x-8 -inset-y-4 rounded-full bg-gold-500/15 blur-2xl dark:bg-gold-400/20 dark:blur-3xl transform-gpu"
                   />
-                  <span className="relative bg-gradient-to-l from-gold-500 via-gold-600 to-gold-700 bg-clip-text text-transparent">
-                    کتاب‌یار
+                  <span className="relative text-gold-600 dark:text-gold-400 font-black">
+                    بوکزی
                   </span>
                 </span>
+                <span className="block text-lg font-extrabold leading-snug text-foreground/90 sm:text-2xl lg:text-3xl mt-1">
+                  زیست‌بومِ کتاب‌های دوزبانه
+                </span>
               </h1>
-              <h2 className="text-2xl font-bold leading-snug text-foreground/90 sm:text-3xl lg:text-4xl">
-                انگلیسی را با کتاب، هوش مصنوعی و بازی یاد بگیر
-              </h2>
             </div>
 
-            {/* Value-prop pills */}
-            <div
-              className="flex flex-wrap items-center justify-center gap-2 lg:justify-start"
-            >
+            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 lg:justify-start">
               {VALUE_PILLS.map((p) => {
                 const Icon = p.icon
                 return (
                   <span
                     key={p.label}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-gold-400/30 bg-card/70 px-3 py-1.5 text-xs font-semibold text-foreground/80 backdrop-blur-sm sm:text-sm"
+                    className="inline-flex items-center gap-1 rounded-full border border-gold-400/25 bg-card/60 px-2.5 py-0.5 text-[11px] font-medium text-foreground/80 backdrop-blur-sm sm:px-3 sm:py-1 sm:text-xs"
                   >
-                    <Icon aria-hidden="true" className="h-3.5 w-3.5 text-gold-600 dark:text-gold-400" />
+                    <Icon aria-hidden="true" className="h-3 w-3 text-gold-600 dark:text-gold-400" />
                     {p.label}
                   </span>
                 )
               })}
             </div>
 
-            <p
-              className="mx-auto max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg lg:mx-0"
-            >
-              ترجمه پاراگراف به پاراگراف، دیکشنری فوری، چت با هوش مصنوعی و
-              سیستم امتیاز و سطح. یادگیری زبان انگلیسی هرگز این‌قدر لذت‌بخش نبوده.
+            <p className="mx-auto max-w-lg text-xs leading-relaxed text-muted-foreground sm:text-base sm:leading-relaxed lg:mx-0">
+              ترجمه پاراگراف به پاراگراف، دیکشنری فوری، چت هوش مصنوعی و سیستم امتیازدهی. یادگیری انگلیسی با لذت خواندن داستان‌های اصیل.
             </p>
 
-            <div
-              className="flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row lg:justify-start"
-            >
-              {/* Primary CTA — "شروع رایگان" → /library
-                  Per user feedback: added Magnetic + shimmer effects
-                  (same as the CTA section's "ورود به کتابخانه" button). */}
+            <div className="flex w-full flex-col justify-center gap-2 sm:w-auto sm:flex-row sm:gap-3 lg:justify-start pt-1">
               <Magnetic strength={12} className="w-full sm:w-auto">
                 <div className="group/cta relative w-full sm:w-auto">
-                  {/* Pulse glow ring */}
                   <span
                     aria-hidden="true"
-                    className="absolute -inset-1 rounded-xl bg-gold-500/30 opacity-50 blur-md transition-opacity duration-300 group-hover/cta:opacity-80"
+                    className="absolute -inset-1 rounded-xl bg-gold-500/25 opacity-40 blur-md transition-opacity duration-300 group-hover/cta:opacity-80"
                   />
                   <Button
                     asChild
-                    size="xl"
                     variant="glow"
-                    className="relative w-full overflow-hidden text-base sm:w-auto"
+                    className="relative h-11 w-full overflow-hidden rounded-xl px-5 text-sm font-bold sm:h-12 sm:rounded-2xl sm:px-7 sm:text-base sm:w-auto"
                   >
                     <Link
                       href="/library"
+                      prefetch={false}
                       aria-label="شروع رایگان — ورود به کتابخانه"
                       title="شروع رایگان"
                     >
-                      <AnimatedGlowBorder color="rgba(255,255,255,0.9)" thickness={2.5} />
+                      <AnimatedGlowBorder color="rgba(255,255,255,0.9)" thickness={2} />
                       <span
                         aria-hidden="true"
                         className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]"
                       >
                         <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-[1100ms] ease-out-expo group-hover/cta:translate-x-full" />
                       </span>
-                      <BookOpen aria-hidden="true" className="relative h-5 w-5" />
+                      <BookOpen aria-hidden="true" className="relative h-4.5 w-4.5 sm:h-5 sm:w-5" />
                       <span className="relative">شروع رایگان</span>
-                      <ArrowLeft aria-hidden="true" className="relative h-5 w-5 transition-transform duration-300 ease-out-expo group-hover/cta:-translate-x-1" />
+                      <ArrowLeft aria-hidden="true" className="relative h-4.5 w-4.5 transition-transform duration-300 ease-out-expo group-hover/cta:-translate-x-1 sm:h-5 sm:w-5" />
                     </Link>
                   </Button>
                 </div>
               </Magnetic>
 
-              {/* Secondary CTA — "کتاب تصادفی" (Feeling Lucky).
-                  Also wrapped in Magnetic for consistency. */}
               <Magnetic strength={10} className="w-full sm:w-auto">
-                <RandomBookButton />
+                <RandomBookButton className="h-11 w-full rounded-xl text-xs font-semibold sm:h-12 sm:rounded-2xl sm:text-sm sm:w-auto" />
               </Magnetic>
             </div>
 
             {/* Trust microcopy */}
-            <div
-              className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground lg:justify-start"
-            >
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground/80 sm:text-xs lg:justify-start pt-1">
               <span className="inline-flex items-center gap-1">
                 <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5 text-gold-600 dark:text-gold-400" />
                 بدون ثبت‌نام
               </span>
               <span aria-hidden="true">·</span>
-              <span>رایگان</span>
+              <span>۱۰۰٪ رایگان</span>
               <span aria-hidden="true">·</span>
-              <span>بدون محدودیت زمانی</span>
-            </div>
-
-            <div
-              className="flex flex-wrap items-center justify-center gap-6 pt-3 lg:justify-start"
-            >
-              <div className="flex items-center gap-2" aria-live="polite">
-                <BookOpen aria-hidden="true" className="h-5 w-5 text-gold-600 dark:text-gold-400" />
-                <div className="text-sm">
-                  <div className="font-bold">
-                    <span className="sr-only">تعداد کتاب‌های موجود: </span>
-                    {toPersianDigits(booksCount)} کتاب موجود
-                  </div>
-                  <div className="text-xs text-muted-foreground">انگلیسی دوزبانه</div>
-                </div>
-              </div>
-              <div aria-hidden="true" className="h-8 w-px bg-border" />
-              <div className="flex items-center gap-2">
-                <Sparkles aria-hidden="true" className="h-5 w-5 text-gold-600 dark:text-gold-400" />
-                <div className="text-sm">
-                  <div className="font-bold">هوش مصنوعی</div>
-                  <div className="text-xs text-muted-foreground">دیکشنری و چت</div>
-                </div>
-              </div>
+              <span>دسترسی آفلاین</span>
             </div>
           </div>
 
@@ -212,18 +145,18 @@ export function HeroSection({ booksCount = 0 }: { booksCount?: number } = {}) {
               looks intentional rather than unfinished.
               Hidden on mobile (saves space, text-only is fine there). */}
           <div
-            className="relative hidden lg:block animate-in fade-in zoom-in-95 duration-1000 delay-300 fill-mode-both"
+            className="relative hidden lg:block"
             aria-label="محل نمایش تصویر برنامه (به‌زودی)"
           >
             <div className="relative aspect-[4/5] w-full max-w-md overflow-hidden rounded-3xl border border-gold-400/30 bg-gradient-to-br from-gold-500/10 via-card to-gold-700/10 shadow-2xl">
-              {/* Ambient halos matching the hero palette */}
+              {/* Ambient halos matching the hero palette — GPU radial gradient */}
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute -left-16 -top-16 h-48 w-48 rounded-full bg-gold-500/15 blur-3xl"
-              />
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute -bottom-16 -right-16 h-56 w-56 rounded-full bg-gold-700/15 blur-3xl"
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  backgroundImage:
+                    'radial-gradient(circle at 10% 10%, rgba(212,175,55,0.15) 0%, transparent 60%), radial-gradient(circle at 90% 90%, rgba(138,104,71,0.15) 0%, transparent 60%)',
+                }}
               />
               {/* Gilded top hairline */}
               <div

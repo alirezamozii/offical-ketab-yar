@@ -1,4 +1,5 @@
 import { STORAGE_KEYS } from '@/lib/storage-keys'
+import { addBookToCollection, removeBookFromCollection } from '@/lib/collections'
 
 const KEY = STORAGE_KEYS.progress
 
@@ -17,15 +18,44 @@ export type ProgressEntry = {
 
 export type ProgressMap = Record<string, ProgressEntry>
 
+function syncCollectionForProgress(slug: string, percent: number) {
+  if (typeof window === 'undefined' || !slug) return
+  try {
+    if (percent >= 100) {
+      addBookToCollection('default-completed', slug)
+      removeBookFromCollection('default-reading', slug)
+    } else if (percent > 0) {
+      addBookToCollection('default-reading', slug)
+    }
+  } catch {
+    /* ignore storage errors */
+  }
+}
+
+let cachedProgressMap: ProgressMap | null = null
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === KEY) cachedProgressMap = null
+  })
+}
+
 export function getLocalProgress(): ProgressMap {
   if (typeof window === 'undefined') return {}
+  if (cachedProgressMap !== null) return cachedProgressMap
   try {
     const raw = localStorage.getItem(KEY)
-    if (!raw) return {}
+    if (!raw) {
+      cachedProgressMap = {}
+      return cachedProgressMap
+    }
     const parsed = JSON.parse(raw)
-    return parsed && typeof parsed === 'object' ? parsed : {}
+    const map: ProgressMap = parsed && typeof parsed === 'object' ? (parsed as ProgressMap) : {}
+    cachedProgressMap = map
+    return map
   } catch {
-    return {}
+    cachedProgressMap = {}
+    return cachedProgressMap
   }
 }
 
@@ -36,10 +66,12 @@ export function getLocalProgressFor(slug: string): ProgressEntry | undefined {
 /** Overwrite the progress entry for a book (replaces any existing entry). */
 export function setLocalProgress(slug: string, entry: ProgressEntry) {
   if (typeof window === 'undefined') return
-  const map = getLocalProgress()
+  const map = { ...getLocalProgress() }
   map[slug] = entry
+  cachedProgressMap = map
   try {
     localStorage.setItem(KEY, JSON.stringify(map))
+    syncCollectionForProgress(slug, entry.percent)
   } catch {}
 }
 
@@ -57,24 +89,32 @@ export function mergeLocalProgress(
   partial: Partial<ProgressEntry>,
 ) {
   if (typeof window === 'undefined') return
-  const map = getLocalProgress()
+  const map = { ...getLocalProgress() }
   const prev = map[slug] ?? {
     currentPage: 0,
     totalPages: 0,
     percent: 0,
     ts: 0,
   }
-  map[slug] = { ...prev, ...partial }
+  const next = { ...prev, ...partial }
+  map[slug] = next
+  cachedProgressMap = map
   try {
     localStorage.setItem(KEY, JSON.stringify(map))
+    if (typeof next.percent === 'number') {
+      syncCollectionForProgress(slug, next.percent)
+    }
   } catch {}
 }
 
 export function clearLocalProgress(slug: string) {
   if (typeof window === 'undefined') return
-  const map = getLocalProgress()
+  const map = { ...getLocalProgress() }
   delete map[slug]
+  cachedProgressMap = map
   try {
     localStorage.setItem(KEY, JSON.stringify(map))
+    removeBookFromCollection('default-completed', slug)
+    removeBookFromCollection('default-reading', slug)
   } catch {}
 }

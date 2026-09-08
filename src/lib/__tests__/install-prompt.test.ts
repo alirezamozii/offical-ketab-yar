@@ -1,9 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   canShowInstallPrompt,
-  DISMISS_KEY,
-  LAST_SHOWN_KEY,
-  ONE_DAY_MS,
   writeDismissedAt,
   writeLastShownAt,
 } from '@/components/pwa/install-prompt'

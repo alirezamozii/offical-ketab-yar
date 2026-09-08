@@ -6,7 +6,7 @@ import {
   type ChallengeDef,
 } from '@/lib/gamification'
 
-export interface DailyChallengeResponse {
+interface DailyChallengeResponse {
   date: string
   challenges: ChallengeDef[]
   pool: ChallengeDef[]

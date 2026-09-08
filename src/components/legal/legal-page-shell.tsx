@@ -12,7 +12,6 @@
  * (typography, color, sticky behaviour) only touches one file.
  */
 
-import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import type { LucideIcon } from 'lucide-react'
@@ -50,7 +49,7 @@ export function LegalPageShell({
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <header className="mb-8 space-y-3 text-center">
+      <header className="mb-8 min-h-[220px] space-y-3 text-center">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-gold-500 to-gold-700 text-white shadow-lg shadow-gold-500/30">
           <Icon className="h-7 w-7" />
         </span>
@@ -78,7 +77,7 @@ export function LegalPageShell({
             <ul className="flex gap-2 overflow-x-auto lg:flex-col lg:gap-0.5 lg:overflow-visible">
               {sections.map((s, i) => (
                 <li key={s.id} className="shrink-0 lg:shrink">
-                  <Link
+                  <a
                     href={`#${s.id}`}
                     className="flex items-center gap-1 whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-gold-500/10 hover:text-foreground lg:whitespace-normal"
                   >
@@ -86,7 +85,7 @@ export function LegalPageShell({
                       {String(i + 1).padStart(2, '0')}
                     </span>
                     <span className="line-clamp-2">{s.title}</span>
-                  </Link>
+                  </a>
                 </li>
               ))}
             </ul>

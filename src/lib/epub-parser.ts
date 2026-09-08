@@ -104,7 +104,7 @@ function cleanHtmlText(html: string): string {
     .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
     .replace(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/gi, '\n\n$1\n\n')
     .replace(/<\/p>/gi, '\n\n')
-    .replace(/<br\s*[\/]?>/gi, '\n')
+    .replace(/<br\s*[/]?>/gi, '\n')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&rsquo;/g, "'")
     .replace(/&lsquo;/g, "'")
@@ -126,73 +126,6 @@ function slugify(text: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-}
-
-/**
- * Split HTML content either by explicit EPUB pagebreaks
- * or by natural narrative paragraph groups.
- */
-function extractPagesFromChapterHtml(
-  html: string,
-  targetDensity = 220,
-  forceDensity = false,
-): string[] {
-  // Check if explicit pagebreak markers exist across the chapter
-  const pagebreakRegex = /<(?:p|span|div|a)\s+[^>]*(?:epub:type=["']pagebreak["']|class=["'][^"']*page(?:-)?break[^"']*|id=["'](?:page|pb|p)[-_]?[0-9]+["'])[^>]*>/gi
-  const rawSections = html.split(pagebreakRegex)
-  const cleanedSections = rawSections
-    .map((s) => cleanHtmlText(s))
-    .filter((s) => s.length > 0)
-
-  // If chapter has genuine internal page markers (> 3 per chapter) and we aren't forcing density, use them directly
-  if (!forceDensity && cleanedSections.length >= 4) {
-    return cleanedSections
-  }
-
-  // Otherwise, use standard physical book page density (~220 words per page at paragraph boundaries)
-  const fullText = cleanHtmlText(html)
-  const paragraphs = fullText
-    .split(/\n\n+/)
-    .map((p) => p.trim())
-    .filter((p) => p.length > 0)
-    .filter((p) => {
-      if (/^—?\s*(?:CHAPTER|PART|BOOK)\s+(?:[A-Z0-9]+|ONE|TWO|THREE|FOUR|FIVE|SIX|SEVEN|EIGHT|NINE|TEN)\s*—?$/i.test(p)) return false;
-      return true;
-    })
-
-  if (paragraphs.length === 0) return []
-
-  const pages: string[] = []
-  let currentParas: string[] = []
-  let currentWords = 0
-
-  for (let i = 0; i < paragraphs.length; i++) {
-    const para = paragraphs[i]
-    const words = para.split(/\s+/).filter(Boolean).length
-    const nextWords = currentWords + words
-
-    if (currentWords > 0 && nextWords >= targetDensity) {
-      if (Math.abs(currentWords - targetDensity) <= Math.abs(nextWords - targetDensity)) {
-        pages.push(currentParas.join('\n\n'))
-        currentParas = [para]
-        currentWords = words
-      } else {
-        currentParas.push(para)
-        pages.push(currentParas.join('\n\n'))
-        currentParas = []
-        currentWords = 0
-      }
-    } else {
-      currentParas.push(para)
-      currentWords += words
-    }
-  }
-
-  if (currentParas.length > 0) {
-    pages.push(currentParas.join('\n\n'))
-  }
-
-  return pages
 }
 
 /**

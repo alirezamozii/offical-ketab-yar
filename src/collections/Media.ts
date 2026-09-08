@@ -6,6 +6,7 @@
  */
 
 import type { CollectionConfig } from 'payload'
+import { canDeleteContent } from '../payload/access'
 
 export const mediaCollection: CollectionConfig = {
   slug: 'media',
@@ -22,16 +23,18 @@ export const mediaCollection: CollectionConfig = {
     read: () => true,
     create: ({ req: { user } }) => Boolean(user),
     update: ({ req: { user } }) => Boolean(user),
-    delete: ({ req: { user } }) => Boolean(user),
+    delete: ({ req: { user } }) => canDeleteContent(user),
   },
   upload: {
+    staticDir: 'public/media',
     imageSizes: [
       { name: 'large', width: 1920, height: 1080, position: 'centre' },
       { name: 'medium', width: 768, height: 768, position: 'centre' },
       { name: 'small', width: 400, height: 400, position: 'centre' },
       { name: 'thumbnail', width: 150, height: 150, position: 'centre' },
     ],
-    mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'],
+    // SVG can execute active content when served from the application origin.
+    mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
   },
   fields: [
     {

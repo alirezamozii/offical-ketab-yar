@@ -20,9 +20,12 @@ import { Button } from '@/components/ui/button'
 import { AudioWaveBars } from '@/components/reader/audio-wave-bars'
 import { useTTSContext } from '@/hooks/tts-provider'
 import { useReader } from '@/components/reader/reader-context'
+import { useReaderSettingsStore } from '@/lib/store/reader-settings-store'
 import { toPersianDigits } from '@/lib/reader/types'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Pause, Play, Square, Volume2 } from 'lucide-react'
+
+const SPEEDS = [0.25, 0.5, 1, 1.25, 1.5, 2]
 
 function formatTime(sec: number): string {
   if (!Number.isFinite(sec) || sec < 0) sec = 0
@@ -36,6 +39,14 @@ export function AudioPlayerBar() {
   const tts = useTTSContext()
   const { themeStyle } = useReader()
   const reduceMotion = useReducedMotion()
+  const audioSpeed = useReaderSettingsStore((state) => state.audioSpeed)
+  const setAudioSpeed = useReaderSettingsStore((state) => state.setAudioSpeed)
+
+  const cycleSpeed = () => {
+    const currentIndex = SPEEDS.findIndex((s) => Math.abs(s - audioSpeed) < 0.05)
+    const nextIndex = (currentIndex + 1) % SPEEDS.length
+    setAudioSpeed(SPEEDS[nextIndex])
+  }
 
   const visible = Boolean(
     tts.currentText || tts.isPlaying || tts.isPaused || tts.isLoading,
@@ -94,6 +105,22 @@ export function AudioPlayerBar() {
           >
             <Square className="h-4 w-4" />
           </Button>
+
+          {/* Speed Toggle (0.25x -> 0.5x -> 1x -> 1.25x -> 1.5x -> 2x) */}
+          <button
+            type="button"
+            onClick={cycleSpeed}
+            className="flex h-9 shrink-0 items-center justify-center rounded-xl border px-2.5 text-xs font-bold tabular-nums transition-[transform,opacity,colors,border-color,background-color] active:scale-95 hover:opacity-90"
+            style={{
+              borderColor: themeStyle.accent + '44',
+              background: themeStyle.accent + '18',
+              color: themeStyle.accent,
+            }}
+            title="تغییر سرعت پخش (۰٫۲۵x، ۰٫۵x، ۱x، ۱٫۲۵x، ۱٫۵x، ۲x)"
+            aria-label={`تغییر سرعت پخش، سرعت فعلی ${audioSpeed} برابر`}
+          >
+            {audioSpeed}×
+          </button>
 
           {/* Progress + time */}
           <div className="flex min-w-0 flex-1 flex-col gap-1">

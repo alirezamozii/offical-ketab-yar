@@ -1,0 +1,21 @@
+[
+  {
+    "page": "library",
+    "path": "/library",
+    "preset": "mobile",
+    "run": 1,
+    "scores": {
+      "performance": 85,
+      "accessibility": 97,
+      "best-practices": 96,
+      "seo": 91
+    },
+    "metrics": {
+      "first-contentful-paint": 1228.803,
+      "largest-contentful-paint": 4078.8029999999994,
+      "total-blocking-time": 140,
+      "cumulative-layout-shift": 0,
+      "speed-index": 2268.9189199992757
+    }
+  }
+]

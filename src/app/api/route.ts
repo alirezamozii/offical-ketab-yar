@@ -11,7 +11,7 @@ import { NextResponse } from 'next/server'
  */
 export async function GET() {
   return NextResponse.json({
-    name: 'Ketab-Yar API',
+    name: 'Bookzi API',
     version: '0.2.0',
     docs: '/',
     status: 'ok',

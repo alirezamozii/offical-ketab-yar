@@ -4,7 +4,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { BlogCover } from '@/components/blog/blog-cover'
 import { useEffect, useMemo, useState } from 'react'
-import { motion, useReducedMotion } from 'framer-motion'
 import { ArrowLeft, Calendar, Clock, BookOpen, User, Eye, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -56,7 +55,6 @@ interface BlogListResponse {
 type LoadState = 'loading' | 'ready' | 'error'
 
 export function BlogPageClient() {
-  const reduceMotion = useReducedMotion()
   const { formatDate, toPersianDigits, formatNumber } = usePersianLocale()
 
   const [state, setState] = useState<LoadState>('loading')
@@ -107,12 +105,7 @@ export function BlogPageClient() {
   // ---- Empty state --------------------------------------------------------
   if (showEmpty) {
     return (
-      <motion.div
-        initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="mx-auto max-w-2xl px-4 py-20 text-center sm:py-28"
-      >
+      <div className="mx-auto max-w-2xl px-4 py-20 text-center sm:py-28">
         <span className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gold-400/30 to-gold-600/20 text-gold-700 dark:text-gold-300">
           <BookOpen className="h-8 w-8" />
         </span>
@@ -131,19 +124,14 @@ export function BlogPageClient() {
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
-      </motion.div>
+      </div>
     )
   }
 
   // ---- Error state --------------------------------------------------------
   if (showError) {
     return (
-      <motion.div
-        initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="mx-auto max-w-2xl px-4 py-20 text-center sm:py-28"
-      >
+      <div className="mx-auto max-w-2xl px-4 py-20 text-center sm:py-28">
         <span className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
           <BookOpen className="h-8 w-8" />
         </span>
@@ -162,7 +150,7 @@ export function BlogPageClient() {
           <Sparkles className="h-4 w-4" />
           تلاش مجدد
         </Button>
-      </motion.div>
+      </div>
     )
   }
 
@@ -171,7 +159,7 @@ export function BlogPageClient() {
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
       <div className="space-y-2 pb-8">
         <span className="inline-block rounded-full bg-gold-500/15 px-3 py-1 text-xs font-bold text-gold-700 dark:text-gold-400">
-          بلاگ کتاب‌یار
+          بلاگ بوکزی
         </span>
         <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
           یادگیری زبان با کتاب
@@ -199,13 +187,9 @@ export function BlogPageClient() {
       ) : (
         <>
           <div className="divide-y divide-border/60">
-            {posts.map((post, i) => (
-              <motion.article
+            {posts.map((post) => (
+              <article
                 key={post.id}
-                initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ duration: 0.4, delay: i * 0.05 }}
                 className="group py-6 cull-offscreen"
               >
                 <Link
@@ -273,7 +257,7 @@ export function BlogPageClient() {
                           </Avatar>
                           <span className="flex items-center gap-1">
                             <User className="h-3 w-3" />
-                            {post.author.name || post.author.username || 'کتاب‌یار'}
+                            {post.author.name || post.author.username || 'بوکزی'}
                           </span>
                         </span>
                         <span className="inline-flex items-center gap-1 text-sm font-semibold text-gold-700 dark:text-gold-300">
@@ -284,7 +268,7 @@ export function BlogPageClient() {
                     </div>
                   </div>
                 </Link>
-              </motion.article>
+              </article>
             ))}
           </div>
 

@@ -73,7 +73,7 @@ const DEFAULTS = {
   showTranslation: true,
   showSubtitles: true,
   pageMode: 'scroll' as ReaderPageMode,
-  voiceId: 'fa-IR-FaridNeural',
+  voiceId: 'fa-IR-DilaraNeural',
   audioSpeed: 1.0,
 }
 

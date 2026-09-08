@@ -10,7 +10,7 @@ export default function AboutLoading() {
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <div className="space-y-8">
         {/* sr-only announcement */}
-        <span className="sr-only">در حال بارگذاری درباره کتاب‌یار…</span>
+        <span className="sr-only">در حال بارگذاری درباره بوکزی…</span>
 
         {/* Centered header */}
         <header className="space-y-3 text-center">

@@ -3,7 +3,7 @@
 /**
  * src/lib/notifications.ts
  * ---------------------------------------------------------------
- * Web Notifications API wrapper for Ketab-Yar's Reading Reminders
+ * Web Notifications API wrapper for Bookzi's Reading Reminders
  * system.
  *
  * ─ Why this exists ──────────────────────────────────────────────
@@ -457,7 +457,7 @@ export function sendLevelUpNotification(level: number): boolean {
  */
 export function sendTestNotification(): boolean {
   return sendNotification(
-    'اعلان آزمایشی کتاب‌یار',
+    'اعلان آزمایشی بوکزی',
     'اگر این را می‌بینید، اعلان‌ها به‌درستی کار می‌کنند!',
     {
       tag: 'ky-test',

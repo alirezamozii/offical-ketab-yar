@@ -1,7 +1,5 @@
 'use client'
 
-import { STORAGE_KEYS } from './storage-keys'
-
 const CACHED_BOOKS_KEY = 'ky_fully_cached_books'
 
 /**
@@ -13,7 +11,7 @@ export function getFullyCachedBooks(): string[] {
     const raw = localStorage.getItem(CACHED_BOOKS_KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
+    return Array.isArray(parsed) ? parsed.filter((slug): slug is string => typeof slug === 'string') : []
   } catch {
     return []
   }
@@ -29,7 +27,7 @@ export function isBookFullyCached(slug: string): boolean {
 /**
  * Marks a book as fully cached offline.
  */
-export function setBookFullyCached(slug: string, title: string) {
+export function setBookFullyCached(slug: string, _title: string) {
   if (typeof window === 'undefined') return
   try {
     const cached = getFullyCachedBooks()
@@ -38,22 +36,6 @@ export function setBookFullyCached(slug: string, title: string) {
       localStorage.setItem(CACHED_BOOKS_KEY, JSON.stringify(cached))
     }
 
-    // Also add to readerSessionHistory so it shows up in "در دسترس آفلاین" on the /offline page
-    const rawHistory = localStorage.getItem(STORAGE_KEYS.readerSessionHistory)
-    const history = rawHistory ? JSON.parse(rawHistory) : []
-    if (Array.isArray(history)) {
-      const exists = history.some((h: any) => h.bookSlug === slug)
-      if (!exists) {
-        history.push({
-          startedAt: new Date().toISOString(),
-          endedAt: new Date().toISOString(),
-          seconds: 1, // small dummy value
-          bookSlug: slug,
-          bookTitle: title,
-        })
-        localStorage.setItem(STORAGE_KEYS.readerSessionHistory, JSON.stringify(history))
-      }
-    }
   } catch (err) {
     console.error('Failed to mark book as cached:', err)
   }
@@ -61,8 +43,9 @@ export function setBookFullyCached(slug: string, title: string) {
 
 /**
  * Progressive prefetcher that fetches pages in chunks of 20, 
- * cover images, and reader HTML page. Everything gets cached 
- * automatically by the Service Worker's runtime caching strategies.
+ * cover images, and reader HTML. Offline persistence depends on the active
+ * service worker's runtime caching rules; successful fetches alone do not
+ * guarantee that the browser retained every resource.
  */
 export async function prefetchBook(
   slug: string,
@@ -71,33 +54,30 @@ export async function prefetchBook(
   onProgress?: (progress: number) => void
 ): Promise<void> {
   if (typeof window === 'undefined') return
+  if (!Number.isSafeInteger(pageCount) || pageCount <= 0) {
+    throw new Error('Cannot prefetch a book without a valid page count')
+  }
 
   try {
     if (onProgress) onProgress(5)
 
-    // 1. Fetch the book details API so it is cached
-    try {
-      await fetch(`/api/books/${slug}`)
-    } catch (e) {
-      console.warn('Failed to prefetch book details API:', e)
-    }
+    // 1. Fetch book details.
+    const details = await fetch(`/api/books/${encodeURIComponent(slug)}`)
+    if (!details.ok) throw new Error('Failed to prefetch book details')
 
     // 2. Fetch cover image
     try {
-      await fetch(`/api/books/${slug}/cover`)
+      await fetch(`/api/books/${encodeURIComponent(slug)}/cover`)
     } catch (e) {
       console.warn('Failed to prefetch cover API:', e)
     }
 
     if (onProgress) onProgress(15)
 
-    // 3. Fetch the main reader page HTML so it is cached in the navigate cache (ketab-pages)
-    // The updated SW NAVIGATE_MATCHER matches any URL starting with /books/read/
-    try {
-      await fetch(`/books/read/${slug}`)
-    } catch (e) {
-      console.warn('Failed to prefetch reader HTML:', e)
-    }
+    // 3. Fetch reader HTML. A fetch is not a navigation request; persistence
+    // of this shell is governed separately by the service worker.
+    const reader = await fetch(`/books/read/${encodeURIComponent(slug)}`)
+    if (!reader.ok) throw new Error('Failed to prefetch reader HTML')
 
     if (onProgress) onProgress(25)
 
@@ -109,18 +89,15 @@ export async function prefetchBook(
     for (let i = 0; i < totalChunks; i++) {
       const from = i * chunkSize + 1
       const to = Math.min((i + 1) * chunkSize, pageCount)
-      const url = `/api/books/${slug}/pages?from=${from}&to=${to}`
+      const url = `/api/books/${encodeURIComponent(slug)}/pages?from=${from}&to=${to}`
 
-      try {
-        const res = await fetch(url)
-        if (res.ok) {
-          completedChunks++
-          const percent = 25 + Math.round((completedChunks / totalChunks) * 75)
-          if (onProgress) onProgress(percent)
-        }
-      } catch (err) {
-        console.warn(`Failed to prefetch chunk ${from}-${to}:`, err)
-      }
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`Failed to prefetch pages ${from}-${to}`)
+      // Wait for the response body as fetch resolves as soon as headers arrive.
+      await res.arrayBuffer()
+      completedChunks++
+      const percent = 25 + Math.round((completedChunks / totalChunks) * 74)
+      if (onProgress) onProgress(percent)
 
       // Small pause to yield main thread and avoid overloading network
       await new Promise((resolve) => setTimeout(resolve, 80))
@@ -131,5 +108,6 @@ export async function prefetchBook(
     if (onProgress) onProgress(100)
   } catch (err) {
     console.error('Prefetch failed:', err)
+    throw err
   }
 }

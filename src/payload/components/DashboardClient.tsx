@@ -424,7 +424,7 @@ export const DashboardClient: React.FC<DashboardClientProps> = ({
                   <span>Postgres & Prisma متصل</span>
                 </span>
               </div>
-              <h2>داشبورد جامع آمار و عملکرد کتاب‌یار</h2>
+              <h2>داشبورد جامع آمار و عملکرد بوکزی</h2>
               <p className="tab-subtitle-text">تحلیل بلادرنگ تعامل کاربران، ساعات مطالعه، کتاب‌های خوانده‌شده و تقاضای پشتیبانی</p>
             </div>
             
@@ -1102,7 +1102,7 @@ export const DashboardClient: React.FC<DashboardClientProps> = ({
       {/* ========================================================= */}
       {/* SECTION 3: CONTENT STUDIO & AI IMPORTER WORKSPACE */}
       {/* ========================================================= */}
-      {(activeTab === 'studio' || activeTab === 'import') && (
+      {activeTab === 'studio' && (
         <div className="dashboard-standalone-workspace fade-in">
           <ContentStudio />
         </div>

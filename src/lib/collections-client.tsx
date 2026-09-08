@@ -9,8 +9,8 @@
  *     React component so callers don't trip the `react-hooks/static-
  *     components` lint rule.
  *   • `useCollections()` — the React hook that hydrates from localStorage
- *     on mount, syncs across tabs via the `storage` event, and exposes
- *     memoized action callbacks.
+ *     on mount, syncs across tabs via the `storage` event, syncs in-memory
+ *     via custom `ky:storage` events, and triggers background server sync.
  *
  * Re-exports every universal symbol from `@/lib/collections` so client
  * components can import everything from a single module:
@@ -72,13 +72,7 @@ export {
 
 /**
  * `<CollectionIcon>` — render-on-demand wrapper that resolves a string icon
- * name to the corresponding lucide component. Declared as a stable React
- * component so callers don't trip the `react-hooks/static-components` lint
- * rule (which fires when a component is "created during render" by calling
- * a function that returns a component class).
- *
- * Usage:
- *   <CollectionIcon name="Heart" className="h-5 w-5" />
+ * name to the corresponding lucide component.
  */
 export function CollectionIcon({
   name,
@@ -87,20 +81,12 @@ export function CollectionIcon({
   name: CollectionIconName
   className?: string
 }) {
-  // Look up the icon component from the static ICON_MAP (no function call
-  // returning a component — keeps the `react-hooks/static-components` lint
-  // rule happy).
   const Icon = ICON_MAP[name] ?? Bookmark
   return <Icon className={className} />
 }
 
 // ---------------------------------------------------------------------------
-// React hook — `useCollections`. Mirrors the shape of `useFavorites`:
-//   • Hydrates from localStorage on mount.
-//   • Cross-tab sync via the `storage` event.
-//   • Same-tab sync via the synthetic `ky:storage` CustomEvent dispatched
-//     by `writeCollections`.
-//   • Memoized action callbacks so consumers can use them in deps.
+// React hook — `useCollections`.
 // ---------------------------------------------------------------------------
 
 const KEY = COLLECTIONS_STORAGE_KEY
@@ -124,15 +110,25 @@ export interface UseCollectionsResult {
 
 export function useCollections(): UseCollectionsResult {
   const [collections, setCollections] = useState<Collection[]>(() =>
-    // SSR / first paint: render the defaults so the page isn't empty until
-    // hydration. The real localStorage value replaces this on mount.
     _seedDefaults(),
   )
   const [loaded, setLoaded] = useState(false)
 
   const refresh = useCallback(() => {
-    setCollections(readCollections())
+    const local = readCollections()
+    setCollections(local)
     setLoaded(true)
+  }, [])
+
+  const syncBackground = useCallback((cols: Collection[]) => {
+    if (typeof window === 'undefined') return
+    try {
+      fetch('/api/collections/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ collections: cols }),
+      }).catch(() => {})
+    } catch {}
   }, [])
 
   useEffect(() => {
@@ -161,29 +157,46 @@ export function useCollections(): UseCollectionsResult {
     ): Collection | null => {
       try {
         const c = createCollection(name, description, color, icon)
-        setCollections(readCollections())
+        const updated = readCollections()
+        setCollections(updated)
+        syncBackground(updated)
         return c
       } catch {
         return null
       }
     },
-    [],
+    [syncBackground],
   )
 
-  const remove = useCallback((id: string) => {
-    deleteCollection(id)
-    setCollections(readCollections())
-  }, [])
+  const remove = useCallback(
+    (id: string) => {
+      deleteCollection(id)
+      const updated = readCollections()
+      setCollections(updated)
+      syncBackground(updated)
+    },
+    [syncBackground],
+  )
 
-  const addBook = useCallback((id: string, slug: string) => {
-    addBookToCollection(id, slug)
-    setCollections(readCollections())
-  }, [])
+  const addBook = useCallback(
+    (id: string, slug: string) => {
+      addBookToCollection(id, slug)
+      const updated = readCollections()
+      setCollections(updated)
+      syncBackground(updated)
+    },
+    [syncBackground],
+  )
 
-  const removeBook = useCallback((id: string, slug: string) => {
-    removeBookFromCollection(id, slug)
-    setCollections(readCollections())
-  }, [])
+  const removeBook = useCallback(
+    (id: string, slug: string) => {
+      removeBookFromCollection(id, slug)
+      const updated = readCollections()
+      setCollections(updated)
+      syncBackground(updated)
+    },
+    [syncBackground],
+  )
 
   const isBookIn = useCallback(
     (id: string, slug: string) => {

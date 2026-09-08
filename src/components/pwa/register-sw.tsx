@@ -20,6 +20,16 @@ export function RegisterSW() {
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (!('serviceWorker' in navigator)) return
+    if (process.env.NODE_ENV !== 'production') {
+      void navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          if (registration.active?.scriptURL === new URL('/sw.js', location.origin).href) {
+            void registration.unregister()
+          }
+        }
+      }).catch(() => {})
+      return
+    }
 
     // Register after load so it doesn't block first paint
     const register = () => {

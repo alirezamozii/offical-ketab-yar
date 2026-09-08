@@ -1,7 +1,5 @@
 'use client'
 
-import { motion, useReducedMotion } from 'framer-motion'
-import { usePathname } from 'next/navigation'
 import { useEffect, useState, type ReactNode } from 'react'
 
 /**
@@ -26,44 +24,28 @@ let hasMountedGlobally = false
  * - Respects `prefers-reduced-motion`: opacity-only, near-instant.
  *
  * Used inside `src/app/template.tsx`.
+ *
+ * Performance: Pure CSS transitions — no framer-motion dependency.
  */
 export function PageTransition({ children }: { children: ReactNode }) {
-  const pathname = usePathname()
-  const prefersReduced = useReducedMotion()
-
-  // `isFirstLoad` is true only on the first ever mount (SSR + initial
-  // client hydration). On subsequent navigations the template remounts,
-  // but the module-level flag is already true → isFirstLoad=false → animate.
-  const [mounted, setMounted] = useState(false)
+  // Capture this once per template mount. Reading the global on each
+  // render can hide the initial page when a provider rerenders it.
+  const [shouldAnimate] = useState(() => hasMountedGlobally)
 
   useEffect(() => {
-    setMounted(true)
+    hasMountedGlobally = true
   }, [])
 
-  const shouldAnimate = mounted && hasMountedGlobally
-  if (mounted && !hasMountedGlobally) {
-    hasMountedGlobally = true
+  // First load: no animation classes at all — content visible immediately
+  if (!shouldAnimate) {
+    return <div className="min-h-0">{children}</div>
   }
 
   return (
-    <motion.div
-      key={pathname}
-      initial={
-        shouldAnimate
-          ? prefersReduced
-            ? { opacity: 0 }
-            : { opacity: 0, y: 6 }
-          : false
-      }
-      animate={prefersReduced ? { opacity: 1 } : { opacity: 1, y: 0 }}
-      transition={
-        prefersReduced
-          ? { duration: 0.08, ease: 'easeOut' }
-          : { duration: 0.2, ease: [0.22, 1, 0.36, 1] }
-      }
-      className="min-h-0"
+    <div
+      className="min-h-0 motion-safe:animate-[testimonialFade_200ms_ease-out_both]"
     >
       {children}
-    </motion.div>
+    </div>
   )
 }

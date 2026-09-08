@@ -2,9 +2,12 @@ import { NextResponse } from 'next/server'
 import { getPayloadClient } from '@/lib/payload'
 import { db } from '@/lib/db'
 import { slugify } from '@/lib/utils'
+import { requireAdminApi } from '@/lib/auth-session'
 
-export async function GET() {
+export async function POST() {
   try {
+    const caller = await requireAdminApi()
+    if (caller instanceof NextResponse) return caller
     const payload = await getPayloadClient()
     const logs: string[] = []
 

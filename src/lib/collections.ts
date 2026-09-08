@@ -282,9 +282,9 @@ function isValidCollection(x: unknown): x is Collection {
     typeof c.id === 'string' &&
     typeof c.name === 'string' &&
     typeof c.description === 'string' &&
-    Array.isArray(c.bookSlugs) &&
-    typeof c.color === 'string' &&
-    typeof c.icon === 'string' &&
+    Array.isArray(c.bookSlugs) && c.bookSlugs.every((slug) => typeof slug === 'string') &&
+    typeof c.color === 'string' && COLLECTION_COLOR_LIST.includes(c.color as CollectionColor) &&
+    typeof c.icon === 'string' && COLLECTION_ICON_LIST.includes(c.icon as CollectionIconName) &&
     typeof c.createdAt === 'string' &&
     typeof c.updatedAt === 'string'
   )

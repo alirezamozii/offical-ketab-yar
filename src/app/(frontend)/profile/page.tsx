@@ -5,7 +5,7 @@ import { SITE } from '@/lib/site'
 
 export const metadata: Metadata = {
   title: 'پروفایل',
-  description: 'پروفایل کاربری شما در کتاب‌یار.',
+  description: 'پروفایل کاربری شما در بوکزی.',
   alternates: { canonical: `${SITE.url}/profile` },
   robots: {
     index: false,

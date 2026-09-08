@@ -2,9 +2,8 @@
 
 import { BookCover } from '@/components/books/book-cover'
 import { FavoriteButton } from '@/components/books/favorite-button'
-import { TrendingBadge } from '@/components/books/trending-badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { motion, useReducedMotion } from 'framer-motion'
+
 import { BookOpen, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 import { memo } from 'react'
@@ -35,21 +34,16 @@ interface BookCardProps {
  * state) re-renders the entire list even though each card's props are
  * unchanged. Props are all primitives / a stable `book` object reference
  * (loaded once from the API), so the default shallow comparison is enough
- * — no custom comparator needed. `memo` does NOT break internal state
- * (framer-motion's `useReducedMotion`) — memo only short-circuits re-
- * renders when props are unchanged, not when internal hooks fire.
+ * — no custom comparator needed.
  */
 export const BookCard = memo(function BookCard({ book, progress, href, cached }: BookCardProps) {
-  const reduceMotion = useReducedMotion()
 
 
   const inProgress = progress !== undefined && progress > 0 && progress < 100
 
   return (
-    <motion.article
-      whileHover={reduceMotion ? undefined : { y: -4 }}
-      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="group relative block h-full cull-offscreen"
+    <article
+      className="group relative block h-full cull-offscreen motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.16,1,0.3,1)] motion-safe:hover:-translate-y-1"
     >
       <div className="relative h-full overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm transition-[transform,opacity,colors,border-color,background-color] duration-300 ease-out-expo group-hover:border-gold-400/40 hover:shadow-md">
         {/* ─── COVER ─── */}
@@ -117,22 +111,12 @@ export const BookCard = memo(function BookCard({ book, progress, href, cached }:
             />
           </div>
 
-          {/* Trending badge — top-end corner, always visible for popular books.
-              Only shows for books with viewCount >= 1000 (محبوب tier or higher). */}
-          {book.viewCount >= 1000 && (
-            <div className="absolute end-2 top-2 z-20">
-              <TrendingBadge viewCount={book.viewCount} />
-            </div>
-          )}
-
-          {/* Read CTA — mobile always visible, desktop slides up on hover.
-              pointer-events-none so it doesn't intercept the stretched-link
-              click — it's purely decorative. */}
+          {/* Read CTA — desktop slides up on hover; hidden on mobile to keep cover clean and unobscured */}
           <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-1.5 transition-transform duration-300 ease-out-expo sm:translate-y-full sm:p-2 sm:group-hover:translate-y-0"
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 hidden p-2 transition-transform duration-300 ease-out-expo sm:block sm:translate-y-full sm:group-hover:translate-y-0"
             aria-hidden="true"
           >
-            <div className="flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-gold-600 via-gold-500 to-gold-600 py-1.5 text-[11px] font-semibold text-white shadow-lg sm:text-xs">
+            <div className="flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-gold-600 via-gold-500 to-gold-600 py-1.5 text-xs font-semibold text-white shadow-lg">
               <BookOpen className="h-3.5 w-3.5" />
               {inProgress ? 'ادامه' : 'مطالعه'}
             </div>
@@ -175,12 +159,13 @@ export const BookCard = memo(function BookCard({ book, progress, href, cached }:
           don't navigate. */}
       <Link
         href={href || `/books/${book.slug}`}
+        prefetch={false}
         className="absolute inset-0 z-10 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         aria-label={`مشاهده ${book.title}${book.author ? ` — ${book.author}` : ''}`}
       >
         <span className="sr-only">مشاهده {book.title}</span>
       </Link>
-    </motion.article>
+    </article>
   )
 })
 

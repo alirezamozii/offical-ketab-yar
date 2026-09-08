@@ -538,7 +538,7 @@ function AchievementDialog({
 
   const handleShare = useCallback(async () => {
     if (!ach) return
-    const text = `🏆 دستاورد «${ach.title}» را در کتاب‌یار باز کردم! ${ach.description}`
+    const text = `🏆 دستاورد «${ach.title}» را در بوکزی باز کردم! ${ach.description}`
     const url =
       typeof window !== 'undefined'
         ? `${window.location.origin}/achievements`

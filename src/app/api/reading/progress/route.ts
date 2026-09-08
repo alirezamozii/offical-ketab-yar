@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { getEffectiveOwner } from '@/lib/session'
 import { parseBody } from '@/lib/api-validate'
 import { apiError } from '@/lib/api-error'
+import { serializable } from '@/lib/transaction'
 
 /**
  * /api/reading/progress — persist + read per-book reading progress.
@@ -18,8 +19,8 @@ export async function GET() {
   try {
     const owner = await getEffectiveOwner()
     const where = owner.userId ? { userId: owner.userId } : { guestId: owner.guestId! }
-    const rows = await db.readingProgress.findMany({ where })
-    return NextResponse.json(rows)
+    const rows = await db.readingProgress.findMany({ where, select: { bookSlug: true, currentPage: true, percent: true, lastReadAt: true } })
+    return NextResponse.json(rows, { headers: { 'Cache-Control': 'private, no-store' } })
   } catch (err) {
     console.error('[/api/reading/progress] GET failed:', err)
     return apiError('بارگذاری پیشرفت مطالعه ناموفق بود.', 500)
@@ -50,70 +51,50 @@ export async function POST(req: NextRequest) {
     const parsed = await parseBody(req, ProgressSchema)
     if (!parsed.ok) return parsed.response
 
-    const { bookSlug, currentPage, totalPages, prevPage, minutesDelta } = parsed.data
-    const percent = Math.max(
-      0,
-      Math.min(100, Math.round((currentPage / Math.max(totalPages, 1)) * 100)),
-    )
-
-    const row = await db.readingProgress.upsert({
-      where: owner.userId
-        ? { userId_bookSlug: { userId: owner.userId, bookSlug } }
-        : { guestId_bookSlug: { guestId: owner.guestId!, bookSlug } },
-      update: { currentPage, percent, lastReadAt: new Date() },
-      create: owner.userId
-        ? { userId: owner.userId, guestId: null, bookSlug, currentPage, percent }
-        : { guestId: owner.guestId!, userId: null, bookSlug, currentPage, percent },
-    })
-
-    // ── A7: Record a real ReadingSession so the leaderboard can aggregate
-    //    genuine per-period reading activity instead of fabricating it.
-    //
-    // One ReadingSession row per (owner, book, calendar day). We upsert so
-    // repeated progress saves within the same day accumulate pages/minutes.
-    // Pages are only counted forward (a user re-reading earlier pages doesn't
-    // inflate the count). The delta is `currentPage - prevPage` when positive.
+    const { bookSlug, currentPage, totalPages, minutesDelta } = parsed.data
     const now = new Date()
     const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const pagesDelta = Math.max(0, currentPage - prevPage)
-
-    if (pagesDelta > 0 || minutesDelta > 0) {
-      try {
-        // Find today's session for this owner+book (if any) to accumulate.
-        const sessionWhere = owner.userId
-          ? { userId: owner.userId, bookSlug }
-          : { guestId: owner.guestId!, bookSlug }
-        const existing = await db.readingSession.findFirst({
-          where: {
-            ...sessionWhere,
-            startedAt: { gte: dayStart },
-            endedAt: null,
-          },
+    const ownerWhere = owner.userId ? { userId: owner.userId } : { guestId: owner.guestId! }
+    const progressWhere = owner.userId
+      ? { userId_bookSlug: { userId: owner.userId, bookSlug } }
+      : { guestId_bookSlug: { guestId: owner.guestId!, bookSlug } }
+    const row = await serializable(async (tx) => {
+      const previous = await tx.readingProgress.findUnique({
+        where: progressWhere,
+        select: { currentPage: true },
+      })
+      const page = Math.min(currentPage, totalPages)
+      const percent = Math.round((page / totalPages) * 100)
+      const saved = await tx.readingProgress.upsert({
+        where: progressWhere,
+        update: { currentPage: page, percent, lastReadAt: now },
+        create: { ...ownerWhere, bookSlug, currentPage: page, percent, lastReadAt: now },
+        select: { bookSlug: true, currentPage: true, percent: true, lastReadAt: true },
+      })
+      // Never trust a client-supplied previous position. Progress and activity
+      // commit together so retries cannot double-count the same transition.
+      const pagesDelta = Math.max(0, page - (previous?.currentPage ?? 0))
+      if (pagesDelta > 0 || minutesDelta > 0) {
+        const existing = await tx.readingSession.findFirst({
+          where: { ...ownerWhere, bookSlug, startedAt: { gte: dayStart } },
           orderBy: { startedAt: 'desc' },
+          select: { id: true },
         })
-
         if (existing) {
-          await db.readingSession.update({
+          await tx.readingSession.update({
             where: { id: existing.id },
-            data: {
-              pagesRead: existing.pagesRead + pagesDelta,
-              minutesRead: existing.minutesRead + minutesDelta,
-              endedAt: now,
-            },
+            data: { pagesRead: { increment: pagesDelta }, minutesRead: { increment: minutesDelta }, endedAt: now },
+            select: { id: true },
           })
         } else {
-          await db.readingSession.create({
-            data: owner.userId
-              ? { userId: owner.userId, guestId: null, bookSlug, pagesRead: pagesDelta, minutesRead: minutesDelta, endedAt: now }
-              : { guestId: owner.guestId!, userId: null, bookSlug, pagesRead: pagesDelta, minutesRead: minutesDelta, endedAt: now },
+          await tx.readingSession.create({
+            data: { ...ownerWhere, bookSlug, pagesRead: pagesDelta, minutesRead: minutesDelta, startedAt: now, endedAt: now },
+            select: { id: true },
           })
         }
-      } catch (sessionErr) {
-        // ReadingSession write is best-effort — never fail the whole progress
-        // save because of it (the ReadingProgress row above already succeeded).
-        console.error('[/api/reading/progress] ReadingSession write failed:', sessionErr)
       }
-    }
+      return saved
+    })
 
     return NextResponse.json(row)
   } catch (err) {

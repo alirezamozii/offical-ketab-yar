@@ -48,7 +48,7 @@ const BodySchema = z.object({
     .min(1, 'متن برای تبدیل به صدا وارد نشده است.')
     .max(MAX_INPUT_CHARS, `متن بیش از حد طولانی است. حداکثر ${MAX_INPUT_CHARS} کاراکتر در هر درخواست.`),
   lang: z.enum(['en', 'fa']).default('en'),
-  speed: z.coerce.number().finite().min(0.5).max(2.0).default(1.0),
+  speed: z.coerce.number().finite().min(0.25).max(2.0).default(1.0),
   voice: z.string().optional(),
 })
 
@@ -57,9 +57,13 @@ const VOICE_MAP: Record<string, string> = {
   'en': 'en-US-AvaMultilingualNeural',
   'en-female': 'en-US-AvaMultilingualNeural',
   'en-male': 'en-US-AndrewMultilingualNeural',
-  'fa': 'fa-IR-FaridNeural',
-  'fa-male': 'fa-IR-FaridNeural',
+  'en-US-AvaMultilingualNeural': 'en-US-AvaMultilingualNeural',
+  'en-US-AndrewMultilingualNeural': 'en-US-AndrewMultilingualNeural',
+  'fa': 'fa-IR-DilaraNeural',
   'fa-female': 'fa-IR-DilaraNeural',
+  'fa-male': 'fa-IR-FaridNeural',
+  'fa-IR-DilaraNeural': 'fa-IR-DilaraNeural',
+  'fa-IR-FaridNeural': 'fa-IR-FaridNeural',
 }
 
 /** Convert speed (0.5–2.0) to Edge TTS rate format (+0%, -50%, etc.) */
@@ -68,14 +72,22 @@ function speedToRate(speed: number): string {
   return pct >= 0 ? `+${pct}%` : `${pct}%`
 }
 
+interface WordBoundaryItem {
+  part: string
+  start: number
+  end: number
+}
+
 // ── Edge TTS engine (primary) ──────────────────────────────────────────────
 async function generateWithEdgeTTS(
   text: string,
   voice: string,
   speed: number,
-): Promise<Buffer | null> {
+): Promise<{ buffer: Buffer; wordBoundaries?: WordBoundaryItem[] } | null> {
   const tmpDir = os.tmpdir()
-  const tmpFile = path.join(tmpDir, `tts-${randomUUID()}.mp3`)
+  const id = randomUUID()
+  const tmpFile = path.join(tmpDir, `tts-${id}.mp3`)
+  const subFile = path.join(tmpDir, `tts-${id}.mp3.json`)
 
   try {
     const tts = new EdgeTTS({
@@ -83,23 +95,36 @@ async function generateWithEdgeTTS(
       rate: speedToRate(speed),
       volume: '+0%',
       timeout: 15_000,
+      saveSubtitles: true,
     })
 
     await tts.ttsPromise(text, tmpFile)
     const buffer = await fs.readFile(tmpFile)
 
+    let wordBoundaries: WordBoundaryItem[] | undefined
+    try {
+      const subContent = await fs.readFile(subFile, 'utf-8')
+      const parsed = JSON.parse(subContent)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        wordBoundaries = parsed
+      }
+    } catch {
+      // Subtitle file might not be generated if edge-tts had no word boundaries
+    }
+
     if (!buffer || buffer.length === 0) return null
-    return buffer
+    return { buffer, wordBoundaries }
   } catch (err) {
     console.error('[tts] edge-tts failed:', err)
     return null
   } finally {
-    // Clean up temp file
+    // Clean up temp files
     try {
       await fs.unlink(tmpFile)
-    } catch {
-      /* ignore */
-    }
+    } catch {}
+    try {
+      await fs.unlink(subFile)
+    } catch {}
   }
 }
 
@@ -149,21 +174,28 @@ export async function POST(req: NextRequest) {
 
   // Resolve voice: explicit override > lang default
   const voiceKey = voiceOverride || lang
-  const edgeVoice = VOICE_MAP[voiceKey] || VOICE_MAP[lang]
+  const edgeVoice = VOICE_MAP[voiceKey] || voiceOverride || VOICE_MAP[lang]
 
   // ── Try Edge TTS first (free, high-quality neural voices) ──
-  const edgeBuffer = await generateWithEdgeTTS(text, edgeVoice, speed)
-  if (edgeBuffer) {
-    return new NextResponse(new Uint8Array(edgeBuffer), {
+  const edgeResult = await generateWithEdgeTTS(text, edgeVoice, speed)
+  if (edgeResult) {
+    const { buffer, wordBoundaries } = edgeResult
+    const headers: Record<string, string> = {
+      'Content-Type': 'audio/mpeg',
+      'Content-Length': buffer.length.toString(),
+      'Cache-Control': 'no-store',
+      'X-TTS-Engine': 'edge',
+      'X-TTS-Voice': edgeVoice,
+      'X-TTS-Lang': lang,
+    }
+    if (wordBoundaries && wordBoundaries.length > 0) {
+      headers['X-TTS-Word-Boundaries'] = Buffer.from(
+        JSON.stringify(wordBoundaries),
+      ).toString('base64')
+    }
+    return new NextResponse(new Uint8Array(buffer), {
       status: 200,
-      headers: {
-        'Content-Type': 'audio/mpeg',
-        'Content-Length': edgeBuffer.length.toString(),
-        'Cache-Control': 'no-store',
-        'X-TTS-Engine': 'edge',
-        'X-TTS-Voice': edgeVoice,
-        'X-TTS-Lang': lang,
-      },
+      headers,
     })
   }
 
@@ -190,17 +222,56 @@ export async function POST(req: NextRequest) {
 }
 
 /**
- * GET /api/tts — metadata endpoint with available voices.
+ * GET /api/tts
+ * If `?text=...` is provided, generates and returns the Edge TTS audio stream (ideal for dictionary word pronunciation).
+ * Otherwise returns metadata with available voices.
  */
-export async function GET() {
-  return NextResponse.json(
-    {
-      ok: true,
-      service: 'tts',
-      maxChars: MAX_INPUT_CHARS,
-      engine: 'edge-tts',
-      voices: Object.keys(VOICE_MAP),
-    },
-    { headers: { 'Cache-Control': 'no-store' } },
-  )
+export async function GET(req: NextRequest) {
+  const text = req.nextUrl.searchParams.get('text')?.trim()
+  if (!text) {
+    return NextResponse.json(
+      {
+        ok: true,
+        service: 'tts',
+        maxChars: MAX_INPUT_CHARS,
+        engine: 'edge-tts',
+        voices: Object.keys(VOICE_MAP),
+      },
+      { headers: { 'Cache-Control': 'no-store' } },
+    )
+  }
+
+  const blocked = await aiRateLimit(req, { anonLimit: 20, authLimit: 60, name: 'tts-get' })
+  if (blocked) return blocked
+
+  const lang = req.nextUrl.searchParams.get('lang') === 'fa' ? 'fa' : 'en'
+  const edgeVoice = VOICE_MAP[lang] || VOICE_MAP.en
+  const edgeResult = await generateWithEdgeTTS(text.slice(0, 200), edgeVoice, 1.0)
+  if (edgeResult) {
+    return new NextResponse(new Uint8Array(edgeResult.buffer), {
+      status: 200,
+      headers: {
+        'Content-Type': 'audio/mpeg',
+        'Content-Length': edgeResult.buffer.length.toString(),
+        'Cache-Control': 'public, max-age=86400, s-maxage=604800',
+        'X-TTS-Engine': 'edge',
+      },
+    })
+  }
+
+  // Fallback to z-ai SDK
+  const zaiBuffer = await generateWithZai(text.slice(0, 200), lang, 1.0)
+  if (zaiBuffer) {
+    return new NextResponse(new Uint8Array(zaiBuffer), {
+      status: 200,
+      headers: {
+        'Content-Type': 'audio/wav',
+        'Content-Length': zaiBuffer.length.toString(),
+        'Cache-Control': 'public, max-age=86400, s-maxage=604800',
+        'X-TTS-Engine': 'zai-fallback',
+      },
+    })
+  }
+
+  return NextResponse.json({ error: 'صدا در دسترس نیست' }, { status: 500 })
 }

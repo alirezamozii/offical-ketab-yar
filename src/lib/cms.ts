@@ -17,7 +17,7 @@
  */
 
 import { cache } from 'react'
-import { db } from '@/lib/db'
+import { db, safeQuery } from '@/lib/db'
 import type {
   CuratedQuote,
   QuoteTheme,
@@ -75,36 +75,94 @@ export function dbQuoteToLegacy(q: {
   }
 }
 
-function withTimeout<T>(promise: Promise<T>, ms = 100, fallback: T): Promise<T> {
-  let timer: NodeJS.Timeout
-  const timeout = new Promise<T>((resolve) => {
-    timer = setTimeout(() => resolve(fallback), ms)
-  })
-  return Promise.race([
-    promise.then((res) => {
-      clearTimeout(timer)
-      return res
-    }),
-    timeout,
-  ]).catch(() => fallback)
-}
+export const SEED_QUOTES: CuratedQuote[] = [
+  {
+    id: 'alice-curiouser',
+    text: 'Curiouser and curiouser! cried Alice (she was so much surprised, that for the moment she quite forgot how to speak good English).',
+    textFa: 'عجیب‌تر و غریب‌تر! آلیس فریاد زد (چنان غافلگیر شده بود که در آن لحظه کلاً فراموش کرد چگونه انگلیسی سلیس صحبت کند).',
+    bookSlug: 'alice-in-wonderland',
+    bookTitle: "Alice's Adventures in Wonderland",
+    bookAuthor: 'Lewis Carroll',
+    pageNumber: 2,
+    theme: ['ماجراجویی', 'خیال'],
+    length: 'متوسط',
+  },
+  {
+    id: 'pride-prejudice-truth',
+    text: 'It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.',
+    textFa: 'این حقیقتی است که در سرتاسر جهان پذیرفته شده است، که مرد مجرد صاحب ثروت خوب، حتماً نیازمند همسری است.',
+    bookSlug: 'pride-and-prejudice',
+    bookTitle: 'Pride and Prejudice',
+    bookAuthor: 'Jane Austen',
+    pageNumber: 1,
+    theme: ['عشق', 'حکمت'],
+    length: 'متوسط',
+  },
+  {
+    id: 'little-prince-heart',
+    text: 'It is only with the heart that one can see rightly; what is essential is invisible to the eye.',
+    textFa: 'تنها با چشم دل می‌توان خوب دید؛ آنچه اصل است و ضروری، از چشم پنهان است.',
+    bookSlug: 'the-little-prince',
+    bookTitle: 'The Little Prince',
+    bookAuthor: 'Antoine de Saint-Exupéry',
+    pageNumber: 4,
+    theme: ['حکمت', 'دوستی', 'رشد شخصی'],
+    length: 'کوتاه',
+  },
+  {
+    id: 'great-gatsby-boats',
+    text: 'So we beat on, boats against the current, borne back ceaselessly into the past.',
+    textFa: 'پس پارو می‌زنیم، همچون قایق‌هایی برخلاف جهت جریان آب، که بی‌وقفه به سوی گذشته بازگردانده می‌شویم.',
+    bookSlug: 'the-great-gatsby',
+    bookTitle: 'The Great Gatsby',
+    bookAuthor: 'F. Scott Fitzgerald',
+    pageNumber: 5,
+    theme: ['زمان', 'حکمت'],
+    length: 'کوتاه',
+  },
+  {
+    id: 'christmas-carol-burden',
+    text: 'No one is useless in this world who lightens the burdens of another.',
+    textFa: 'هیچ‌کس در این جهان بی‌فایده نیست اگر اندکی از بار سنگین دوش دیگری بکاهد.',
+    bookSlug: 'a-christmas-carol',
+    bookTitle: 'A Christmas Carol',
+    bookAuthor: 'Charles Dickens',
+    pageNumber: 3,
+    theme: ['خوش‌بینی', 'رشد شخصی', 'حکمت'],
+    length: 'کوتاه',
+  },
+  {
+    id: 'sherlock-impossible',
+    text: 'When you have eliminated the impossible, whatever remains, however improbable, must be the truth.',
+    textFa: 'وقتی تمام ناممکن‌ها را کنار زدی، هر آنچه باقی می‌ماند، هرچقدر هم دور از ذهن باشد، باید حقیقت باشد.',
+    bookSlug: 'the-adventures-of-sherlock-holmes',
+    bookTitle: 'The Adventures of Sherlock Holmes',
+    bookAuthor: 'Arthur Conan Doyle',
+    pageNumber: 2,
+    theme: ['حکمت', 'ماجراجویی'],
+    length: 'متوسط',
+  },
+]
 
 /** Fetch all active quotes, ordered by `displayOrder`. */
 export const getActiveQuotes = cache(async function getActiveQuotes(): Promise<CuratedQuote[]> {
   try {
-    const rows = await withTimeout(
-      db.quote.findMany({
-        where: { isActive: true },
-        orderBy: [{ displayOrder: 'asc' }, { createdAt: 'asc' }],
-      }),
-      1000,
+    const rows = await safeQuery(
+      () =>
+        db.quote.findMany({
+          where: { isActive: true },
+          orderBy: [{ displayOrder: 'asc' }, { createdAt: 'asc' }],
+        }),
       [],
+      250,
     )
-    return rows.map(dbQuoteToLegacy)
+    if (rows && rows.length > 0) {
+      return rows.map(dbQuoteToLegacy)
+    }
   } catch {
     console.warn('[getActiveQuotes] DB offline or query skipped.')
-    return []
   }
+  return SEED_QUOTES
 })
 
 /** Fetch all quotes (including inactive) — admin panel use. */
@@ -123,7 +181,7 @@ export async function getQuoteBySlug(slug: string) {
 export async function getQuoteOfTheDayFromDB(date: Date = new Date()): Promise<CuratedQuote | null> {
   try {
     const all = await getActiveQuotes()
-    if (all.length === 0) return null
+    if (all.length === 0) return SEED_QUOTES[0]
     const s = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
     let h = 2166136261
     for (let i = 0; i < s.length; i++) {
@@ -133,7 +191,7 @@ export async function getQuoteOfTheDayFromDB(date: Date = new Date()): Promise<C
     return all[Math.abs(h) % all.length]
   } catch {
     console.warn('[getQuoteOfTheDayFromDB] DB offline or query skipped.')
-    return null
+    return SEED_QUOTES[0]
   }
 }
 

@@ -30,15 +30,13 @@ const OnboardingFlow = dynamic(
 
 export function OnboardingTrigger() {
   const pathname = usePathname()
-  // `shouldRender` is null until we've hydrated from localStorage — this
-  // prevents a flash of the wizard on every page load for returning users.
   const [shouldRender, setShouldRender] = React.useState<boolean | null>(null)
 
+  const isEligibleRoute = pathname === '/dashboard' || pathname?.startsWith('/dashboard/') || pathname === '/onboarding'
+
   React.useEffect(() => {
-    // Developer escape hatch — `?skip_onboarding` disables the wizard
-    // for the current tab session (useful for QA / screenshots).
-    // We read window.location.search directly instead of useSearchParams
-    // to avoid Next.js's static-render Suspense requirement.
+    if (!isEligibleRoute) return
+
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search)
       if (params.get('skip_onboarding') !== null) {
@@ -49,15 +47,8 @@ export function OnboardingTrigger() {
     const state = getOnboardingState()
     const alreadyDone = state.completed || state.skipped
     setShouldRender(!alreadyDone)
-  }, [])
+  }, [isEligibleRoute])
 
-  // Don't render the wizard on reader routes — a deep-linked reader URL on
-  // a first visit shouldn't be interrupted by the wizard. The user will see
-  // it next time they hit a non-reader page.
-  if (pathname && pathname.startsWith('/books/')) {
-    return null
-  }
-
-  if (shouldRender !== true) return null
+  if (!isEligibleRoute || shouldRender !== true) return null
   return <OnboardingFlow />
 }

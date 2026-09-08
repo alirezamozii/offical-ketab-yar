@@ -23,7 +23,7 @@ export function ShareButton({ bookSlug, bookTitle }: ShareButtonProps) {
     typeof window !== 'undefined'
       ? `${window.location.origin}/books/${bookSlug}`
       : `/books/${bookSlug}`
-  const text = `در حال خواندن «${bookTitle}» در کتاب‌یار — مطالعه دوزبانه با هوش مصنوعی`
+  const text = `در حال خواندن «${bookTitle}» در بوکزی — مطالعه دوزبانه با هوش مصنوعی`
 
   async function copyLink() {
     try {
@@ -87,6 +87,7 @@ export function ShareButton({ bookSlug, bookTitle }: ShareButtonProps) {
           variant="outline"
           size="sm"
           className="gap-2"
+          aria-label="اشتراک‌گذاری کتاب"
           onClick={(e) => {
             e.preventDefault()
             // Always go through `nativeShare()` — it feature-detects the Web

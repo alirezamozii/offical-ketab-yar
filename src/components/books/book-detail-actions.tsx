@@ -1,16 +1,18 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { BookOpen, Check, ChevronLeft, RotateCcw } from 'lucide-react'
+import { BookOpen, CheckCircle2, ChevronLeft, RotateCcw } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { getLocalProgress } from '@/hooks/reader/use-local-progress'
+import { getLocalProgress, clearLocalProgress } from '@/hooks/reader/use-local-progress'
+import { toPersianDigits } from '@/lib/typography'
 import { cn } from '@/lib/utils'
 
 type ReadingState = 'fresh' | 'in-progress' | 'completed'
 
 interface BookDetailActionsProps {
   slug: string
+  totalPages?: number
   /**
    * `default` — full-size CTA used in the hero (desktop + mobile).
    * `compact` — slimmer CTA used inside the sticky mobile reading bar.
@@ -27,6 +29,7 @@ function deriveState(percent: number): ReadingState {
 
 export function BookDetailActions({
   slug,
+  totalPages = 0,
   variant = 'default',
   className,
 }: BookDetailActionsProps) {
@@ -37,15 +40,24 @@ export function BookDetailActions({
   useEffect(() => {
     const map = getLocalProgress()
     if (map[slug]) {
-      setPercent(map[slug].percent)
-      setCurrentPage(map[slug].currentPage)
+      setPercent(map[slug].percent || 0)
+      setCurrentPage(map[slug].currentPage || 0)
     }
     setHydrated(true)
   }, [slug])
 
-  // First paint (SSR + initial hydration) renders the "fresh" copy so that the
-  // server-rendered HTML and the first client render match — no hydration
-  // warning. After mount, we swap to the actual state.
+  const handleResetProgress = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      clearLocalProgress(slug)
+      setPercent(0)
+      setCurrentPage(0)
+    } catch {
+      /* ignore */
+    }
+  }
+
   const state = hydrated ? deriveState(percent) : 'fresh'
   const href = `/books/read/${slug}`
 
@@ -55,7 +67,7 @@ export function BookDetailActions({
       state === 'completed'
         ? 'خواندن دوباره'
         : state === 'in-progress'
-          ? `ادامه · ${percent}٪`
+          ? `ادامه · ${toPersianDigits(percent)}٪`
           : 'شروع مطالعه'
     return (
       <Button
@@ -76,41 +88,124 @@ export function BookDetailActions({
     )
   }
 
-  // Default hero CTA — full-size with subtext and explicit iconography
-  if (state === 'completed') {
+  // When book is in-progress or completed, render the integrated rich progress card
+  if (state === 'in-progress' || state === 'completed') {
+    const isCompleted = state === 'completed'
+    const radius = 26
+    const circumference = 2 * Math.PI * radius
+    const strokeOffset = circumference - (percent / 100) * circumference
+
     return (
-      <div className={cn('flex flex-col gap-3 sm:flex-row', className)}>
-        <Button asChild size="xl" variant="outline" className="flex-1">
-          <Link href={href}>
-            <RotateCcw className="h-5 w-5" />
-            خواندن دوباره
-            <ChevronLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div className="flex items-center gap-2 self-center rounded-full bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 sm:self-auto">
-          <Check className="h-3.5 w-3.5" />
-          این کتاب را تمام کرده‌اید
+      <div className={cn('relative overflow-hidden rounded-2xl border border-gold-500/30 bg-gradient-to-br from-gold-500/10 via-card to-card p-4 sm:p-5 shadow-sm', className)}>
+        {/* Glow */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-gold-500/10 blur-2xl"
+        />
+
+        <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5 min-w-0">
+            {/* Circular Progress Ring */}
+            <div className="relative h-16 w-16 shrink-0">
+              <svg
+                className="h-full w-full -rotate-90"
+                viewBox="0 0 64 64"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="32"
+                  cy="32"
+                  r={radius}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="5"
+                  className="text-border/60"
+                />
+                <circle
+                  cx="32"
+                  cy="32"
+                  r={radius}
+                  fill="none"
+                  stroke="url(#progressGradientDetail)"
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeOffset}
+                  className="transition-[stroke-dashoffset] duration-700 ease-out"
+                />
+                <defs>
+                  <linearGradient id="progressGradientDetail" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#f4d35e" />
+                    <stop offset="100%" stopColor="#b8956a" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                {isCompleted ? (
+                  <CheckCircle2 className="h-6 w-6 text-emerald-500" aria-hidden="true" />
+                ) : (
+                  <>
+                    <span className="text-sm font-extrabold tabular-nums text-gold-700 dark:text-gold-400">
+                      {toPersianDigits(percent)}
+                    </span>
+                    <span className="text-[9px] font-medium text-muted-foreground">٪</span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Info */}
+            <div className="min-w-0">
+              <h3 className="flex items-center gap-1.5 text-sm font-bold text-foreground">
+                <BookOpen className="h-4 w-4 text-gold-600 dark:text-gold-400 shrink-0" />
+                {isCompleted ? 'کتاب به پایان رسید!' : 'در حال خواندن این کتاب'}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isCompleted
+                  ? 'این کتاب را با موفقیت تمام کرده‌اید.'
+                  : totalPages > 0
+                    ? `صفحه ${toPersianDigits(currentPage + 1)} از ${toPersianDigits(totalPages)}`
+                    : `${toPersianDigits(percent)}٪ پیشرفت`}
+              </p>
+            </div>
+          </div>
+
+          {/* Actions: Continue + Reset */}
+          <div className="flex items-center gap-2 self-end sm:self-center shrink-0 w-full sm:w-auto">
+            <Button asChild size="default" variant="glow" className="flex-1 sm:flex-initial gap-1.5 shadow-md">
+              <Link href={href}>
+                {isCompleted ? (
+                  <>
+                    <RotateCcw className="h-4 w-4" />
+                    خواندن دوباره
+                  </>
+                ) : (
+                  <>
+                    <BookOpen className="h-4 w-4" />
+                    ادامه مطالعه
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </>
+                )}
+              </Link>
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleResetProgress}
+              className="gap-1 text-xs text-muted-foreground hover:text-foreground h-9 px-2.5"
+              title="شروع از اول و پاکسازی درصد پیشرفت"
+              aria-label="شروع از اول"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              شروع از اول
+            </Button>
+          </div>
         </div>
       </div>
     )
   }
 
-  if (state === 'in-progress') {
-    return (
-      <div className={cn('flex flex-col gap-3 sm:flex-row', className)}>
-        <Button asChild size="xl" variant="glow" className="flex-1">
-          <Link href={href}>
-            <BookOpen className="h-5 w-5" />
-            ادامه از صفحه {currentPage + 1}
-            <span className="text-xs opacity-90">({percent}٪ خوانده‌اید)</span>
-            <ChevronLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-      </div>
-    )
-  }
-
-  // fresh
+  // Fresh: single prominent CTA
   return (
     <div className={cn('flex flex-col gap-3 sm:flex-row', className)}>
       <Button asChild size="xl" variant="glow" className="flex-1">
@@ -121,104 +216,5 @@ export function BookDetailActions({
         </Link>
       </Button>
     </div>
-  )
-}
-
-/**
- * Sticky reading bar — appears after the hero scrolls out of view.
- *
- * On mobile (sm:hidden): a bottom-anchored bar with title + author + a
- * single compact CTA. Designed for one-thumb reach.
- *
- * On desktop (hidden sm:flex): a top-anchored bar that slides down from
- * the top of the viewport, showing title + author (truncated) and a
- * compact CTA. The desktop variant is intentionally more spacious —
- * it lives at the top of the viewport rather than the bottom so it
- * doesn't fight with the footer or any back-to-top button.
- *
- * Both variants observe the same hero sentinel (#ky-hero-sentinel) and
- * share visibility state. The bar is hidden while the hero is on-screen
- * (no point duplicating the hero's CTA) and slides in once the user
- * starts scrolling into the page body.
- */
-export function StickyReadingBar({
-  slug,
-  title,
-  author,
-}: {
-  slug: string
-  title: string
-  author: string
-}) {
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    // Attach an IntersectionObserver to a sentinel placed at the top of the
-    // hero. When the sentinel scrolls out of view, show the sticky bar.
-    const sentinel = document.getElementById('ky-hero-sentinel')
-    if (!sentinel) return
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          // e.isIntersecting === false means hero top is above viewport
-          setVisible(!e.isIntersecting)
-        }
-      },
-      { rootMargin: '0px 0px -60% 0px', threshold: 0 },
-    )
-    io.observe(sentinel)
-    return () => io.disconnect()
-  }, [])
-
-  return (
-    <>
-      {/* Mobile bottom bar */}
-      <div
-        role="region"
-        aria-label="نوار مطالعه"
-        className={cn(
-          'fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur-md transition-transform duration-300 sm:hidden',
-          'pb-safe',
-          visible ? 'translate-y-0' : 'translate-y-full',
-        )}
-      >
-        <div className="flex items-center gap-3 px-3 py-2.5">
-          <div className="min-w-0 flex-1">
-            <p className="line-clamp-1 text-sm font-semibold" dir="ltr">
-              {title}
-            </p>
-            <p className="line-clamp-1 text-[11px] text-muted-foreground">
-              {author}
-            </p>
-          </div>
-          <BookDetailActions slug={slug} variant="compact" />
-        </div>
-      </div>
-
-      {/* Desktop top bar — slides down from the very top of the viewport.
-          Sits above site header z-index. Uses a max-w so it stays aligned
-          with the page column on wide screens. */}
-      <div
-        role="region"
-        aria-label="نوار مطالعه"
-        className={cn(
-          'fixed inset-x-0 top-0 z-40 hidden border-b border-border bg-card/95 backdrop-blur-md transition-transform duration-300 sm:block',
-          'pt-safe',
-          visible ? 'translate-y-0' : '-translate-y-full',
-        )}
-      >
-        <div className="mx-auto flex max-w-6xl items-center gap-4 px-6 py-2.5">
-          <div className="min-w-0 flex-1">
-            <p className="line-clamp-1 text-sm font-bold leading-tight" dir="ltr" title={title}>
-              {title}
-            </p>
-            <p className="line-clamp-1 text-[11px] text-muted-foreground">
-              {author}
-            </p>
-          </div>
-          <BookDetailActions slug={slug} variant="compact" className="max-w-[260px]" />
-        </div>
-      </div>
-    </>
   )
 }

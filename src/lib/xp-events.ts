@@ -24,6 +24,7 @@
 export interface XPPostBody {
   pagesRead?: number
   completedBook?: boolean
+  bookSlug?: string
   bookLevel?: string
   isFirstReadToday?: boolean
   vocabGameXP?: number

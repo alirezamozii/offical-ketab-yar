@@ -1,5 +1,3 @@
-'use client'
-
 /**
  * src/components/books/trending-badge.tsx
  * ---------------------------------------------------------------
@@ -19,7 +17,6 @@
  * ---------------------------------------------------------------
  */
 
-import { motion, useReducedMotion } from 'framer-motion'
 import { Flame, TrendingUp, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -60,8 +57,6 @@ const TIERS: Tier[] = [
 ]
 
 export function TrendingBadge({ viewCount, className }: TrendingBadgeProps) {
-  const reduceMotion = useReducedMotion()
-
   // Find the highest tier the book qualifies for
   const tier = TIERS.find((t) => viewCount >= t.threshold)
   if (!tier) return null
@@ -69,10 +64,7 @@ export function TrendingBadge({ viewCount, className }: TrendingBadgeProps) {
   const Icon = tier.icon
 
   return (
-    <motion.span
-      initial={reduceMotion ? false : { opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
+    <span
       className={cn(
         'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold',
         tier.className,
@@ -82,11 +74,11 @@ export function TrendingBadge({ viewCount, className }: TrendingBadgeProps) {
       <Icon
         className={cn(
           'h-3.5 w-3.5',
-          !reduceMotion && tier.label === 'داغ' && 'animate-pulse',
+          tier.label === 'داغ' && 'motion-safe:animate-pulse',
         )}
         aria-hidden="true"
       />
       {tier.label}
-    </motion.span>
+    </span>
   )
 }

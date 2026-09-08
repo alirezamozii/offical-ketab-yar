@@ -404,7 +404,7 @@ function WelcomeStep({ onStart, onSkip }: { onStart: () => void; onSkip: () => v
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
         >
-          به کتاب‌یار خوش آمدید!
+          به بوکزی خوش آمدید!
         </motion.h2>
         <motion.p
           className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base"
@@ -489,7 +489,7 @@ function LevelStep({
                   پیشنهادی: تعیین سطح هوشمند
                 </span>
                 <Badge className="bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5">
-                  پیشنهادی کتاب‌یار
+                  پیشنهادی بوکزی
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -1119,9 +1119,9 @@ export function OnboardingFlow({ onClose }: OnboardingFlowProps) {
         aria-describedby={undefined}
       >
         {/* Hidden a11y title/description — Radix requires a DialogTitle. */}
-        <DialogTitle className="sr-only">معرفی کتاب‌یار</DialogTitle>
+        <DialogTitle className="sr-only">معرفی بوکزی</DialogTitle>
         <DialogDescription id="onboarding-desc" className="sr-only">
-          راهنمای چندمرحله‌ای شروع کار با کتاب‌یار.
+          راهنمای چندمرحله‌ای شروع کار با بوکزی.
         </DialogDescription>
 
         {/* Animated gradient background — gold/amber mesh, very subtle */}

@@ -177,7 +177,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          'ثبت پیام ناموفق بود. لطفاً چند لحظه بعد دوباره تلاش کنید یا به ایمیل support@ketabyar.ir پیام بزنید.',
+          'ثبت پیام ناموفق بود. لطفاً چند لحظه بعد دوباره تلاش کنید یا به ایمیل support@bookzi.ir پیام بزنید.',
       },
       { status: 500, headers: { 'Cache-Control': 'no-store' } },
     )

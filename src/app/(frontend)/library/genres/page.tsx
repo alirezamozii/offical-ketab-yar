@@ -38,22 +38,22 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'fa_IR',
     url: `${SITE.url}/library/genres`,
-    title: 'ژانرهای کتاب‌یار — مرور کتاب‌ها بر اساس موضوع',
+    title: 'ژانرهای بوکزی — مرور کتاب‌ها بر اساس موضوع',
     description:
       'کتاب‌های انگلیسی دوزبانه را بر اساس ژانر و موضوع مرور کنید.',
-    siteName: 'کتاب‌یار',
+    siteName: 'بوکزی',
     images: [
       {
         url: '/api/og?title=Genres&subtitle=Browse%20books%20by%20topic',
         width: 1200,
         height: 630,
-        alt: 'ژانرهای کتاب‌یار',
+        alt: 'ژانرهای بوکزی',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'ژانرهای کتاب‌یار',
+    title: 'ژانرهای بوکزی',
     description: 'کتاب‌های انگلیسی دوزبانه را بر اساس ژانر مرور کنید.',
     images: ['/api/og?title=Genres&subtitle=Browse%20books%20by%20topic'],
   },

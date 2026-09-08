@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { BookOpen, Check, ChevronLeft, Loader2, Sparkles, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { AuthProvider } from '@/components/providers/auth-provider'
 
 const LEVELS = [
   {
@@ -63,7 +64,7 @@ const LEVELS = [
   },
 ]
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const router = useRouter()
   const { update } = useSession()
   const [step, setStep] = useState(1)
@@ -139,7 +140,7 @@ export default function OnboardingPage() {
                 <Sparkles className="w-12 h-12" />
               </div>
               <div className="space-y-2">
-                <h1 className="text-3xl font-extrabold">به کتاب‌یار خوش آمدید!</h1>
+                <h1 className="text-3xl font-extrabold">به بوکزی خوش آمدید!</h1>
                 <p className="text-muted-foreground leading-relaxed">
                   برای شخصی‌سازی تجربه شما، چند سؤال سریع می‌پرسیم.
                   فقط ۳۰ ثانیه طول می‌کشد.
@@ -308,5 +309,13 @@ export default function OnboardingPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function OnboardingPage() {
+  return (
+    <AuthProvider>
+      <OnboardingContent />
+    </AuthProvider>
   )
 }

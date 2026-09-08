@@ -1,4 +1,4 @@
-// Seed content for Ketab-Yar. English excerpts are from public-domain works.
+// Seed content for Bookzi (بوکزی). English excerpts are from public-domain works.
 // Persian (Farsi) translations are faithful adaptations for bilingual reading.
 
 export interface SeedPage {

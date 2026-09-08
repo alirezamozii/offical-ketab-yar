@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * /auth/signin — Ketab-Yar sign-in page (premium edition)
+ * /auth/signin — Bookzi sign-in page (premium edition)
  */
 
 import { signIn } from 'next-auth/react'
@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
+import { executeThemeTransition } from '@/lib/theme-transition'
 
 // Brand palette (warm sepia/bronze) — light mode
 const BRAND_LIGHT = {
@@ -203,10 +204,10 @@ function SignInBrandBlock({ reduceMotion, B, itemVariants }: { reduceMotion: boo
           fontFamily: 'var(--font-vazirmatn), system-ui',
         }}
       >
-        کتاب‌یار
+        بوکزی
       </h1>
-      <p className="text-sm" style={{ color: B.bronzeDark }}>
-        پلتفرم هوشمند مطالعه دوزبانه کتاب‌های انگلیسی
+      <p className="text-sm font-medium" style={{ color: B.bronzeDark }}>
+        زیست‌بومِ کتاب‌های دوزبانه
       </p>
     </motion.div>
   )
@@ -382,10 +383,16 @@ function SignInForm() {
     }
   }, [])
 
-  function toggleTheme() {
+  function toggleTheme(e?: React.MouseEvent) {
     const next = theme === 'light' ? 'dark' : 'light'
-    setOverrideTheme(next)
-    localStorage.setItem('ky-signin-theme', next)
+    executeThemeTransition({
+      theme: next,
+      setTheme: (t) => {
+        setOverrideTheme(t as 'light' | 'dark')
+        localStorage.setItem('ky-signin-theme', t)
+      },
+      event: e,
+    })
   }
 
   const B = theme === 'dark' ? BRAND_DARK : BRAND_LIGHT
@@ -445,7 +452,7 @@ function SignInForm() {
 
       {mounted && (
         <button
-          onClick={toggleTheme}
+          onClick={(e) => toggleTheme(e)}
           className="fixed top-5 left-5 z-50 w-10 h-10 rounded-full flex items-center justify-center transition-[transform,opacity,colors,border-color,background-color] hover:scale-110 active:scale-95"
           style={{
             background: B.cardBg,

@@ -47,7 +47,7 @@ describe('reader-settings-store', () => {
     expect(state.showTranslation).toBe(true)
     expect(state.showSubtitles).toBe(true)
     expect(state.pageMode).toBe('scroll')
-    expect(state.voiceId).toBe('fa-IR-FaridNeural')
+    expect(state.voiceId).toBe('fa-IR-DilaraNeural')
     expect(state.audioSpeed).toBe(1.0)
   })
 

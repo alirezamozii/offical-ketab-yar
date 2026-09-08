@@ -1,24 +1,21 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { requireUserApi } from '@/lib/auth-session'
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const currentUser = await requireUserApi()
+    if (currentUser instanceof NextResponse) return currentUser
 
     const user = await db.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: currentUser.id },
       select: {
         settingsJson: true,
-        collections: true,
-        userGoals: true,
-        readingHistory: true,
-        readingProgress: true,
-        vocabularies: true,
+        collections: { select: { id: true, name: true, description: true, color: true, icon: true, bookSlugs: true, createdAt: true, updatedAt: true } },
+        userGoals: { select: { period: true, target: true, unit: true } },
+        readingHistory: { select: { date: true, pages: true, seconds: true, byHour: true } },
+        readingProgress: { select: { bookSlug: true, currentPage: true, percent: true, lastReadAt: true } },
+        vocabularies: { select: { id: true, word: true, definition: true, translation: true, context: true, bookSlug: true, createdAt: true } },
       },
     })
 
@@ -37,14 +34,17 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({
-      settings: user.settingsJson,
-      collections: user.collections,
-      goals: goals,
-      history: user.readingHistory,
-      progress: user.readingProgress,
-      vocabulary: user.vocabularies,
-    })
+    return NextResponse.json(
+      {
+        settings: user.settingsJson,
+        collections: user.collections,
+        goals,
+        history: user.readingHistory,
+        progress: user.readingProgress,
+        vocabulary: user.vocabularies,
+      },
+      { headers: { 'Cache-Control': 'private, no-store' } },
+    )
   } catch (error) {
     console.error('[API_SYNC_FULL_GET]', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

@@ -13,19 +13,16 @@ import {
   AlignCenter,
   AlignJustify,
   AlignLeft,
-  BookOpen,
   Contrast,
   Moon,
   ScrollText,
   Sun,
-  Type,
   X,
 } from 'lucide-react'
 import { useReaderSettingsStore } from '@/lib/store/reader-settings-store'
 import { cn } from '@/lib/utils'
 import type {
   ReaderFontFamily,
-  ReadingLayout,
   ReadingPreferences,
   ReaderTheme,
 } from '@/lib/reader/types'
@@ -45,10 +42,9 @@ interface SettingsPanelProps {
 /**
  * The reader settings drawer. Owns every "reading experience" knob:
  * theme preset, font family + size + line-height + letter-spacing, column
- * width + margin density, layout mode (continuous vs paginated), reading
- * rhythm (snap), subtitles, paragraph numbers, drop caps, and auto-scroll
- * speed. Every change flows through `onChange` → `useReadingPreferences`,
- * which persists to `STORAGE_KEYS.readerPrefs`.
+ * width + margin density, layout mode (continuous vs paginated), subtitles,
+ * paragraph numbers, and auto-scroll speed. Every change flows through
+ * `onChange` → `useReadingPreferences`, which persists to `STORAGE_KEYS.readerPrefs`.
  */
 export function SettingsPanel({
   prefs,
@@ -59,9 +55,7 @@ export function SettingsPanel({
 }: SettingsPanelProps) {
   const s = THEME_STYLES[theme]
   const voiceId = useReaderSettingsStore((state) => state.voiceId)
-  const audioSpeed = useReaderSettingsStore((state) => state.audioSpeed)
   const setVoiceId = useReaderSettingsStore((state) => state.setVoiceId)
-  const setAudioSpeed = useReaderSettingsStore((state) => state.setAudioSpeed)
 
   return (
     <Sheet open={open} onOpenChange={(o) => { if (!o) onClose() }}>
@@ -224,15 +218,15 @@ export function SettingsPanel({
 
           <Separator />
 
-          {/* ---- Column width (acts as margin-width slider) ---- */}
-          <Group label="عرض حاشیه متن">
+          {/* ---- Column width (acts as container max-width) ---- */}
+          <Group label="پهنای کادر متن">
             <SegmentedThree
               value={prefs.columnWidth}
               onChange={(v) => onChange('columnWidth', v)}
               options={[
                 { id: 'narrow', label: 'باریک', Icon: AlignLeft },
                 { id: 'normal', label: 'متوسط', Icon: AlignCenter },
-                { id: 'wide', label: 'پهن', Icon: AlignJustify },
+                { id: 'wide', label: 'عریض', Icon: AlignJustify },
               ]}
               accent={s.accent}
               border={s.border}
@@ -241,39 +235,19 @@ export function SettingsPanel({
 
           <Separator />
 
-          {/* ---- Margin density ---- */}
-          <Group label="تراکم حاشیه">
+          {/* ---- Paragraph spacing / Margin density ---- */}
+          <Group label="فاصله بین پاراگراف‌ها">
             <SegmentedThree
               value={prefs.margin}
               onChange={(v) => onChange('margin', v)}
               options={[
                 { id: 'compact', label: 'فشرده' },
-                { id: 'normal', label: 'معمولی' },
-                { id: 'comfortable', label: 'راحت' },
+                { id: 'normal', label: 'استاندارد' },
+                { id: 'comfortable', label: 'باز و راحت' },
               ]}
               accent={s.accent}
               border={s.border}
             />
-          </Group>
-
-          <Separator />
-
-          {/* ---- Layout: continuous vs paginated ---- */}
-          <Group label="نوع نمایش متن">
-            <SegmentedThree
-              value={prefs.layout}
-              onChange={(v) => onChange('layout', v as ReadingLayout)}
-              options={[
-                { id: 'continuous', label: 'متن پیوسته' },
-                { id: 'paginated', label: 'صفحه‌بندی' },
-              ]}
-              accent={s.accent}
-              border={s.border}
-            />
-            <p className="text-[11px] leading-relaxed opacity-60">
-              حالت «پیوسته» اسکرول بلند را نشان می‌دهد؛ حالت «صفحه‌بندی»
-              پاراگراف‌ها را دسته‌بندی و دکمهٔ ورق زدن نمایش می‌دهد.
-            </p>
           </Group>
 
           <Separator />
@@ -281,81 +255,12 @@ export function SettingsPanel({
           {/* ---- Subtitles toggle ---- */}
           <ToggleRow
             label="نمایش ترجمه"
-            hint="ترجمه فارسی زیر هر پاراگراف"
+            hint="نمایش ترجمه فارسی زیر هر بند"
             active={prefs.showSubtitles}
             accent={s.accent}
             border={s.border}
             onToggle={() => onChange('showSubtitles', !prefs.showSubtitles)}
           />
-
-          <Separator />
-
-          {/* ---- Paragraph numbers toggle ---- */}
-          <ToggleRow
-            label="نمایش شماره پاراگراف"
-            hint="شماره هر بخش در حاشیه نمایش داده شود"
-            active={prefs.showParagraphNumbers}
-            accent={s.accent}
-            border={s.border}
-            onToggle={() =>
-              onChange('showParagraphNumbers', !prefs.showParagraphNumbers)
-            }
-            Icon={Type}
-          />
-
-          <Separator />
-
-          {/* ---- Drop caps toggle ---- */}
-          <ToggleRow
-            label="حروف بزرگ اول (Drop Caps)"
-            hint="حرف اول هر پاراگراف بزرگ‌تر نمایش داده شود"
-            active={prefs.dropCaps}
-            accent={s.accent}
-            border={s.border}
-            onToggle={() => onChange('dropCaps', !prefs.dropCaps)}
-            Icon={BookOpen}
-          />
-
-          <Separator />
-
-          {/* ---- Reading rhythm (scroll-snap) ---- */}
-          <Group label="ریتم مطالعه">
-            <SegmentedThree
-              value={prefs.readingRhythm}
-              onChange={(v) => onChange('readingRhythm', v)}
-              options={[
-                { id: 'free', label: 'آزاد' },
-                { id: 'snap', label: 'چسبیده به بخش' },
-              ]}
-              accent={s.accent}
-              border={s.border}
-            />
-            <p className="text-[11px] leading-relaxed opacity-60">
-              حالت «چسبیده» پاراگراف‌ها را هنگام اسکرول روی خط تمرکز می‌نشاند.
-            </p>
-          </Group>
-
-          <Separator />
-
-          {/* ---- Auto-scroll speed ---- */}
-          <Group
-            label={`سرعت ورق‌خودی خودکار: ${toPersianDigits(
-              prefs.autoScrollInterval,
-            )} ثانیه`}
-          >
-            <Slider
-              value={[prefs.autoScrollInterval]}
-              min={5}
-              max={60}
-              step={1}
-              onValueChange={(v) => onChange('autoScrollInterval', v[0])}
-              aria-label="سرعت ورق‌خودی خودکار"
-            />
-            <div className="flex justify-between text-[11px] opacity-60">
-              <span>۵ ثانیه (سریع)</span>
-              <span>۶۰ ثانیه (آرام)</span>
-            </div>
-          </Group>
 
           <Separator />
 
@@ -379,7 +284,7 @@ export function SettingsPanel({
               <div className="flex flex-col gap-1.5">
                 <span className="text-xs font-semibold opacity-70">انتخاب گوینده فارسی</span>
                 <SegmentedThree
-                  value={voiceId.startsWith('fa') ? voiceId : 'fa-IR-FaridNeural'}
+                  value={voiceId.startsWith('fa') ? voiceId : 'fa-IR-DilaraNeural'}
                   onChange={(v) => setVoiceId(v)}
                   options={[
                     { id: 'fa-IR-DilaraNeural', label: 'دیلارا (زن)' },
@@ -388,24 +293,6 @@ export function SettingsPanel({
                   accent={s.accent}
                   border={s.border}
                 />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold opacity-70 block">
-                  سرعت خواندن: {toPersianDigits(audioSpeed.toFixed(1))}x
-                </label>
-                <Slider
-                  value={[audioSpeed * 10]}
-                  min={5}
-                  max={20}
-                  step={1}
-                  onValueChange={(v) => setAudioSpeed(v[0] / 10)}
-                  aria-label="سرعت خواندن"
-                />
-                <div className="flex justify-between text-[10px] opacity-60">
-                  <span>۰٫۵x (آهسته)</span>
-                  <span>۲٫۰x (سریع)</span>
-                </div>
               </div>
             </div>
           </Group>

@@ -12,8 +12,8 @@ type Args = {
 }
 
 export const metadata: Metadata = {
-  title: 'Ketab-Yar Admin',
-  description: 'Content management system for Ketab-Yar',
+  title: 'Bookzi Admin',
+  description: 'Content management system for Bookzi',
 }
 
 export const dynamic = 'force-dynamic'

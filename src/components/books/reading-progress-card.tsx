@@ -17,7 +17,6 @@
  * ---------------------------------------------------------------
  */
 
-import { motion, useReducedMotion } from 'framer-motion'
 import { BookOpen, CheckCircle2, RotateCcw } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
@@ -34,37 +33,29 @@ export function ReadingProgressCard({
   bookSlug,
   totalPages,
 }: ReadingProgressCardProps) {
-  const reduceMotion = useReducedMotion()
   const [percent, setPercent] = useState(0)
   const [currentPage, setCurrentPage] = useState(0)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    const map = getLocalProgress()
-    const entry = map[bookSlug]
-    if (entry) {
-      setPercent(entry.percent)
-      setCurrentPage(entry.currentPage || 0)
-    }
     setMounted(true)
+    const map = getLocalProgress()
+    if (map[bookSlug]) {
+      setPercent(map[bookSlug].percent || 0)
+      setCurrentPage(map[bookSlug].currentPage || 0)
+    }
   }, [bookSlug])
 
-  // Don't render until mounted (avoids hydration mismatch)
-  if (!mounted) return null
-
-  // Don't render for books not started
-  if (percent === 0) return null
+  // Don't render anything if user hasn't started or not mounted yet
+  if (!mounted || percent <= 0) return null
 
   const isCompleted = percent >= 100
-  const radius = 28
+  const radius = 26
   const circumference = 2 * Math.PI * radius
   const strokeOffset = circumference - (percent / 100) * circumference
 
   return (
-    <motion.section
-      initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+    <section
       className="relative overflow-hidden rounded-2xl border border-gold-500/30 bg-gradient-to-br from-gold-500/10 via-card to-card p-5 shadow-sm sm:p-6"
       aria-label="پیشرفت مطالعه"
     >
@@ -93,7 +84,7 @@ export function ReadingProgressCard({
               className="text-border/60"
             />
             {/* Progress ring */}
-            <motion.circle
+            <circle
               cx="32"
               cy="32"
               r={radius}
@@ -102,9 +93,8 @@ export function ReadingProgressCard({
               strokeWidth="5"
               strokeLinecap="round"
               strokeDasharray={circumference}
-              initial={reduceMotion ? false : { strokeDashoffset: circumference }}
-              animate={{ strokeDashoffset: strokeOffset }}
-              transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+              strokeDashoffset={strokeOffset}
+              className="transition-[stroke-dashoffset] duration-700 ease-out"
             />
             <defs>
               <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -177,6 +167,6 @@ export function ReadingProgressCard({
           </div>
         </div>
       </div>
-    </motion.section>
+    </section>
   )
 }

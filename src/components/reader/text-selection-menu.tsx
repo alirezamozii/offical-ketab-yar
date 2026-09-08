@@ -37,7 +37,6 @@ const SWATCH_COLORS: Highlight['color'][] = [
 export function TextSelectionMenu({
   position,
   theme,
-  selectedText,
   onHighlight,
   onShowDictionary,
   onAddToVocabulary,
@@ -46,7 +45,6 @@ export function TextSelectionMenu({
   onAIChat,
   onClose,
 }: TextSelectionMenuProps) {
-  const isSingleWord = selectedText.trim().split(/\s+/).length === 1
   const dark = theme === 'dark' || theme === 'high-contrast'
 
   // Clamp horizontal position so the menu never overflows the viewport.
@@ -111,14 +109,14 @@ export function TextSelectionMenu({
 
       <div className={cn('mx-1 my-1 w-px', dark ? 'bg-gold-700' : 'bg-gold-300')} />
 
-      {isSingleWord && onShowDictionary && (
+      {onShowDictionary && (
         <IconButton theme={theme} onClick={onShowDictionary} label="دیکشنری">
           <BookOpen
             className={cn('h-5 w-5', dark ? 'text-gold-400' : 'text-gold-600')}
           />
         </IconButton>
       )}
-      {isSingleWord && onAddToVocabulary && (
+      {onAddToVocabulary && (
         <IconButton
           theme={theme}
           onClick={onAddToVocabulary}
@@ -168,7 +166,7 @@ function IconButton({
   label,
 }: {
   children: React.ReactNode
-  onClick: () => void
+  onClick: (e: React.MouseEvent) => void
   label: string
   theme: ReaderTheme
 }) {
@@ -177,7 +175,10 @@ function IconButton({
       <Button
         size="sm"
         variant="ghost"
-        onClick={onClick}
+        onClick={(e) => {
+          e.stopPropagation()
+          onClick(e)
+        }}
         className="relative p-1.5 sm:p-2"
         title={label}
         aria-label={label}

@@ -7,7 +7,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { motion, useReducedMotion } from 'framer-motion'
 import { Star, ThumbsDown, ThumbsUp } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { usePersianLocale } from '@/hooks/use-persian-locale'
@@ -64,7 +63,6 @@ export function ReviewsList({
 }) {
   const queryClient = useQueryClient()
   const [guestId, setGuestId] = useState('guest')
-  const reduceMotion = useReducedMotion()
   const { formatRelativeTime } = usePersianLocale()
 
   useEffect(() => {
@@ -172,12 +170,8 @@ function compareReviews(a: ReviewWithVote, b: ReviewWithVote, sort: 'newest' | '
         const v = votes[r.id] || { up: 0, down: 0, myVote: null }
         const isNew = newReviewId === r.id
         return (
-          <motion.div
+          <div
             key={r.id}
-            layout={!reduceMotion}
-            initial={isNew && !reduceMotion ? { opacity: 0, y: -8, scale: 0.98 } : false}
-            animate={isNew && !reduceMotion ? { opacity: 1, y: 0, scale: 1 } : undefined}
-            transition={{ type: 'spring', stiffness: 280, damping: 24 }}
             className={cn(
               'group/review relative flex flex-col rounded-2xl border bg-card p-5 shadow-sm transition-colors',
               'hover:border-gold-500/40 hover:shadow-md hover:shadow-gold-500/5',
@@ -196,12 +190,13 @@ function compareReviews(a: ReviewWithVote, b: ReviewWithVote, sort: 'newest' | '
                 <ReviewAvatar name={r.userName} avatarUrl={r.userAvatar} />
                 <div className="min-w-0 space-y-0.5">
                   <p className="line-clamp-1 font-semibold leading-tight">{r.userName}</p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[11px] text-muted-foreground" suppressHydrationWarning>
                     {formatRelativeTime(r.createdAt)}
                   </p>
                 </div>
               </div>
               <div
+                role="img"
                 className="flex shrink-0 gap-0.5"
                 aria-label={`امتیاز: ${r.rating} از ۵`}
               >
@@ -226,11 +221,11 @@ function compareReviews(a: ReviewWithVote, b: ReviewWithVote, sort: 'newest' | '
               <span className="text-[11px] text-muted-foreground">
                 آیا مفید بود؟
               </span>
-              <motion.button
-                whileTap={reduceMotion ? undefined : { scale: 0.9 }}
+              <button
+                type="button"
                 onClick={() => vote(r.id, 'up')}
                 className={cn(
-                  'flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                  'flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors active:scale-95',
                   v.myVote === 'up'
                     ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                     : 'border-border text-muted-foreground hover:border-emerald-500/50 hover:text-emerald-600',
@@ -240,12 +235,12 @@ function compareReviews(a: ReviewWithVote, b: ReviewWithVote, sort: 'newest' | '
               >
                 <ThumbsUp className="h-3.5 w-3.5" />
                 {v.up > 0 && <span className="tabular-nums">{v.up}</span>}
-              </motion.button>
-              <motion.button
-                whileTap={reduceMotion ? undefined : { scale: 0.9 }}
+              </button>
+              <button
+                type="button"
                 onClick={() => vote(r.id, 'down')}
                 className={cn(
-                  'flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                  'flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors active:scale-95',
                   v.myVote === 'down'
                     ? 'border-red-500 bg-red-500/10 text-red-600 dark:text-red-400'
                     : 'border-border text-muted-foreground hover:border-red-500/50 hover:text-red-600',
@@ -255,9 +250,9 @@ function compareReviews(a: ReviewWithVote, b: ReviewWithVote, sort: 'newest' | '
               >
                 <ThumbsDown className="h-3.5 w-3.5" />
                 {v.down > 0 && <span className="tabular-nums">{v.down}</span>}
-              </motion.button>
+              </button>
             </div>
-          </motion.div>
+          </div>
         )
       })}
     </div>
@@ -321,15 +316,14 @@ function ReviewAvatar({
  * RatingDistribution — 5★ to 1★ horizontal bars showing how many reviews
  * fall into each bucket. Pure SSR / presentational.
  *
- * The bars animate from 0% → final width on mount (framer-motion, gated by
- * reduced-motion). Each star bucket has a count + percentage label.
+ * The bars animate from 0% → final width on mount (framer-motion).
+ * Each star bucket has a count + percentage label.
  */
 export function RatingDistribution({
   reviews,
 }: {
   reviews: ReviewWithVote[]
 }) {
-  const reduceMotion = useReducedMotion()
   const total = reviews.length
   const buckets = [5, 4, 3, 2, 1].map((star) => {
     const count = reviews.filter((r) => r.rating === star).length
@@ -351,12 +345,9 @@ export function RatingDistribution({
             <Star className="h-3 w-3 fill-gold-500 text-gold-500" />
           </span>
           <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-            <motion.div
-              className="h-full rounded-full bg-gradient-to-l from-gold-400 to-gold-600"
-              style={{ transformOrigin: 'right', width: '100%' }}
-              initial={reduceMotion ? false : { scaleX: 0 }}
-              animate={{ scaleX: pct / 100 }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            <div
+              className="h-full rounded-full bg-gradient-to-l from-gold-400 to-gold-600 transition-[width] duration-500"
+              style={{ width: `${pct}%` }}
             />
           </div>
           <span className="w-10 shrink-0 text-start text-muted-foreground tabular-nums">

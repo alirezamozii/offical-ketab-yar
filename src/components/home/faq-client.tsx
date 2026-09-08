@@ -67,10 +67,8 @@ function AccordionItem({
         id={panelId}
         role="region"
         aria-labelledby={buttonId}
-        className={cn(
-          'grid transition-all duration-300 ease-in-out',
-          isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-        )}
+        hidden={!isOpen}
+        className="motion-safe:animate-[testimonialFade_200ms_ease-out_both]"
       >
         <div className="overflow-hidden">
           <div className="px-4 pb-4 pr-16 sm:px-5 sm:pb-5 sm:pr-16">

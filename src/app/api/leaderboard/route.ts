@@ -8,14 +8,14 @@ import {
   getLevelTitle,
 } from '@/lib/gamification'
 
-export type LeaderboardPeriod =
+type LeaderboardPeriod =
   | 'daily'
   | 'weekly'
   | 'monthly'
   | 'yearly'
   | 'alltime'
 
-export interface LeaderboardEntry {
+interface LeaderboardEntry {
   rank: number
   ownerId: string
   name: string
@@ -29,7 +29,7 @@ export interface LeaderboardEntry {
   rankChange: number // 0 for now — real rank-change tracking requires historical snapshots (TODO)
 }
 
-export interface LeaderboardResponse {
+interface LeaderboardResponse {
   period: LeaderboardPeriod
   entries: LeaderboardEntry[]
   currentUserRank: number | null
@@ -130,6 +130,15 @@ async function ensureStatsRow(
   }
 }
 
+function formatGuestDisplayName(guestId: string): string {
+  let hash = 0
+  for (let i = 0; i < guestId.length; i++) {
+    hash = (hash * 31 + guestId.charCodeAt(i)) >>> 0
+  }
+  const code = (hash % 9000) + 1000
+  return `کاربر مهمان #${code}`
+}
+
 const LEADERBOARD_CACHE_CONTROL = 'public, max-age=60, s-maxage=120'
 
 // fallow-ignore-next-line complexity
@@ -197,19 +206,23 @@ export async function GET(req: NextRequest) {
       const isCurrentUser = rowOwnerId === ownerId
       if (isCurrentUser) currentUserRank = rank
       const level = calculateLevel(r.totalXP)
-      const name = r.name || (isCurrentUser ? 'شما' : 'کاربر')
+      const isGuest = !r.userId || Boolean(r.guestId) || rowOwnerId.startsWith('g_')
+      const fallbackName = isGuest
+        ? formatGuestDisplayName(r.guestId || rowOwnerId)
+        : 'کاربر بوکزی'
+      const name = r.name || (isCurrentUser ? (isGuest ? `شما (${fallbackName})` : 'شما') : fallbackName)
       return {
         rank,
         ownerId: rowOwnerId,
         name,
-        avatar: name.trim().charAt(0) || '؟',
+        avatar: name.trim().charAt(0) || (isGuest ? 'م' : '؟'),
         xpGained: r.totalXP,
         pagesRead: r.pagesRead,
         totalXP: r.totalXP,
         level,
         levelTitle: getLevelTitle(level),
         isCurrentUser,
-        rankChange: 0, // TODO: track historical ranks for real deltas
+        rankChange: 0,
       }
     })
 
@@ -317,19 +330,23 @@ export async function GET(req: NextRequest) {
     const level = calculateLevel(totalXP)
     // Derive period XP from pages read in the period (honest, not fabricated).
     const xpGained = s.pagesRead * XP_PER_PAGE
-    const name = stat?.name || (isCurrentUser ? 'شما' : 'کاربر')
+    const isGuest = s.ownerId.startsWith('g_') || s.ownerId === guestId
+    const fallbackName = isGuest
+      ? formatGuestDisplayName(s.ownerId)
+      : 'کاربر بوکزی'
+    const name = stat?.name || (isCurrentUser ? (isGuest ? `شما (${fallbackName})` : 'شما') : fallbackName)
     return {
       rank,
       ownerId: s.ownerId,
       name,
-      avatar: name.trim().charAt(0) || '؟',
+      avatar: name.trim().charAt(0) || (isGuest ? 'م' : '؟'),
       xpGained,
       pagesRead: s.pagesRead,
       totalXP,
       level,
       levelTitle: getLevelTitle(level),
       isCurrentUser,
-      rankChange: 0, // TODO: track historical ranks for real deltas
+      rankChange: 0,
     }
   })
 

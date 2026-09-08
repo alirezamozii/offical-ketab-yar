@@ -2,12 +2,13 @@ import { SITE } from '@/lib/site'
 import dynamic from 'next/dynamic'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Metadata } from 'next'
+import { AuthProvider } from '@/components/providers/auth-provider'
 
 export const metadata: Metadata = {
   alternates: { canonical: `${SITE.url}/settings` },
-  title: 'تنظیمات | کتاب‌یار',
+  title: 'تنظیمات | بوکزی',
   description:
-    'تنظیمات برنامه کتاب‌یار: ظاهر، مطالعه، اعلان‌ها، دسترسی‌پذیری، حریم خصوصی، زبان و مدیریت داده.',
+    'تنظیمات برنامه بوکزی: ظاهر، مطالعه، اعلان‌ها، دسترسی‌پذیری، حریم خصوصی، زبان و مدیریت داده.',
   robots: {
     index: false,
     follow: false,
@@ -24,7 +25,9 @@ const SettingsPageClient = dynamic(
 export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-      <SettingsPageClient />
+      <AuthProvider>
+        <SettingsPageClient />
+      </AuthProvider>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Centralized localStorage key registry for Ketab-Yar.
+ * Centralized localStorage key registry for Bookzi.
  *
  * ─ Why this exists ────────────────────────────────────────────────────────
  * Previously every hook/component declared its own `const KEY = 'ky_xxx'`
@@ -232,7 +232,7 @@ export function clearablePrefixes(): readonly string[] {
 }
 
 /**
- * Wipe every Ketab-Yar localStorage entry — static keys + every prefixed
+ * Wipe every Bookzi localStorage entry — static keys + every prefixed
  * variant (ky_hl_*, ky_chat_*, ky_challenges_*, etc.). Safe to call from
  * the client only. Returns the number of entries removed.
  *

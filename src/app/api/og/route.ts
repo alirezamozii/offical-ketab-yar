@@ -24,7 +24,7 @@ export const dynamic = 'force-dynamic'
 const WIDTH = 1200
 const HEIGHT = 630
 
-const BRAND_TITLE = 'Ketab-Yar'
+const BRAND_TITLE = 'Bookzi'
 const BRAND_SUBTITLE = 'Bilingual English books with AI'
 // Display-only host (no protocol) shown on the OG image — derived from the
 // central SITE config so staging / preview deploys brand correctly.
@@ -117,10 +117,10 @@ function buildSvg(title: string, subtitle: string): string {
   <!-- Brand lockup (top-left) -->
   <g transform="translate(80, 80)">
     <rect x="0" y="0" width="72" height="72" rx="18" fill="url(#accent)"/>
-    <text x="36" y="52" font-family="Georgia, 'Times New Roman', serif" font-size="44" font-weight="700" text-anchor="middle" fill="#1a1612">K</text>
+    <text x="36" y="52" font-family="Georgia, 'Times New Roman', serif" font-size="44" font-weight="700" text-anchor="middle" fill="#1a1612">B</text>
   </g>
-  <text x="172" y="118" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="30" font-weight="700" fill="#d4a574" letter-spacing="2">KETAB-YAR</text>
-  <text x="172" y="148" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="18" fill="#8a7a68" letter-spacing="1">BILINGUAL ENGLISH BOOKS WITH AI</text>
+  <text x="172" y="118" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="30" font-weight="700" fill="#d4a574" letter-spacing="2">BOOKZI</text>
+  <text x="172" y="148" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="18" fill="#8a7a68" letter-spacing="1">THE BILINGUAL BOOKS ECOSYSTEM</text>
 
   <!-- Vertical accent line -->
   <rect x="80" y="220" width="4" height="280" rx="2" fill="url(#accent)"/>

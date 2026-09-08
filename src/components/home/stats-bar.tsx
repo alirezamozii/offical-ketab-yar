@@ -48,28 +48,28 @@ export function StatsBar({
 
   return (
     <section className="border-y border-border/40 bg-gradient-to-b from-gold-500/5 via-transparent to-transparent">
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-6">
+      <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-8">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-6">
           {STATS.map((s) => {
             const Icon = s.icon
             return (
               <div
                 key={s.label}
-                className="group flex items-center gap-3 rounded-xl border border-border/40 bg-card/50 px-4 py-3 backdrop-blur-sm transition-colors hover:border-gold-400/60 hover:bg-gold-500/5"
+                className="group flex items-center gap-2.5 rounded-xl border border-border/40 bg-card/50 p-2.5 backdrop-blur-sm transition-colors hover:border-gold-400/60 hover:bg-gold-500/5 sm:px-4 sm:py-3"
               >
-                <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-gold-500/20 to-gold-700/10 text-gold-700 dark:text-gold-400">
+                <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-gold-500/20 to-gold-700/10 text-gold-700 dark:text-gold-400 sm:h-10 sm:w-10">
                   <span
                     aria-hidden="true"
                     className="absolute inset-0 rounded-lg bg-gold-500/40 opacity-50 blur-md transition-opacity duration-300 group-hover:opacity-100"
                   />
-                  <Icon className="relative h-5 w-5 transition-transform duration-300 ease-out-expo group-hover:scale-110" />
+                  <Icon className="relative h-4 w-4 transition-transform duration-300 ease-out-expo group-hover:scale-110 sm:h-5 sm:w-5" />
                 </span>
                 <div className="min-w-0">
-                  <div className="text-xl font-extrabold leading-tight text-foreground sm:text-2xl">
+                  <div className="text-base font-extrabold leading-tight text-foreground sm:text-2xl">
                     <CountUp to={s.value} />
                     {s.suffix}
                   </div>
-                  <div className="truncate text-xs text-muted-foreground sm:text-sm">
+                  <div className="truncate text-[11px] text-muted-foreground sm:text-sm">
                     {s.label}
                   </div>
                 </div>

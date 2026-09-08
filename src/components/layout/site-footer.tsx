@@ -11,11 +11,10 @@ import {
   Twitter,
   Banana,
 } from 'lucide-react'
-import { BackToTop } from '@/components/layout/back-to-top'
 import { NewsletterSignup } from '@/components/layout/newsletter-signup'
 import { SITE } from '@/lib/site'
+import { cn } from '@/lib/utils'
 import { useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
 
 type LinkItem = { label: string; href: string }
 type LinkColumn = { title: string; items: LinkItem[] }
@@ -40,7 +39,7 @@ const LINKS: LinkColumn[] = [
     ],
   },
   {
-    title: 'کتاب‌یار',
+    title: 'بوکزی',
     items: [
       { label: 'درباره ما', href: '/about' },
       { label: 'پشتیبانی', href: '/support' },
@@ -61,10 +60,10 @@ const LINKS: LinkColumn[] = [
 
 /** Social links — rendered as icon buttons in the brand column. */
 const SOCIAL: { Icon: typeof Twitter; label: string; href: string }[] = [
-  { Icon: Twitter, label: 'توییتر کتاب‌یار', href: SITE.social.twitter },
-  { Icon: Instagram, label: 'اینستاگرام کتاب‌یار', href: SITE.social.instagram },
-  { Icon: Send, label: 'تلگرام کتاب‌یار', href: SITE.social.telegram },
-  { Icon: Github, label: 'گیت‌هاب کتاب‌یار', href: SITE.social.github },
+  { Icon: Twitter, label: 'توییتر بوکزی', href: SITE.social.twitter },
+  { Icon: Instagram, label: 'اینستاگرام بوکزی', href: SITE.social.instagram },
+  { Icon: Send, label: 'تلگرام بوکزی', href: SITE.social.telegram },
+  { Icon: Github, label: 'گیت‌هاب بوکزی', href: SITE.social.github },
 ]
 
 const FOCUS_RING =
@@ -72,7 +71,7 @@ const FOCUS_RING =
 
 /**
  * EasterEggHeart — per user feedback: the heart icon morphs to a BANANA
- * on click (not a book). Both have a glow. Real framer-motion animation.
+ * on click (not a book). Both have a glow. Pure CSS transition animation.
  *
  * Per user feedback: "این کتابه هم گقتم از فوتر بره به حاش موز BENANAN
  * باشه" — the morph target is a banana 🍌, not a book.
@@ -89,44 +88,36 @@ function EasterEggHeart() {
     >
       {/* Soft glow halo — both heart and banana have a glow. Color morphs
           from red to yellow during the transition. */}
-      <motion.span
+      <span
         aria-hidden="true"
-        className="absolute inset-0 rounded-full blur-md"
-        animate={{
-          backgroundColor: morphed
-            ? 'rgba(250, 204, 21, 0.5)'
-            : 'rgba(239, 68, 68, 0.4)',
-          opacity: morphed ? 0.8 : 0.6,
-          scale: morphed ? 1.1 : 1,
-        }}
-        transition={{ duration: 0.4, ease: 'easeInOut' }}
+        className={cn(
+          'absolute inset-0 rounded-full blur-md transition-all duration-300 ease-in-out',
+          morphed
+            ? 'bg-yellow-400/50 opacity-80 scale-110'
+            : 'bg-red-500/40 opacity-60 scale-100',
+        )}
       />
       {/* Crossfade morph: old icon exits while new icon enters. */}
-      <AnimatePresence mode="wait" initial={false}>
-        {morphed ? (
-          <motion.span
-            key="banana"
-            className="relative inline-flex items-center justify-center"
-            initial={{ opacity: 0, scale: 0.3, rotate: -90 }}
-            animate={{ opacity: 1, scale: 1, rotate: 0 }}
-            exit={{ opacity: 0, scale: 0.3, rotate: 90 }}
-            transition={{ duration: 0.35, ease: [0.34, 1.56, 0.64, 1] }}
-          >
-            <Banana className="h-4 w-4 text-yellow-500 dark:text-yellow-400" />
-          </motion.span>
-        ) : (
-          <motion.span
-            key="heart"
-            className="relative inline-flex items-center justify-center"
-            initial={{ opacity: 0, scale: 0.3, rotate: 90 }}
-            animate={{ opacity: 1, scale: 1, rotate: 0 }}
-            exit={{ opacity: 0, scale: 0.3, rotate: -90 }}
-            transition={{ duration: 0.35, ease: [0.34, 1.56, 0.64, 1] }}
-          >
-            <Heart className="h-4 w-4 fill-red-500 text-red-500" />
-          </motion.span>
+      <span
+        className={cn(
+          'relative inline-flex items-center justify-center transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-none',
+          morphed
+            ? 'opacity-100 scale-100 rotate-0'
+            : 'absolute opacity-0 scale-50 -rotate-90 pointer-events-none',
         )}
-      </AnimatePresence>
+      >
+        <Banana className="h-4 w-4 text-yellow-500 dark:text-yellow-400" />
+      </span>
+      <span
+        className={cn(
+          'relative inline-flex items-center justify-center transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-none',
+          !morphed
+            ? 'opacity-100 scale-100 rotate-0'
+            : 'absolute opacity-0 scale-50 rotate-90 pointer-events-none',
+        )}
+      >
+        <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+      </span>
     </button>
   )
 }
@@ -171,17 +162,17 @@ export function SiteFooter() {
           <div className="space-y-3 lg:col-span-1">
             <Link
               href="/"
-              aria-label="کتاب‌یار — خانه"
+              prefetch={false}
+              aria-label="بوکزی — خانه"
               className={`flex items-center gap-2.5 ${FOCUS_RING}`}
             >
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-gold-500 to-gold-700 text-white shadow-lg shadow-gold-500/30">
                 <BookOpen className="h-5 w-5" />
               </span>
-              <span className="text-lg font-extrabold">کتاب‌یار</span>
+              <span className="text-lg font-extrabold">بوکزی</span>
             </Link>
             <p className="max-w-xs text-xs leading-relaxed text-muted-foreground text-balance">
-              همراه هوشمند مطالعه دوزبانه. کتاب‌های انگلیسی را با ترجمه فارسی،
-              دیکشنری و هوش مصنوعی بخوانید.
+              بوکزی؛ زیست‌بومِ کتاب‌های دوزبانه. مطالعه هوشمند رمان‌های انگلیسی با ترجمه فارسی، دیکشنری در لحظه و واژگان‌ساز.
             </p>
 
             {/* Social row */}
@@ -225,7 +216,7 @@ export function SiteFooter() {
                               behavior: 'smooth',
                             })
                           }
-                          className={`flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary ${FOCUS_RING}`}
+                          className={`inline-flex items-center gap-1 py-1 text-xs text-muted-foreground transition-colors hover:text-primary ${FOCUS_RING}`}
                           aria-label="بازگشت به بالای صفحه"
                         >
                           <ChevronUp className="h-3 w-3" />
@@ -234,7 +225,8 @@ export function SiteFooter() {
                       ) : (
                         <Link
                           href={item.href}
-                          className={`text-xs text-muted-foreground transition-colors hover:text-primary ${FOCUS_RING}`}
+                          prefetch={false}
+                          className={`inline-block py-1 text-xs text-muted-foreground transition-colors hover:text-primary ${FOCUS_RING}`}
                         >
                           {item.label}
                         </Link>
@@ -247,22 +239,16 @@ export function SiteFooter() {
           </div>
         </div>
 
-        {/* ─── Bottom bar ───
-            Per user feedback: "© 2026 کتاب‌یار — تمام حقوق محفوظ است.
-            ساخته شده با برای علاقه‌مندان به کتاب اینم باید به شکل وسط
-            چین باشه" — center-aligned on all breakpoints. */}
+        {/* ─── Bottom bar ─── */}
         <div className="mt-5 flex flex-col items-center gap-2 border-t border-border/70 pt-4 text-center text-xs text-muted-foreground sm:mt-6">
-          <p>© {new Date().getFullYear()} کتاب‌یار — تمام حقوق محفوظ است.</p>
+          <p>© {new Date().getFullYear()} بوکزی (Bookzi) — تمام حقوق محفوظ است.</p>
           <p className="flex items-center justify-center gap-1.5">
             ساخته شده با
             <EasterEggHeart />
-            برای علاقه‌مندان به کتاب
+            برای علاقه‌مندان به کتاب و یادگیری زبان
           </p>
         </div>
       </div>
-
-      {/* Floating back-to-top button (client island) */}
-      <BackToTop />
     </footer>
   )
 }

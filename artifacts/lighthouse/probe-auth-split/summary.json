@@ -1,0 +1,40 @@
+[
+  {
+    "page": "terms",
+    "path": "/terms",
+    "preset": "mobile",
+    "run": 1,
+    "scores": {
+      "performance": 84,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 1230.9076,
+      "largest-contentful-paint": 4117.8152,
+      "total-blocking-time": 156,
+      "cumulative-layout-shift": 0,
+      "speed-index": 2351.294197999912
+    }
+  },
+  {
+    "page": "terms",
+    "path": "/terms",
+    "preset": "mobile",
+    "run": 2,
+    "scores": {
+      "performance": 82,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 1223.7774999999997,
+      "largest-contentful-paint": 4161.555,
+      "total-blocking-time": 223,
+      "cumulative-layout-shift": 0,
+      "speed-index": 2287.1911919998875
+    }
+  }
+]

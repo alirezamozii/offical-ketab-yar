@@ -9,7 +9,7 @@
 #   DATABASE_URL=postgresql://... ./scripts/backup-db.sh  # Postgres backup
 #
 # Cron: run daily at 02:00 UTC
-#   0 2 * * * /path/to/ketab-yar/scripts/backup-db.sh
+#   0 2 * * * /path/to/bookzi/scripts/backup-db.sh
 # ---------------------------------------------------------------
 set -euo pipefail
 
@@ -19,7 +19,7 @@ mkdir -p "$BACKUP_DIR"
 
 if [[ "${DATABASE_URL:-}" == postgresql://* ]]; then
   echo "📦 Backing up Postgres database..."
-  BACKUP_FILE="$BACKUP_DIR/ketabyar-$TIMESTAMP.sql.gz"
+  BACKUP_FILE="$BACKUP_DIR/bookzi-$TIMESTAMP.sql.gz"
   pg_dump "$DATABASE_URL" | gzip > "$BACKUP_FILE"
   echo "✅ Backup saved: $BACKUP_FILE ($(du -h "$BACKUP_FILE" | cut -f1))"
 
@@ -34,7 +34,7 @@ else
   DB_FILE="${DATABASE_URL:-file:./db/custom.db}"
   DB_FILE="${DB_FILE#file:}"
   if [[ -f "$DB_FILE" ]]; then
-    BACKUP_FILE="$BACKUP_DIR/ketabyar-$TIMESTAMP.db"
+    BACKUP_FILE="$BACKUP_DIR/bookzi-$TIMESTAMP.db"
     cp "$DB_FILE" "$BACKUP_FILE"
     echo "✅ Backup saved: $BACKUP_FILE ($(du -h "$BACKUP_FILE" | cut -f1))"
   else
@@ -45,5 +45,5 @@ fi
 
 # Rotate: keep only the last 14 days of backups
 echo "🧹 Rotating backups older than 14 days..."
-find "$BACKUP_DIR" -name "ketabyar-*" -mtime +14 -delete 2>/dev/null || true
+find "$BACKUP_DIR" -name "bookzi-*" -mtime +14 -delete 2>/dev/null || true
 echo "✅ Done."

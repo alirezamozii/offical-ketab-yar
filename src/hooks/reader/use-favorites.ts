@@ -1,6 +1,4 @@
-'use client'
-
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useSyncExternalStore } from 'react'
 import { STORAGE_KEYS } from '@/lib/storage-keys'
 
 const KEY = STORAGE_KEYS.favorites
@@ -17,39 +15,65 @@ export type FavoriteBook = {
 
 type FavoriteMap = Record<string, FavoriteBook>
 
-function read(): FavoriteMap {
-  if (typeof window === 'undefined') return {}
-  try {
-    const raw = localStorage.getItem(KEY)
-    if (!raw) return {}
-    const v = JSON.parse(raw)
-    return v && typeof v === 'object' ? v : {}
-  } catch {
-    return {}
+const emptyMap: FavoriteMap = {}
+let cachedMap: FavoriteMap | null = null
+const listeners = new Set<() => void>()
+
+function getSnapshot(): FavoriteMap {
+  if (typeof window === 'undefined') return emptyMap
+  if (cachedMap === null) {
+    try {
+      const raw = localStorage.getItem(KEY)
+      if (raw) {
+        const v = JSON.parse(raw)
+        cachedMap = v && typeof v === 'object' ? v : {}
+      } else {
+        cachedMap = {}
+      }
+    } catch {
+      cachedMap = {}
+    }
+  }
+  return cachedMap ?? emptyMap
+}
+
+function getServerSnapshot(): FavoriteMap {
+  return emptyMap
+}
+
+function notify() {
+  for (const l of listeners) {
+    l()
+  }
+}
+
+let storageListenerAdded = false
+function subscribe(listener: () => void) {
+  listeners.add(listener)
+  if (!storageListenerAdded && typeof window !== 'undefined') {
+    storageListenerAdded = true
+    window.addEventListener('storage', (e: StorageEvent) => {
+      if (e.key === KEY) {
+        cachedMap = null
+        notify()
+      }
+    })
+  }
+  return () => {
+    listeners.delete(listener)
   }
 }
 
 function write(m: FavoriteMap) {
+  cachedMap = m
   try {
     localStorage.setItem(KEY, JSON.stringify(m))
   } catch {}
+  notify()
 }
 
 export function useFavorites() {
-  const [favorites, setFavorites] = useState<FavoriteMap>({})
-  const [loaded, setLoaded] = useState(false)
-
-  useEffect(() => {
-    setFavorites(read())
-    setLoaded(true)
-    // Cross-tab sync: when another tab writes to `ky_favorites`, re-read.
-    // (The browser only fires `storage` in *other* tabs, not the writer.)
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === KEY) setFavorites(read())
-    }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
-  }, [])
+  const favorites = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   const isFavorite = useCallback(
     (slug: string) => Boolean(favorites[slug]),
@@ -58,16 +82,14 @@ export function useFavorites() {
 
   const toggle = useCallback(
     (book: Omit<FavoriteBook, 'addedAt'>) => {
-      setFavorites((prev) => {
-        const next = { ...prev }
-        if (next[book.slug]) {
-          delete next[book.slug]
-        } else {
-          next[book.slug] = { ...book, addedAt: Date.now() }
-        }
-        write(next)
-        return next
-      })
+      const current = getSnapshot()
+      const next = { ...current }
+      if (next[book.slug]) {
+        delete next[book.slug]
+      } else {
+        next[book.slug] = { ...book, addedAt: Date.now() }
+      }
+      write(next)
     },
     [],
   )
@@ -78,7 +100,7 @@ export function useFavorites() {
   )
 
   return useMemo(
-    () => ({ favorites, list, isFavorite, toggle, loaded }),
-    [favorites, list, isFavorite, toggle, loaded],
+    () => ({ favorites, list, isFavorite, toggle, loaded: true }),
+    [favorites, list, isFavorite, toggle],
   )
 }

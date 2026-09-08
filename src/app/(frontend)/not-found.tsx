@@ -41,7 +41,7 @@ const SUGGESTIONS: Array<{
   {
     href: '/',
     label: 'خانه',
-    description: 'معرفی کتاب‌یار و کتاب‌های منتخب',
+    description: 'معرفی بوکزی و کتاب‌های منتخب',
     icon: Home,
   },
   {
@@ -87,7 +87,7 @@ export default function NotFound() {
 
       {/* Brand wordmark */}
       <span className="mb-8 text-gradient-gold text-sm font-bold tracking-wide">
-        کتاب‌یار
+        بوکزی
       </span>
 
       {/* 404 illustration */}

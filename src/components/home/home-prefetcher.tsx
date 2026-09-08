@@ -9,44 +9,62 @@ interface HomePrefetcherProps {
 
 export function HomePrefetcher({ books }: HomePrefetcherProps) {
   useEffect(() => {
-    // Only run prefetch on first load when browser is idle and online
+    // Only run prefetch when browser is online
     if (typeof window === 'undefined' || !navigator.onLine) return
 
-    const runPrefetch = async () => {
-      // Prefetch details and first chapter (pages 1-20) for the top 3 books
-      for (const book of books.slice(0, 3)) {
-        if (isBookFullyCached(book.slug)) continue
+    // Respect data-saver mode and slow connections
+    const conn = (navigator as { connection?: { saveData?: boolean; effectiveType?: string } }).connection
+    if (conn?.saveData || conn?.effectiveType === 'slow-2g' || conn?.effectiveType === '2g') return
 
-        try {
-          // 1. Prefetch book details API
-          await fetch(`/api/books/${book.slug}`)
-          
-          // 2. Prefetch cover image API
-          await fetch(`/api/books/${book.slug}/cover`)
-          
-          // 3. Prefetch reader HTML page (caches the shell)
-          await fetch(`/books/read/${book.slug}`)
-          
-          // 4. Prefetch first chunk (pages 1-20) so they can start reading offline instantly
-          await fetch(`/api/books/${book.slug}/pages?from=1&to=20`)
-        } catch (e) {
-          console.warn('Failed to background prefetch book:', book.slug, e)
-        }
-        
-        // Brief pause between books
-        await new Promise((resolve) => setTimeout(resolve, 1500))
+    const runPrefetch = async () => {
+      // Only prefetch the first book to minimize network contention
+      const book = books[0]
+      if (!book || isBookFullyCached(book.slug)) return
+
+      try {
+        // Prefetch with low priority so it never delays critical navigation
+        await fetch(`/api/books/${book.slug}`, { priority: 'low' } as RequestInit)
+      } catch {
+        // silent
       }
     }
 
-    let timer: NodeJS.Timeout | undefined
-    // Wait until browser is completely loaded and idle
-    if ('requestIdleCallback' in window) {
-      window.requestIdleCallback(() => runPrefetch())
+    let cancelled = false
+
+    // Wait until page is fully loaded + 8s idle delay
+    const startPrefetch = () => {
+      if (cancelled) return
+      const timer = setTimeout(() => {
+        if (cancelled) return
+        if ('requestIdleCallback' in window) {
+          window.requestIdleCallback(() => {
+            if (!cancelled) runPrefetch()
+          }, { timeout: 10000 })
+        } else {
+          runPrefetch()
+        }
+      }, 8000)
+      return timer
+    }
+
+    let timer: ReturnType<typeof setTimeout> | undefined
+
+    if (document.readyState === 'complete') {
+      timer = startPrefetch()
     } else {
-      timer = setTimeout(runPrefetch, 5000)
+      const onLoad = () => {
+        timer = startPrefetch()
+      }
+      window.addEventListener('load', onLoad, { once: true })
+      return () => {
+        cancelled = true
+        window.removeEventListener('load', onLoad)
+        if (timer) clearTimeout(timer)
+      }
     }
 
     return () => {
+      cancelled = true
       if (timer) clearTimeout(timer)
     }
   }, [books])

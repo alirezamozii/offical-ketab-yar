@@ -5,44 +5,47 @@ import type { Metadata } from 'next'
 import { SITE } from '@/lib/site'
 
 export const metadata: Metadata = {
-  title: 'درباره کتاب‌یار — پلتفرم مطالعه دوزبانه با AI',
+  title: 'درباره بوکزی — زیست‌بومِ کتاب‌های دوزبانه',
   description:
-    'کتاب‌یار پلتفرمی برای مطالعه دوزبانه کتاب‌های انگلیسی با هوش مصنوعی، دیکشنری هوشمند و واژگان‌ساز. مأموریت ما، ترکیب لذت خواندن با یادگیری زبان است.',
+    'بوکزی؛ زیست‌بومِ کتاب‌های دوزبانه. پلتفرمی برای مطالعه هوشمند رمان‌های انگلیسی با ترجمه موازی، دیکشنری در لحظه و واژگان‌ساز. مأموریت ما، ترکیب لذت خواندن با یادگیری زبان است.',
   keywords: [
-    'درباره کتاب‌یار',
+    'درباره بوکزی',
+    'بوکزی',
+    'Bookzi',
+    'زیست‌بوم کتاب‌های دوزبانه',
     'پلتفرم مطالعه دوزبانه',
-    'یادگیری زبان با هوش مصنوعی',
+    'یادگیری زبان با کتاب',
     'دیکشنری هوشمند',
     'مطالعه دوزبانه',
-    'کتاب‌یار چیست',
-    'تیم کتاب‌یار',
-    'مأموریت کتاب‌یار',
-    'about ketabyar',
+    'بوکزی چیست',
+    'تیم بوکزی',
+    'مأموریت بوکزی',
+    'about bookzi',
   ],
   alternates: { canonical: `${SITE.url}/about` },
   openGraph: {
     type: 'website',
     locale: 'fa_IR',
     url: `${SITE.url}/about`,
-    title: 'درباره کتاب‌یار — مأموریت و تیم',
+    title: 'درباره بوکزی — زیست‌بومِ کتاب‌های دوزبانه',
     description:
-      'کتاب‌یار پلتفرمی برای مطالعه دوزبانه کتاب‌های انگلیسی با هوش مصنوعی، دیکشنری و واژگان‌ساز.',
-    siteName: 'کتاب‌یار',
+      'بوکزی؛ زیست‌بومِ کتاب‌های دوزبانه. پلتفرمی برای مطالعه رمان‌های انگلیسی با ترجمه موازی، دیکشنری و واژگان‌ساز.',
+    siteName: 'بوکزی',
     images: [
       {
-        url: '/api/og?title=About%20Ketab-Yar&subtitle=Our%20mission',
+        url: '/api/og?title=About%20Bookzi&subtitle=The%20Bilingual%20Books%20Ecosystem',
         width: 1200,
         height: 630,
-        alt: 'درباره کتاب‌یار',
+        alt: 'درباره بوکزی',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'درباره کتاب‌یار',
+    title: 'درباره بوکزی — زیست‌بومِ کتاب‌های دوزبانه',
     description:
-      'پلتفرم هوشمند مطالعه دوزبانه کتاب‌های انگلیسی با هوش مصنوعی.',
-    images: ['/api/og?title=About%20Ketab-Yar&subtitle=Our%20mission'],
+      'بوکزی؛ زیست‌بومِ کتاب‌های دوزبانه و مطالعه هوشمند رمان‌های انگلیسی.',
+    images: ['/api/og?title=About%20Bookzi&subtitle=The%20Bilingual%20Books%20Ecosystem'],
   },
   robots: {
     index: true,
@@ -65,11 +68,11 @@ export default function AboutPage() {
             <BookOpen className="h-7 w-7" />
           </span>
           <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-            درباره کتاب‌یار
+            درباره بوکزی
           </h1>
           <p className="mx-auto max-w-2xl text-muted-foreground">
             ما باور داریم خواندن کتاب باید لذت‌بخش باشد و یادگیری زبان باید در
-            دلِ همین لذت اتفاق بیفتد. کتاب‌یار این دو را با هم ترکیب می‌کند.
+            دلِ همین لذت اتفاق بیفتد. بوکزی این دو را با هم ترکیب می‌کند.
           </p>
         </header>
 

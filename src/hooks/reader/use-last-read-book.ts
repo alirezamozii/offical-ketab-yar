@@ -92,20 +92,23 @@ export function useLastReadBook(): {
       }
     }
 
-    load()
-
-    // Re-check when the user navigates back to a tab (visibilitychange)
-    // so the orb updates after they finish a reading session.
-    const onVis = () => {
-      if (document.visibilityState === 'visible') load()
-    }
-    document.addEventListener('visibilitychange', onVis)
-    // Re-check when local progress changes (storage event from other tabs).
-    window.addEventListener('storage', load)
-    return () => {
-      cancelled = true
-      document.removeEventListener('visibilitychange', onVis)
-      window.removeEventListener('storage', load)
+    if ('requestIdleCallback' in window) {
+      const handle = (window as unknown as { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback(
+        () => { if (!cancelled) void load() },
+        { timeout: 2000 },
+      )
+      return () => {
+        cancelled = true
+        if ('cancelIdleCallback' in window) {
+          (window as unknown as { cancelIdleCallback: (id: number) => void }).cancelIdleCallback(handle)
+        }
+      }
+    } else {
+      const timer = setTimeout(() => { if (!cancelled) void load() }, 1000)
+      return () => {
+        cancelled = true
+        clearTimeout(timer)
+      }
     }
   }, [])
 

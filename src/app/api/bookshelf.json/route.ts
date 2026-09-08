@@ -30,6 +30,7 @@ function parseGenres(raw: string): string[] {
 export async function GET() {
   const books = await db.book
     .findMany({
+      where: { isPublished: true },
       orderBy: { createdAt: 'desc' },
       select: {
         slug: true,
@@ -59,9 +60,9 @@ export async function GET() {
   const itemList = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    name: 'کتاب‌های کتاب‌یار',
+    name: 'کتاب‌های بوکزی',
     description:
-      'فهرست کامل کتاب‌های انگلیسی دوزبانه کتاب‌یار به همراه امتیاز، ژانر و مترجم.',
+      'فهرست کامل کتاب‌های انگلیسی دوزبانه بوکزی به همراه امتیاز، ژانر و مترجم.',
     numberOfItems: books.length,
     url: `${SITE_URL}/api/bookshelf.json`,
     itemListElement: books.map((b, i) => {

@@ -246,8 +246,8 @@ export async function resolveBlogAuthorId(doc: any): Promise<string> {
 
   const editorial = await db.user.create({
     data: {
-      email: 'editorial@ketabyar.ir',
-      name: 'Ketab-Yar Editorial',
+      email: 'editorial@bookzi.ir',
+      name: 'Bookzi Editorial',
       role: 'ADMIN',
     },
     select: { id: true },

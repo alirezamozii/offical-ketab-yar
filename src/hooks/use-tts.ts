@@ -44,11 +44,19 @@ import { toast } from 'sonner'
 
 export type TTSLang = 'en' | 'fa'
 
+export interface WordBoundary {
+  part: string
+  start: number // in ms
+  end: number   // in ms
+}
+
 export interface UseTTSReturn {
   speak: (text: string, lang?: TTSLang) => Promise<void>
   stop: () => void
   pause: () => void
   resume: () => void
+  seek: (timeSec: number) => void
+  seekPercent: (ratio: number) => void
   isPlaying: boolean
   isPaused: boolean
   isLoading: boolean
@@ -61,6 +69,10 @@ export interface UseTTSReturn {
   chunkIndex: number
   /** Total chunks in the current playback queue (1 for short texts). */
   totalChunks: number
+  /** Exact millisecond-aligned word boundaries from the neural engine. */
+  wordBoundaries: WordBoundary[]
+  /** Index of the word actively being read (-1 if none/idle). */
+  activeWordIndex: number
 }
 
 const MAX_CACHE_ENTRIES = 32
@@ -73,6 +85,11 @@ const MAX_CHUNK_CHARS = 480
 
 function cacheKey(text: string, lang: TTSLang, voice: string, speed: number) {
   return `${lang}|${voice}|${speed}|${text}`
+}
+
+interface CachedAudio {
+  blob: Blob
+  wordBoundaries: WordBoundary[]
 }
 
 /**
@@ -120,10 +137,20 @@ function splitIntoChunks(text: string, maxChars = MAX_CHUNK_CHARS): string[] {
   return chunks.filter(Boolean)
 }
 
+function getWordIndexFromCharIndex(text: string, charIndex: number): number {
+  const words = text.split(/\s+/)
+  let charsCount = 0
+  for (let i = 0; i < words.length; i++) {
+    charsCount += words[i].length + 1
+    if (charsCount > charIndex) return i
+  }
+  return -1
+}
+
 export function useTTS(): UseTTSReturn {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const objectUrlRef = useRef<string | null>(null)
-  const cacheRef = useRef<Map<string, Blob>>(new Map())
+  const cacheRef = useRef<Map<string, CachedAudio>>(new Map())
   const currentKeyRef = useRef<string | null>(null)
   const rafRef = useRef<number | null>(null)
   // Queue of pending chunks for long-form playback (e.g. a full reader page).
@@ -134,6 +161,8 @@ export function useTTS(): UseTTSReturn {
   const isFallbackActiveRef = useRef<boolean>(false)
   const fallbackUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
   const playNextChunkRef = useRef<(() => void) | null>(null)
+  const boundariesRef = useRef<WordBoundary[]>([])
+  const activeWordIndexRef = useRef<number>(-1)
   // AbortController for the in-flight /api/tts fetch. Aborted when a new
   // speak() call supersedes the current one and on unmount — prevents
   // memory leaks + the "setState on unmounted component" React warning.
@@ -149,6 +178,18 @@ export function useTTS(): UseTTSReturn {
   const [durationSec, setDurationSec] = useState(0)
   const [elapsedSec, setElapsedSec] = useState(0)
   const [currentText, setCurrentText] = useState('')
+  const [wordBoundaries, setWordBoundaries] = useState<WordBoundary[]>([])
+  const [activeWordIndex, setActiveWordIndex] = useState<number>(-1)
+  const audioSpeed = useReaderSettingsStore((state) => state.audioSpeed)
+
+  // Dynamically update playbackRate on active audio element when audioSpeed changes
+  useEffect(() => {
+    if (audioRef.current) {
+      try {
+        audioRef.current.playbackRate = audioSpeed
+      } catch {}
+    }
+  }, [audioSpeed])
 
   // ---- Lazily create the audio element on the client ----
   const getAudio = useCallback((): HTMLAudioElement => {
@@ -190,8 +231,12 @@ export function useTTS(): UseTTSReturn {
     queueRef.current = []
     totalChunksRef.current = 0
     chunkIndexRef.current = 0
+    boundariesRef.current = []
+    activeWordIndexRef.current = -1
     setTotalChunks(0)
     setChunkIndex(0)
+    setWordBoundaries((prev) => (prev.length === 0 ? prev : []))
+    setActiveWordIndex(-1)
     const el = audioRef.current
     if (el) {
       try {
@@ -216,25 +261,38 @@ export function useTTS(): UseTTSReturn {
     setCurrentText('')
   }, [cancelTick])
 
-  // ---- Tick loop: drives progress + elapsed time state ----
-  //
-  // **rAF throttle (P0, audit 03 §5.3):** the original loop called 3
-  // `setState`s × 60fps = ~180 re-renders/sec of the TTSProvider subtree
-  // (which wraps the entire reader tree). We keep the rAF scheduler for
-  // smoothness but only call the `setState`s when at least 250ms have
-  // elapsed since the last update (~4Hz). This cuts re-renders by ~15×
-  // during audio playback with no perceptible UI difference — the
-  // progress bar's CSS `transition: width 120ms linear` smooths the
-  // 4Hz jumps into continuous motion.
+  // ---- Tick loop: drives progress + elapsed time state and exact word boundary highlight ----
   const startTick = useCallback(() => {
     cancelTick()
-    let lastUpdateMs = 0
+    let lastUiUpdateMs = 0
     const loop = () => {
       const el = audioRef.current
       if (!el) return
       const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
-      if (now - lastUpdateMs >= 250) {
-        lastUpdateMs = now
+      const currentMs = (el.currentTime || 0) * 1000
+
+      // High-precision word boundary checking in animation frame
+      const bounds = boundariesRef.current
+      if (bounds && bounds.length > 0) {
+        const foundIndex = bounds.findIndex(
+          (w) => currentMs >= w.start && currentMs <= w.end,
+        )
+        if (foundIndex !== -1 && foundIndex !== activeWordIndexRef.current) {
+          activeWordIndexRef.current = foundIndex
+          setActiveWordIndex(foundIndex)
+        } else if (foundIndex === -1 && activeWordIndexRef.current !== -1) {
+          // Check if between words or still within short gap
+          const nextIdx = bounds.findIndex((w) => currentMs < w.start)
+          if (nextIdx > 0 && currentMs - bounds[nextIdx - 1].end > 350) {
+            activeWordIndexRef.current = -1
+            setActiveWordIndex(-1)
+          }
+        }
+      }
+
+      // Smooth throttled progress/time updates for React state (~4Hz)
+      if (now - lastUiUpdateMs >= 200) {
+        lastUiUpdateMs = now
         const dur = Number.isFinite(el.duration) ? el.duration : 0
         const pos = el.currentTime || 0
         setElapsedSec(pos)
@@ -246,19 +304,51 @@ export function useTTS(): UseTTSReturn {
     rafRef.current = requestAnimationFrame(loop)
   }, [cancelTick])
 
+  // ---- Seek audio to specific second position ----
+  const seek = useCallback((timeSec: number) => {
+    const el = audioRef.current
+    if (!el || !Number.isFinite(el.duration) || el.duration <= 0) return
+    const clamped = Math.max(0, Math.min(el.duration, timeSec))
+    try {
+      el.currentTime = clamped
+      setElapsedSec(clamped)
+      setProgress(clamped / el.duration)
+
+      // Immediately sync active word to new time
+      const currentMs = clamped * 1000
+      const bounds = boundariesRef.current
+      if (bounds && bounds.length > 0) {
+        const found = bounds.findIndex((w) => currentMs >= w.start && currentMs <= w.end)
+        activeWordIndexRef.current = found
+        setActiveWordIndex(found)
+      }
+    } catch (e) {
+      console.error('[tts] seek error:', e)
+    }
+  }, [])
+
+  // ---- Seek audio by progress ratio (0 to 1) ----
+  const seekPercent = useCallback((ratio: number) => {
+    const el = audioRef.current
+    if (!el || !Number.isFinite(el.duration) || el.duration <= 0) return
+    const clampedRatio = Math.max(0, Math.min(1, ratio))
+    seek(clampedRatio * el.duration)
+  }, [seek])
+
   // ---- Fetch a single chunk's audio (cache-aware) and load it into the element ----
   const loadChunk = useCallback(
     async (text: string, lang: TTSLang): Promise<boolean> => {
       const el = getAudio()
       const { voiceId, audioSpeed } = useReaderSettingsStore.getState()
-      const selectedVoice = voiceId.startsWith(lang) ? voiceId : (lang === 'fa' ? 'fa-IR-FaridNeural' : 'en-US-AvaMultilingualNeural')
+      const selectedVoice = voiceId.startsWith(lang) ? voiceId : (lang === 'fa' ? 'fa-IR-DilaraNeural' : 'en-US-AvaMultilingualNeural')
       const key = cacheKey(text, lang, selectedVoice, audioSpeed)
 
-      let blob = cacheRef.current.get(key)
+      const cached = cacheRef.current.get(key)
+      let blob: Blob | undefined = cached?.blob
+      let boundaries: WordBoundary[] = cached?.wordBoundaries || []
+
       if (!blob) {
-        // Abort any previously in-flight fetch (e.g. user clicked speak
-        // again before the last fetch finished). The AbortController is
-        // also aborted on unmount + on stop().
+        // Abort any previously in-flight fetch
         fetchAbortRef.current?.abort()
         const ctrl = new AbortController()
         fetchAbortRef.current = ctrl
@@ -292,6 +382,21 @@ export function useTTS(): UseTTSReturn {
           toast.error(msg)
           return false
         }
+
+        // Extract WordBoundaries from header if present
+        const wbHeader = res.headers.get('x-tts-word-boundaries')
+        if (wbHeader) {
+          try {
+            const decoded = typeof window !== 'undefined' ? atob(wbHeader) : Buffer.from(wbHeader, 'base64').toString('utf-8')
+            const parsedBounds = JSON.parse(decoded)
+            if (Array.isArray(parsedBounds)) {
+              boundaries = parsedBounds
+            }
+          } catch (e) {
+            console.warn('[tts] failed to parse word boundaries header:', e)
+          }
+        }
+
         blob = await res.blob()
         if (!blob || blob.size === 0) {
           const msg = 'سرویس صدا در دسترس نیست'
@@ -299,12 +404,17 @@ export function useTTS(): UseTTSReturn {
           toast.error(msg)
           return false
         }
-        cacheRef.current.set(key, blob)
+        cacheRef.current.set(key, { blob, wordBoundaries: boundaries })
         if (cacheRef.current.size > MAX_CACHE_ENTRIES) {
           const firstKey = cacheRef.current.keys().next().value
           if (firstKey) cacheRef.current.delete(firstKey)
         }
       }
+
+      boundariesRef.current = boundaries
+      activeWordIndexRef.current = -1
+      setWordBoundaries(boundaries)
+      setActiveWordIndex(-1)
 
       if (objectUrlRef.current) {
         URL.revokeObjectURL(objectUrlRef.current)
@@ -338,6 +448,14 @@ export function useTTS(): UseTTSReturn {
     const voice = voices.find((v) => v.lang.startsWith(lang))
     if (voice) utterance.voice = voice
 
+    utterance.onboundary = (e) => {
+      if (e.name === 'word') {
+        const wordIdx = getWordIndexFromCharIndex(text, e.charIndex)
+        activeWordIndexRef.current = wordIdx
+        setActiveWordIndex(wordIdx)
+      }
+    }
+
     utterance.onend = () => {
       // Advance chunk queue
       playNextChunkRef.current?.()
@@ -365,6 +483,10 @@ export function useTTS(): UseTTSReturn {
       setCurrentText('')
       setTotalChunks(0)
       setChunkIndex(0)
+      boundariesRef.current = []
+      activeWordIndexRef.current = -1
+      setWordBoundaries([])
+      setActiveWordIndex(-1)
       totalChunksRef.current = 0
       chunkIndexRef.current = 0
       isFallbackActiveRef.current = false
@@ -419,7 +541,7 @@ export function useTTS(): UseTTSReturn {
       if (chunks.length === 0) return
 
       const { voiceId, audioSpeed } = useReaderSettingsStore.getState()
-      const selectedVoice = voiceId.startsWith(lang) ? voiceId : (lang === 'fa' ? 'fa-IR-FaridNeural' : 'en-US-AvaMultilingualNeural')
+      const selectedVoice = voiceId.startsWith(lang) ? voiceId : (lang === 'fa' ? 'fa-IR-DilaraNeural' : 'en-US-AvaMultilingualNeural')
 
       // If the same single-chunk text is already playing, do nothing.
       if (
@@ -451,6 +573,10 @@ export function useTTS(): UseTTSReturn {
       chunkIndexRef.current = 0
       setTotalChunks(chunks.length)
       setChunkIndex(0)
+      boundariesRef.current = []
+      activeWordIndexRef.current = -1
+      setWordBoundaries([])
+      setActiveWordIndex(-1)
       setIsPlaying(false)
       setIsPaused(false)
       setError(null)
@@ -549,6 +675,10 @@ export function useTTS(): UseTTSReturn {
       setCurrentText('')
       setTotalChunks(0)
       setChunkIndex(0)
+      boundariesRef.current = []
+      activeWordIndexRef.current = -1
+      setWordBoundaries([])
+      setActiveWordIndex(-1)
       totalChunksRef.current = 0
       chunkIndexRef.current = 0
       if (objectUrlRef.current) {
@@ -577,9 +707,6 @@ export function useTTS(): UseTTSReturn {
   useEffect(() => {
     return () => {
       cancelTick()
-      // Abort any in-flight /api/tts fetch so its `.then` doesn't fire
-      // after the component is gone (would cause a "setState on unmounted
-      // component" React warning + a dangling object-URL leak).
       fetchAbortRef.current?.abort()
       fetchAbortRef.current = null
       const el = audioRef.current
@@ -603,6 +730,8 @@ export function useTTS(): UseTTSReturn {
       stop,
       pause,
       resume,
+      seek,
+      seekPercent,
       isPlaying,
       isPaused,
       isLoading,
@@ -613,12 +742,16 @@ export function useTTS(): UseTTSReturn {
       currentText,
       chunkIndex,
       totalChunks,
+      wordBoundaries,
+      activeWordIndex,
     }),
     [
       speak,
       stop,
       pause,
       resume,
+      seek,
+      seekPercent,
       isPlaying,
       isPaused,
       isLoading,
@@ -629,6 +762,8 @@ export function useTTS(): UseTTSReturn {
       currentText,
       chunkIndex,
       totalChunks,
+      wordBoundaries,
+      activeWordIndex,
     ],
   )
 }

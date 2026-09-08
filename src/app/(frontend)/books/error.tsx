@@ -46,7 +46,7 @@ export default function BooksError({
       />
 
       <span className="mb-8 text-gradient-gold text-sm font-bold tracking-wide">
-        کتاب‌یار
+        بوکزی
       </span>
 
       <span className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gold-500/15 text-gold-600 shadow-md-warm dark:text-gold-400">

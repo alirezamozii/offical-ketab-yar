@@ -1,135 +1,102 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
 import { ArrowUp } from 'lucide-react'
-import { useScrollDirection } from '@/hooks/use-scroll-direction'
 import { useScrollProgress } from '@/hooks/use-scroll-progress'
-import { useIsMobile } from '@/hooks/use-mobile'
+import { cn } from '@/lib/utils'
 
 /**
- * BackToTop — fixed FAB that appears after the user scrolls > 500px.
+ * BackToTop — fixed FAB that appears after the user scrolls > 250px.
  * Smooth-scrolls to top on click. Respects reduced motion.
  *
- * Performance fix (per user feedback "لگ میزنه و دیر کار میکنه"):
- *   The circular progress ring now uses the singleton `useScrollProgress`
- *   hook which updates the SVG `strokeDashoffset` DIRECTLY via a ref —
- *   no React state changes, no re-renders on scroll. This is the same
- *   singleton system that drives the header progress bar, so both stay
- *   perfectly in sync at 60fps with only ONE window scroll listener.
- *
- *   `useScrollDirection` is still used for the `hidden` state (smart-hide
- *   on scroll-down) because that's a binary state that only changes on
- *   direction flips, not on every scroll tick.
+ * The circular progress ring uses the singleton `useScrollProgress` hook
+ * which updates the SVG `strokeDashoffset` directly via a ref — zero React
+ * re-renders on scroll, staying in sync with the page scroll at 60fps.
  */
 const RADIUS = 18
 const CIRC = 2 * Math.PI * RADIUS
 
 export function BackToTop() {
   const [visible, setVisible] = useState(false)
-  const prefersReduced = useReducedMotion()
-  const isMobile = useIsMobile()
-  const { hidden: navHidden } = useScrollDirection(8, 120)
-  // Ref to the progress arc circle — updated directly by the singleton
-  // scroll hook, bypassing React state entirely.
   const arcRef = useRef<SVGCircleElement>(null)
+  const visibleRef = useRef(false)
 
-  useScrollProgress((_, scrollY) => {
-    const isOver = scrollY > 400
-    if (isOver !== visible) {
+  // Single subscription for both visibility check and progress arc update
+  useScrollProgress((progress, scrollY) => {
+    const isOver = scrollY > 250
+    if (isOver !== visibleRef.current) {
+      visibleRef.current = isOver
       setVisible(isOver)
+    }
+
+    const el = arcRef.current
+    if (el) {
+      const p = Math.min(1, Math.max(0, progress))
+      el.style.strokeDashoffset = `${CIRC * (1 - p)}px`
     }
   })
 
-  // Subscribe to the singleton scroll progress system. This writes
-  // `strokeDashoffset` directly to the SVG circle element — zero re-renders.
-  useScrollProgress((progress) => {
-    const el = arcRef.current
-    if (!el) return
-    const p = Math.min(1, Math.max(0, progress))
-    el.setAttribute('stroke-dashoffset', String(CIRC * (1 - p)))
-  })
-
   const handleClick = () => {
-    if (prefersReduced) {
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       window.scrollTo(0, 0)
     } else {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 
-  const show = visible && !(isMobile && navHidden)
-
   return (
-    <AnimatePresence>
-      {show && (
-        <motion.button
-          type="button"
-          onClick={handleClick}
-          aria-label="بازگشت به بالا"
-          initial={
-            prefersReduced
-              ? { opacity: 0 }
-              : { opacity: 0, scale: 0.6, y: 8 }
-          }
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={
-            prefersReduced
-              ? { opacity: 0 }
-              : { opacity: 0, scale: 0.6, y: 8 }
-          }
-          transition={
-            prefersReduced
-              ? { duration: 0.12 }
-              : { type: 'spring', stiffness: 500, damping: 30 }
-          }
-          whileTap={prefersReduced ? undefined : { scale: 0.9 }}
-          className="
-            fixed end-4 z-30
-            flex h-11 w-11 items-center justify-center
-            rounded-full border border-border/70 bg-background/90 backdrop-blur
-            text-foreground shadow-lg shadow-primary/10
-            transition-colors hover:border-primary hover:text-primary
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background
-            no-tap-highlight touch-manipulation tap-target
-            bottom-24 md:bottom-6
-          "
-        >
-          {/* ─── Circular progress ring (SVG) ───
-              Plain SVG circles. The progress arc's `stroke-dashoffset` is
-              updated DIRECTLY by the singleton useScrollProgress hook via
-              the ref above — no React state, no re-renders, smooth 60fps. */}
-          <svg
-            className="absolute inset-0 h-full w-full -rotate-90"
-            viewBox="0 0 44 44"
-            fill="none"
-            aria-hidden
-          >
-            {/* Track */}
-            <circle
-              cx="22"
-              cy="22"
-              r={RADIUS}
-              stroke="hsl(var(--border))"
-              strokeWidth="2"
-              opacity="0.5"
-            />
-            {/* Progress arc — ref-driven, updates on every scroll tick */}
-            <circle
-              ref={arcRef}
-              cx="22"
-              cy="22"
-              r={RADIUS}
-              stroke="hsl(var(--primary))"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeDasharray={CIRC}
-              strokeDashoffset={CIRC}
-            />
-          </svg>
-          <ArrowUp className="relative h-5 w-5" />
-        </motion.button>
+    <button
+      type="button"
+      onClick={handleClick}
+      aria-label="بازگشت به بالا"
+      aria-hidden={!visible}
+      tabIndex={visible ? 0 : -1}
+      className={cn(
+        'fixed end-4 z-30',
+        'flex h-11 w-11 items-center justify-center',
+        'rounded-full border border-border/70 bg-background/95 backdrop-blur-md',
+        'text-foreground shadow-lg shadow-gold-500/10',
+        'hover:border-gold-500/60 hover:text-gold-600 dark:hover:text-gold-400',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        'no-tap-highlight touch-manipulation tap-target',
+        'motion-safe:active:scale-90',
+        'bottom-24 md:bottom-6',
+        'transition-all duration-300 ease-out motion-reduce:transition-none',
+        visible
+          ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
+          : 'opacity-0 scale-75 translate-y-2 pointer-events-none',
       )}
-    </AnimatePresence>
+    >
+      {/* Circular progress ring (SVG) */}
+      <svg
+        className="absolute inset-0 h-full w-full -rotate-90 pointer-events-none"
+        viewBox="0 0 44 44"
+        fill="none"
+        aria-hidden="true"
+      >
+        {/* Track circle */}
+        <circle
+          cx="22"
+          cy="22"
+          r={RADIUS}
+          className="stroke-border/40"
+          strokeWidth="2.5"
+        />
+        {/* Progress arc — ref-driven, updates on every scroll tick */}
+        <circle
+          ref={arcRef}
+          cx="22"
+          cy="22"
+          r={RADIUS}
+          className="stroke-gold-500 dark:stroke-gold-400"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeDasharray={CIRC}
+          style={{ strokeDashoffset: `${CIRC}px` }}
+        />
+      </svg>
+      <ArrowUp className="relative h-5 w-5" />
+    </button>
   )
 }
+

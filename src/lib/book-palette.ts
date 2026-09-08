@@ -112,14 +112,21 @@ export async function extractColorsFromMediaDoc(
       })
     }
 
-    if (!mediaDoc || !mediaDoc.filename) return null
+    if (!mediaDoc || typeof mediaDoc.filename !== 'string') return null
+
+    // Payload stores a filename, not a path. Normalizing to the basename keeps
+    // the lookup inside the configured media directories even if malformed
+    // input contains path separators.
+    const filename = path.basename(mediaDoc.filename)
+    if (!filename) return null
 
     // Look for file in public/media or uploads
-    const possiblePaths = [
-      path.join(process.cwd(), 'public', 'media', mediaDoc.filename),
-      path.join(process.cwd(), 'media', mediaDoc.filename),
-      path.join(process.cwd(), 'public', 'covers', mediaDoc.filename),
+    const mediaRoots = [
+      path.join(/* turbopackIgnore: true */ process.cwd(), 'public', 'media'),
+      path.join(/* turbopackIgnore: true */ process.cwd(), 'media'),
+      path.join(/* turbopackIgnore: true */ process.cwd(), 'public', 'covers'),
     ]
+    const possiblePaths = mediaRoots.map((root) => path.join(root, filename))
 
     for (const filePath of possiblePaths) {
       if (fs.existsSync(filePath)) {

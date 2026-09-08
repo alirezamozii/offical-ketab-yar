@@ -94,12 +94,12 @@ export function ShareCard({ payload }: ShareCardProps) {
       ctx.fillStyle = glow
       ctx.fillRect(0, 0, W, H)
 
-      // (2) Top brand bar — "کتاب‌یار" + Jalali month/year label.
+      // (2) Top brand bar — "بوکزی" + Jalali month/year label.
       ctx.fillStyle = '#fbbf24' // gold-400
       ctx.font = '700 36px sans-serif'
       ctx.textAlign = 'right'
       ctx.direction = 'rtl'
-      ctx.fillText('کتاب‌یار', W - 60, 80)
+      ctx.fillText('بوکزی', W - 60, 80)
       ctx.fillStyle = 'rgba(255,255,255,0.6)'
       ctx.font = '500 26px sans-serif'
       ctx.fillText(`${monthLabel} ${yearLabel}`, 60, 80)
@@ -196,13 +196,13 @@ export function ShareCard({ payload }: ShareCardProps) {
       ctx.fillStyle = '#34d399' // emerald-400
       ctx.fillText(topAuthor, 100, 1070)
 
-      // (9) Footer — KETABYAR.IR branding per user feedback.
-      // Old: "کتاب‌یار — همراه مطالعه شما" + "ketabyar.ir/stats"
-      // New: bold "KETABYAR.IR" + subtle tagline below.
+      // (9) Footer — bookzi.ir branding per user feedback.
+      // Old: "بوکزی — همراه مطالعه شما" + "bookzi.ir/stats"
+      // New: bold "bookzi.ir" + subtle tagline below.
       ctx.fillStyle = '#fbbf24'
       ctx.font = '800 32px sans-serif'
       ctx.textAlign = 'center'
-      ctx.fillText('KETABYAR.IR', W / 2, 1260)
+      ctx.fillText('bookzi.ir', W / 2, 1260)
       ctx.fillStyle = 'rgba(255,255,255,0.4)'
       ctx.font = '500 22px sans-serif'
       ctx.fillText('همراه مطالعه شما', W / 2, 1300)
@@ -239,7 +239,7 @@ export function ShareCard({ payload }: ShareCardProps) {
           const url = URL.createObjectURL(blob)
           const a = document.createElement('a')
           a.href = url
-          a.download = `ketabyar-stats-${Date.now()}.png`
+          a.download = `bookzi-stats-${Date.now()}.png`
           document.body.appendChild(a)
           a.click()
           document.body.removeChild(a)
@@ -286,8 +286,8 @@ export function ShareCard({ payload }: ShareCardProps) {
         const blob = await new Promise<Blob | null>((resolve) =>
           canvas.toBlob(resolve, 'image/png'),
         )
-        if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], 'ketabyar-stats.png', { type: 'image/png' })] })) {
-          const file = new File([blob], 'ketabyar-stats.png', { type: 'image/png' })
+        if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], 'bookzi-stats.png', { type: 'image/png' })] })) {
+          const file = new File([blob], 'bookzi-stats.png', { type: 'image/png' })
           await navigator.share({
             title: 'سال من در کتاب‌ها',
             text: shareText,
@@ -322,7 +322,7 @@ export function ShareCard({ payload }: ShareCardProps) {
     >
       {/* Top brand bar */}
       <div className="flex items-center justify-between border-b border-white/5 px-5 py-3">
-        <span className="text-xs font-medium text-gold-400">کتاب‌یار</span>
+        <span className="text-xs font-medium text-gold-400">بوکزی</span>
         <span className="text-[10px] text-white/40">
           {monthLabel} {yearLabel}
         </span>
@@ -400,7 +400,7 @@ export function ShareCard({ payload }: ShareCardProps) {
         </div>
 
         <div className="relative mt-4 text-center">
-          <span className="text-xs font-bold tracking-wider text-gold-400">KETABYAR.IR</span>
+          <span className="text-xs font-bold tracking-wider text-gold-400">bookzi.ir</span>
         </div>
       </div>
 

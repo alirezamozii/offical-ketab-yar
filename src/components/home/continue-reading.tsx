@@ -40,14 +40,7 @@ export function ContinueReading() {
       .finally(() => setLoaded(true))
   }, [])
 
-  if (!loaded) {
-    return (
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8" aria-hidden="true">
-        <div className="h-36 w-full animate-pulse rounded-3xl border border-border/20 bg-muted/20" />
-      </div>
-    )
-  }
-  if (books.length === 0) return null
+  if (!loaded || books.length === 0) return null
 
   const featured = books[0]
   const featuredProgress = progressMap[featured.slug]
@@ -146,6 +139,7 @@ export function ContinueReading() {
               >
                 <Link
                   href={`/books/read/${featured.slug}`}
+                  prefetch={false}
                   aria-label={`ادامه مطالعه ${featured.title}`}
                 >
                   <BookOpen className="h-4 w-4" />
@@ -154,7 +148,7 @@ export function ContinueReading() {
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <Link href="/dashboard" aria-label="رفتن به داشبورد">
+                <Link href="/dashboard" prefetch={false} aria-label="رفتن به داشبورد">
                   رفتن به داشبورد
                 </Link>
               </Button>
@@ -188,7 +182,7 @@ export function EmptyStateCTA() {
           </p>
         </div>
         <Button asChild variant="glow">
-          <Link href="/library" aria-label="مرور کتابخانه">
+          <Link href="/library" prefetch={false} aria-label="مرور کتابخانه">
             <BookOpen className="h-4 w-4" />
             مرور کتابخانه
           </Link>

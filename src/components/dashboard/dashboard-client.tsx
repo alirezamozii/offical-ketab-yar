@@ -345,7 +345,7 @@ export function DashboardClient() {
       <DashboardSection
         icon={Activity}
         title="فعالیت اخیر"
-        subtitle="کارهای شما و جامعه کتاب‌یار"
+        subtitle="کارهای شما و جامعه بوکزی"
         index={2}
       >
         <ActivityFeed />

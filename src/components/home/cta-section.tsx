@@ -20,7 +20,7 @@ export function CTASection() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
       <div
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gold-600 via-gold-500 to-gold-700 px-6 py-12 shadow-2xl shadow-gold-500/30 sm:px-10 sm:py-14 animate-in fade-in slide-in-from-bottom-8 duration-1000 fill-mode-both transform-gpu"
+        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gold-600 via-gold-500 to-gold-700 px-6 py-12 shadow-2xl shadow-gold-500/30 sm:px-10 sm:py-14"
       >
         {/* Texture — kept subtle */}
         <div className="pointer-events-none absolute inset-0 bg-dot-pattern opacity-15" />
@@ -73,7 +73,7 @@ export function CTASection() {
                   size="xl"
                   className="group/cta relative w-full overflow-hidden bg-white text-gold-800 shadow-xl hover:bg-white/90 sm:w-auto"
                 >
-                  <Link href="/library" aria-label="ورود به کتابخانه">
+                  <Link href="/library" prefetch={false} aria-label="ورود به کتابخانه">
                     {/* Shimmer sweep on hover */}
                     <span
                       aria-hidden="true"
@@ -93,7 +93,7 @@ export function CTASection() {
                 variant="outline"
                 className="border-white/70 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 hover:text-white"
               >
-                <Link href="/vocabulary/game" aria-label="بازی واژگان">
+                <Link href="/vocabulary/game" prefetch={false} aria-label="بازی واژگان">
                   <Gift className="h-5 w-5" />
                   بازی واژگان
                 </Link>
@@ -112,7 +112,7 @@ export function CTASection() {
 
           {/* ─── Image placeholder (left side on desktop RTL) ─── */}
           <div
-            className="relative hidden lg:block animate-in fade-in zoom-in-95 duration-1000 delay-300 fill-mode-both"
+            className="relative hidden lg:block"
             aria-label="محل نمایش تصویر برنامه (به‌زودی)"
           >
             <div className="relative aspect-[4/5] w-full max-w-sm overflow-hidden rounded-2xl border border-white/30 bg-white/10 shadow-2xl backdrop-blur-sm">

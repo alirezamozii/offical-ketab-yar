@@ -1,10 +1,16 @@
 'use client'
 
 import { SrsDots } from '@/components/vocabulary/srs-dots'
-import {
-  WordDetailDialog,
-  type VocabWord,
-} from '@/components/vocabulary/word-detail-dialog'
+import type { VocabWord } from '@/components/vocabulary/word-detail-dialog'
+import dynamic from 'next/dynamic'
+
+const WordDetailDialog = dynamic(
+  () =>
+    import('@/components/vocabulary/word-detail-dialog').then(
+      (m) => m.WordDetailDialog,
+    ),
+  { ssr: false },
+)
 import { DailyWordsSection } from '@/components/vocabulary/daily-words-section'
 import {
   useVocabMeta,

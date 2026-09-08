@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useTransition, useMemo } from 'react'
+import React, { useState, useEffect, useTransition, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import {
   Sparkles,
@@ -109,7 +109,7 @@ export const ContentStudio: React.FC = () => {
   }, [activeStage])
 
   // Load books & blogs on mount
-  const refreshLibraryData = async () => {
+  const refreshLibraryData = useCallback(async () => {
     try {
       const [books, blogs, mockupStatus] = await Promise.all([
         getBookListForEditingAction(),
@@ -119,13 +119,13 @@ export const ContentStudio: React.FC = () => {
       setBooksList(books)
       setBlogList(blogs)
       setMockupMode(mockupStatus.enabled)
-      if (books.length > 0 && !selectedBookSlug) {
-        setSelectedBookSlug(books[0].slug)
+      if (books.length > 0) {
+        setSelectedBookSlug((current) => current || books[0].slug)
       }
     } catch (err) {
       console.error(err)
     }
-  }
+  }, [])
 
   const handleToggleMockupMode = async () => {
     setTogglingMockup(true)
@@ -149,8 +149,8 @@ export const ContentStudio: React.FC = () => {
   }
 
   useEffect(() => {
-    refreshLibraryData()
-  }, [])
+    void refreshLibraryData()
+  }, [refreshLibraryData])
 
   // Load book details when selected for visual editing
   useEffect(() => {

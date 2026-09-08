@@ -5,7 +5,6 @@ import { FavoriteButton } from '@/components/books/favorite-button'
 import { Badge } from '@/components/ui/badge'
 import { BookOpen, Calendar, Star } from 'lucide-react'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
 import type { BookListItem } from '@/lib/data'
 
 /**
@@ -23,12 +22,7 @@ export function BookListItemRow({
   index?: number
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: Math.min(index * 0.03, 0.3) }}
-      className="cull-offscreen"
-    >
+    <div className="cull-offscreen">
       <Link
         href={`/books/${book.slug}`}
         className="group flex gap-3 rounded-2xl border border-border/60 bg-card p-3 shadow-sm transition-[transform,opacity,colors,border-color,background-color] hover:border-primary/50 hover:shadow-md sm:gap-4 sm:p-4"
@@ -132,7 +126,7 @@ export function BookListItemRow({
           </span>
         </div>
       </Link>
-    </motion.div>
+    </div>
   )
 }
 

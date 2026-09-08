@@ -3,12 +3,12 @@ import { StatsPageLoader } from '@/components/stats/stats-page-loader'
 import { SITE } from '@/lib/site'
 
 export const metadata: Metadata = {
-  title: 'آمار مطالعه | کتاب‌یار',
+  title: 'آمار مطالعه | بوکزی',
   description:
     'مرور سال شما در کتاب‌ها: صفحات خوانده‌شده، استمرار، ژانرهای محبوب، الگوی زمانی، رشد واژگان و دستاوردها — به سبک Spotify Wrapped.',
   alternates: { canonical: `${SITE.url}/stats` },
   openGraph: {
-    title: 'آمار مطالعه | کتاب‌یار',
+    title: 'آمار مطالعه | بوکزی',
     description:
       'مرور سال شما در کتاب‌ها — صفحات، استمرار، ژانرها، الگوی زمانی و دستاوردها.',
     type: 'website',
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 export default function StatsPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <h1 className="sr-only">آمار مطالعه کتاب‌یار</h1>
+      <h1 className="sr-only">آمار مطالعه بوکزی</h1>
       <StatsPageLoader />
     </div>
   )

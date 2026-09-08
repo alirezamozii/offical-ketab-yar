@@ -1,32 +1,28 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import nextDynamic from 'next/dynamic'
 import { getActiveQuotes, getQuoteOfTheDayFromDB } from '@/lib/cms'
 import type { CuratedQuote } from '@/lib/quotes'
 import type { BookListItem } from '@/lib/data'
 import { getBooks } from '@/lib/data'
 import { SITE } from '@/lib/site'
+import { QuotesPageClient } from '@/components/quotes/quotes-page-client'
 import { QuotesSkeleton } from '@/components/quotes/quotes-skeleton'
 
-export const dynamic = 'force-dynamic'
-
-const QuotesPageClient = nextDynamic(
-  () => import('@/components/quotes/quotes-page-client').then((m) => m.QuotesPageClient),
-  {
-    loading: () => <QuotesSkeleton />,
-  }
-)
+export const revalidate = 60
 
 export const metadata: Metadata = {
-  title: 'نقل‌قول‌ها | کتاب‌یار',
+  title: 'کوت‌ها | بوکزی',
   description:
-    'گالری نقل‌قول‌های برگزیده از کتاب‌ها و هایلایت‌های شما. نقل‌قول روز، فیلتر بر اساس موضوع، اشتراک‌گذاری و ذخیره‌سازی.',
+    'گالری کوت‌های برگزیده از کتاب‌ها و هایلایت‌های شما در بوکزی؛ زیست‌بومِ کتاب‌های دوزبانه. کوت روز، طراحی استوری کارت، اشتراک‌گذاری و ذخیره‌سازی.',
   keywords: [
-    'نقل‌قول',
+    'کوت',
+    'کوت‌ها',
     'هایلایت',
-    'نقل‌قول روز',
-    'کتاب‌یار',
-    'اشتراک‌گذاری نقل‌قول',
+    'کوت روز',
+    'بوکزی',
+    'Bookzi',
+    'استودیو کوت',
+    'اشتراک‌گذاری کوت',
     'quotes',
     'highlights',
   ],
@@ -35,23 +31,23 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'fa_IR',
     url: `${SITE.url}/quotes`,
-    title: 'نقل‌قول‌ها | کتاب‌یار',
+    title: 'کوت‌ها | بوکزی',
     description:
-      'گالری نقل‌قول‌های برگزیده از کتاب‌ها به‌همراه هایلایت‌های شما.',
-    siteName: 'کتاب‌یار',
+      'گالری کوت‌های برگزیده از کتاب‌ها به‌همراه هایلایت‌های شما در بوکزی.',
+    siteName: 'بوکزی',
     images: [
       {
         url: '/api/og?title=Quotes&subtitle=Curated%20highlights%20gallery',
         width: 1200,
         height: 630,
-        alt: 'نقل‌قول‌ها | کتاب‌یار',
+        alt: 'کوت‌ها | بوکزی',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'نقل‌قول‌ها | کتاب‌یار',
-    description: 'گالری نقل‌قول‌های برگزیده و هایلایت‌های شما.',
+    title: 'کوت‌ها | بوکزی',
+    description: 'گالری کوت‌های برگزیده و هایلایت‌های شما در بوکزی.',
     images: ['/api/og?title=Quotes&subtitle=Curated%20highlights%20gallery'],
   },
   robots: {
@@ -113,7 +109,7 @@ async function QuotesContent() {
 
 export default function QuotesPage() {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-7xl px-4 pt-20 sm:pt-24 pb-16 sm:px-6">
       <Suspense fallback={<QuotesSkeleton />}>
         <QuotesContent />
       </Suspense>

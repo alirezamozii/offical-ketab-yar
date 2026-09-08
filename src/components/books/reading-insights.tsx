@@ -1,5 +1,3 @@
-'use client'
-
 /**
  * src/components/books/reading-insights.tsx
  * ---------------------------------------------------------------
@@ -18,7 +16,6 @@
  * ---------------------------------------------------------------
  */
 
-import { motion, useReducedMotion } from 'framer-motion'
 import { BookOpen, Clock, Eye, FileText, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -64,8 +61,6 @@ export function ReadingInsights({
   reviewCount,
   averageRating,
 }: ReadingInsightsProps) {
-  const reduceMotion = useReducedMotion()
-
   const stats: StatItem[] = [
     {
       icon: Eye,
@@ -99,21 +94,12 @@ export function ReadingInsights({
   return (
     <section aria-label="آمار کتاب">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-        {stats.map((stat, i) => {
+        {stats.map((stat) => {
           const Icon = stat.icon
           return (
-            <motion.div
+            <div
               key={stat.label}
-              initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-20px' }}
-              transition={{
-                duration: 0.4,
-                delay: i * 0.07,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-              whileHover={reduceMotion ? undefined : { y: -2 }}
-              className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-3 transition-colors hover:border-gold-500/40 hover:bg-gold-500/5 sm:p-4"
+              className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-gold-500/40 hover:bg-gold-500/5 sm:p-4"
             >
               {/* Top hairline accent */}
               <span
@@ -143,17 +129,13 @@ export function ReadingInsights({
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           )
         })}
       </div>
 
       {/* Reading difficulty hint */}
-      <motion.p
-        initial={reduceMotion ? false : { opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.3 }}
+      <p
         className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground"
       >
         <BookOpen className="h-3.5 w-3.5 shrink-0 text-gold-600 dark:text-gold-400" aria-hidden="true" />
@@ -164,7 +146,7 @@ export function ReadingInsights({
               ? 'زمان مطالعه متوسط — در یک یا دو جلسه قابل completion.'
               : 'کتاب کوتاه — در یک نشست قابل خواندن.'}
         </span>
-      </motion.p>
+      </p>
     </section>
   )
 }

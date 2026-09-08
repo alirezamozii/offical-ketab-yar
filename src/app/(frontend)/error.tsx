@@ -1,10 +1,6 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
-import { Home, RotateCcw, TriangleAlert } from 'lucide-react'
-import Link from 'next/link'
 import { useEffect, useRef } from 'react'
-import * as Sentry from '@sentry/nextjs'
 
 /**
  * Root error boundary — catches any unhandled error in the route tree
@@ -41,15 +37,19 @@ export default function RootError({
     // Forward to Sentry — attach the Next.js digest so support can correlate
     // user-reported digests with Sentry events. The 2nd arg is the CaptureContext:
     // we tag the error with the boundary that captured it + the digest.
-    Sentry.captureException(error, {
-      tags: {
-        boundary: 'root-error',
-        digest: error.digest ?? 'no-digest',
-      },
-      extra: {
-        url: typeof window !== 'undefined' ? window.location.href : 'SSR',
-      },
-    })
+    if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+      void import('@sentry/nextjs').then((Sentry) => {
+        Sentry.captureException(error, {
+          tags: {
+            boundary: 'root-error',
+            digest: error.digest ?? 'no-digest',
+          },
+          extra: {
+            url: typeof window !== 'undefined' ? window.location.href : 'SSR',
+          },
+        })
+      })
+    }
     // Move focus to the primary action so keyboard users can retry immediately.
     primaryRef.current?.focus()
   }, [error])
@@ -67,12 +67,22 @@ export default function RootError({
 
       {/* Brand wordmark */}
       <span className="mb-8 text-gradient-gold text-sm font-bold tracking-wide">
-        کتاب‌یار
+        بوکزی
       </span>
 
       {/* Icon */}
       <span className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gold-500/15 text-gold-600 shadow-md-warm dark:text-gold-400">
-        <TriangleAlert className="h-10 w-10" aria-hidden="true" />
+        <svg
+          className="h-10 w-10"
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+        >
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+          <path d="M12 9v4M12 17h.01" />
+        </svg>
       </span>
 
       {/* Headline + sub-message */}
@@ -93,22 +103,21 @@ export default function RootError({
 
       {/* Actions */}
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-        <Button
+        <button
           ref={primaryRef}
           onClick={reset}
-          variant="glow"
-          size="lg"
+          type="button"
+          className="inline-flex h-11 items-center rounded-lg bg-primary px-5 font-semibold text-primary-foreground"
           aria-label="تلاش دوباره برای بارگذاری صفحه"
         >
-          <RotateCcw className="h-4 w-4" aria-hidden="true" />
           تلاش دوباره
-        </Button>
-        <Button asChild variant="outline" size="lg">
-          <Link href="/">
-            <Home className="h-4 w-4" aria-hidden="true" />
-            بازگشت به خانه
-          </Link>
-        </Button>
+        </button>
+        <a
+          href="/"
+          className="inline-flex h-11 items-center rounded-lg border border-border px-5 font-semibold"
+        >
+          بازگشت به خانه
+        </a>
       </div>
     </div>
   )

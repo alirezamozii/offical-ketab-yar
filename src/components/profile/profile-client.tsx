@@ -32,7 +32,7 @@ import {
   Trophy,
   Zap,
 } from 'lucide-react'
-import { useTheme } from 'next-themes'
+import { useThemeToggle } from '@/hooks/use-theme-toggle'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -80,7 +80,7 @@ function formatMemberSince(iso: string): string {
 }
 
 export function ProfileClient() {
-  const { resolvedTheme, setTheme } = useTheme()
+  const { resolvedTheme, toggleTheme } = useThemeToggle()
   const { data: streakData, setGoal } = useReadingStreak()
   const [xp, setXp] = useState<XPStats | null>(null)
   const [vocabCount, setVocabCount] = useState(0)
@@ -278,7 +278,7 @@ export function ProfileClient() {
       <DashboardSection
         icon={Star}
         title="آمار کلی"
-        subtitle="تصویری از کل فعالیت شما در کتاب‌یار"
+        subtitle="تصویری از کل فعالیت شما در بوکزی"
         index={2}
       >
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -334,7 +334,7 @@ export function ProfileClient() {
                 variant={!isDark ? 'default' : 'outline'}
                 size="sm"
                 className="gap-1.5"
-                onClick={() => setTheme('light')}
+                onClick={(e) => toggleTheme('light', e)}
               >
                 <Sun className="h-4 w-4" />
                 روشن
@@ -343,7 +343,7 @@ export function ProfileClient() {
                 variant={isDark ? 'default' : 'outline'}
                 size="sm"
                 className="gap-1.5"
-                onClick={() => setTheme('dark')}
+                onClick={(e) => toggleTheme('dark', e)}
               >
                 <Moon className="h-4 w-4" />
                 تاریک

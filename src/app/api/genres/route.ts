@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, safeQuery } from '@/lib/db'
 import { cache, TTL } from '@/lib/cache'
 
 function parseGenres(raw: string): string[] {
@@ -28,9 +28,13 @@ export async function GET(req: NextRequest) {
     const cacheKey = `genres:${sort}`
 
     const genres = await cache.wrap(cacheKey, async () => {
-      const books = await db.book.findMany({
-        select: { genres: true, viewCount: true },
-      })
+      const books = await safeQuery(
+        () =>
+          db.book.findMany({
+            select: { genres: true, viewCount: true },
+          }),
+        [],
+      )
       const map = new Map<string, { count: number; views: number }>()
       for (const b of books) {
         for (const g of parseGenres(b.genres)) {

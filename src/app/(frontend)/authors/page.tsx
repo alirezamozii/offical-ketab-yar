@@ -1,4 +1,3 @@
-import Script from 'next/script'
 import { AuthorsPageClient, type AuthorWithBio } from '@/components/authors/authors-page-client'
 import { AuthorsDirectorySkeleton } from '@/components/authors/authors-skeleton'
 import { getAuthors, getBooksCount } from '@/lib/data'
@@ -8,12 +7,12 @@ import { SITE } from '@/lib/site'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
 
 export const metadata: Metadata = {
   title: 'فهرست نویسندگان برجسته جهان — زندگی‌نامه و بیوگرافی',
   description:
-    'فهرست جامع و بیوگرافی کامل نویسندگان بزرگ ادبیات جهان در کتاب‌یار: لوئیس کارول، چارلز دیکنز، جین آستن، مارک تواین، اسکار وایلد و بیشتر. کاوش زندگی‌نامه دوزبانه، عکس، ملیت، دوران ادبی و دانلود کتاب‌ها.',
+    'فهرست جامع و بیوگرافی کامل نویسندگان بزرگ ادبیات جهان در بوکزی: لوئیس کارول، چارلز دیکنز، جین آستن، مارک تواین، اسکار وایلد و بیشتر. کاوش زندگی‌نامه دوزبانه، عکس، ملیت، دوران ادبی و دانلود کتاب‌ها.',
   keywords: [
     'نویسندگان برجسته',
     'زندگی‌نامه نویسنده',
@@ -24,8 +23,8 @@ export const metadata: Metadata = {
     'جین آستن',
     'مارک تواین',
     'اسکار وایلد',
-    'آرتور کانن دویل',
-    'آگاتا کریستی',
+    'بوکزی',
+    'Bookzi',
     'نویسندگان انگلیسی',
     'authors directory',
     'authors biography',
@@ -36,24 +35,24 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'fa_IR',
     url: `${SITE.url}/authors`,
-    title: 'فهرست و بیوگرافی نویسندگان بزرگ جهان — کتاب‌یار',
+    title: 'فهرست و بیوگرافی نویسندگان بزرگ جهان — بوکزی',
     description:
-      'کاوش در زندگی و آثار نویسندگان بزرگ جهان همراه با بیوگرافی دوزبانه، ملیت، دوران ادبی و کتاب‌های آن‌ها.',
-    siteName: 'کتاب‌یار',
+      'کاوش در زندگی و آثار نویسندگان بزرگ جهان همراه با بیوگرافی دوزبانه، ملیت، دوران ادبی و کتاب‌های آن‌ها در بوکزی.',
+    siteName: 'بوکزی',
     images: [
       {
         url: '/api/og?title=Authors&subtitle=Authors%20directory',
         width: 1200,
         height: 630,
-        alt: 'فهرست نویسندگان کتاب‌یار',
+        alt: 'فهرست نویسندگان بوکزی',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'فهرست و بیوگرافی نویسندگان بزرگ جهان — کتاب‌یار',
+    title: 'فهرست و بیوگرافی نویسندگان بزرگ جهان — بوکزی',
     description:
-      'کاوش در زندگی و آثار نویسندگان بزرگ جهان همراه با بیوگرافی دوزبانه و کتاب‌ها.',
+      'کاوش در زندگی و آثار نویسندگان بزرگ جهان همراه با بیوگرافی دوزبانه و کتاب‌های آن‌ها در بوکزی.',
     images: ['/api/og?title=Authors&subtitle=Authors%20directory'],
   },
   robots: {
@@ -64,6 +63,7 @@ export const metadata: Metadata = {
       follow: true,
       'max-image-preview': 'large',
       'max-snippet': -1,
+      'max-video-preview': -1,
     },
   },
 }
@@ -84,8 +84,8 @@ async function AuthorsContent() {
     '@type': 'CollectionPage',
     '@id': `${SITE.url}/authors#webpage`,
     url: `${SITE.url}/authors`,
-    name: 'فهرست نویسندگان کتاب‌یار',
-    description: 'بیوگرافی، زندگی‌نامه و آثار نویسندگان بزرگ ادبیات جهان.',
+    name: 'فهرست نویسندگان بوکزی',
+    description: 'بیوگرافی، زندگی‌نامه و آثار نویسندگان بزرگ ادبیات جهان در بوکزی.',
     mainEntity: {
       '@type': 'ItemList',
       numberOfItems: authors.length,
@@ -119,12 +119,12 @@ async function AuthorsContent() {
 
   return (
     <>
-      <Script
+      <script
         id="authors-collection-ld"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionLd) }}
       />
-      <Script
+      <script
         id="authors-breadcrumb-ld"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbLd) }}

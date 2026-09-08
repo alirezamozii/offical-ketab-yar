@@ -12,7 +12,7 @@ import {
 } from '@/lib/gamification'
 import { parseBody } from '@/lib/api-validate'
 
-export interface XPStatsResponse {
+interface XPStatsResponse {
   totalXP: number
   level: number
   levelTitle: string
@@ -23,7 +23,7 @@ export interface XPStatsResponse {
   streakDays: number
 }
 
-export interface XPGainResponse extends XPStatsResponse {
+interface XPGainResponse extends XPStatsResponse {
   gained: ReturnType<typeof calculateReadingXP>
   newLevel: number
   leveledUp: boolean

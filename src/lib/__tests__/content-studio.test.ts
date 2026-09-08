@@ -41,7 +41,7 @@ describe('AI Prompts & Schemas Validation Suite', () => {
     expect(BOOK_CONTENT_PAGES_PROMPT.sampleJson.pages[0].farsi).toBeTruthy()
 
     // 4. Full bundle sample
-    expect(FULL_BOOK_BUNDLE_PROMPT.sampleJson.title).toBeTruthy()
+    expect(FULL_BOOK_BUNDLE_PROMPT.sampleJson.book.title).toBeTruthy()
     expect(FULL_BOOK_BUNDLE_PROMPT.sampleJson.author.name).toBeTruthy()
     expect(Array.isArray(FULL_BOOK_BUNDLE_PROMPT.sampleJson.pages)).toBe(true)
 
@@ -61,7 +61,7 @@ describe('AI Prompts & Schemas Validation Suite', () => {
     expect(BOOK_INFO_PROMPT.systemPrompt).toContain('CEFR')
     expect(BOOK_CONTENT_PAGES_PROMPT.systemPrompt).toContain('ترجمه')
     expect(FULL_BOOK_BUNDLE_PROMPT.systemPrompt).toContain('پکیج کامل')
-    expect(BLOG_POST_PROMPT.systemPrompt).toContain('مارک‌داون')
+    expect(BLOG_POST_PROMPT.systemPrompt).toContain('Markdown')
     expect(QUOTES_PROMPT.systemPrompt).toContain('نقل‌قول')
   })
 })

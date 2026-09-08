@@ -45,7 +45,7 @@ async function auditRoute(route: string): Promise<AuditResult> {
   try {
     const res = await fetch(url, {
       headers: {
-        'User-Agent': 'KetabYar-Performance-Auditor/1.0',
+        'User-Agent': 'Bookzi-Performance-Auditor/1.0',
         'Accept-Encoding': 'gzip, deflate, br'
       }
     })

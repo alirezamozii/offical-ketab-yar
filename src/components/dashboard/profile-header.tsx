@@ -64,10 +64,10 @@ export function ProfileHeader() {
     const level = xp?.level ? toPersianNumber(xp.level) : '۱'
     const xpStr = xp?.totalXP ? toPersianNumber(xp.totalXP) : '۰'
     const streak = xp?.streakDays ? toPersianNumber(xp.streakDays) : '۰'
-    const text = `کتاب‌یار | سطح ${level} · ${xpStr} امتیاز · ${streak} روز استمرار — KETABYAR.IR`
+    const text = `بوکزی | سطح ${level} · ${xpStr} امتیاز · ${streak} روز استمرار — BOOKZI.IR`
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'کتاب‌یار', text, url: 'https://ketabyar.ir' })
+        await navigator.share({ title: 'بوکزی', text, url: 'https://bookzi.ir' })
       } else {
         await navigator.clipboard.writeText(text)
         toast.success('آمار شما در کلیپ‌بورد کپی شد')
@@ -119,7 +119,7 @@ export function ProfileHeader() {
 
           <div className="min-w-0 space-y-1">
             <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-              <span className="text-gradient-gold">داشبورد کتاب‌یار</span>
+              <span className="text-gradient-gold">داشبورد بوکزی</span>
             </h1>
             {xp?.levelTitle && (
               <p className="flex items-center gap-1.5 text-sm font-medium text-gold-700 dark:text-gold-400">

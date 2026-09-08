@@ -33,7 +33,9 @@ import { getStorageKey } from '@/lib/storage-keys'
 import {
   mergeLocalProgress,
 } from '@/hooks/reader/use-local-progress'
+import { addBookToCollection, removeBookFromCollection } from '@/lib/collections'
 import type { ReaderBook } from '@/lib/reader/types'
+import { recordReadingDay } from '@/lib/goals'
 import { useEffect, useRef, type MutableRefObject } from 'react'
 
 interface UseReaderXpOptions {
@@ -107,6 +109,11 @@ export function useReaderXp({
     if (delta > 0) {
       pagesToAward = delta
       lastAwardedParagraphRef.current = currentParagraph
+      const now = new Date()
+      recordReadingDay({
+        date: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`,
+        pagesDelta: pagesToAward,
+      })
       if (
         currentParagraph >= totalPages - 1 &&
         !completionAwardedRef.current
@@ -115,6 +122,8 @@ export function useReaderXp({
         completionAwardedRef.current = true
         try {
           localStorage.setItem(getStorageKey('bookComplete', book.slug), '1')
+          addBookToCollection('default-completed', book.slug)
+          removeBookFromCollection('default-reading', book.slug)
         } catch {}
         // Dispatch a CustomEvent so the BookCompletionCelebration component
         // (rendered in the reader) can show a confetti + congratulations modal.
@@ -135,8 +144,9 @@ export function useReaderXp({
     const progressCtrl = new AbortController()
     progressAbortRef.current = progressCtrl
 
-    const id = window.setTimeout(() => {
-      fetch('/api/reading/progress', {
+    const id = window.setTimeout(async () => {
+      try {
+      const progressResponse = await fetch('/api/reading/progress', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -145,14 +155,18 @@ export function useReaderXp({
           totalPages,
         }),
         signal: progressCtrl.signal,
-      }).catch(() => {})
+      })
+      if (!progressResponse.ok) return
 
       if (pagesToAward > 0 || awardCompletion) {
-        postXP({
+        await postXP({
           pagesRead: pagesToAward,
           completedBook: awardCompletion,
-          bookLevel: book.level || '',
-        }).catch(() => {})
+          bookSlug: book.slug,
+        })
+      }
+      } catch {
+        // Local progress remains available when the network fails.
       }
     }, 800)
     return () => {

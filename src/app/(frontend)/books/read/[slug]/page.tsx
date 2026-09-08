@@ -4,6 +4,14 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { SITE } from '@/lib/site'
 
+export const revalidate = 60
+
+export async function generateStaticParams() {
+  const { getHighestRatedBooks } = await import('@/lib/data')
+  const books = await getHighestRatedBooks(10)
+  return books.map((b) => ({ slug: b.slug }))
+}
+
 interface PageProps {
   params: Promise<{ slug: string }>
 }

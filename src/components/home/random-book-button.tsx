@@ -10,7 +10,13 @@ import { useState } from 'react'
  * from /api/books, picks one at random, and routes the user straight into
  * the reader (/books/read/[slug]) with no intermediate page.
  */
-export function RandomBookButton() {
+export function RandomBookButton({
+  className,
+  size = 'default',
+}: {
+  className?: string
+  size?: 'default' | 'sm' | 'lg' | 'xl'
+} = {}) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
@@ -36,14 +42,14 @@ export function RandomBookButton() {
   return (
     <Button
       type="button"
-      size="xl"
+      size={size}
       variant="outline"
-      className="w-full text-base sm:w-auto"
+      className={className || "w-full text-sm sm:text-base sm:w-auto"}
       onClick={pickRandom}
       disabled={loading}
       aria-label="کتاب تصادفی — مستقیم وارد ریدر شوید"
     >
-      <Dices aria-hidden="true" className={loading ? 'h-5 w-5 animate-spin' : 'h-5 w-5'} />
+      <Dices aria-hidden="true" className={loading ? 'h-4 w-4 sm:h-5 sm:w-5 animate-spin' : 'h-4 w-4 sm:h-5 sm:w-5'} />
       {loading ? 'در حال انتخاب…' : 'کتاب تصادفی'}
     </Button>
   )

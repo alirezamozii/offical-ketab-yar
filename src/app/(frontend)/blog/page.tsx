@@ -2,14 +2,17 @@ import { BlogPageClient } from '@/components/blog/blog-page-client'
 import type { Metadata } from 'next'
 import { SITE } from '@/lib/site'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
 
 export const metadata: Metadata = {
-  title: 'بلاگ — مقالات و راهنماهای مطالعه دوزبانه',
+  title: 'بلاگ — مقالات و راهنماهای مطالعه دوزبانه | بوکزی',
   description:
-    'بلاگ کتاب‌یار — مقالاتی درباره یادگیری زبان انگلیسی با کتاب، معرفی برترین کتاب‌ها و نکات مطالعه دوزبانه.',
+    'بلاگ بوکزی — مقالاتی درباره یادگیری زبان انگلیسی با کتاب، معرفی برترین کتاب‌ها و نکات مطالعه دوزبانه.',
   keywords: [
-    'بلاگ کتاب‌یار',
+    'بلاگ بوکزی',
+    'بوکزی',
+    'Bookzi',
+    'زیست‌بوم کتاب‌های دوزبانه',
     'یادگیری زبان انگلیسی',
     'مطالعه دوزبانه',
     'معرفی کتاب',
@@ -22,10 +25,10 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'fa_IR',
     url: `${SITE.url}/blog`,
-    title: 'بلاگ | کتاب‌یار',
+    title: 'بلاگ | بوکزی',
     description:
-      'مقالاتی درباره یادگیری زبان انگلیسی با کتاب، معرفی برترین کتاب‌ها و نکات مطالعه دوزبانه.',
-    siteName: 'کتاب‌یار',
+      'مقالاتی درباره یادگیری زبان انگلیسی با کتاب، معرفی برترین کتاب‌ها و نکات مطالعه دوزبانه در بوکزی.',
+    siteName: 'بوکزی',
   },
   robots: {
     index: true,

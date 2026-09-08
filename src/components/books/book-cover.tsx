@@ -78,11 +78,6 @@ export const BookCover = memo(function BookCover({
       : size === 'lg'
         ? 'inset 0 10px 26px -8px rgba(0,0,0,0.36)'
         : 'inset 0 8px 22px -8px rgba(0,0,0,0.32)'
-  // Accent ambient glow — bottom-left, large, blurred, low opacity.
-  // Position/size scale with the cover.
-  const glowSize =
-    size === 'xl' ? 'h-44 w-44' : size === 'lg' ? 'h-32 w-32' : 'h-28 w-28'
-  const glowOpacity = size === 'xl' ? 'opacity-[0.18]' : 'opacity-[0.14]'
 
   return (
     <div
@@ -203,16 +198,14 @@ export const BookCover = memo(function BookCover({
         aria-hidden="true"
       />
 
-      {/* (6) Accent ambient glow — bottom-left, large, blurred, low opacity.
-           Harmonizes with .book-light (also bottom-left) so the cover reads
-           as a single light source rather than two competing ones. */}
+      {/* (6) Accent ambient glow — bottom-left, rendered via zero-cost radial-gradient
+           to eliminate GPU blur passes across book card lists. */}
       <div
-        className={cn(
-          'pointer-events-none absolute -bottom-10 -left-10 rounded-full blur-3xl',
-          glowSize,
-          glowOpacity,
-        )}
-        style={{ background: accent }}
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: `radial-gradient(circle at 10% 90%, ${accent} 0%, transparent 65%)`,
+          opacity: size === 'xl' ? 0.22 : 0.16,
+        }}
         aria-hidden="true"
       />
 

@@ -141,14 +141,15 @@ export function ChaptersPanel({
                     <span
                       className={cn(
                         'block truncate',
-                        isHeading ? 'font-bold' : 'font-medium opacity-85',
+                        isHeading ? 'font-bold' : 'font-medium',
                       )}
                       dir="ltr"
                       lang="en"
+                      style={{ color: isHeading ? s.accent : s.text }}
                     >
                       {label}
                     </span>
-                    <span className="text-[11px] opacity-60">
+                    <span className="text-[11px]" style={{ color: s.muted }}>
                       چپتر {toPersianDigits(i + 1)}
                       {isBookmarked && ' · نشان‌شده'}
                     </span>

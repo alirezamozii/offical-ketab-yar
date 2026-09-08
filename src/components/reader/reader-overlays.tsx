@@ -1,17 +1,40 @@
 'use client'
 
-import { AIChatPanel } from '@/components/reader/ai-chat-panel'
-import { ChaptersPanel } from '@/components/reader/chapters-panel'
-import { HighlightsPanel } from '@/components/reader/highlights-panel'
-import { SettingsPanel } from '@/components/reader/settings-panel'
-import { ShortcutsHelpOverlay } from '@/components/reader/shortcuts-help-overlay'
-import { TextSelectionMenu } from '@/components/reader/text-selection-menu'
-import { WordPopupDictionary } from '@/components/reader/word-popup-dictionary'
+import dynamic from 'next/dynamic'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { useReader } from '@/components/reader/reader-context'
 import { AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { useEffect } from 'react'
+
+const TextSelectionMenu = dynamic(
+  () => import('@/components/reader/text-selection-menu').then((m) => m.TextSelectionMenu),
+  { ssr: false },
+)
+const WordPopupDictionary = dynamic(
+  () => import('@/components/reader/word-popup-dictionary').then((m) => m.WordPopupDictionary),
+  { ssr: false },
+)
+const SettingsPanel = dynamic(
+  () => import('@/components/reader/settings-panel').then((m) => m.SettingsPanel),
+  { ssr: false },
+)
+const ChaptersPanel = dynamic(
+  () => import('@/components/reader/chapters-panel').then((m) => m.ChaptersPanel),
+  { ssr: false },
+)
+const HighlightsPanel = dynamic(
+  () => import('@/components/reader/highlights-panel').then((m) => m.HighlightsPanel),
+  { ssr: false },
+)
+const AIChatPanel = dynamic(
+  () => import('@/components/reader/ai-chat-panel').then((m) => m.AIChatPanel),
+  { ssr: false },
+)
+const ShortcutsHelpOverlay = dynamic(
+  () => import('@/components/reader/shortcuts-help-overlay').then((m) => m.ShortcutsHelpOverlay),
+  { ssr: false },
+)
 
 /**
  * Renders all the AnimatePresence-gated overlays:
@@ -113,79 +136,92 @@ export function ReaderOverlays() {
       </AnimatePresence>
 
       {/* ---- Word popup dictionary (centered modal — Radix Dialog) ---- */}
-      <ErrorBoundary>
-        <WordPopupDictionary
-          open={showDictionary}
-          word={dictionaryWord}
-          context={currentParagraphPlainText().slice(0, 200)}
-          theme={prefs.theme}
-          bookSlug={book.slug}
-          onClose={() => setShowDictionary(false)}
-        />
-      </ErrorBoundary>
+      {showDictionary && (
+        <ErrorBoundary>
+          <WordPopupDictionary
+            open={showDictionary}
+            word={dictionaryWord}
+            context={currentParagraphPlainText().slice(0, 200)}
+            theme={prefs.theme}
+            bookSlug={book.slug}
+            onClose={() => setShowDictionary(false)}
+          />
+        </ErrorBoundary>
+      )}
 
-      <ErrorBoundary>
-        <SettingsPanel
-          prefs={prefs}
-          onChange={update}
-          theme={prefs.theme}
-          open={showSettings}
-          onClose={() => setShowSettings(false)}
-        />
-      </ErrorBoundary>
+      {showSettings && (
+        <ErrorBoundary>
+          <SettingsPanel
+            prefs={prefs}
+            onChange={update}
+            theme={prefs.theme}
+            open={showSettings}
+            onClose={() => setShowSettings(false)}
+          />
+        </ErrorBoundary>
+      )}
 
-      <ErrorBoundary>
-        <ChaptersPanel
-          book={book}
-          currentPage={currentParagraph}
-          bookmarks={bookmarks}
-          theme={prefs.theme}
-          open={showChapters}
-          onClose={() => setShowChapters(false)}
-          onJumpToPage={(p) => {
-            scrollToParagraph(p)
-            setShowChapters(false)
-          }}
-          onToggleBookmark={toggleBookmark}
-        />
-      </ErrorBoundary>
+      {showChapters && (
+        <ErrorBoundary>
+          <ChaptersPanel
+            book={book}
+            currentPage={currentParagraph}
+            bookmarks={bookmarks}
+            theme={prefs.theme}
+            open={showChapters}
+            onClose={() => setShowChapters(false)}
+            onJumpToPage={(p) => {
+              scrollToParagraph(p)
+              setShowChapters(false)
+            }}
+            onToggleBookmark={toggleBookmark}
+          />
+        </ErrorBoundary>
+      )}
 
-      <ErrorBoundary>
-        <HighlightsPanel
-          highlights={highlights}
-          currentPage={currentParagraph}
-          theme={prefs.theme}
-          editingHighlightId={editingHighlightId}
-          onEditNote={setEditingHighlightId}
-          onSaveNote={setHighlightNote}
-          open={showHighlights}
-          onClose={() => setShowHighlights(false)}
-          onDelete={removeHighlight}
-          onClearAll={clearAllHighlights}
-          onCopy={(t) => {
-            navigator.clipboard.writeText(t)
-            toast.success('کپی شد')
-          }}
-          onJumpToPage={(p) => {
-            scrollToParagraph(p)
-            setShowHighlights(false)
-          }}
-        />
-      </ErrorBoundary>
+      {showHighlights && (
+        <ErrorBoundary>
+          <HighlightsPanel
+            highlights={highlights}
+            currentPage={currentParagraph}
+            theme={prefs.theme}
+            bookTitle={book.title}
+            bookAuthor={book.author}
+            bookSlug={book.slug}
+            editingHighlightId={editingHighlightId}
+            onEditNote={setEditingHighlightId}
+            onSaveNote={setHighlightNote}
+            open={showHighlights}
+            onClose={() => setShowHighlights(false)}
+            onDelete={removeHighlight}
+            onClearAll={clearAllHighlights}
+            onCopy={(t) => {
+              navigator.clipboard.writeText(t)
+              toast.success('کپی شد')
+            }}
+            onJumpToPage={(p) => {
+              scrollToParagraph(p)
+              setShowHighlights(false)
+            }}
+          />
+        </ErrorBoundary>
+      )}
 
-      <ErrorBoundary>
-        <AIChatPanel
-          bookTitle={book.title}
-          bookAuthor={book.author}
-          bookSlug={book.slug}
-          bookContext={currentParagraphPlainText()}
-          selectedText={selectedText}
-          theme={prefs.theme}
-          isMobile={isMobile}
-          open={showChat}
-          onClose={() => setShowChat(false)}
-        />
-      </ErrorBoundary>
+      {showChat && (
+        <ErrorBoundary>
+          <AIChatPanel
+            bookTitle={book.title}
+            bookAuthor={book.author}
+            bookSlug={book.slug}
+            bookContext={currentParagraphPlainText()}
+            selectedText={selectedText}
+            theme={prefs.theme}
+            isMobile={isMobile}
+            open={showChat}
+            onClose={() => setShowChat(false)}
+          />
+        </ErrorBoundary>
+      )}
 
       {/* ---- Shortcuts help overlay (? key) ---- */}
       <AnimatePresence>

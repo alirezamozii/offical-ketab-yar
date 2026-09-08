@@ -1,6 +1,4 @@
-import Script from 'next/script'
 import { BookOfTheDay } from '@/components/home/book-of-the-day'
-import { ContinueReading } from '@/components/home/continue-reading'
 import { safeJsonLd } from '@/lib/json-ld'
 import { getQuoteOfTheDayFromDB } from '@/lib/cms'
 import { CTASection } from '@/components/home/cta-section'
@@ -11,13 +9,21 @@ import { QuoteOfTheDay } from '@/components/home/quote-of-the-day'
 import { SectionDivider } from '@/components/home/section-divider'
 import { StatsBar } from '@/components/home/stats-bar'
 import { TestimonialsSection } from '@/components/home/testimonials-section'
-import { HomePrefetcher } from '@/components/home/home-prefetcher'
+import { SiteFooter } from '@/components/layout/site-footer'
+import dynamic from 'next/dynamic'
+
+const ContinueReading = dynamic(
+  () => import('@/components/home/continue-reading').then((m) => m.ContinueReading),
+)
+const HomePrefetcher = dynamic(
+  () => import('@/components/home/home-prefetcher').then((m) => m.HomePrefetcher),
+)
 import {
   MostReadBooks,
   RecentlyAddedBooks,
 } from '@/components/home/book-sections'
 import {
-  getBooks,
+  getCatalogStats,
   getMostReadBooks,
   getRecentlyAddedBooks,
 } from '@/lib/data'
@@ -29,10 +35,13 @@ export const revalidate = 60
 const SITE_URL = SITE.url
 
 export const metadata: Metadata = {
-  title: 'کتاب‌یار | مطالعه دوزبانه کتاب انگلیسی با AI',
+  title: 'بوکزی | زیست‌بومِ کتاب‌های دوزبانه',
   description:
-    'کتاب‌های انگلیسی را رایگان و دوزبانه بخوانید. ترجمه پاراگراف به پاراگراف، دیکشنری هوشمند، واژگان و چت با هوش مصنوعی. یادگیری زبان انگلیسی با کتاب.',
+    'بوکزی؛ زیست‌بومِ کتاب‌های دوزبانه. کتاب‌های انگلیسی را با ترجمه موازی فارسی، دیکشنری در لحظه، واژگان‌ساز و هوش مصنوعی بخوانید.',
   keywords: [
+    'بوکزی',
+    'Bookzi',
+    'زیست‌بوم کتاب‌های دوزبانه',
     'کتاب انگلیسی',
     'مطالعه دوزبانه',
     'یادگیری زبان انگلیسی',
@@ -40,38 +49,35 @@ export const metadata: Metadata = {
     'کتاب دوزبانه',
     'هوش مصنوعی',
     'دیکشنری هوشمند',
-    'کتاب‌یار',
     'کتاب انگلیسی با ترجمه',
     'ترجمه فارسی کتاب',
-    'Alice in Wonderland',
     'bilingual English Persian books',
     'learn English with books',
-    'English books free',
   ],
   alternates: { canonical: SITE_URL },
   openGraph: {
     type: 'website',
     locale: 'fa_IR',
     url: SITE_URL,
-    siteName: 'کتاب‌یار',
-    title: 'کتاب‌یار — مطالعه دوزبانه کتاب انگلیسی با هوش مصنوعی',
+    siteName: 'بوکزی',
+    title: 'بوکزی — زیست‌بومِ کتاب‌های دوزبانه',
     description:
-      'کتاب‌های انگلیسی را رایگان و دوزبانه بخوانید. دیکشنری هوشمند، واژگان‌ساز و چت با هوش مصنوعی.',
+      'کتاب‌های انگلیسی را با ترجمه پاراگراف‌به‌پاراگراف، دیکشنری هوشمند، واژگان‌ساز و استودیوی کوت بخوانید.',
     images: [
       {
-        url: '/api/og?title=Ketab-Yar&subtitle=Bilingual%20English%20books%20with%20AI',
+        url: '/api/og?title=Bookzi&subtitle=Bilingual%20English%20books%20ecosystem',
         width: 1200,
         height: 630,
-        alt: 'کتاب‌یار — پلتفرم مطالعه دوزبانه با هوش مصنوعی',
+        alt: 'بوکزی — زیست‌بومِ کتاب‌های دوزبانه',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'کتاب‌یار — مطالعه دوزبانه با AI',
+    title: 'بوکزی — زیست‌بومِ کتاب‌های دوزبانه',
     description:
-      'کتاب‌های انگلیسی رایگان با مطالعه دوزبانه و هوش مصنوعی',
-    images: ['/api/og?title=Ketab-Yar&subtitle=Bilingual%20English%20books%20with%20AI'],
+      'مطالعه هوشمند رمان‌های انگلیسی با ترجمه موازی و هوش مصنوعی در بوکزی',
+    images: ['/api/og?title=Bookzi&subtitle=Bilingual%20English%20books%20ecosystem'],
   },
   robots: {
     index: true,
@@ -87,10 +93,10 @@ export const metadata: Metadata = {
 }
 
 export default async function HomePage() {
-  const [recent, mostRead, allBooks, quoteOfTheDay] = await Promise.all([
-    getRecentlyAddedBooks(12),
-    getMostReadBooks(12),
-    getBooks(),
+  const [recent, mostRead, stats, quoteOfTheDay] = await Promise.all([
+    getRecentlyAddedBooks(6),
+    getMostReadBooks(6),
+    getCatalogStats(),
     getQuoteOfTheDayFromDB(),
   ])
 
@@ -100,18 +106,11 @@ export default async function HomePage() {
     pageCount: b.pageCount,
   }))
 
-  // Real catalog totals — fed to client components so the home page never
-  // shows fabricated marketing numbers. Books count and total pages come
-  // straight from the database.
-  const booksCount = allBooks.length
-  const pagesCount = allBooks.reduce((sum, b) => sum + b.pageCount, 0)
-  // Real reading metrics — sum of all view counts and total minutes read
-  // across the catalog. These replace the old "10 levels / 1 AI" stats
-  // that the user found meaningless.
-  const totalReads = allBooks.reduce((sum, b) => sum + (b.viewCount || 0), 0)
-  const totalMinutes = Math.round(
-    allBooks.reduce((sum, b) => sum + (b.viewCount || 0) * 12, 0) / 60,
-  )
+  // Real catalog totals from cached database aggregate
+  const booksCount = stats.booksCount
+  const pagesCount = stats.pagesCount
+  const totalReads = stats.totalReads
+  const totalMinutes = stats.totalMinutes
 
   // --- Structured data: WebPage ----------------------------------------------
   const webPageLd = {
@@ -119,9 +118,9 @@ export default async function HomePage() {
     '@type': 'WebPage',
     '@id': `${SITE_URL}/#webpage`,
     url: SITE_URL,
-    name: 'کتاب‌یار — مطالعه دوزبانه کتاب انگلیسی با هوش مصنوعی',
+    name: 'بوکزی — زیست‌بومِ کتاب‌های دوزبانه',
     description:
-      'پلتفرم هوشمند مطالعه دوزبانه کتاب‌های انگلیسی با هوش مصنوعی، دیکشنری و واژگان‌ساز.',
+      'بوکزی؛ زیست‌بومِ کتاب‌های دوزبانه. مطالعه هوشمند رمان‌های انگلیسی با ترجمه موازی، دیکشنری در لحظه، واژگان‌ساز و استودیوی کوت.',
     inLanguage: 'fa-IR',
     isPartOf: { '@id': `${SITE_URL}/#website` },
     about: { '@id': `${SITE_URL}/#organization` },
@@ -132,43 +131,43 @@ export default async function HomePage() {
   // never drift apart. `allBooks.length` is interpolated at render time.
   const faqItems: FaqItem[] = [
     {
-      question: 'آیا کتاب‌یار رایگان است؟',
+      question: 'آیا بوکزی رایگان است؟',
       answer:
-        'بله، مطالعه کتاب‌های انگلیسی دوزبانه، دیکشنری هوشمند، ذخیره واژگان و هایلایت‌ها در کتاب‌یار کاملاً رایگان است. برخی ویژگی‌های پیشرفته مانند ترجمه نامحدود یا چت پریمیوم با هوش مصنوعی در نسخه پولی قرار دارند اما بخش اصلی تجربه رایگان است.',
+        'بله، مطالعه کتاب‌های انگلیسی دوزبانه، دیکشنری هوشمند، ذخیره واژگان و کوت‌ها در بوکزی کاملاً رایگان است. بخش اصلی تجربه کاربری بدون محدودیت در اختیار شماست.',
     },
     {
-      question: 'چگونه با کتاب‌یار زبان انگلیسی یاد بگیرم؟',
+      question: 'چگونه با بوکزی زبان انگلیسی یاد بگیرم؟',
       answer:
-        'با مطالعه دوزبانه پاراگراف به پاراگراف، انتخاب کلمه برای دیدن معنی و تلفظ، ذخیره واژگان در واژگان‌ساز و تمرین منظم با سیستم تکرار با فاصله (SRS)، در همان حالی که کتاب می‌خوانید زبان یاد می‌گیرید. چت با هوش مصنوعی هم برای رفع اشکال گرامری و درک بهتر متن در دسترس است.',
+        'با مطالعه دوزبانه پاراگراف به پاراگراف، انتخاب کلمه برای دیدن معنی و تلفظ، ذخیره واژگان در واژگان‌ساز و تمرین منظم با سیستم تکرار با فاصله (SRS)، در همان حالی که کتاب می‌خوانید زبان یاد می‌گیرید.',
     },
     {
       question: 'آیا می‌توانم کتاب‌ها را دانلود کنم؟',
       answer:
-        'کتاب‌یار یک پلتفرم مطالعه آنلاین است و فعلاً امکان دانلود فایل PDF وجود ندارد. می‌توانید کتاب‌ها را به‌صورت دوزبانه در سایت مطالعه کنید و پیشرفت مطالعه‌تان به‌صورت خودکار ذخیره می‌شود تا ادامه کتاب را در هر دستگاهی از سر بگیرید.',
+        'بوکزی یک پلتفرم مطالعه آنلاین و وب‌اپلیکیشن تعاملی است. می‌توانید کتاب‌ها را به‌صورت دوزبانه در سایت مطالعه کنید و پیشرفت مطالعه‌تان به‌صورت خودکار ذخیره می‌شود تا ادامه کتاب را در هر دستگاهی از سر بگیرید.',
     },
     {
-      question: 'چه کتاب‌هایی در کتاب‌یار موجود است و برای چه سطوحی مناسب است؟',
-      answer: `در حال حاضر ${allBooks.length} کتاب انگلیسی در ژانرهای مختلف مانند آلیس در سرزمین عجایب، گاتبی بزرگ، داستان دو شهر و... با ترجمه فارسی، در سطوح مختلف از مبتدی تا پیشرفته موجود است و هر هفته کتاب‌های جدید اضافه می‌شود.`,
+      question: 'چه کتاب‌هایی در بوکزی موجود است و برای چه سطوحی مناسب است؟',
+      answer: `در حال حاضر ده‌ها کتاب انگلیسی در ژانرهای مختلف مانند آلیس در سرزمین عجایب، گتسبی بزرگ، داستان دو شهر و... با ترجمه فارسی، در سطوح مختلف از مبتدی تا پیشرفته موجود است و مرتباً کتاب‌های جدید اضافه می‌شود.`,
     },
     {
-      question: 'هوش مصنوعی در کتاب‌یار چطور کار می‌کند؟',
+      question: 'هوش مصنوعی در بوکزی چطور کار می‌کند؟',
       answer:
-        'دو ابزار هوش مصنوعی داریم: دیکشنری هوشمند که با انتخاب کلمه، معنی، تلفظ، مثال و معادل فارسی را نمایش می‌دهد و چت هوش مصنوعی که می‌توانید درباره پیرنگ کتاب، معنی جمله، گرامر یا هر سوال دیگری بپرسید. این ابزارها بر پایه مدل‌های زبانی بزرگ کار می‌کنند.',
+        'ابزارهای هوشمند بوکزی شامل دیکشنری تعاملی با تلفظ صوتی، نمایش نقش کلمه، ترجمه دقیق متنی و استودیوی ساخت کارت کوت هستند.',
     },
     {
-      question: 'سطوح کتاب‌ها در کتاب‌یار چیست؟',
+      question: 'سطوح کتاب‌ها در بوکزی چیست؟',
       answer:
         'کتاب‌ها بر اساس استاندارد CEFR در سطوح A1، A2، B1، B2 و C1 دسته‌بندی می‌شوند. در صفحه کتابخانه می‌توانید با فیلتر سطح، کتاب متناسب با توانایی زبانی خود را پیدا کنید.',
     },
     {
-      question: 'آیا می‌توانم کتاب‌ها را به‌صورت آفلاین بخوانم؟',
+      question: 'آیا می‌توانم از بوکزی روی گوشی استفاده کنم؟',
       answer:
-        'کتاب‌یار در حال حاضر برای مطالعه به اینترنت نیاز دارد، اما قابلیت PWA را دارد و می‌توانید آن را روی گوشی نصب کنید. پشتیبانی کامل از مطالعه آفلاین و همگام‌سازی در نسخه‌های بعدی در دسترس خواهد بود.',
+        'بله، بوکزی کاملاً ریسپانسیو و PWA است و می‌توانید آن را مستقیماً روی گوشی آیفون یا اندروید نصب کرده و مثل یک اپلیکیشن بومی مطالعه کنید.',
     },
     {
-      question: 'آیا کتاب‌یار برای کودکان مناسب است؟',
+      question: 'استودیو کوت بوکزی چیست؟',
       answer:
-        'بله، بخش بزرگی از کتاب‌ها مانند آلیس در سرزمین عجایب، جزیره گنج و داستان‌های جذاب کودکان برای سطوح A1 و A2 مناسب هستند. والدین می‌توانند با فیلتر سطح، کتاب مناسب سن و توانایی زبانی فرزندشان را انتخاب کنند.',
+        'در بوکزی می‌توانید هر جمله یا هایلایت جذاب از کتاب‌ها را به کارت‌های کاغذی بسیار شیک (کاغذ کرافت، ابسیدین شب، برگه‌های خط‌دار دفتری و سپیا) در ابعاد استوری یا پست تبدیل کرده و دانلود کنید.',
     },
   ]
 
@@ -187,15 +186,15 @@ export default async function HomePage() {
     })),
   }
 
-  // --- Structured data: ItemList (catalog of all books) ----------------------
+  // --- Structured data: ItemList (featured books on the page) -----------------
   const itemListLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     '@id': `${SITE_URL}/#booklist`,
-    name: 'کتاب‌های انگلیسی دوزبانه کتاب‌یار',
-    description: `فهرست ${allBooks.length} کتاب انگلیسی دوزبانه در کتاب‌یار — مطالعه رایگان با ترجمه فارسی، دیکشنری هوشمند و هوش مصنوعی.`,
-    numberOfItems: allBooks.length,
-    itemListElement: allBooks.map((b, i) => ({
+    name: 'کتاب‌های محبوب بوکزی',
+    description: `فهرست کتاب‌های پرمطالعه انگلیسی دوزبانه در بوکزی — مطالعه رایگان با ترجمه فارسی، دیکشنری هوشمند و هوش مصنوعی.`,
+    numberOfItems: mostRead.length,
+    itemListElement: mostRead.map((b, i) => ({
       '@type': 'ListItem',
       position: i + 1,
       item: {
@@ -227,22 +226,6 @@ export default async function HomePage() {
 
   return (
     <>
-      <Script
-        id="home-webpage-ld"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(webPageLd) }}
-      />
-      <Script
-        id="home-faq-ld"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(faqLd) }}
-      />
-      <Script
-        id="home-itemlist-ld"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(itemListLd) }}
-      />
-
       <HeroSection booksCount={booksCount} />
       <StatsBar
         booksCount={booksCount}
@@ -285,6 +268,23 @@ export default async function HomePage() {
 
       <CTASection />
       <HomePrefetcher books={prefetchBooks} />
+      <SiteFooter />
+
+      <script
+        id="home-webpage-ld"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(webPageLd) }}
+      />
+      <script
+        id="home-faq-ld"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(faqLd) }}
+      />
+      <script
+        id="home-itemlist-ld"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(itemListLd) }}
+      />
     </>
   )
 }

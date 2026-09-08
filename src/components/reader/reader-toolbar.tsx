@@ -1,20 +1,22 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { ReaderAudioControls } from '@/components/reader/reader-audio-controls'
+
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetTitle,
-} from '@/components/ui/sheet'
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHandle,
+  DrawerTitle,
+} from '@/components/ui/drawer'
 import { useReader } from '@/components/reader/reader-context'
 import { formatSessionTime } from '@/hooks/reader/use-reading-session-timer'
-import { toPersianDigits } from '@/lib/reader/types'
+import { toPersianDigits, type ReaderTheme } from '@/lib/reader/types'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   ChevronRight,
   Clock,
+  Coffee,
   Contrast,
   Focus,
   Highlighter,
@@ -22,11 +24,14 @@ import {
   List as ListIcon,
   MessageSquare,
   Minus,
+  Moon,
   MoreHorizontal,
   Plus,
   Settings,
   Share2,
+  Sun,
   Type,
+  X,
 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
@@ -89,315 +94,439 @@ export function ReaderToolbar() {
           style={{ background: themeStyle.bg, borderColor: themeStyle.border }}
         >
           <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-2 px-3 sm:px-4">
-            <a
-              href={`/books/${book.slug}`}
-              className="flex min-w-0 items-center gap-1.5 hover:opacity-70"
-            >
-              <ChevronRight className="h-5 w-5 shrink-0" />
-              <span className="flex min-w-0 flex-col">
-                <span className="ms-1 max-w-[120px] truncate text-sm font-bold sm:max-w-xs">
-                  {book.title}
-                </span>
-                {book.author && (
-                  <span
-                    className="ms-1 max-w-[120px] truncate text-[10px] opacity-60 sm:max-w-xs"
-                    dir="auto"
-                  >
-                    {book.author}
+            <div className="flex min-w-0 items-center gap-2">
+              <a
+                href={`/books/${book.slug}`}
+                className="flex min-w-0 items-center gap-1.5 transition-opacity hover:opacity-70"
+              >
+                <ChevronRight className="h-5 w-5 shrink-0" />
+                <span className="flex min-w-0 flex-col">
+                  <span className="ms-1 max-w-[120px] truncate text-sm font-bold sm:max-w-xs">
+                    {book.title}
                   </span>
-                )}
-              </span>
-              <span
-                className="hidden rounded-full px-2 py-0.5 text-[11px] font-bold sm:inline-block"
-                style={{
-                  background: themeStyle.accent + '22',
-                  color: themeStyle.accent,
-                }}
-              >
-                {toPersianDigits(displayPercent)}٪
-              </span>
-              <span
-                className="hidden items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold md:inline-flex"
-                style={{
-                  background: themeStyle.accent + '15',
-                  color: themeStyle.muted,
-                }}
-                title="زمان مطالعه این جلسه"
-              >
-                <Clock className="h-3 w-3" />
-                {formatSessionTime(sessionSeconds)}
-              </span>
-            </a>
-            <div className="flex items-center gap-0.5 sm:gap-1">
-              {/* ---- Font size quick-adjust (A- / A+) ---- */}
-              <ReaderIconButton
-                onClick={decreaseFontSize}
-                label="کاهش اندازه قلم"
-                accent={themeStyle.accent}
-                ariaKeyshortcuts="-"
-                className="hidden sm:inline-flex"
-              >
-                <Minus className="h-4 w-4" />
-                <span className="text-[10px] font-bold">A</span>
-              </ReaderIconButton>
-              <ReaderIconButton
-                onClick={increaseFontSize}
-                label="افزایش اندازه قلم"
-                accent={themeStyle.accent}
-                ariaKeyshortcuts="+"
-                className="hidden sm:inline-flex"
-              >
-                <Plus className="h-4 w-4" />
-                <span className="text-xs font-bold">A</span>
-              </ReaderIconButton>
+                  {book.author && (
+                    <span
+                      className="ms-1 max-w-[120px] truncate text-[10px] opacity-90 font-medium sm:max-w-xs"
+                      dir="auto"
+                    >
+                      {book.author}
+                    </span>
+                  )}
+                </span>
+                <span
+                  className="hidden rounded-full px-2 py-0.5 text-[11px] font-bold sm:inline-block"
+                  style={{
+                    background: themeStyle.accent + '22',
+                    color: themeStyle.accent,
+                  }}
+                >
+                  {toPersianDigits(displayPercent)}٪
+                </span>
+                <span
+                  className="hidden items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold lg:inline-flex"
+                  style={{
+                    background: themeStyle.accent + '15',
+                    color: themeStyle.muted,
+                  }}
+                  title="زمان مطالعه این جلسه"
+                >
+                  <Clock className="h-3 w-3" />
+                  {formatSessionTime(sessionSeconds)}
+                </span>
+              </a>
 
-              {/* ---- TTS audio (گوش دادن به متن) ---- */}
-              <ReaderAudioControls className="hidden sm:inline-flex" />
-
-              {/* ---- Theme toggle (cycles day → sepia → dark → high-contrast) ---- */}
-              <ReaderIconButton
-                onClick={cycleTheme}
-                label={`تم: ${themeLabel}`}
-                accent={themeStyle.accent}
-                ariaKeyshortcuts="Shift+T"
-                className="hidden sm:inline-flex"
-              >
-                <Contrast className="h-4 w-4" />
-              </ReaderIconButton>
-
+              {/* ---- TOC / Chapters: Direct book navigation next to title ---- */}
               <ReaderIconButton
                 onClick={() => {
                   setShowChapters((v) => !v)
                   setShowSettings(false)
                   setShowHighlights(false)
                 }}
-                label="فصل‌ها"
+                label="فهرست فصل‌ها"
                 accent={themeStyle.accent}
                 ariaKeyshortcuts="C"
                 className="hidden md:inline-flex"
               >
                 <ListIcon className="h-4 w-4" />
+                <span className="hidden xl:inline text-xs font-medium">فصل‌ها</span>
               </ReaderIconButton>
-              <ReaderIconButton
-                onClick={() =>
-                  update(
-                    'language',
-                    currentLanguage === 'english' ? 'farsi' : 'english',
-                  )
-                }
-                label="تغییر زبان"
-                ariaKeyshortcuts="L"
-              >
-                <Languages className="h-4 w-4" />
-                <span className="text-xs font-bold">
-                  {currentLanguage === 'english' ? 'EN' : 'FA'}
-                </span>
-              </ReaderIconButton>
-              <ReaderIconButton
-                onClick={() => update('showSubtitles', !prefs.showSubtitles)}
-                label="ترجمه"
-                active={prefs.showSubtitles}
-                accent={themeStyle.accent}
-                ariaKeyshortcuts="T"
-              >
-                <Type className="h-4 w-4" />
-              </ReaderIconButton>
-              <ReaderIconButton
-                onClick={() => {
-                  setShowHighlights((v) => !v)
-                  setShowSettings(false)
-                }}
-                label="نشان‌ها"
-                accent={themeStyle.accent}
-                ariaKeyshortcuts="H"
-                className="hidden md:inline-flex"
-              >
-                <Highlighter className="h-4 w-4" />
-                {pageHlCount > 0 && (
-                  <span
-                    className="absolute -end-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
-                    style={{ background: themeStyle.accent }}
-                  >
-                    {toPersianDigits(pageHlCount)}
-                  </span>
-                )}
-              </ReaderIconButton>
-              <ReaderIconButton
-                onClick={handleShare}
-                label="اشتراک‌گذاری"
-                accent={themeStyle.accent}
-                className="hidden md:inline-flex"
-              >
-                <Share2 className="h-4 w-4" />
-              </ReaderIconButton>
-              <ReaderIconButton
-                onClick={() => setShowChat((v) => !v)}
-                label="هوش مصنوعی"
-                accent={themeStyle.accent}
-                ariaKeyshortcuts="A"
-                className="hidden md:inline-flex"
-              >
-                <MessageSquare className="h-4 w-4" />
-              </ReaderIconButton>
-              <ReaderIconButton
-                onClick={() => {
-                  setShowSettings((v) => !v)
-                  setShowHighlights(false)
-                }}
-                label="تنظیمات"
-                accent={themeStyle.accent}
-                ariaKeyshortcuts="S"
-              >
-                <Settings className="h-4 w-4" />
-              </ReaderIconButton>
-              <ReaderIconButton
-                onClick={toggleFocusMode}
-                label="حالت تمرکز"
-                accent={themeStyle.accent}
-                ariaKeyshortcuts="F"
-              >
-                <Focus className="h-4 w-4" />
-              </ReaderIconButton>
+            </div>
 
-              {/* ---- Mobile overflow trigger — opens a bottom Sheet with the
-                  7 tools that are hidden on phone-width viewports. The
-                  desktop toolbar shows the inline buttons instead. ---- */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setMoreOpen(true)}
-                aria-label="ابزارهای بیشتر"
-                title="ابزارهای بیشتر"
-                className="md:hidden"
-              >
-                <MoreHorizontal className="h-5 w-5" />
-              </Button>
+            {/* ---- Actions & Tools Area (Categorized Clusters) ---- */}
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              {/* Cluster 1: Language & Translation */}
+              <div className="flex items-center gap-0.5">
+                <ReaderIconButton
+                  onClick={() =>
+                    update(
+                      'language',
+                      currentLanguage === 'english' ? 'farsi' : 'english',
+                    )
+                  }
+                  label={`${currentLanguage === 'english' ? 'EN' : 'FA'} — تغییر زبان متن (فعلی: ${currentLanguage === 'english' ? 'انگلیسی' : 'فارسی'})`}
+                  ariaKeyshortcuts="L"
+                  className="h-9 px-2.5"
+                >
+                  <Languages className="h-4 w-4" />
+                  <span className="text-xs font-bold tracking-wider">
+                    {currentLanguage === 'english' ? 'EN' : 'FA'}
+                  </span>
+                </ReaderIconButton>
+
+                <ReaderIconButton
+                  onClick={() => update('showSubtitles', !prefs.showSubtitles)}
+                  label="زیرنویس ترجمه فارسی"
+                  active={prefs.showSubtitles}
+                  accent={themeStyle.accent}
+                  ariaKeyshortcuts="T"
+                  className="h-9 px-2"
+                >
+                  <Type className="h-4 w-4" />
+                  <span className="hidden lg:inline text-xs font-medium">ترجمه</span>
+                </ReaderIconButton>
+              </div>
+
+              {/* Divider */}
+              <div
+                className="hidden sm:block h-4 w-px opacity-25 mx-0.5"
+                style={{ background: themeStyle.text }}
+              />
+
+              {/* Cluster 2: Study & AI Companion */}
+              <div className="hidden md:flex items-center gap-0.5">
+                <ReaderIconButton
+                  onClick={() => {
+                    setShowHighlights((v) => !v)
+                    setShowSettings(false)
+                  }}
+                  label="نشان‌ها و هایلایت‌ها"
+                  accent={themeStyle.accent}
+                  ariaKeyshortcuts="H"
+                  className="h-9 w-9 p-0 justify-center"
+                >
+                  <Highlighter className="h-4 w-4" />
+                  {pageHlCount > 0 && (
+                    <span
+                      className="absolute -end-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white shadow-sm"
+                      style={{ background: themeStyle.accent }}
+                    >
+                      {toPersianDigits(pageHlCount)}
+                    </span>
+                  )}
+                </ReaderIconButton>
+
+                <ReaderIconButton
+                  onClick={() => setShowChat((v) => !v)}
+                  label="دستیار هوش مصنوعی"
+                  accent={themeStyle.accent}
+                  ariaKeyshortcuts="A"
+                  className="h-9 w-9 p-0 justify-center"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                </ReaderIconButton>
+              </div>
+
+              {/* Divider */}
+              <div
+                className="hidden md:block h-4 w-px opacity-25 mx-0.5"
+                style={{ background: themeStyle.text }}
+              />
+
+              {/* Cluster 3: Display, Typography & Appearance */}
+              <div className="hidden sm:flex items-center gap-1">
+                {/* Segmented Font Stepper (Fixed LTR order: [ A- | A+ ] with matching h-9) */}
+                <div
+                  className="flex h-9 items-center rounded-lg border shadow-sm"
+                  style={{ borderColor: themeStyle.border }}
+                  dir="ltr"
+                >
+                  <button
+                    type="button"
+                    onClick={decreaseFontSize}
+                    title="کاهش اندازه قلم (A-)"
+                    aria-label="کاهش اندازه قلم"
+                    className="flex h-full w-8 items-center justify-center rounded-s-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                  >
+                    <span className="text-[11px] font-bold opacity-75">A-</span>
+                  </button>
+                  <div
+                    className="h-4 w-px opacity-20"
+                    style={{ background: themeStyle.text }}
+                  />
+                  <button
+                    type="button"
+                    onClick={increaseFontSize}
+                    title="افزایش اندازه قلم (A+)"
+                    aria-label="افزایش اندازه قلم"
+                    className="flex h-full w-8 items-center justify-center rounded-e-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                  >
+                    <span className="text-xs font-bold">A+</span>
+                  </button>
+                </div>
+
+                <ReaderIconButton
+                  onClick={cycleTheme}
+                  label={`تغییر تم (فعلی: ${themeLabel})`}
+                  accent={themeStyle.accent}
+                  ariaKeyshortcuts="Shift+T"
+                  className="h-9 w-9 p-0 justify-center"
+                >
+                  <Contrast className="h-4 w-4" />
+                </ReaderIconButton>
+
+                <ReaderIconButton
+                  onClick={() => {
+                    setShowSettings((v) => !v)
+                    setShowHighlights(false)
+                  }}
+                  label="تنظیمات مطالعه"
+                  accent={themeStyle.accent}
+                  ariaKeyshortcuts="S"
+                  className="h-9 w-9 p-0 justify-center"
+                >
+                  <Settings className="h-4 w-4" />
+                </ReaderIconButton>
+              </div>
+
+              {/* Divider */}
+              <div
+                className="hidden md:block h-4 w-px opacity-25 mx-0.5"
+                style={{ background: themeStyle.text }}
+              />
+
+              {/* Cluster 4: Utility & Mode Actions */}
+              <div className="flex items-center gap-0.5">
+                <ReaderIconButton
+                  onClick={handleShare}
+                  label="اشتراک‌گذاری"
+                  accent={themeStyle.accent}
+                  className="hidden md:inline-flex h-9 w-9 p-0 justify-center"
+                >
+                  <Share2 className="h-4 w-4" />
+                </ReaderIconButton>
+
+                <ReaderIconButton
+                  onClick={toggleFocusMode}
+                  label="حالت تمرکز (تمام‌صفحه)"
+                  accent={themeStyle.accent}
+                  ariaKeyshortcuts="F"
+                  className="hidden sm:inline-flex h-9 w-9 p-0 justify-center"
+                >
+                  <Focus className="h-4 w-4" />
+                </ReaderIconButton>
+
+                {/* Mobile overflow trigger */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setMoreOpen(true)}
+                  aria-label="ابزارهای بیشتر"
+                  title="ابزارهای بیشتر"
+                  className="md:hidden h-9 w-9"
+                >
+                  <MoreHorizontal className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
           </div>
         </motion.header>
       )}
     </AnimatePresence>
 
-    {/* ---- Mobile overflow Sheet — bottom drawer with the 7 hidden tools.
-         Each tool is a large tap-target button (≥44×44) with a Persian
-         label + icon. Tapping a tool runs its action and closes the sheet. */}
-    <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-      <SheetContent
-        side="bottom"
-        showCloseButton={false}
-        className="gap-0 rounded-t-2xl border-t pb-safe"
+    {/* ---- Mobile overflow Drawer — Categorized for optimal touch UX ---- */}
+    <Drawer open={moreOpen} onOpenChange={setMoreOpen}>
+      <DrawerContent
+        className="gap-0 rounded-t-3xl border-t pb-safe max-h-[85vh] overflow-y-auto"
         style={{ background: themeStyle.bg, color: themeStyle.text, borderColor: themeStyle.border }}
       >
-        <SheetTitle className="sr-only">ابزارهای بیشتر</SheetTitle>
-        <SheetDescription className="sr-only">
-          دسترسی به فصل‌ها، هایلایت‌ها، هوش مصنوعی، تنظیمات قلم، تم، متن‌خوان و اشتراک‌گذاری.
-        </SheetDescription>
+        <DrawerHandle className="opacity-40" style={{ background: themeStyle.accent }} />
+        <DrawerTitle className="sr-only">ابزارهای مطالعه</DrawerTitle>
+        <DrawerDescription className="sr-only">
+          دسترسی به فصل‌ها، نشان‌ها، هوش مصنوعی، تنظیمات قلم، تم و امکانات دیگر.
+        </DrawerDescription>
 
+        {/* Header */}
         <div
-          className="flex shrink-0 items-center justify-between border-b px-5 py-4"
+          className="flex shrink-0 items-center justify-between border-b px-5 py-3.5"
           style={{ borderColor: themeStyle.border }}
         >
-          <h2 className="text-base font-bold">ابزارهای بیشتر</h2>
+          <h2 className="text-base font-bold">ابزارهای مطالعه</h2>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setMoreOpen(false)}
             aria-label="بستن"
+            className="h-8 w-8 rounded-full"
           >
-            <MoreHorizontal className="h-5 w-5 rotate-45" aria-hidden />
+            <X className="h-4 w-4" />
           </Button>
         </div>
 
-        <div className="grid grid-cols-4 gap-2 p-4">
-          <MoreToolButton
-            icon={<ListIcon className="h-5 w-5" />}
-            label="فصل‌ها"
-            onClick={() => {
-              setShowChapters((v) => !v)
-              setShowSettings(false)
-              setShowHighlights(false)
-              setMoreOpen(false)
-            }}
-            accent={themeStyle.accent}
-          />
-          <MoreToolButton
-            icon={<Highlighter className="h-5 w-5" />}
-            label="نشان‌ها"
-            badge={pageHlCount > 0 ? toPersianDigits(pageHlCount) : undefined}
-            onClick={() => {
-              setShowHighlights((v) => !v)
-              setShowSettings(false)
-              setMoreOpen(false)
-            }}
-            accent={themeStyle.accent}
-          />
-          <MoreToolButton
-            icon={<MessageSquare className="h-5 w-5" />}
-            label="هوش مصنوعی"
-            onClick={() => {
-              setShowChat((v) => !v)
-              setMoreOpen(false)
-            }}
-            accent={themeStyle.accent}
-          />
-          <MoreToolButton
-            icon={<Settings className="h-5 w-5" />}
-            label="تنظیمات"
-            onClick={() => {
-              setShowSettings((v) => !v)
-              setShowHighlights(false)
-              setMoreOpen(false)
-            }}
-            accent={themeStyle.accent}
-          />
-          <MoreToolButton
-            icon={<Minus className="h-4 w-4" />}
-            label="کاهش قلم"
-            onClick={() => {
-              decreaseFontSize()
-              setMoreOpen(false)
-            }}
-            accent={themeStyle.accent}
-          />
-          <MoreToolButton
-            icon={<Plus className="h-4 w-4" />}
-            label="افزایش قلم"
-            onClick={() => {
-              increaseFontSize()
-              setMoreOpen(false)
-            }}
-            accent={themeStyle.accent}
-          />
-          <MoreToolButton
-            icon={<Contrast className="h-5 w-5" />}
-            label={`تم: ${themeLabel}`}
-            onClick={() => {
-              cycleTheme()
-              setMoreOpen(false)
-            }}
-            accent={themeStyle.accent}
-          />
-          <MoreToolButton
-            icon={<Share2 className="h-5 w-5" />}
-            label="اشتراک"
-            onClick={() => {
-              handleShare()
-              setMoreOpen(false)
-            }}
-            accent={themeStyle.accent}
-          />
-        </div>
+        <div className="space-y-4 p-4">
+          {/* Card 1: Appearance & Typography */}
+          <div
+            className="space-y-3 rounded-2xl border p-3.5"
+            style={{ borderColor: themeStyle.border, background: themeStyle.bg }}
+          >
+            <span className="text-[11px] font-bold opacity-75">
+              ظاهر و اندازه متن
+            </span>
 
-        {/* TTS gets its own full-width row because it has live state (spinner,
-            wave bars, chunk counter) that needs more horizontal room. */}
-        <div
-          className="border-t px-4 py-3"
-          style={{ borderColor: themeStyle.border }}
-        >
-          <ReaderAudioControls className="w-full justify-center" />
+            {/* Font Size Stepper */}
+            <div
+              className="flex items-center justify-between gap-3 rounded-xl border px-3 py-2"
+              style={{ borderColor: themeStyle.border }}
+            >
+              <span className="text-xs font-semibold">اندازه قلم متن</span>
+              <div className="flex items-center gap-2" dir="ltr">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={decreaseFontSize}
+                  className="h-8 w-8 rounded-lg p-0 font-bold"
+                  aria-label="کاهش اندازه قلم"
+                  title="کاهش اندازه قلم"
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                </Button>
+                <span className="min-w-[40px] text-center text-xs font-bold tabular-nums">
+                  {toPersianDigits(prefs.fontSize)}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={increaseFontSize}
+                  className="h-8 w-8 rounded-lg p-0 font-bold"
+                  aria-label="افزایش اندازه قلم"
+                  title="افزایش اندازه قلم"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Theme Selector */}
+            <div>
+              <span className="mb-2 block text-[10px] font-semibold opacity-60">
+                پوسته مطالعه
+              </span>
+              <div className="grid grid-cols-4 gap-1.5">
+                {[
+                  { id: 'light', label: 'روز', icon: Sun, bg: '#ffffff', text: '#1a1a1a', border: '#e5e5e5' },
+                  { id: 'sepia', label: 'سپیا', icon: Coffee, bg: '#f4ecd8', text: '#5b4636', border: '#d9ccb0' },
+                  { id: 'dark', label: 'شب', icon: Moon, bg: '#1c1c1e', text: '#f2f2f7', border: '#38383a' },
+                  { id: 'high-contrast', label: 'کنتراست', icon: Contrast, bg: '#000000', text: '#ffff00', border: '#555555' },
+                ].map((t) => {
+                  const isActive = prefs.theme === t.id
+                  const Icon = t.icon
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => update('theme', t.id as ReaderTheme)}
+                      className={cn(
+                        'flex flex-col items-center justify-center gap-1 rounded-xl border-2 py-2 px-1 transition-transform active:scale-95',
+                        isActive ? 'ring-2 ring-gold-500 font-bold shadow-xs' : 'opacity-80 hover:opacity-100',
+                      )}
+                      style={{
+                        background: t.bg,
+                        color: t.text,
+                        borderColor: isActive ? themeStyle.accent : t.border,
+                      }}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span className="text-[11px]">{t.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Quick Study Tools (4-column balanced grid) */}
+          <div
+            className="space-y-2 rounded-2xl border p-3.5"
+            style={{ borderColor: themeStyle.border }}
+          >
+            <span className="text-[11px] font-bold opacity-75">
+              ابزارهای مطالعه
+            </span>
+            <div className="grid grid-cols-4 gap-2">
+              <MoreToolButton
+                icon={<ListIcon className="h-5 w-5" />}
+                label="فصل‌ها"
+                onClick={() => {
+                  setShowChapters(true)
+                  setShowSettings(false)
+                  setShowHighlights(false)
+                  setMoreOpen(false)
+                }}
+                accent={themeStyle.accent}
+              />
+              <MoreToolButton
+                icon={<Highlighter className="h-5 w-5" />}
+                label="نشان‌ها"
+                badge={pageHlCount > 0 ? toPersianDigits(pageHlCount) : undefined}
+                onClick={() => {
+                  setShowHighlights(true)
+                  setShowSettings(false)
+                  setMoreOpen(false)
+                }}
+                accent={themeStyle.accent}
+              />
+              <MoreToolButton
+                icon={<MessageSquare className="h-5 w-5" />}
+                label="هوش مصنوعی"
+                onClick={() => {
+                  setShowChat(true)
+                  setMoreOpen(false)
+                }}
+                accent={themeStyle.accent}
+              />
+              <MoreToolButton
+                icon={<Focus className="h-5 w-5" />}
+                label="حالت تمرکز"
+                onClick={() => {
+                  toggleFocusMode()
+                  setMoreOpen(false)
+                }}
+                accent={themeStyle.accent}
+              />
+            </div>
+          </div>
+
+          {/* Card 3: Settings & Share (2-column balanced row) */}
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                setShowSettings(true)
+                setShowHighlights(false)
+                setMoreOpen(false)
+              }}
+              className="flex items-center justify-center gap-2 rounded-xl border py-2.5 px-3 transition-colors hover:bg-black/5 dark:hover:bg-white/5 active:scale-98"
+              style={{ borderColor: themeStyle.border }}
+            >
+              <Settings className="h-4 w-4" style={{ color: themeStyle.accent }} />
+              <span className="text-xs font-semibold">تنظیمات کامل</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                handleShare()
+                setMoreOpen(false)
+              }}
+              className="flex items-center justify-center gap-2 rounded-xl border py-2.5 px-3 transition-colors hover:bg-black/5 dark:hover:bg-white/5 active:scale-98"
+              style={{ borderColor: themeStyle.border }}
+            >
+              <Share2 className="h-4 w-4" style={{ color: themeStyle.accent }} />
+              <span className="text-xs font-semibold">اشتراک‌گذاری</span>
+            </button>
+          </div>
         </div>
-      </SheetContent>
-    </Sheet>
+      </DrawerContent>
+    </Drawer>
     </>
   )
 }
@@ -476,8 +605,8 @@ export function ReaderIconButton({
       title={label}
       aria-label={label}
       aria-keyshortcuts={ariaKeyshortcuts}
-      className={cn('relative gap-1 px-2', className)}
-      style={active && accent ? { background: accent + '22' } : undefined}
+      className={cn('relative h-9 rounded-lg gap-1.5 px-2.5 transition-colors', className)}
+      style={active && accent ? { background: accent + '22', color: accent } : undefined}
     >
       {children}
     </Button>

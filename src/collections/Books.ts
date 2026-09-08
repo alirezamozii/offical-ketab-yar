@@ -8,6 +8,7 @@
 
 import type { CollectionConfig } from 'payload'
 import { slugify } from '../lib/utils'
+import { canDeleteContent } from '../payload/access'
 
 export const booksCollection: CollectionConfig = {
   slug: 'books',
@@ -22,10 +23,10 @@ export const booksCollection: CollectionConfig = {
     description: 'مدیریت کتاب‌های دوزبانه، فصول و صفحات متن انگلیسی و فارسی',
   },
   access: {
-    read: () => true,
+    read: ({ req: { user } }) => user ? true : { isPublished: { equals: true } },
     create: ({ req: { user } }) => Boolean(user),
     update: ({ req: { user } }) => Boolean(user),
-    delete: ({ req: { user } }) => Boolean(user),
+    delete: ({ req: { user } }) => canDeleteContent(user),
   },
   fields: [
     {
@@ -219,7 +220,7 @@ export const booksCollection: CollectionConfig = {
             { label: 'متن معمولی (Text)', value: 'text' },
             { label: 'تیتر فصل (Heading)', value: 'heading' },
             { label: 'تصویر تصویرگری (Image)', value: 'image' },
-            { label: 'نقل‌قول برگزیده (Quote)', value: 'quote' },
+            { label: 'کوت برگزیده (Quote)', value: 'quote' },
           ],
         },
         { name: 'meta', label: 'متادیتا (اختیاری)', type: 'text' },

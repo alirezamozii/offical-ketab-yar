@@ -1,0 +1,21 @@
+[
+  {
+    "page": "book-detail",
+    "path": "/books/alice-in-wonderland",
+    "preset": "mobile",
+    "run": 1,
+    "scores": {
+      "performance": 79,
+      "accessibility": 97,
+      "best-practices": 96,
+      "seo": 91
+    },
+    "metrics": {
+      "first-contentful-paint": 1110,
+      "largest-contentful-paint": 4110,
+      "total-blocking-time": 135,
+      "cumulative-layout-shift": 0.07596560716854597,
+      "speed-index": 5754.289180000196
+    }
+  }
+]

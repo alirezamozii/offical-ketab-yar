@@ -1,0 +1,59 @@
+[
+  {
+    "page": "terms",
+    "path": "/terms",
+    "preset": "mobile",
+    "run": 1,
+    "scores": {
+      "performance": 93,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 1234.2511,
+      "largest-contentful-paint": 3082.3766500000006,
+      "total-blocking-time": 131,
+      "cumulative-layout-shift": 0,
+      "speed-index": 1234.2511
+    }
+  },
+  {
+    "page": "terms",
+    "path": "/terms",
+    "preset": "mobile",
+    "run": 2,
+    "scores": {
+      "performance": 92,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 1221.3595,
+      "largest-contentful-paint": 3082.03925,
+      "total-blocking-time": 150,
+      "cumulative-layout-shift": 0,
+      "speed-index": 1221.3595
+    }
+  },
+  {
+    "page": "terms",
+    "path": "/terms",
+    "preset": "mobile",
+    "run": 3,
+    "scores": {
+      "performance": 92,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 1221.1004,
+      "largest-contentful-paint": 3085.6506000000004,
+      "total-blocking-time": 154,
+      "cumulative-layout-shift": 0,
+      "speed-index": 1221.1004
+    }
+  }
+]

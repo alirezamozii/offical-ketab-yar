@@ -1,21 +1,17 @@
-import Script from 'next/script'
 import { BookCover } from '@/components/books/book-cover'
 import { safeJsonLd } from '@/lib/json-ld'
-import { BookCarousel } from '@/components/books/book-carousel'
 import { CefrLevelIndicator } from '@/components/books/cefr-level-indicator'
 import { ReadingInsights } from '@/components/books/reading-insights'
-import { TrendingBadge } from '@/components/books/trending-badge'
 import { BookToc } from '@/components/books/book-toc'
-import { ReadingProgressCard } from '@/components/books/reading-progress-card'
-import {
-  BookDetailActions,
-  StickyReadingBar,
-} from '@/components/books/book-detail-actions'
+import { BookDetailActions } from '@/components/books/book-detail-actions'
 import { AddToCollectionButton } from '@/components/books/add-to-collection-button'
 import { FavoriteButton } from '@/components/books/favorite-button'
 import { DownloadBookButton } from '@/components/books/download-book-button'
-import { ReviewsSection } from '@/components/books/reviews-list'
-import { ReviewFormWrapper } from '@/components/books/review-form-wrapper'
+import {
+  LazyReviewsSection,
+  LazyReviewFormWrapper,
+  LazyBookCarousel,
+} from '@/components/books/book-lazy-sections'
 import { ShareButton } from '@/components/books/share-button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -59,7 +55,12 @@ interface PageProps {
 
 const SITE_URL = SITE.url
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
+
+export async function generateStaticParams() {
+  const books = await getHighestRatedBooks(10)
+  return books.map((b) => ({ slug: b.slug }))
+}
 
 export async function generateMetadata({
   params,
@@ -76,10 +77,12 @@ export async function generateMetadata({
   const ogImage = `/api/og?title=${encodeURIComponent(book.title)}&subtitle=${encodeURIComponent(book.author)}`
   return {
     title: `${book.title} — ${book.author}`,
-    description: `${book.description} — خلاصه، ترجمه فارسی و مطالعه رایگان دوزبانه در کتاب‌یار.`,
+    description: `${book.description} — خلاصه، ترجمه فارسی و مطالعه رایگان دوزبانه در بوکزی.`,
     keywords: [
       book.title,
       book.author,
+      'بوکزی',
+      'Bookzi',
       'کتاب انگلیسی',
       'مطالعه دوزبانه',
       'ترجمه فارسی',
@@ -96,7 +99,7 @@ export async function generateMetadata({
       url: canonical,
       title: `${book.title} — ${book.author}`,
       description: book.description,
-      siteName: 'کتاب‌یار',
+      siteName: 'بوکزی',
       images: [
         {
           url: ogImage,
@@ -325,17 +328,17 @@ export default async function BookDetailPage({ params }: PageProps) {
 
   return (
     <>
-      <Script
+      <script
         id="book-detail-ld"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(bookLd) }}
       />
-      <Script
+      <script
         id="book-article-ld"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(articleLd) }}
       />
-      <Script
+      <script
         id="book-breadcrumb-ld"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbLd) }}
@@ -422,8 +425,6 @@ export default async function BookDetailPage({ params }: PageProps) {
             </BreadcrumbList>
           </Breadcrumb>
 
-          {/* Hero sentinel — observed by the sticky reading bar */}
-          <div id="ky-hero-sentinel" aria-hidden className="h-px w-full" />
 
           {/* Hero grid */}
           <div className="grid gap-8 md:grid-cols-[280px_1fr] lg:gap-12">
@@ -455,7 +456,6 @@ export default async function BookDetailPage({ params }: PageProps) {
                     </Badge>
                   ))}
                   <CefrLevelIndicator level={book.level} compact />
-                  <TrendingBadge viewCount={book.viewCount} />
                   {book.isPremium && (
                     <Badge className="bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950">
                       پریمیوم
@@ -514,7 +514,7 @@ export default async function BookDetailPage({ params }: PageProps) {
               </div>
 
               <div className="pt-2">
-                <BookDetailActions slug={book.slug} />
+                <BookDetailActions slug={book.slug} totalPages={book.pageCount} />
               </div>
 
               {/* Secondary actions: favorite + collection + share + download */}
@@ -548,14 +548,8 @@ export default async function BookDetailPage({ params }: PageProps) {
       </section>
 
       <article className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-        {/* Reading progress card — shows for books the user has started */}
-        <ReadingProgressCard
-          bookSlug={book.slug}
-          totalPages={book.pageCount}
-        />
-
         {/* Quick-glance book-specs + rating distribution strip */}
-        <section className="mt-8 grid gap-4 lg:grid-cols-[1fr_1fr]">
+        <section className="grid gap-4 lg:grid-cols-[1fr_1fr]">
           {/* مشخصات کتاب */}
           <div className="rounded-2xl border border-border/60 bg-card/60 p-5 sm:p-6">
             <h2 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
@@ -723,7 +717,7 @@ export default async function BookDetailPage({ params }: PageProps) {
             </h2>
             <div className="flex items-center gap-2">
               <ShareButton bookSlug={book.slug} bookTitle={book.title} />
-              <ReviewFormWrapper bookSlug={book.slug} />
+              <LazyReviewFormWrapper bookSlug={book.slug} />
             </div>
           </div>
 
@@ -735,7 +729,7 @@ export default async function BookDetailPage({ params }: PageProps) {
               </p>
             </div>
           ) : (
-            <ReviewsSection reviews={book.reviews} />
+            <LazyReviewsSection reviews={book.reviews} />
           )}
         </section>
 
@@ -755,18 +749,11 @@ export default async function BookDetailPage({ params }: PageProps) {
                 <ChevronLeft className="h-4 w-4" />
               </Link>
             </div>
-            <BookCarousel books={related} />
+            <LazyBookCarousel books={related} />
           </section>
         )}
       </article>
 
-      {/* Sticky reading bar — appears after hero scrolls out of view.
-          Renders BOTH a mobile bottom bar and a desktop top bar. */}
-      <StickyReadingBar
-        slug={book.slug}
-        title={book.title}
-        author={book.author}
-      />
     </>
   )
 }

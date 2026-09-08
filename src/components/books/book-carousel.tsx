@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { BookListItem } from '@/lib/data'
 import { BookCard } from '@/components/books/book-card'
@@ -50,53 +50,75 @@ export function BookCarousel({
     const el = scroller.current
     if (!el) return
     const amount = Math.min(el.clientWidth * 0.8, 600)
-    el.scrollBy({ left: -dir * amount, behavior: 'smooth' })
+    el.scrollBy({ left: -dir * amount, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
   }, [])
 
   // State refs to eliminate unnecessary setState calls on every scroll tick.
   const prevCanScrollPrev = useRef(false)
   const prevCanScrollNext = useRef(true)
+  const scrollRaf = useRef<number | null>(null)
 
   /** Update arrow visibility based on scroll position. */
   const updateArrows = useCallback(() => {
+    if (scrollRaf.current !== null) return
+    scrollRaf.current = requestAnimationFrame(() => {
+      scrollRaf.current = null
+      const el = scroller.current
+      if (!el) return
+      const { scrollLeft, scrollWidth, clientWidth } = el
+      const maxScroll = scrollWidth - clientWidth
+      const absLeft = Math.abs(scrollLeft)
+      const nextPrev = absLeft > 4
+      const nextNext = absLeft < maxScroll - 4
+
+      if (prevCanScrollPrev.current !== nextPrev) {
+        prevCanScrollPrev.current = nextPrev
+        setCanScrollPrev(nextPrev)
+      }
+      if (prevCanScrollNext.current !== nextNext) {
+        prevCanScrollNext.current = nextNext
+        setCanScrollNext(nextNext)
+      }
+    })
+  }, [])
+
+  useEffect(() => {
     const el = scroller.current
     if (!el) return
-    const { scrollLeft, scrollWidth, clientWidth } = el
-    const maxScroll = scrollWidth - clientWidth
-    const absLeft = Math.abs(scrollLeft)
-    const nextPrev = absLeft > 4
-    const nextNext = absLeft < maxScroll - 4
-
-    if (prevCanScrollPrev.current !== nextPrev) {
-      prevCanScrollPrev.current = nextPrev
-      setCanScrollPrev(nextPrev)
+    const observer = new ResizeObserver(updateArrows)
+    observer.observe(el)
+    updateArrows()
+    return () => {
+      observer.disconnect()
+      if (scrollRaf.current !== null) cancelAnimationFrame(scrollRaf.current)
+      scrollRaf.current = null
     }
-    if (prevCanScrollNext.current !== nextNext) {
-      prevCanScrollNext.current = nextNext
-      setCanScrollNext(nextNext)
-    }
-  }, [])
+  }, [updateArrows, books.length])
 
   // ── Drag-to-scroll handlers ─────────────────────────────────────────
   function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
     const el = scroller.current
     if (!el) return
-    // Only start drag on primary button (left click) or touch.
-    if (e.button !== 0 && e.pointerType === 'mouse') return
+    // Touch/pen keep native scrolling and taps. Capture the mouse only
+    // after an actual drag so ordinary card links retain their clicks.
+    if (e.pointerType !== 'mouse' || e.button !== 0) return
+    if ((e.target as HTMLElement).closest('button, input, select, textarea')) return
     dragStart.current = { x: e.clientX, scrollLeft: el.scrollLeft }
     dragMoved.current = false
-    setIsDragging(true)
-    el.setPointerCapture(e.pointerId)
   }
 
   function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
     const el = scroller.current
     if (!el || !dragStart.current) return
     const dx = e.clientX - dragStart.current.x
-    if (Math.abs(dx) > 4) dragMoved.current = true
-    // In RTL, dragging right should scroll content left (next).
-    // scrollLeft += dx works for LTR; for RTL we invert.
-    el.scrollLeft = dragStart.current.scrollLeft + dx
+    if (!dragMoved.current) {
+      if (Math.abs(dx) <= 4) return
+      dragMoved.current = true
+      setIsDragging(true)
+      el.setPointerCapture(e.pointerId)
+    }
+    // CSSOM scrollLeft decreases as RTL content moves to the right.
+    el.scrollLeft = dragStart.current.scrollLeft - dx
   }
 
   function onPointerUp(e: React.PointerEvent<HTMLDivElement>) {
@@ -135,6 +157,8 @@ export function BookCarousel({
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        onPointerLeave={(e) => { if (!dragMoved.current) onPointerUp(e) }}
+        onDragStart={(e) => e.preventDefault()}
         onClickCapture={onClickCapture}
         onScroll={updateArrows}
         className={cn(

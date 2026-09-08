@@ -16,7 +16,7 @@ import { usePathname } from 'next/navigation'
  */
 import { useOptimizedScroll } from '@/hooks/use-optimized-scroll'
 
-export function SmoothScrollProvider({ children }: { children: ReactNode }) {
+export function SmoothScrollProvider({ children }: { children?: ReactNode } = {}) {
   const pathname = usePathname() || '/'
   useOptimizedScroll()
   const isReaderPage = pathname.startsWith('/books/read/')
@@ -29,13 +29,11 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
     if (prefersReduced) return
 
     // Mobile & touch devices handle scrolling natively on the GPU.
-    // Running Lenis JS rAF loop on touch devices hijacks native GPU scroll,
-    // causing severe INP lag (1340ms) and forced reflows on mobile.
+    // Use matchMedia to avoid triggering forced layout/reflow on initial mount.
     const isTouchOrMobile =
-      typeof window !== 'undefined' &&
-      ('ontouchstart' in window ||
-        navigator.maxTouchPoints > 0 ||
-        window.innerWidth < 768)
+      'ontouchstart' in window ||
+      navigator.maxTouchPoints > 0 ||
+      window.matchMedia('(max-width: 767px)').matches
     if (isTouchOrMobile) return
 
     let lenis: import('lenis').default | null = null
@@ -76,5 +74,5 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
     }
   }, [isReaderPage])
 
-  return <>{children}</>
+  return children ? <>{children}</> : null
 }

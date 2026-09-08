@@ -7,6 +7,8 @@ import type { Metadata } from 'next'
 
 
 import { SITE } from '@/lib/site'
+import { QueryProvider } from '@/components/providers/query-provider'
+import { DeferredProviders } from '@/components/providers/deferred-providers'
 
 export const metadata: Metadata = {
   title: 'داشبورد',
@@ -42,7 +44,11 @@ export default function DashboardPage() {
           <StatsExport />
         </div>
       </header>
-      <DashboardClient />
+      <DeferredProviders>
+        <QueryProvider>
+          <DashboardClient />
+        </QueryProvider>
+      </DeferredProviders>
     </div>
   )
 }

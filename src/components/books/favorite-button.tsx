@@ -1,7 +1,6 @@
 'use client'
 
 import { Heart } from 'lucide-react'
-import { AnimatePresence, motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { useFavorites } from '@/hooks/reader/use-favorites'
 import type { BookListItem } from '@/lib/data'
@@ -37,29 +36,15 @@ export function FavoriteButton({ book, className, size = 'md' }: FavoriteButtonP
         className,
       )}
     >
-      <AnimatePresence mode="wait" initial={false}>
-        {fav ? (
-          <motion.span
-            key="filled"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-          >
-            <Heart className="h-4 w-4 fill-red-500 text-red-500" />
-          </motion.span>
-        ) : (
-          <motion.span
-            key="outline"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-          >
-            <Heart className="h-4 w-4" />
-          </motion.span>
-        )}
-      </AnimatePresence>
+      {fav ? (
+        <span key="filled" className="inline-flex">
+          <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+        </span>
+      ) : (
+        <span key="outline" className="inline-flex">
+          <Heart className="h-4 w-4" />
+        </span>
+      )}
     </button>
   )
 }

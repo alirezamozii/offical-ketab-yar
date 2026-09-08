@@ -1,26 +1,17 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireUserApi } from '@/lib/auth-session'
 import { db } from '@/lib/db'
 
 export async function DELETE() {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const user = await requireUserApi()
+    if (user instanceof NextResponse) return user
 
-    await db.readingProgress.deleteMany({
-      where: { userId: session.user.id }
-    })
-    
-    await db.readingHistoryDayRow.deleteMany({
-      where: { userId: session.user.id }
-    })
-    
-    await db.readingSession.deleteMany({
-      where: { userId: session.user.id }
-    })
+    await db.$transaction([
+      db.readingProgress.deleteMany({ where: { userId: user.id } }),
+      db.readingHistoryDayRow.deleteMany({ where: { userId: user.id } }),
+      db.readingSession.deleteMany({ where: { userId: user.id } }),
+    ])
 
     return NextResponse.json({ ok: true })
   } catch (error) {

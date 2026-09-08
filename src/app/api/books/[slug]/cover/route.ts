@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { processCoverImage } from '@/lib/extract-colors'
-import { requireAdmin } from '@/lib/auth-session'
-import { writeFile, mkdir } from 'fs/promises'
+import { requireAdminApi } from '@/lib/auth-session'
+import { writeFile, mkdir, unlink } from 'fs/promises'
 import path from 'path'
 
 /**
@@ -44,24 +44,55 @@ export async function GET(
 ) {
   try {
     const { slug } = await params
-    const book = await db.book.findUnique({
-      where: { slug },
-      select: {
-        slug: true,
-        coverFrom: true,
-        coverTo: true,
-        coverAccent: true,
-        coverImage: true,
-        coverImageUrl: true,
-        coverBlurhash: true,
-      },
-    })
+    let book: any = null
+    try {
+      book = await db.book.findUnique({
+        where: { slug },
+        select: {
+          slug: true,
+          coverFrom: true,
+          coverTo: true,
+          coverAccent: true,
+          coverImage: true,
+          coverImageUrl: true,
+          coverBlurhash: true,
+        },
+      })
+    } catch {
+      const { getBookBySlug } = await import('@/lib/data')
+      const fallback = await getBookBySlug(slug)
+      if (fallback) {
+        book = {
+          slug: fallback.slug,
+          coverFrom: fallback.coverFrom,
+          coverTo: fallback.coverTo,
+          coverAccent: fallback.coverAccent,
+          coverImage: fallback.coverImage,
+          coverImageUrl: fallback.coverImageUrl,
+          coverBlurhash: fallback.coverBlurhash,
+        }
+      }
+    }
 
     if (!book) {
-      return NextResponse.json(
-        { error: 'کتاب مورد نظر یافت نشد.' },
-        { status: 404 },
-      )
+      const { getBookBySlug } = await import('@/lib/data')
+      const fallback = await getBookBySlug(slug)
+      if (fallback) {
+        book = {
+          slug: fallback.slug,
+          coverFrom: fallback.coverFrom,
+          coverTo: fallback.coverTo,
+          coverAccent: fallback.coverAccent,
+          coverImage: fallback.coverImage,
+          coverImageUrl: fallback.coverImageUrl,
+          coverBlurhash: fallback.coverBlurhash,
+        }
+      } else {
+        return NextResponse.json(
+          { error: 'کتاب مورد نظر یافت نشد.' },
+          { status: 404 },
+        )
+      }
     }
 
     return NextResponse.json(book, {
@@ -87,13 +118,14 @@ export async function POST(
   // matching the convention used by all /api/admin/* routes.
   // NOTE: must be OUTSIDE the try/catch below — notFound() throws a special
   // error that the catch block would otherwise swallow into a 500.
-  await requireAdmin()
+  const caller = await requireAdminApi()
+  if (caller instanceof NextResponse) return caller
 
   try {
     const { slug } = await params
 
     // 1. Verify the book exists.
-    const book = await db.book.findUnique({ where: { slug } })
+    const book = await db.book.findUnique({ where: { slug }, select: { id: true } })
     if (!book) {
       return NextResponse.json(
         { error: 'کتاب مورد نظر یافت نشد.' },
@@ -186,11 +218,12 @@ export async function DELETE(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   // 🔒 Admin-only — outside try/catch so notFound() isn't swallowed into 500.
-  await requireAdmin()
+  const caller = await requireAdminApi()
+  if (caller instanceof NextResponse) return caller
 
   try {
     const { slug } = await params
-    const book = await db.book.findUnique({ where: { slug } })
+    const book = await db.book.findUnique({ where: { slug }, select: { id: true, coverImage: true } })
     if (!book) {
       return NextResponse.json(
         { error: 'کتاب مورد نظر یافت نشد.' },
@@ -202,6 +235,9 @@ export async function DELETE(
       where: { slug },
       data: { coverImage: null },
     })
+    if (book.coverImage?.startsWith('/covers/')) {
+      await unlink(path.join(COVERS_DIR, path.basename(book.coverImage))).catch(() => {})
+    }
 
     return NextResponse.json({ slug, coverImage: null })
   } catch (err) {

@@ -52,10 +52,23 @@ export async function GET() {
     const ownerWhere = userId ? { OR: [{ userId }, { guestId }] } : { guestId }
 
     // Fetch goals + milestone defs from the CMS DB (admin-editable).
-    const [goals, milestoneDefs] = await Promise.all([
+    const [defaultGoals, milestoneDefs, savedGoals] = await Promise.all([
       getGoalsConfigFromDB(),
       getActiveMilestoneDefs(),
+      db.userGoal.findMany({
+        where: userId ? { userId } : { guestId },
+        select: { period: true, target: true, unit: true },
+      }),
     ])
+    const goals: GoalsConfig = { ...defaultGoals }
+    for (const saved of savedGoals) {
+      if (
+        (saved.period === 'daily' || saved.period === 'weekly' || saved.period === 'monthly') &&
+        (saved.unit === 'pages' || saved.unit === 'minutes')
+      ) {
+        goals[saved.period] = { target: saved.target, unit: saved.unit }
+      }
+    }
 
     const [statsRow, vocabCount] = await Promise.all([
       // H-08: use the correct unique key — userId for signed-in, guestId for
@@ -139,7 +152,7 @@ export async function GET() {
       { goals, ...payload },
       {
         headers: {
-          'Cache-Control': 'private, max-age=30',
+          'Cache-Control': 'private, no-store',
         },
       },
     )
@@ -263,7 +276,7 @@ export async function POST(req: NextRequest) {
       { goals: validated },
       {
         headers: {
-          'Cache-Control': 'private, max-age=30',
+          'Cache-Control': 'private, no-store',
         },
       },
     )

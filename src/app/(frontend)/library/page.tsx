@@ -1,17 +1,16 @@
 import { LibraryClient } from '@/components/library/library-client'
-import { LibrarySkeleton } from '@/components/library/library-skeleton'
 import { TopTrending } from '@/components/library/top-trending'
 import { getBooks, getBooksCount, getMostReadBooks } from '@/lib/data'
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
 import { SITE } from '@/lib/site'
+import { QueryProvider } from '@/components/providers/query-provider'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
 
 export const metadata: Metadata = {
   title: 'کتابخانه دوزبانه',
   description:
-    'کتابخانه کتاب‌یار: مرور کتاب‌های انگلیسی با ترجمه فارسی، قابل جستجو و فیلتر بر اساس ژانر و سطح. مطالعه رایگان دوزبانه با دیکشنری هوشمند و هوش مصنوعی.',
+    'کتابخانه بوکزی: مرور کتاب‌های انگلیسی با ترجمه فارسی، قابل جستجو و فیلتر بر اساس ژانر و سطح. مطالعه رایگان دوزبانه با دیکشنری هوشمند و هوش مصنوعی.',
   keywords: [
     'کتابخانه آنلاین',
     'کتاب انگلیسی با ترجمه',
@@ -26,22 +25,22 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'fa_IR',
     url: `${SITE.url}/library`,
-    title: 'کتابخانه دوزبانه کتاب‌یار — هزاران صفحه کتاب انگلیسی و فارسی',
+    title: 'کتابخانه دوزبانه بوکزی — هزاران صفحه کتاب انگلیسی و فارسی',
     description:
       'مرور کتاب‌های انگلیسی با ترجمه فارسی، قابل جستجو و فیلتر بر اساس ژانر و سطح.',
-    siteName: 'کتاب‌یار',
+    siteName: 'بوکزی',
     images: [
       {
         url: '/api/og?title=Library&subtitle=Bilingual%20book%20catalog',
         width: 1200,
         height: 630,
-        alt: 'کتابخانه دوزبانه کتاب‌یار',
+        alt: 'کتابخانه دوزبانه بوکزی',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'کتابخانه دوزبانه کتاب‌یار',
+    title: 'کتابخانه دوزبانه بوکزی',
     description:
       'مرور کتاب‌های انگلیسی با ترجمه فارسی، قابل جستجو و فیلتر بر اساس ژانر و سطح.',
     images: ['/api/og?title=Library&subtitle=Bilingual%20book%20catalog'],
@@ -58,15 +57,11 @@ export const metadata: Metadata = {
   },
 }
 
-async function LibraryContent() {
-  const initial = await getBooks()
-  return <LibraryClient initial={initial} />
-}
-
 export default async function LibraryPage() {
-  const [total, trending] = await Promise.all([
+  const [total, trending, initialBooks] = await Promise.all([
     getBooksCount(),
     getMostReadBooks(10),
+    getBooks(),
   ])
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -107,9 +102,9 @@ export default async function LibraryPage() {
           Dynamic ranking based on real viewCount, pastel palette. */}
       <TopTrending books={trending} />
 
-      <Suspense fallback={<LibrarySkeleton count={8} view="grid" />}>
-        <LibraryContent />
-      </Suspense>
+      <QueryProvider>
+        <LibraryClient initial={initialBooks} />
+      </QueryProvider>
     </div>
   )
 }

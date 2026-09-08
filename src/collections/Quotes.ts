@@ -8,12 +8,13 @@
 
 import type { CollectionConfig } from 'payload'
 import { slugify } from '../lib/utils'
+import { canDeleteContent } from '../payload/access'
 
 export const quotesCollection: CollectionConfig = {
   slug: 'quotes',
   labels: {
-    singular: 'نقل‌قول',
-    plural: '۴. نقل‌قول‌ها (Quotes)',
+    singular: 'کوت',
+    plural: '۴. کوت‌ها (Quotes)',
   },
   admin: {
     useAsTitle: 'text',
@@ -22,10 +23,10 @@ export const quotesCollection: CollectionConfig = {
     description: 'جملات قصار و برگزیده کتاب‌ها برای تمرین و نمایش روزانه',
   },
   access: {
-    read: () => true,
+    read: ({ req: { user } }) => user ? true : { isActive: { equals: true } },
     create: ({ req: { user } }) => Boolean(user),
     update: ({ req: { user } }) => Boolean(user),
-    delete: ({ req: { user } }) => Boolean(user),
+    delete: ({ req: { user } }) => canDeleteContent(user),
   },
   fields: [
     {
@@ -40,14 +41,14 @@ export const quotesCollection: CollectionConfig = {
     },
     {
       name: 'text',
-      label: 'متن نقل‌قول به انگلیسی',
+      label: 'متن کوت به انگلیسی',
       type: 'textarea',
       required: true,
       admin: { description: 'متن جمله یا پاراگراف برگزیده به زبان انگلیسی' },
     },
     {
       name: 'textFa',
-      label: 'ترجمه فارسی نقل‌قول',
+      label: 'ترجمه فارسی کوت',
       type: 'textarea',
       admin: { description: 'ترجمه دقیق و روان جمله به زبان فارسی' },
     },
@@ -83,7 +84,7 @@ export const quotesCollection: CollectionConfig = {
       label: 'شماره صفحه در کتاب',
       type: 'number',
       defaultValue: 1,
-      admin: { description: 'شماره صفحه‌ای که این نقل‌قول در آن آمده است' },
+      admin: { description: 'شماره صفحه‌ای که این کوت در آن آمده است' },
     },
     {
       name: 'themes',
@@ -94,7 +95,7 @@ export const quotesCollection: CollectionConfig = {
     },
     {
       name: 'length',
-      label: 'طول نقل‌قول',
+      label: 'طول کوت',
       type: 'select',
       defaultValue: 'متوسط',
       options: [
@@ -115,7 +116,7 @@ export const quotesCollection: CollectionConfig = {
       label: 'فعال در سیستم',
       type: 'checkbox',
       defaultValue: true,
-      admin: { position: 'sidebar', description: 'نمایش این نقل‌قول در صفحه اصلی و اپلیکیشن' },
+      admin: { position: 'sidebar', description: 'نمایش این کوت در صفحه اصلی و اپلیکیشن' },
     },
   ],
   hooks: {

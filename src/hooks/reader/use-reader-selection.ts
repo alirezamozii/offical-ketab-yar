@@ -96,8 +96,10 @@ export function useReaderSelection({
 
   // ---- Dictionary ----
   const handleShowDictionary = useCallback(() => {
-    if (selectedText.trim()) {
-      onShowDictionary(selectedText)
+    const raw = selectedText.trim()
+    const clean = raw.replace(/^['"“«(]+|[.,!?;:)'"»]+$/g, '')
+    if (clean) {
+      onShowDictionary(clean)
       setShowTextMenu(false)
     }
   }, [selectedText, onShowDictionary])

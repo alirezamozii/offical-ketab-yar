@@ -160,7 +160,7 @@ export function StatsExport() {
     ctx.font = 'bold 28px sans-serif'
     ctx.textAlign = 'left'
     ctx.textBaseline = 'alphabetic'
-    ctx.fillText('کتاب‌یار', 40, 50)
+    ctx.fillText('بوکزی', 40, 50)
     ctx.fillStyle = '#8a6847'
     ctx.font = '13px sans-serif'
     ctx.fillText('خلاصه مطالعه من', 40, 70)
@@ -280,7 +280,7 @@ export function StatsExport() {
     ctx.font = '12px sans-serif'
     ctx.textAlign = 'left'
     const date = new Date().toLocaleDateString('fa-IR')
-    ctx.fillText(`کتاب‌یار — ${date}`, 40, H - 22)
+    ctx.fillText(`بوکزی — ${date}`, 40, H - 22)
     ctx.textAlign = 'right'
     ctx.fillText(new URL(SITE.url).host, W - 40, H - 22)
 
@@ -304,7 +304,7 @@ export function StatsExport() {
         canvas.toBlob(resolve, 'image/png'),
       )
       if (!blob) throw new Error('blob failed')
-      downloadBlob(blob, `ketab-yar-stats-${Date.now()}.png`)
+      downloadBlob(blob, `bookzi-stats-${Date.now()}.png`)
       toast.success('تصویر خلاصه دانلود شد')
       setLastFormat('png')
       setOpen(false)
@@ -323,11 +323,11 @@ export function StatsExport() {
         canvas.toBlob(resolve, 'image/png'),
       )
       if (!blob) throw new Error('blob failed')
-      const file = new File([blob], 'ketab-yar-stats.png', { type: 'image/png' })
+      const file = new File([blob], 'bookzi-stats.png', { type: 'image/png' })
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: 'خلاصه مطالعه من در کتاب‌یار',
+          title: 'خلاصه مطالعه من در بوکزی',
         })
         setLastFormat('png')
         setOpen(false)

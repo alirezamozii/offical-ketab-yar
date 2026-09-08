@@ -82,9 +82,13 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Optional body — silently tolerate invalid JSON.
-  const _body = await req.json().catch(() => ({}))
-  void _body
+  const body = await req.json().catch(() => null) as { confirm?: unknown } | null
+  if (body?.confirm !== 'حذف') {
+    return NextResponse.json(
+      { ok: false, error: 'برای حذف حساب، عبارت تأیید را وارد کنید.' },
+      { status: 400 },
+    )
+  }
 
   try {
     await db.user.delete({ where: { id: userId } })

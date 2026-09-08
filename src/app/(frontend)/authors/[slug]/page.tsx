@@ -67,16 +67,18 @@ export async function generateMetadata({
   const canonical = `${SITE.url}/authors/${summary.slug}`
   const title = bio?.nameFa
     ? `${bio.nameFa} (${summary.name}) — زندگی‌نامه و کتاب‌ها`
-    : `${summary.name} — کتاب‌ها در کتاب‌یار`
+    : `${summary.name} — کتاب‌ها در بوکزی`
   const description = bio?.bioFa
-    ? `${bio.bioFa} ${summary.bookCount} کتاب از ${summary.name} در کتابخانهٔ دوزبانهٔ کتاب‌یار.`
-    : `${summary.name} — ${summary.bookCount} کتاب در کتابخانهٔ دوزبانهٔ کتاب‌یار.`
+    ? `${bio.bioFa} ${summary.bookCount} کتاب از ${summary.name} در زیست‌بومِ کتاب‌های دوزبانه بوکزی.`
+    : `${summary.name} — ${summary.bookCount} کتاب در زیست‌بومِ کتاب‌های دوزبانه بوکزی.`
 
   const keywords = [
     summary.name,
     bio?.nameFa,
     bio?.nationalityFa,
     bio?.eraFa,
+    'بوکزی',
+    'Bookzi',
     'زندگی‌نامه نویسنده',
     'کتاب‌های دوزبانه',
     'مطالعه دوزبانه',
@@ -95,7 +97,7 @@ export async function generateMetadata({
       url: canonical,
       title,
       description,
-      siteName: 'کتاب‌یار',
+      siteName: 'بوکزی',
       images: [
         {
           url: (summary as any).photoUrl || `/api/og?title=${encodeURIComponent(summary.name)}&subtitle=${encodeURIComponent(bio?.nameFa || 'Author')}`,
@@ -107,7 +109,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${summary.name} — کتاب‌یار`,
+      title: `${summary.name} — بوکزی`,
       description,
       images: [
         (summary as any).photoUrl || `/api/og?title=${encodeURIComponent(summary.name)}&subtitle=${encodeURIComponent(bio?.nameFa || 'Author')}`,
@@ -169,7 +171,7 @@ export default async function AuthorDetailPage({ params }: PageProps) {
       ? { nationality: { '@type': 'Country', name: bio.nationality } }
       : {}),
     jobTitle: 'Author',
-    description: bio?.bio || bio?.bioFa || `${author.name} — author in Ketab-Yar.`,
+    description: bio?.bio || bio?.bioFa || `${author.name} — author in Bookzi.`,
     knowsAbout: [...author.genres, ...(bio?.tags || [])],
     url: canonical,
     worksFor: { '@id': `${SITE.url}/#organization` },
@@ -179,7 +181,7 @@ export default async function AuthorDetailPage({ params }: PageProps) {
   const itemListLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    name: `Books by ${author.name} in Ketab-Yar`,
+    name: `Books by ${author.name} in Bookzi`,
     itemListElement: author.books.map((b, i) => ({
       '@type': 'ListItem',
       position: i + 1,
@@ -315,7 +317,7 @@ export default async function AuthorDetailPage({ params }: PageProps) {
             <div className="flex flex-wrap items-center gap-2">
               {bio?.nationalityFa && (
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/60 px-3 py-1 text-xs font-medium">
-                  <span aria-hidden="true">{bio.flagEmoji}</span>
+                  {bio.flagEmoji && <span aria-hidden="true">{bio.flagEmoji}</span>}
                   <Globe aria-hidden="true" className="h-3 w-3 text-gold-600 dark:text-gold-400" />
                   {bio.nationalityFa}
                 </span>
@@ -364,22 +366,38 @@ export default async function AuthorDetailPage({ params }: PageProps) {
         </div>
 
         {/* Short Bio */}
-        {bio?.bioFa && (
-          <p className="relative mt-6 max-w-3xl text-base leading-relaxed text-foreground/90">
-            {bio.bioFa}
-          </p>
+        {(bio?.bioFa || bio?.bio) && (
+          <div className="relative mt-6 max-w-3xl space-y-2">
+            {bio.bioFa && (
+              <p className="text-base leading-relaxed text-foreground/90">
+                {bio.bioFa}
+              </p>
+            )}
+            {bio.bio && (!bio.bioFa || bio.bio !== bio.bioFa) && (
+              <p className="text-sm leading-relaxed text-muted-foreground font-serif italic" dir="ltr">
+                {bio.bio}
+              </p>
+            )}
+          </div>
         )}
 
         {/* Long-form Biography if present */}
-        {bio?.biographyFa && (
-          <div className="relative mt-6 rounded-2xl border border-border/50 bg-background/50 p-5 space-y-3">
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-gold-600 dark:text-gold-400">
+        {(bio?.biographyFa || bio?.biography) && (
+          <div className="relative mt-6 rounded-2xl border border-border/50 bg-background/50 p-5 sm:p-6 space-y-3">
+            <h3 className="flex items-center gap-2 text-base font-bold text-gold-600 dark:text-gold-400">
               <Sparkles className="h-4 w-4" />
-              زندگی‌نامه تفصیلی
+              زندگی‌نامه و بیوگرافی تفصیلی
             </h3>
-            <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
-              {bio.biographyFa}
-            </p>
+            {bio.biographyFa && (
+              <p className="whitespace-pre-line text-sm sm:text-base leading-relaxed text-foreground/90">
+                {bio.biographyFa}
+              </p>
+            )}
+            {bio.biography && (!bio.biographyFa || bio.biography !== bio.biographyFa) && (
+              <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground pt-2 border-t border-border/30" dir="ltr">
+                {bio.biography}
+              </p>
+            )}
           </div>
         )}
 

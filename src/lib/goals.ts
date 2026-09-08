@@ -137,6 +137,20 @@ export function recordReadingDay(opts: {
   writeReadingHistory(history.slice(-365))
 }
 
+/** Flush the local daily history to the identity-scoped server store. */
+export async function syncReadingHistory(keepalive = false): Promise<void> {
+  if (typeof window === 'undefined') return
+  const days = readReadingHistory()
+  if (days.length === 0) return
+  const response = await fetch('/api/reading/history/sync', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ days }),
+    keepalive,
+  })
+  if (!response.ok) throw new Error(`Reading history sync failed: ${response.status}`)
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Server-known stats snapshot (UserStats + Vocabulary)
 // ─────────────────────────────────────────────────────────────────────────────

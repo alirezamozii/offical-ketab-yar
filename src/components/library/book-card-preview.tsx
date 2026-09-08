@@ -96,11 +96,25 @@ export function BookCardWithPreview({
     })
   }
 
+  const [isDesktop, setIsDesktop] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      setIsDesktop(true)
+    }
+  }, [])
+
+  if (!isDesktop) {
+    return (
+      <div className="block h-full">
+        <BookCard book={book} progress={progress} />
+      </div>
+    )
+  }
+
   return (
     <HoverCard openDelay={300} closeDelay={150}>
       <HoverCardTrigger asChild>
-        {/* `md:block` ensures the hover-card only kicks in on desktop.
-            Mobile users tap the card directly. */}
         <div className="block h-full" onMouseEnter={onHoverStart}>
           <BookCard
             book={book}

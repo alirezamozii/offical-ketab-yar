@@ -1,6 +1,3 @@
-'use client'
-
-import { motion, useReducedMotion } from 'framer-motion'
 import {
   ArrowLeft,
   BookOpen,
@@ -104,25 +101,20 @@ function hash(s: string): number {
 
 export function GenreCard({
   genre,
-  index,
+  index: _index,
 }: {
   genre: GenreInfo
   index: number
   sort?: 'count' | 'views'
 }) {
-  const reduceMotion = useReducedMotion()
   const grad = GRADIENTS[hash(genre.name) % GRADIENTS.length]
   const Icon = getGenreIcon(genre.name)
 
   return (
-    <motion.div
-      initial={reduceMotion ? undefined : { opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: reduceMotion ? 0 : Math.min(index * 0.04, 0.4) }}
-      whileHover={reduceMotion ? undefined : { y: -4 }}
-    >
+    <div className="transition-transform duration-300 motion-safe:hover:-translate-y-1">
       <Link
         href={`/library?genre=${encodeURIComponent(genre.name)}`}
+        prefetch={false}
         className="group relative block overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-[transform,opacity,colors,border-color,background-color] duration-300 ease-out-expo hover:border-gold-500/40 hover:shadow-lg hover:shadow-gold-500/10"
         aria-label={`ژانر ${genre.name} — ${genre.count} کتاب`}
       >
@@ -167,6 +159,6 @@ export function GenreCard({
           </div>
         </div>
       </Link>
-    </motion.div>
+    </div>
   )
 }

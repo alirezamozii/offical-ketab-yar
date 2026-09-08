@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Ketab-Yar — production docker-compose stack
+# Bookzi (بوکزی) — production docker-compose stack
 #
 # Services:
 #   db      — Postgres 16 (the production database; replaces dev SQLite)
@@ -10,12 +10,8 @@
 # Quick start:
 #   1. Copy .env.example → .env, fill in real values (DOMAIN, NEXTAUTH_SECRET,
 #      POSTGRES_PASSWORD, GOOGLE_CLIENT_*).
-#   2. `docker compose up -d`
-#   3. On first boot only, run migrations against the live DB:
-#        docker compose run --rm app sh -c "bun run db:generate && bunx prisma db push"
-#      (Or — preferred — switch to `prisma migrate deploy` once the schema is
-#       frozen. See audits/08 §3.3.)
-#   4. Seed the book catalog (idempotent — skips books that already exist):
+#   2. `docker compose up -d` (the one-shot migrate service applies Prisma migrations)
+#   3. Seed the book catalog (idempotent — skips books that already exist):
 #        docker compose run --rm app sh -c "bun run db:seed:prod"
 #   5. Visit https://{$DOMAIN}.
 #
@@ -30,54 +26,69 @@ services:
   # ── Postgres 16 ─────────────────────────────────────────────────────────────
   db:
     image: postgres:16-alpine
-    container_name: ketab-yar-db
+    container_name: bookzi-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-ky}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required — set it in .env}
-      POSTGRES_DB: ${POSTGRES_DB:-ketabyar}
+      POSTGRES_DB: ${POSTGRES_DB:-bookzi}
       # Tuning for small-VPS friendliness. Bump shared_buffers up to 25% of RAM
       # for a dedicated DB host. These defaults are conservative (256MB total).
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C.UTF-8"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ky} -d ${POSTGRES_DB:-ketabyar}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ky} -d ${POSTGRES_DB:-bookzi}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
-    # Do NOT expose 5432 publicly. Comment this in only for local debugging
-    # from the host (and bind to 127.0.0.1 — never 0.0.0.0 — on a VPS).
-    ports:
-      - "127.0.0.1:5432:5432"
     networks:
-      - ketab-yar-net
+      - bookzi-net
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
 
-  # ── Next.js app ────────────────────────────────────────────────────────────
-  app:
-    image: alirezamoozi/ketabyar:latest
+  # Apply reviewed Prisma migrations before the app starts.
+  migrate:
+    image: alirezamoozi/bookzi:latest
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ketab-yar-app
-    restart: unless-stopped
+    restart: "no"
     depends_on:
       db:
         condition: service_healthy
     environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-ky}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-bookzi}?schema=public&connection_limit=10&pool_timeout=20"
+    command: ["node_modules/.bin/prisma", "migrate", "deploy"]
+    networks:
+      - bookzi-net
+
+  # ── Next.js app ────────────────────────────────────────────────────────────
+  app:
+    image: alirezamoozi/bookzi:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bookzi-app
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
       # Postgres connection string — points at the `db` service on the
       # internal compose network. `?schema=public` is the default but
       # explicit is better.
-      DATABASE_URL: "postgresql://${POSTGRES_USER:-ky}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-ketabyar}?schema=public&connection_limit=10&pool_timeout=20"
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-ky}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-bookzi}?schema=public&connection_limit=10&pool_timeout=20"
       NODE_ENV: production
       # NextAuth — required. Generate with `openssl rand -base64 32`.
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?NEXTAUTH_SECRET is required — set it in .env}
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET:?PAYLOAD_SECRET is required — set it in .env}
       NEXTAUTH_URL: ${NEXTAUTH_URL:?NEXTAUTH_URL is required — e.g. https://your-domain.tld}
       # Google OAuth — optional. If both unset, Google sign-in is disabled.
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
@@ -90,8 +101,12 @@ services:
       ADMIN_EMAIL_WHITELIST: ${ADMIN_EMAIL_WHITELIST:-}
       # Used by Caddyfile.prod for the auto-HTTPS site block.
       DOMAIN: ${DOMAIN:?DOMAIN is required — e.g. your-domain.tld}
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
+    volumes:
+      - uploads:/app/public/uploads
+      - covers:/app/public/covers
+      - media:/app/public/media
     # Readiness probe — hits /api/health/ready which pings the DB. Caddy
     # waits for this before routing traffic (see caddy depends_on below).
     healthcheck:
@@ -101,7 +116,7 @@ services:
       retries: 3
       start_period: 40s
     networks:
-      - ketab-yar-net
+      - bookzi-net
     logging:
       driver: "json-file"
       options:
@@ -111,7 +126,7 @@ services:
   # ── Caddy edge (TLS termination + reverse proxy) ───────────────────────────
   caddy:
     image: caddy:2-alpine
-    container_name: ketab-yar-caddy
+    container_name: bookzi-caddy
     restart: unless-stopped
     depends_on:
       app:
@@ -128,7 +143,7 @@ services:
       DOMAIN: ${DOMAIN:?DOMAIN is required}
       ACME_EMAIL: ${ACME_EMAIL:-admin@${DOMAIN}}
     networks:
-      - ketab-yar-net
+      - bookzi-net
     logging:
       driver: "json-file"
       options:
@@ -138,18 +153,18 @@ services:
   # ── Nightly backup (optional but recommended) ──────────────────────────────
   # Runs `pg_dump` once a day at 02:00 UTC. Dumps land in the `pg_backups`
   # named volume; rotate via the `find -mtime +7 -delete` step. To restore:
-  #   docker compose exec -T db psql -U ky ketabyar < /backups/<file>.sql
+  #   docker compose exec -T db psql -U ky bookzi < /backups/<file>.sql
   backup:
     image: postgres:16-alpine
-    container_name: ketab-yar-backup
+    container_name: bookzi-backup
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-ky}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-ketabyar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required — set it in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-bookzi}
       PGHOST: db
     volumes:
       - pg_backups:/backups
@@ -169,15 +184,15 @@ services:
           echo "[backup] next run in $${sleep_seconds}s"
           sleep $${sleep_seconds}
           ts=$$(date -u +%Y%m%dT%H%M%SZ)
-          out="/backups/ketabyar-$${ts}.sql.gz"
+          out="/backups/bookzi-$${ts}.sql.gz"
           echo "[backup] dumping to $$out"
           pg_dump -U "$${POSTGRES_USER}" "$${POSTGRES_DB}" | gzip > "$$out"
           echo "[backup] done: $$out ($$(du -h $$out | cut -f1))"
           # Rotate: keep last 14 dumps
-          find /backups -name 'ketabyar-*.sql.gz' -mtime +14 -delete
+          find /backups -name 'bookzi-*.sql.gz' -mtime +14 -delete
         done
     networks:
-      - ketab-yar-net
+      - bookzi-net
     logging:
       driver: "json-file"
       options:
@@ -185,7 +200,7 @@ services:
         max-file: "3"
 
 networks:
-  ketab-yar-net:
+  bookzi-net:
     driver: bridge
 
 volumes:
@@ -193,3 +208,6 @@ volumes:
   caddy_data:    # TLS certs / ACME state — don't delete or you hit LE rate limits
   caddy_config:  # Caddy autosave
   pg_backups:    # Nightly pg_dump output (rotates, 14-day retention)
+  uploads:       # Runtime image uploads
+  covers:        # Runtime-generated book covers
+  media:         # Payload CMS media uploads

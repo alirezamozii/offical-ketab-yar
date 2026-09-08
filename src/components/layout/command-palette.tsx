@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useTheme } from 'next-themes'
+import { useThemeToggle } from '@/hooks/use-theme-toggle'
 import {
   BookMarked,
   BookOpen,
@@ -64,7 +64,7 @@ const PAGES: QuickLink[] = [
   { href: '/collections', label: 'پلی‌لیست‌های من', icon: LibraryBig, hint: 'C' },
   { href: '/library/genres', label: 'ژانرها', icon: Compass, hint: 'G' },
   { href: '/authors', label: 'نویسندگان', icon: Feather, hint: 'A' },
-  { href: '/quotes', label: 'نقل‌قول‌ها و هایلایت‌ها', icon: Quote, hint: 'Q' },
+  { href: '/quotes', label: 'کوت‌ها و هایلایت‌ها', icon: Quote, hint: 'Q' },
   { href: '/leaderboard', label: 'لیدربورد', icon: Trophy, hint: 'B' },
   { href: '/achievements', label: 'دستاوردها', icon: Medal, hint: 'A' },
   { href: '/goals', label: 'اهداف مطالعه', icon: Target, hint: 'O' },
@@ -195,10 +195,10 @@ function readRecentPages(): RecentPageEntry[] {
  *  - Display — theme toggle.
  *  - Action — close current page.
  */
-export function CommandPalette() {
+export function CommandPalette({ initiallyOpen = false }: { initiallyOpen?: boolean }) {
   const router = useRouter()
-  const { resolvedTheme, setTheme } = useTheme()
-  const [open, setOpen] = useState(false)
+  const { resolvedTheme, toggleTheme } = useThemeToggle()
+  const [open, setOpen] = useState(initiallyOpen)
   const [query, setQuery] = useState('')
   const [searchHits, setSearchHits] = useState<SearchHit[]>([])
   const [loadingSearch, setLoadingSearch] = useState(false)
@@ -318,7 +318,7 @@ export function CommandPalette() {
     <CommandDialog
       open={open}
       onOpenChange={setOpen}
-      title="پنل فرمان کتاب‌یار"
+      title="پنل فرمان بوکزی"
       description="برای جستجوی صفحه یا کتاب، تایپ کنید. کلید Escape برای بستن."
       className="scale-in sm:max-w-xl"
     >
@@ -552,7 +552,7 @@ export function CommandPalette() {
             onSelect={() => {
               setOpen(false)
               const next = resolvedTheme === 'dark' ? 'light' : 'dark'
-              setTheme(next)
+              toggleTheme(next)
               toast.success(
                 next === 'dark' ? 'حالت تاریک فعال شد' : 'حالت روشن فعال شد',
               )

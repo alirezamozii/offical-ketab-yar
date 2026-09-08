@@ -131,7 +131,7 @@ export function SupportForm() {
         </span>
         <h2 className="text-xl font-bold">پیام شما رسید</h2>
         <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
-          تیم پشتیبانی کتاب‌یار معمولاً ظرف ۲۴ ساعت پاسخ می‌دهد. اگر ایمیل
+          تیم پشتیبانی بوکزی معمولاً ظرف ۲۴ ساعت پاسخ می‌دهد. اگر ایمیل
           خود را بررسی کردید و پاسخی دریافت نکردید، پوشه اسپم را نیز ببینید.
         </p>
         <Button

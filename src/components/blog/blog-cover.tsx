@@ -23,7 +23,6 @@
  * ---------------------------------------------------------------
  */
 
-import { motion, useReducedMotion } from 'framer-motion'
 import {
   BookOpen,
   Brain,
@@ -174,7 +173,6 @@ export function BlogCover({
   variant = 'list',
   className,
 }: BlogCoverProps) {
-  const reduceMotion = useReducedMotion()
   const theme = getTheme(tag)
   const Icon = theme.icon
   const initial = title.trim().charAt(0) || 'ک'
@@ -256,20 +254,14 @@ export function BlogCover({
         }}
       />
       {/* Decorative orbs */}
-      <motion.div
-        initial={reduceMotion ? false : { opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+      <div
         className={cn(
           'absolute -left-20 -top-20 h-64 w-64 rounded-full bg-gradient-to-br opacity-30 blur-3xl',
           theme.from,
           theme.to,
         )}
       />
-      <motion.div
-        initial={reduceMotion ? false : { opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.8, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+      <div
         className={cn(
           'absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-gradient-to-tl opacity-20 blur-3xl',
           theme.from,
@@ -282,10 +274,7 @@ export function BlogCover({
       </span>
       {/* Tag icon + label */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <motion.div
-          initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+        <div
           className="flex flex-col items-center gap-3"
         >
           <span
@@ -301,7 +290,7 @@ export function BlogCover({
               {tag}
             </span>
           )}
-        </motion.div>
+        </div>
       </div>
     </div>
   )

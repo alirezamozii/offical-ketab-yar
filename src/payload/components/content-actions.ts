@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { slugify } from '@/lib/utils'
 import { revalidateBook, revalidateBlog } from '@/lib/revalidate'
-import { getCurrentUser } from '@/lib/auth-session'
+import { getVerifiedAdminUser } from '@/lib/auth-session'
 import { headers } from 'next/headers'
 import {
   normalizePages,
@@ -30,13 +30,9 @@ async function assertAdminPermission(): Promise<{ id: string; role: string }> {
     // continue
   }
 
-  const nextAuthUser = await getCurrentUser()
-  if (nextAuthUser && !nextAuthUser.banned && (nextAuthUser.role === 'OWNER' || nextAuthUser.role === 'ADMIN')) {
+  const nextAuthUser = await getVerifiedAdminUser()
+  if (nextAuthUser) {
     return { id: nextAuthUser.id, role: nextAuthUser.role }
-  }
-
-  if (process.env.NODE_ENV === 'development') {
-    return { id: 'dev-admin', role: 'owner' }
   }
 
   throw new Error('دسترسی غیرمجاز. تنها مدیران و مالک سیستم مجاز به انجام این عملیات هستند.')
@@ -404,26 +400,35 @@ export async function importBlogPostAction(jsonString: string): Promise<{ succes
     }
 
     // Direct upsert to Prisma for immediate availability
-    await db.blogPost.upsert({
-      where: { slug },
-      update: {
-        title: data.title.trim(),
-        excerpt: data.excerpt?.trim() || '',
-        content: data.content || '',
-        tags: JSON.stringify(blogData.tags),
-        published: true,
-        publishedAt: new Date(),
-      },
-      create: {
-        slug,
-        title: data.title.trim(),
-        excerpt: data.excerpt?.trim() || '',
-        content: data.content || '',
-        tags: JSON.stringify(blogData.tags),
-        published: true,
-        publishedAt: new Date(),
-      },
-    })
+    let prismaAuthorId = authorId ? String(authorId) : undefined
+    if (!prismaAuthorId) {
+      const firstUser = await db.user.findFirst({ select: { id: true } })
+      if (firstUser) prismaAuthorId = firstUser.id
+    }
+    if (prismaAuthorId) {
+      await db.blogPost.upsert({
+        where: { slug },
+        update: {
+          title: data.title.trim(),
+          excerpt: data.excerpt?.trim() || '',
+          content: data.content || '',
+          tags: JSON.stringify(blogData.tags),
+          published: true,
+          publishedAt: new Date(),
+          authorId: prismaAuthorId,
+        },
+        create: {
+          slug,
+          title: data.title.trim(),
+          excerpt: data.excerpt?.trim() || '',
+          content: data.content || '',
+          tags: JSON.stringify(blogData.tags),
+          published: true,
+          publishedAt: new Date(),
+          authorId: prismaAuthorId,
+        },
+      })
+    }
 
     revalidateBlog(slug)
     return { success: true, log, slug }

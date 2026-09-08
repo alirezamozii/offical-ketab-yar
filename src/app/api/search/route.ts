@@ -169,7 +169,7 @@ export async function GET(req: NextRequest) {
       }
 
       // Apply book-level filters via the `book` relation.
-      const bookFilter: Prisma.BookWhereInput = {}
+      const bookFilter: Prisma.BookWhereInput = { isPublished: true }
       if (levels.length) bookFilter.level = { in: levels }
       if (minRating > 0) bookFilter.rating = { gte: minRating }
       if (genres.length) {
@@ -183,7 +183,7 @@ export async function GET(req: NextRequest) {
 
       let pages = await db.bookPage.findMany({
         where: pageWhere,
-        include: { book: { select: BOOK_SELECT } },
+        select: { pageNumber: true, english: true, farsi: true, book: { select: BOOK_SELECT } },
         take: 200, // fetch a generous pool, then score + slice to `limit`
       })
 
@@ -224,7 +224,7 @@ export async function GET(req: NextRequest) {
           }
           pages = await db.bookPage.findMany({
             where: fuzzyWhere,
-            include: { book: { select: BOOK_SELECT } },
+            select: { pageNumber: true, english: true, farsi: true, book: { select: BOOK_SELECT } },
             take: 200,
           })
           if (genres.length) {
@@ -285,6 +285,7 @@ export async function GET(req: NextRequest) {
       // body text doesn't repeat the query.
       const slugsWithPageHits = new Set(deduped.map((h) => h.bookSlug))
       const bookOnlyWhere: Prisma.BookWhereInput = {
+        isPublished: true,
         slug: { notIn: [...slugsWithPageHits] },
         OR: [
           { title: { contains: q } },
@@ -296,7 +297,7 @@ export async function GET(req: NextRequest) {
       if (levels.length) bookOnlyWhere.level = { in: levels }
       if (minRating > 0) bookOnlyWhere.rating = { gte: minRating }
       if (genres.length) {
-        bookOnlyWhere.AND = genres.map((g) => ({ genres: { contains: g } }))
+        bookOnlyWhere.AND = [{ OR: genres.map((g) => ({ genres: { contains: g } })) }]
       }
 
       let bookOnlyMatches = await db.book.findMany({

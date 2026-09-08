@@ -6,7 +6,7 @@
  * Visual CEFR (Common European Framework of Reference) level bar.
  * Renders all 6 levels (A1 → C2) as a horizontal pill row with the
  * book's level highlighted. Color-coded from green (beginner) to
- * deep gold (advanced) to match the Ketab-Yar gold/bronze palette
+ * deep gold (advanced) to match the Bookzi gold/bronze palette
  * (NO indigo/blue per design rules).
  *
  * Persian level descriptors:
@@ -21,7 +21,6 @@
  * ---------------------------------------------------------------
  */
 
-import { useReducedMotion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const
@@ -72,7 +71,6 @@ export function CefrLevelIndicator({
   compact = false,
   className,
 }: CefrLevelIndicatorProps) {
-  const reduceMotion = useReducedMotion()
   const current = normalizeLevel(level)
   const currentIndex = LEVELS.indexOf(current)
   const label = LEVEL_LABELS_FA[current]
@@ -112,11 +110,6 @@ export function CefrLevelIndicator({
                     ? 'bg-muted/40 text-muted-foreground/70 border-border/50'
                     : INACTIVE_TINT,
               )}
-              style={
-                isCurrent && !reduceMotion
-                  ? { transitionDelay: '0.05s' }
-                  : undefined
-              }
             >
               {lvl}
             </span>

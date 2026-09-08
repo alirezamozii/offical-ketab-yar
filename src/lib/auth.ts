@@ -1,5 +1,5 @@
 /**
- * src/lib/auth.ts — NextAuth configuration for Ketab-Yar
+ * src/lib/auth.ts — NextAuth configuration for Bookzi
  *
  * Roles:
  *   - USER   : default, can read books, leave reviews, track progress
@@ -58,7 +58,8 @@ function getAdminWhitelist(): Set<string> | '*' {
   const fallback = process.env.ADMIN_EMAIL_WHITELIST || ''
   const raw = (safeEnv('ADMIN_EMAIL_WHITELIST', fallback) || fallback) as string
   const trimmed = raw.trim()
-  if (!trimmed || trimmed === '*') return '*'
+  if (trimmed === '*') return '*'
+  if (!trimmed) return new Set()
   return new Set(
     trimmed
       .split(',')
@@ -142,7 +143,6 @@ export const authOptions: NextAuthOptions = {
       }
       if (trigger === 'update' && session) {
         if (session.username) token.username = session.username
-        if (session.role) token.role = session.role
         if (session.onboardingCompleted !== undefined) {
           token.onboardingCompleted = session.onboardingCompleted
         }
@@ -182,9 +182,18 @@ export const authOptions: NextAuthOptions = {
           token.picture = dbUser.image
           token.onboardingCompleted = dbUser.onboardingCompleted
           token.englishLevel = dbUser.englishLevel
-          if (dbUser.banned) {
-            token.banned = true
-          }
+          token.banned = dbUser.banned
+        } else {
+          // A signed cookie is not proof that its account still exists.
+          token.id = undefined
+          token.role = 'USER'
+          token.banned = true
+          token.username = undefined
+          token.name = null
+          token.picture = null
+          token.email = undefined
+          token.onboardingCompleted = false
+          token.englishLevel = null
         }
         token._lastDbCheck = Date.now()
       }
@@ -207,7 +216,10 @@ export const authOptions: NextAuthOptions = {
         // Invite mode check
         if (!canSignUp(user.email)) return false
         // Check ban status
-        const dbUser = await db.user.findUnique({ where: { email: user.email } })
+        const dbUser = await db.user.findUnique({
+          where: { email: user.email },
+          select: { id: true, banned: true },
+        })
         if (dbUser?.banned) return false
 
         // ── Cross-device merge (audit 04 §6.5 fix) ──────────────────────

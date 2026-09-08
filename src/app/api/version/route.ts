@@ -23,7 +23,7 @@ export const dynamic = 'force-dynamic'
 export function GET() {
   return NextResponse.json(
     {
-      name: 'Ketab-Yar',
+      name: 'Bookzi',
       version: '0.2.0',
       build: process.env.NODE_ENV ?? 'unknown',
       timestamp: new Date().toISOString(),

@@ -53,6 +53,9 @@ const envSchema = z.object({
     .string()
     .min(16, 'NEXTAUTH_SECRET must be at least 16 characters — generate with `openssl rand -base64 32`'),
 
+  /** Payload CMS JWT signing secret. Must be independent and strong in production. */
+  PAYLOAD_SECRET: z.string().optional().nullable().default(null),
+
   /** Canonical public URL — used for OAuth redirects, absolute links, etc. */
   NEXTAUTH_URL: z
     .string()
@@ -107,6 +110,7 @@ function normalizeRawEnv(raw: NodeJS.ProcessEnv): Record<string, string | undefi
     'OWNER_EMAIL',
     'ADMIN_EMAIL_WHITELIST',
     'DOMAIN',
+    'PAYLOAD_SECRET',
   ] as const
   const out: Record<string, string | undefined> = { ...raw }
   for (const k of OPTIONAL_KEYS) {

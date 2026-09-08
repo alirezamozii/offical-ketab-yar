@@ -23,7 +23,9 @@ const MAX_BOOK_CONTEXT = 4_000
 const MAX_SELECTED_TEXT = 1_000
 
 const MessageSchema = z.object({
-  role: z.enum(['user', 'assistant', 'system']),
+  // System instructions are server-owned; accepting them from clients would
+  // let callers override the tutor policy.
+  role: z.enum(['user', 'assistant']),
   content: z
     .string()
     .trim()

@@ -1,4 +1,3 @@
-import Script from 'next/script'
 import {
   Accordion,
   AccordionContent,
@@ -13,19 +12,19 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'سوالات متداول — کتاب‌یار',
+  title: 'سوالات متداول — بوکزی',
   description:
-    'پاسخ سوال‌های رایج درباره کتاب‌یار و نحوه استفاده از آن: مطالعه دوزبانه، دیکشنری، هایلایت، واژگان و هوش مصنوعی. راهنمای کامل کاربران.',
+    'پاسخ سوال‌های رایج درباره بوکزی و نحوه استفاده از آن: مطالعه دوزبانه، دیکشنری، هایلایت، واژگان و هوش مصنوعی. راهنمای کامل کاربران.',
   keywords: [
-    'سوالات متداول کتاب‌یار',
-    'راهنما کتاب‌یار',
-    'نحوه استفاده از کتاب‌یار',
+    'سوالات متداول بوکزی',
+    'راهنما بوکزی',
+    'نحوه استفاده از بوکزی',
     'دیکشنری هوشمند',
     'هایلایت',
     'واژگان',
     'هوش مصنوعی',
     'پرسش و پاسخ',
-    'FAQ ketabyar',
+    'FAQ bookzi',
     'how to use',
   ],
   alternates: { canonical: `${SITE.url}/help` },
@@ -33,23 +32,23 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'fa_IR',
     url: `${SITE.url}/help`,
-    title: 'سوالات متداول کتاب‌یار',
+    title: 'سوالات متداول بوکزی',
     description:
-      'پاسخ سوال‌های رایج درباره مطالعه دوزبانه، دیکشنری، هایلایت، واژگان و هوش مصنوعی در کتاب‌یار.',
-    siteName: 'کتاب‌یار',
+      'پاسخ سوال‌های رایج درباره مطالعه دوزبانه، دیکشنری، هایلایت، واژگان و هوش مصنوعی در بوکزی.',
+    siteName: 'بوکزی',
     images: [
       {
         url: '/api/og?title=FAQ&subtitle=Frequently%20asked%20questions',
         width: 1200,
         height: 630,
-        alt: 'سوالات متداول کتاب‌یار',
+        alt: 'سوالات متداول بوکزی',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'سوالات متداول کتاب‌یار',
-    description: 'پاسخ سوال‌های رایج درباره نحوه استفاده از کتاب‌یار.',
+    title: 'سوالات متداول بوکزی',
+    description: 'پاسخ سوال‌های رایج درباره نحوه استفاده از بوکزی.',
     images: ['/api/og?title=FAQ&subtitle=Frequently%20asked%20questions'],
   },
   robots: {
@@ -66,7 +65,7 @@ export const metadata: Metadata = {
 
 const FAQS = [
   {
-    q: 'آیا استفاده از کتاب‌یار رایگان است؟',
+    q: 'آیا استفاده از بوکزی رایگان است؟',
     a: 'بله. مطالعه کتاب‌ها، دیکشنری، ذخیره واژگان و هایلایت‌ها رایگان است. برخی ویژگی‌های پیشرفته در نسخه پریمیوم قرار دارند.',
   },
   {
@@ -110,7 +109,7 @@ const faqLd = {
 export default function HelpPage() {
   return (
     <>
-      <Script
+      <script
         id="help-faq-ld"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(faqLd) }}

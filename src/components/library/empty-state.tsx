@@ -1,7 +1,6 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { motion, useReducedMotion } from 'framer-motion'
 import {
   BookOpen,
   Filter,
@@ -42,12 +41,8 @@ export function LibraryEmptyState({
   onClearFilters: () => void
   onPickGenre: (g: string) => void
 }) {
-  const reduceMotion = useReducedMotion()
   return (
-    <motion.div
-      initial={reduceMotion ? undefined : { opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+    <div
       className="relative flex flex-col items-center gap-5 overflow-hidden rounded-2xl border border-dashed border-border/70 bg-card/40 px-6 py-14 text-center"
     >
       {/* Ambient gold halo — radiates from behind the icon tile. */}
@@ -56,35 +51,13 @@ export function LibraryEmptyState({
         aria-hidden="true"
       />
 
-      {/* Decorative SVG bookshelf illustration — sits behind the icon tile.
-          Includes a wooden plank, varied book spines with title stripes, a
-          small reading lamp casting a warm glow, and a potted plant. The
-          whole illustration pulses gently (gated by reduced-motion) so the
-          empty state reads as alive rather than static. */}
-      <motion.svg
+      {/* Decorative SVG bookshelf illustration */}
+      <svg
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-4 -z-10 mx-auto h-40 w-72 sm:h-44 sm:w-80"
+        className="pointer-events-none absolute inset-x-0 top-4 -z-10 mx-auto h-40 w-72 sm:h-44 sm:w-80 opacity-80"
         viewBox="0 0 320 180"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        initial={reduceMotion ? undefined : { opacity: 0.6 }}
-        animate={
-          reduceMotion
-            ? undefined
-            : {
-                opacity: [0.7, 1, 0.7],
-                scale: [1, 1.035, 1],
-              }
-        }
-        transition={
-          reduceMotion
-            ? undefined
-            : {
-                duration: 3.4,
-                repeat: Infinity,
-                ease: 'easeInOut',
-              }
-        }
       >
         <defs>
           {/* Wood-tone gradient for the shelf plank. */}
@@ -252,13 +225,10 @@ export function LibraryEmptyState({
           fill="#dc2626"
           opacity="0.85"
         />
-      </motion.svg>
+      </svg>
 
       <div className="relative">
-        <motion.div
-          initial={reduceMotion ? undefined : { scale: 0.85, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        <div
           className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 text-primary ring-1 ring-primary/20"
         >
           {hasFilters ? (
@@ -266,7 +236,7 @@ export function LibraryEmptyState({
           ) : (
             <BookOpen className="h-8 w-8" />
           )}
-        </motion.div>
+        </div>
       </div>
 
       <div className="space-y-1.5">
@@ -329,7 +299,7 @@ export function LibraryEmptyState({
           />
         </div>
       )}
-    </motion.div>
+    </div>
   )
 }
 

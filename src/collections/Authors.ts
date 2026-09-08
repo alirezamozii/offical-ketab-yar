@@ -8,6 +8,7 @@
 
 import type { CollectionConfig } from 'payload'
 import { slugify } from '../lib/utils'
+import { canDeleteContent } from '../payload/access'
 
 export const authorsCollection: CollectionConfig = {
   slug: 'authors',
@@ -25,7 +26,7 @@ export const authorsCollection: CollectionConfig = {
     read: () => true,
     create: ({ req: { user } }) => Boolean(user),
     update: ({ req: { user } }) => Boolean(user),
-    delete: ({ req: { user } }) => Boolean(user),
+    delete: ({ req: { user } }) => canDeleteContent(user),
   },
   fields: [
     {

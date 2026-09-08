@@ -4,12 +4,12 @@ import { Mail, MessageCircle, Clock, Shield } from 'lucide-react'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'پشتیبانی — کتاب‌یار',
+  title: 'پشتیبانی — بوکزی',
   description:
-    'سوال، پیشنهاد یا گزارش مشکل خود را برای ما بفرستید. تیم پشتیبانی کتاب‌یار معمولاً ظرف ۲۴ ساعت پاسخ می‌دهد.',
+    'سوال، پیشنهاد یا گزارش مشکل خود را برای ما بفرستید. تیم پشتیبانی بوکزی معمولاً ظرف ۲۴ ساعت پاسخ می‌دهد.',
   keywords: [
-    'پشتیبانی کتاب‌یار',
-    'تماس با کتاب‌یار',
+    'پشتیبانی بوکزی',
+    'تماس با بوکزی',
     'گزارش مشکل',
     'پیشنهاد',
     'سوال',
@@ -21,22 +21,22 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'fa_IR',
     url: `${SITE.url}/support`,
-    title: 'پشتیبانی کتاب‌یار',
+    title: 'پشتیبانی بوکزی',
     description:
-      'سوال، پیشنهاد یا گزارش مشکل خود را برای تیم کتاب‌یار بفرستید.',
-    siteName: 'کتاب‌یار',
+      'سوال، پیشنهاد یا گزارش مشکل خود را برای تیم بوکزی بفرستید.',
+    siteName: 'بوکزی',
     images: [
       {
         url: '/api/og?title=Support&subtitle=Get%20in%20touch',
         width: 1200,
         height: 630,
-        alt: 'پشتیبانی کتاب‌یار',
+        alt: 'پشتیبانی بوکزی',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'پشتیبانی کتاب‌یار',
+    title: 'پشتیبانی بوکزی',
     description: 'سوال، پیشنهاد یا گزارش مشکل خود را برای ما بفرستید.',
     images: ['/api/og?title=Support&subtitle=Get%20in%20touch'],
   },

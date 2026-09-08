@@ -28,6 +28,7 @@ import ReactMarkdown from 'react-markdown'
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
+import './typography.css'
 import { notFound } from 'next/navigation'
 import {
   ArrowRight,
@@ -120,17 +121,19 @@ export async function generateMetadata({
   const canonical = `${SITE_URL}/blog/${slug}`
   const description =
     post.excerpt?.trim() ||
-    `${post.title} — مقاله‌ای در بلاگ کتاب‌یار درباره یادگیری زبان با کتاب و مطالعه دوزبانه.`
+    `${post.title} — مقاله‌ای در بلاگ بوکزی درباره یادگیری زبان با کتاب و مطالعه دوزبانه.`
 
   const ogImage = post.coverUrl || `/api/og?title=${encodeURIComponent(post.title)}`
-  const authorName = post.author.name || post.author.username || 'کتاب‌یار'
+  const authorName = post.author.name || post.author.username || 'بوکزی'
 
   return {
-    title: `${post.title} | بلاگ کتاب‌یار`,
+    title: `${post.title} | بلاگ بوکزی`,
     description,
     keywords: [
       post.title,
-      'بلاگ کتاب‌یار',
+      'بلاگ بوکزی',
+      'بوکزی',
+      'Bookzi',
       'یادگیری زبان انگلیسی',
       'مطالعه دوزبانه',
       'معرفی کتاب',
@@ -142,7 +145,7 @@ export async function generateMetadata({
       url: canonical,
       title: post.title,
       description,
-      siteName: 'کتاب‌یار',
+      siteName: 'بوکزی',
       publishedTime: post.publishedAt.toISOString(),
       authors: [authorName],
       images: [
@@ -233,7 +236,7 @@ export default async function BlogPostPage({ params }: PageProps) {
   const tags = parseTags(post.tags)
   const minutes = readingMinutes(post.content)
   const canonical = `${SITE_URL}/blog/${post.slug}`
-  const authorName = post.author.name || post.author.username || 'کتاب‌یار'
+  const authorName = post.author.name || post.author.username || 'بوکزی'
 
   // Fetch up to 3 related posts (same tag, excluding current post).
   // Falls back to most-recent posts if no tag match.
@@ -518,8 +521,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           مطالعه را شروع کنید
         </h2>
         <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-          کتاب‌یار پلتفرمی هوشمند برای مطالعه دوزبانه کتاب‌های انگلیسی با دیکشنری،
-          ترجمه فارسی و واژگان‌ساز است.
+          بوکزی؛ زیست‌بومِ کتاب‌های دوزبانه. مطالعه هوشمند رمان‌های انگلیسی با ترجمه فارسی، دیکشنری و واژگان‌ساز.
         </p>
         <Button asChild variant="glow" className="mt-5 gap-2">
           <Link href="/library" aria-label="مرور کتابخانه">

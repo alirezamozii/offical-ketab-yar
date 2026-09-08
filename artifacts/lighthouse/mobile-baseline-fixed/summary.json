@@ -1,0 +1,211 @@
+[
+  {
+    "page": "home",
+    "path": "/",
+    "preset": "mobile",
+    "run": 1,
+    "scores": {
+      "performance": 67,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 2370.0029999999997,
+      "largest-contentful-paint": 4699.006000000001,
+      "total-blocking-time": 405,
+      "cumulative-layout-shift": 0,
+      "speed-index": 4927.360098604377
+    }
+  },
+  {
+    "page": "library",
+    "path": "/library",
+    "preset": "mobile",
+    "run": 1,
+    "scores": {
+      "performance": 78,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 1528.464,
+      "largest-contentful-paint": 4381.624,
+      "total-blocking-time": 224,
+      "cumulative-layout-shift": 0.0004026727926184414,
+      "speed-index": 4427.758019116183
+    }
+  },
+  {
+    "page": "book-detail",
+    "path": "/books/alice-in-wonderland",
+    "preset": "mobile",
+    "run": 1,
+    "scores": {
+      "performance": 81,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 1226.009,
+      "largest-contentful-paint": 3926.009,
+      "total-blocking-time": 324.50675,
+      "cumulative-layout-shift": 0,
+      "speed-index": 1576.8356489684265
+    }
+  },
+  {
+    "page": "reader",
+    "path": "/books/read/alice-in-wonderland",
+    "preset": "mobile",
+    "run": 1,
+    "scores": {
+      "performance": 75,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 1213.6152,
+      "largest-contentful-paint": 4213.6152,
+      "total-blocking-time": 435.01900000000023,
+      "cumulative-layout-shift": 0,
+      "speed-index": 1213.6152
+    }
+  },
+  {
+    "page": "authors",
+    "path": "/authors",
+    "preset": "mobile",
+    "run": 1,
+    "scores": {
+      "performance": 90,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 1220.25,
+      "largest-contentful-paint": 3620.25,
+      "total-blocking-time": 21.5,
+      "cumulative-layout-shift": 0,
+      "speed-index": 1286.7145413436888
+    }
+  },
+  {
+    "page": "quotes",
+    "path": "/quotes",
+    "preset": "mobile",
+    "run": 1,
+    "scores": {
+      "performance": 82,
+      "accessibility": 93,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 1213.198,
+      "largest-contentful-paint": 4663.197999999999,
+      "total-blocking-time": 110.99999999999955,
+      "cumulative-layout-shift": 0,
+      "speed-index": 1351.275547948394
+    }
+  },
+  {
+    "page": "leaderboard",
+    "path": "/leaderboard",
+    "preset": "mobile",
+    "run": 1,
+    "scores": {
+      "performance": 86,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 1223.2135,
+      "largest-contentful-paint": 3923.2134999999994,
+      "total-blocking-time": 140,
+      "cumulative-layout-shift": 0,
+      "speed-index": 1223.2135
+    }
+  },
+  {
+    "page": "blog",
+    "path": "/blog",
+    "preset": "mobile",
+    "run": 1,
+    "scores": {
+      "performance": 87,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 1073.6933,
+      "largest-contentful-paint": 4073.6933,
+      "total-blocking-time": 15,
+      "cumulative-layout-shift": 0,
+      "speed-index": 1125.811308443026
+    }
+  },
+  {
+    "page": "vocabulary",
+    "path": "/vocabulary",
+    "preset": "mobile",
+    "run": 1,
+    "scores": {
+      "performance": 84,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 1222.1343,
+      "largest-contentful-paint": 4405.335749999999,
+      "total-blocking-time": 109.93284999999923,
+      "cumulative-layout-shift": 0,
+      "speed-index": 1222.1343
+    }
+  },
+  {
+    "page": "help",
+    "path": "/help",
+    "preset": "mobile",
+    "run": 1,
+    "scores": {
+      "performance": 87,
+      "accessibility": 98,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 1216.6803,
+      "largest-contentful-paint": 3916.6803,
+      "total-blocking-time": 114,
+      "cumulative-layout-shift": 0,
+      "speed-index": 1216.6803
+    }
+  },
+  {
+    "page": "terms",
+    "path": "/terms",
+    "preset": "mobile",
+    "run": 1,
+    "scores": {
+      "performance": 88,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 1220.1522,
+      "largest-contentful-paint": 3770.1522000000004,
+      "total-blocking-time": 101,
+      "cumulative-layout-shift": 0,
+      "speed-index": 1220.1522
+    }
+  }
+]

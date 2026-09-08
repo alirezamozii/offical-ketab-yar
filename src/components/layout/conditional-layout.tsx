@@ -1,85 +1,129 @@
-'use client'
+import {
+  BookMarked,
+  BookOpen,
+  Feather,
+  Home,
+  LayoutDashboard,
+  Library,
+  Moon,
+  Search,
+} from 'lucide-react'
 
-import { usePathname } from 'next/navigation'
-import { BottomNav } from '@/components/layout/bottom-nav'
-import { SiteFooter } from '@/components/layout/site-footer'
-import { SiteHeader } from '@/components/layout/site-header'
+const desktopLinks = [
+  ['/', 'خانه'],
+  ['/library', 'کتابخانه'],
+  ['/quotes', 'کوت‌ها'],
+  ['/authors', 'نویسندگان'],
+  ['/blog', 'بلاگ'],
+  ['/vocabulary', 'واژگان'],
+  ['/leaderboard', 'لیدربورد'],
+] as const
 
-/**
- * Fullscreen immersive routes (reader, auth, onboarding) skip the
- * header/footer/bottom-nav so they render as standalone experiences.
- */
-const FULLSCREEN = ['/books/read', '/auth', '/onboarding']
+const mobileLinks = [
+  ['/', 'خانه', Home],
+  ['/library', 'کتابخانه', Library],
+  ['/authors', 'نویسندگان', Feather],
+  ['/vocabulary', 'واژگان', BookMarked],
+  ['/dashboard', 'داشبورد', LayoutDashboard],
+] as const
 
-function isFullscreen(pathname: string) {
-  return FULLSCREEN.some((p) => pathname === p || pathname.startsWith(p + '/'))
+function StaticHeader() {
+  return (
+    <div className="site-shell-header">
+      <header
+        role="banner"
+        aria-label="سرصفحه اصلی"
+        className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b border-gold-500/20 bg-background/95 px-4 backdrop-blur-md sm:h-20 sm:px-10"
+      >
+        <a
+          href="/"
+          aria-label="بوکزی — خانه"
+          className="flex shrink-0 items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-gold-400 via-gold-500 to-gold-700 text-white shadow-md shadow-gold-500/30 sm:h-11 sm:w-11 sm:rounded-2xl">
+            <BookOpen aria-hidden="true" className="h-5 w-5" />
+          </span>
+          <span className="text-lg font-extrabold tracking-tight sm:text-2xl">بوکزی</span>
+        </a>
+
+        <nav aria-label="ناوبری اصلی" className="hidden items-center gap-1 md:flex">
+          {desktopLinks.map(([href, label]) => (
+            <a
+              key={href}
+              href={href}
+              className="rounded-lg px-2.5 py-2 text-xs font-bold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:text-sm"
+            >
+              {label}
+            </a>
+          ))}
+        </nav>
+
+        <div className="flex items-center gap-1.5">
+          <a
+            href="/search"
+            aria-label="جستجو"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <Search aria-hidden="true" className="h-5 w-5" />
+          </a>
+          <button
+            id="theme-toggle"
+            type="button"
+            aria-label="تغییر تم روشن/تاریک"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <Moon aria-hidden="true" className="h-5 w-5" />
+          </button>
+          <a
+            href="/auth/signin"
+            className="inline-flex h-9 items-center rounded-full bg-gradient-to-br from-gold-500 to-gold-700 px-4 text-xs font-bold text-white shadow-md sm:text-sm"
+          >
+            ورود
+          </a>
+        </div>
+      </header>
+      <div aria-hidden="true" className="h-16 sm:h-20" />
+    </div>
+  )
 }
 
-/**
- * ConditionalLayout — splits fullscreen (reader) routes from the standard
- * app shell (header + main + footer + bottom-nav).
- *
- * Layout shell:
- *   <div flex min-h-screen flex-col>
- *     <SiteHeader />     ← sticky top, scroll-shrink, progress bar
- *     <main flex-1>      ← page content (scrolls under the header)
- *     <SiteFooter />     ← mt-auto sticks to bottom on short pages
- *     <BottomNav />      ← mobile-only floating bar (hidden on scroll-down)
- *   </div>
- *
- * The body element (in app/layout.tsx) carries `min-h-screen flex flex-col`
- * so the footer is always pushed to the bottom of the viewport on short
- * pages, and the inner div here composes the actual app shell.
- *
- * Accessibility:
- * - The `<main>` element (and the fullscreen wrapper) carries `id="main-content"`
- *   so the SkipLink can target it. `tabIndex={-1}` makes it programmatically
- *   focusable without breaking tab order, so the skip link can move focus
- *   to it (HTML5 allows focusing any element with tabindex=-1).
- * - `role="main"` is set explicitly so screen readers that don't recognize
- *   the `<main>` element (very old browsers) still get the landmark.
- * - `aria-label` gives the main region a localized, human-readable name.
- *
- * Mobile bottom padding: `pb-24 md:pb-0` on main ensures page content isn't
- * hidden behind the floating bottom-nav (~60px tall + safe-area-inset-bottom).
- * On md+ the bar is hidden so we drop the padding.
- */
-export function ConditionalLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname()
-
-  if (isFullscreen(pathname)) {
-    return (
-      <main
-        id="main-content"
-        role="main"
-        tabIndex={-1}
-        aria-label="محتوای اصلی"
-        className="min-h-screen w-full outline-none"
-      >
-        {children}
-      </main>
-    )
-  }
-
-  const isHomePage = pathname === '/'
-
+function StaticBottomNav() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <SiteHeader />
+    <nav
+      aria-label="ناوبری پایین — دسترسی سریع به بخش‌های اصلی"
+      className="site-shell-bottom fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 pb-safe backdrop-blur-md md:hidden"
+    >
+      <ul className="mx-auto flex max-w-md items-stretch px-2">
+        {mobileLinks.map(([href, label, Icon]) => (
+          <li key={href} className="flex-1">
+            <a
+              href={href}
+              className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg py-1.5 text-[10px] font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Icon aria-hidden="true" className="h-[18px] w-[18px]" />
+              <span>{label}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
+
+export function ConditionalLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="site-shell flex min-h-screen flex-col">
+      <StaticHeader />
       <main
         id="main-content"
         role="main"
         tabIndex={-1}
-        aria-label="محتوای اصلی کتاب‌یار"
-        // pb-24 = 96px — clears the bottom-nav (~60px) + safe-area + a bit
-        // of breathing room so the last card isn't pinned to the bar.
-        // scroll-mt-16 — anchor jumps land below the sticky 64px header.
-        className="flex-1 scroll-mt-16 pb-24 outline-none md:pb-0"
+        aria-label="محتوای اصلی بوکزی"
+        className="site-shell-main flex-1 scroll-mt-16 pb-24 outline-none md:pb-0"
       >
         {children}
       </main>
-      {isHomePage && <SiteFooter />}
-      <BottomNav />
+      <StaticBottomNav />
     </div>
   )
 }

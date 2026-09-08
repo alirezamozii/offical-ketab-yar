@@ -1,0 +1,21 @@
+[
+  {
+    "page": "terms",
+    "path": "/terms",
+    "preset": "mobile",
+    "run": 1,
+    "scores": {
+      "performance": 87,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "metrics": {
+      "first-contentful-paint": 1224.2799,
+      "largest-contentful-paint": 3924.2799000000005,
+      "total-blocking-time": 100.5,
+      "cumulative-layout-shift": 0,
+      "speed-index": 2613.662145558678
+    }
+  }
+]

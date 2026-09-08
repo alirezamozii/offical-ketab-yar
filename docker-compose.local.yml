@@ -1,0 +1,77 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Bookzi (بوکزی) — local development & test docker-compose stack
+#
+# Usage:
+#   1. Start PostgreSQL only (for local development with `npm run dev`):
+#        npm run db:up
+#        OR: docker compose -f docker-compose.local.yml up -d db
+#
+#   2. Start full stack (PostgreSQL + Next.js app):
+#        npm run docker:local:up
+#        OR: docker compose -f docker-compose.local.yml up -d --build
+#
+#   3. Stop stack:
+#        docker compose -f docker-compose.local.yml down
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  # ── Postgres 16 ─────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: bookzi-local-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ky}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ketabyar_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-ketabyar}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C.UTF-8"
+    volumes:
+      - pgdata_local:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ky} -d ${POSTGRES_DB:-ketabyar}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - bookzi-local-net
+
+  # ── Next.js app (standalone) ───────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bookzi-local-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-ky}:${POSTGRES_PASSWORD:-ketabyar_secret}@db:5432/${POSTGRES_DB:-ketabyar}?schema=public"
+      NODE_ENV: production
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-development_secret_key_at_least_16_characters_long}
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET:-development_secret_key_at_least_32_characters_long_for_payload}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      SIGNUP_MODE: ${SIGNUP_MODE:-open}
+      ADMIN_EMAIL_WHITELIST: ${ADMIN_EMAIL_WHITELIST:-*}
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - uploads_local:/app/public/uploads
+      - covers_local:/app/public/covers
+      - media_local:/app/public/media
+    networks:
+      - bookzi-local-net
+
+networks:
+  bookzi-local-net:
+    driver: bridge
+
+volumes:
+  pgdata_local:
+  uploads_local:
+  covers_local:
+  media_local:

@@ -21,7 +21,7 @@ export const Dashboard = async () => {
           color: 'var(--payload-color-primary-500, #f4d35e)',
           textAlign: 'right'
         }}>
-          پیشخوان مدیریت و کنترل پنل کتاب‌یار
+          پیشخوان مدیریت و کنترل پنل بوکزی
         </h1>
         <DashboardClient 
           initialStats={initialStats} 

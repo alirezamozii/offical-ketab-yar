@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import { cache, TTL } from '@/lib/cache'
-import { BOOK_LIST_SELECT, toListItem } from '@/lib/books-query'
+import { getBookBySlug } from '@/lib/data'
 
 /**
  * GET /api/books/[slug]
@@ -21,27 +19,7 @@ export async function GET(
       )
     }
 
-    const cacheKey = `book:detail:${slug}`
-    const book = await cache.wrap(cacheKey, async () => {
-      const row = await db.book.findUnique({
-        where: { slug, isPublished: true },
-        select: {
-          ...BOOK_LIST_SELECT,
-          chapters: {
-            select: {
-              id: true,
-              title: true,
-              titleFa: true,
-              slug: true,
-              order: true,
-              startPage: true,
-            },
-            orderBy: { order: 'asc' },
-          },
-        },
-      })
-      return row
-    }, TTL.BOOKS_LIST)
+    const book = await getBookBySlug(slug)
 
     if (!book) {
       return NextResponse.json(
@@ -50,15 +28,16 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({
-      ...toListItem(book),
-      chapters: book.chapters,
+    return NextResponse.json(book, {
+      headers: {
+        'Cache-Control': 'public, max-age=60, s-maxage=300',
+      },
     })
   } catch (err) {
     console.error('[/api/books/[slug]] Error:', err)
     return NextResponse.json(
-      { error: 'خطا در دریافت اطلاعات کتاب.' },
-      { status: 500 }
+      { error: 'کتاب مورد نظر یافت نشد.' },
+      { status: 404 }
     )
   }
 }

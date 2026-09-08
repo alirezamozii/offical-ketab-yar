@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth-session'
+import { requireAdminApi } from '@/lib/auth-session'
 import { db } from '@/lib/db'
 import { logAuditAction } from '@/lib/audit'
 import { getClientIpHash } from '@/lib/rate-limit'
-import { writeFile, mkdir } from 'fs/promises'
+import { writeFile, mkdir, unlink } from 'fs/promises'
 import { join } from 'path'
+import { randomUUID } from 'crypto'
+import sharp from 'sharp'
 
 const ALLOWED_MIME_TYPES = new Set([
   'image/jpeg',
@@ -27,10 +29,8 @@ const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024 // 10 MB
  */
 export async function POST(req: NextRequest) {
   try {
-    const user = await getCurrentUser()
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'OWNER')) {
-      return NextResponse.json({ error: 'دسترسی غیرمجاز.' }, { status: 403 })
-    }
+    const user = await requireAdminApi()
+    if (user instanceof NextResponse) return user
 
     const formData = await req.formData()
     const file = formData.get('file') as File | null
@@ -58,39 +58,55 @@ export async function POST(req: NextRequest) {
     }
 
     const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
+    let image: { data: Buffer; info: sharp.OutputInfo }
+    try {
+      image = await sharp(Buffer.from(bytes), { limitInputPixels: 40_000_000 })
+        .rotate()
+        .resize({ width: 2000, height: 2000, fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 85 })
+        .toBuffer({ resolveWithObject: true })
+    } catch {
+      return NextResponse.json({ error: 'محتوای فایل یک تصویر معتبر نیست.' }, { status: 400 })
+    }
 
-    const ext = mimeType.split('/')[1] || 'png'
-    const sanitizeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const filename = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}_${sanitizeName}.${ext}`
+    const filename = `${randomUUID()}.webp`
 
     const uploadDir = join(process.cwd(), 'public', 'uploads')
     await mkdir(uploadDir, { recursive: true })
 
     const filepath = join(uploadDir, filename)
-    await writeFile(filepath, buffer)
+    await writeFile(filepath, image.data, { flag: 'wx' })
 
     const publicUrl = `/uploads/${filename}`
 
-    const asset = await db.imageAsset.create({
-      data: {
-        userId: user.id,
-        filename,
-        originalUrl: publicUrl,
-        mimeType,
-        sizeBytes: file.size,
-        alt: file.name,
-      },
-    })
+    let asset: { id: string }
+    try {
+      asset = await db.imageAsset.create({
+        data: {
+          userId: user.id,
+          filename,
+          originalUrl: publicUrl,
+          mimeType: 'image/webp',
+          sizeBytes: image.data.length,
+          width: image.info.width,
+          height: image.info.height,
+          alt: file.name.slice(0, 240),
+        },
+        select: { id: true },
+      })
+    } catch (error) {
+      await unlink(filepath).catch(() => {})
+      throw error
+    }
 
     const ipHash = await getClientIpHash(req)
     await logAuditAction({
       actorId: user.id,
       action: 'ADMIN_IMAGE_UPLOAD',
       target: asset.id,
-      details: { filename, url: publicUrl, sizeBytes: file.size },
+      details: { filename, url: publicUrl, sizeBytes: image.data.length },
       ipHash,
-    })
+    }).catch((error) => console.error('[/api/admin/upload] Audit log failed:', error))
 
     return NextResponse.json({
       success: true,

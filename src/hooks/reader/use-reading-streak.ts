@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { STORAGE_KEYS } from '@/lib/storage-keys'
+import { recordReadingDay } from '@/lib/goals'
 
 const KEY = STORAGE_KEYS.streak
 
@@ -112,6 +113,11 @@ export function recordReadingTick(secondsElapsed: number) {
     todaySeconds,
   }
   save(next)
+  recordReadingDay({
+    date: today,
+    secondsDelta: Math.max(0, secondsElapsed),
+    hour: new Date(now).getHours(),
+  })
 }
 
 /** Reset today's seconds at day rollover. */

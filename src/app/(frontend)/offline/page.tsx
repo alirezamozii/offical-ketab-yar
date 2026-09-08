@@ -13,6 +13,7 @@ import {
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { STORAGE_KEYS } from '@/lib/storage-keys'
+import { getFullyCachedBooks } from '@/lib/book-prefetcher'
 
 /**
  * Offline fallback page (`/offline`).
@@ -34,10 +35,8 @@ import { STORAGE_KEYS } from '@/lib/storage-keys'
  * `/offline` via the SW fallback (a graceful degradation, no 500).
  *
  * To make this discoverable, we split the book list into two sections:
- *   • "در دسترس آفلاین" — books with a reader-session-history entry
- *     (`ky_reader_session_history`), which means the user has opened them
- *     at least once and the SW has cached their content. These get a
- *     "آفلاین" badge.
+ *   • "در دسترس آفلاین" — books whose complete-download marker was written
+ *     after every content request finished. These get an "آفلاین" badge.
  *   • "علاقه‌مندی‌ها" — favorited books (`ky_favorites`). These *might*
  *     be cached if the user has read them, but we don't have a guarantee,
  *     so no badge.
@@ -69,14 +68,6 @@ type ProgressEntry = {
 }
 
 type ProgressMap = Record<string, ProgressEntry>
-
-type ReaderSessionHistoryEntry = {
-  startedAt: string
-  endedAt: string
-  seconds: number
-  bookSlug: string
-  bookTitle: string
-}
 
 // ─── localStorage readers (all client-gated) ──────────────────────────────
 
@@ -117,18 +108,6 @@ function readProgress(): ProgressMap {
   }
 }
 
-function readSessionHistory(): ReaderSessionHistoryEntry[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.readerSessionHistory)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? (parsed as ReaderSessionHistoryEntry[]) : []
-  } catch {
-    return []
-  }
-}
-
 /** Defensive online check — `navigator.onLine` can be undefined in some webviews. */
 function isOnline(): boolean {
   if (typeof navigator === 'undefined') return true
@@ -152,10 +131,7 @@ export default function OfflinePage() {
   const [online, setOnline] = useState<boolean>(() => isOnline())
   const [books] = useState<CachedBook[]>(() => readFavorites())
   const [progress] = useState<ProgressMap>(() => readProgress())
-  const [readSlugs] = useState<Set<string>>(() => {
-    const history = readSessionHistory()
-    return new Set(history.map((h) => h.bookSlug))
-  })
+  const [cachedSlugs] = useState<Set<string>>(() => new Set(getFullyCachedBooks()))
   const [retrying, setRetrying] = useState(false)
   const loaded = true
 
@@ -193,18 +169,18 @@ export default function OfflinePage() {
     }, 500)
   }, [])
 
-  // Split favorites into "cached" (user has opened → SW has content) and
+  // Split favorites into explicitly downloaded and favorites-only groups.
   // "favorites-only" (may or may not be cached). Books in both groups are
   // rendered the same way; the cached group gets a small "آفلاین" badge.
   const { cachedBooks, favOnlyBooks } = useMemo(() => {
     const cached: CachedBook[] = []
     const favOnly: CachedBook[] = []
     for (const b of books) {
-      if (readSlugs.has(b.slug)) cached.push(b)
+      if (cachedSlugs.has(b.slug)) cached.push(b)
       else favOnly.push(b)
     }
     return { cachedBooks: cached, favOnlyBooks: favOnly }
-  }, [books, readSlugs])
+  }, [books, cachedSlugs])
 
   return (
     <div className="relative mx-auto flex min-h-[80vh] max-w-3xl flex-col items-center px-4 py-12 text-center sm:px-6">
@@ -216,7 +192,7 @@ export default function OfflinePage() {
 
       {/* Brand wordmark */}
       <span className="mb-8 text-gradient-gold text-sm font-bold tracking-wide">
-        کتاب‌یار
+        بوکزی
       </span>
 
       {/* Icon — a "torn book with wifi-off" feel using two stacked icons */}

@@ -1,6 +1,5 @@
 'use client'
 
-import { motion, useReducedMotion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -29,23 +28,15 @@ export function ActiveFilterChips({
   filters: ActiveFilter[]
   onClearAll?: () => void
 }) {
-  const reduceMotion = useReducedMotion()
   if (filters.length === 0) return null
   return (
     <div className="flex flex-wrap items-center gap-2">
       <span className="text-xs font-medium text-muted-foreground">فیلترهای فعال:</span>
-      {filters.map((f, i) => (
-        <motion.button
+      {filters.map((f) => (
+        <button
           key={f.key}
           type="button"
           onClick={f.onRemove}
-          initial={reduceMotion ? undefined : { opacity: 0, y: -4, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{
-            delay: reduceMotion ? 0 : Math.min(i * 0.04, 0.2),
-            duration: 0.25,
-            ease: [0.16, 1, 0.3, 1],
-          }}
           className={cn(
             'group inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1',
             'text-xs font-medium text-primary transition-colors hover:bg-primary/20',
@@ -54,7 +45,7 @@ export function ActiveFilterChips({
         >
           <span>{f.label}</span>
           <X className="h-3 w-3 transition-transform duration-200 group-hover:rotate-90" />
-        </motion.button>
+        </button>
       ))}
       {onClearAll && filters.length > 1 && (
         <>

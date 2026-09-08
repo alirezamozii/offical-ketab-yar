@@ -21,7 +21,7 @@ export const UsersCollection: CollectionConfig = {
           const count = await req.payload.count({ collection: 'users' })
           return count.totalDocs === 0
         } catch {
-          return true
+          return false
         }
       }
       return req.user.role === 'owner'
@@ -75,7 +75,7 @@ export const UsersCollection: CollectionConfig = {
               data.role = 'owner'
             }
           } catch {
-            data.role = 'owner'
+            // Never grant ownership when the bootstrap check is unavailable.
           }
         }
         return data

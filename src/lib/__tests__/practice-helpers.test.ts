@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  loadStats,
-  saveStats,
-  shuffle,
-  buildDeck,
-} from '../../components/vocabulary/practice-client'
+import { shuffle, buildDeck } from '../../components/vocabulary/practice-client'
 
 describe('practice-client pure helper functions', () => {
   describe('shuffle', () => {

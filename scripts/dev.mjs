@@ -53,7 +53,7 @@ if (os.platform() === 'win32') {
   }
 }
 
-console.log('\n🚀 Starting Ketab-Yar development environment...\n')
+console.log('🚀 Starting Bookzi (بوکزی) development environment...\n')
 
 // 1. Ensure Docker Postgres container is up and healthy
 try {
@@ -84,7 +84,8 @@ try {
     console.log('✅ Postgres container is ready.\n')
     // Ensure payload schema exists for Payload CMS isolation
     try {
-      execSync('docker compose exec -T db psql -U ky -d ketabyar -c "CREATE SCHEMA IF NOT EXISTS payload;"', {
+      const dbName = process.env.POSTGRES_DB || 'bookzi'
+      execSync(`docker compose exec -T db psql -U ky -d ${dbName} -c "CREATE SCHEMA IF NOT EXISTS payload;"`, {
         stdio: 'ignore',
       })
       console.log('✅ Payload PostgreSQL schema verified.\n')
@@ -98,28 +99,60 @@ try {
   console.warn('⚠️ Docker compose skipped or Docker Desktop is not running.\n')
 }
 
-// 2. Ensure Prisma schema & client are in sync
-try {
-  console.log('🔄 Syncing Prisma database schema...')
-  execSync('npx prisma db push --skip-generate --accept-data-loss', {
-    stdio: 'inherit',
+import net from 'node:net'
+
+async function checkPostgresPort() {
+  return new Promise((resolve) => {
+    const socket = net.createConnection({ port: 5432, host: '127.0.0.1', timeout: 500 }, () => {
+      socket.destroy()
+      resolve(true)
+    })
+    socket.on('error', () => resolve(false))
+    socket.on('timeout', () => {
+      socket.destroy()
+      resolve(false)
+    })
   })
-  execSync('npx prisma generate', { stdio: 'inherit' })
-  console.log('✅ Database schema and client in sync.\n')
-} catch (err) {
-  console.warn('⚠️ Prisma sync skipped.\n')
+}
+
+const isPostgresUp = await checkPostgresPort()
+if (!isPostgresUp) {
+  process.env.DB_OFFLINE = 'true'
+  console.log('ℹ️ PostgreSQL is offline. Instant mock/seed fallback enabled (DB_OFFLINE=true).\n')
+}
+
+// 2. Ensure Prisma schema & client are in sync (only if Postgres is online)
+if (isPostgresUp) {
+  try {
+    console.log('🔄 Syncing Prisma database schema...')
+    execSync('npx prisma db push --skip-generate --accept-data-loss', {
+      stdio: 'inherit',
+    })
+    execSync('npx prisma generate', { stdio: 'inherit' })
+    console.log('✅ Database schema and client in sync.\n')
+  } catch (err) {
+    console.warn('⚠️ Prisma sync skipped.\n')
+  }
 }
 
 // 3. Launch Next.js dev server
 // Set PAYLOAD_CI=true so Drizzle's push auto-accepts new table prompts
 console.log('⚡ Starting Next.js dev server on port 3000...\n')
-const devProcess = spawn('npx', ['next', 'dev', '-p', '3000'], {
-  stdio: 'inherit',
+const nodeOptions = [
+  process.env.NODE_OPTIONS || '',
+  '--unhandled-rejections=warn',
+]
+  .filter(Boolean)
+  .join(' ')
+
+const devProcess = spawn('npx', ['next', 'dev', '-p', process.env.PORT || '3000'], {
+  stdio: ['ignore', 'inherit', 'inherit'],
   shell: true,
   env: {
     ...process.env,
     // Tell Drizzle to auto-accept schema changes without interactive prompts
-    CI: 'true',
+    PAYLOAD_CI: 'true',
+    NODE_OPTIONS: nodeOptions,
   },
 })
 
@@ -130,6 +163,7 @@ for (const sig of ['SIGINT', 'SIGTERM']) {
   })
 }
 
-devProcess.on('exit', (code) => {
+devProcess.on('exit', (code, signal) => {
+  console.log(`\n🛑 Next.js dev server exited (code: ${code}, signal: ${signal})\n`)
   process.exit(code ?? 0)
 })

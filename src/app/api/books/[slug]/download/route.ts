@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth-session'
+import { requireUserApi } from '@/lib/auth-session'
 
 export async function GET(
   _req: NextRequest,
@@ -19,13 +19,8 @@ export async function GET(
 ) {
   const { slug } = await params
 
-  const user = await getCurrentUser()
-  if (!user) {
-    return NextResponse.json(
-      { error: 'برای دانلود کتاب باید وارد شوید.' },
-      { status: 401 },
-    )
-  }
+  const user = await requireUserApi()
+  if (user instanceof NextResponse) return user
 
   const book = await db.book.findUnique({
     where: { slug },
@@ -81,7 +76,7 @@ export async function GET(
     coverAccent: book.coverAccent,
     coverImageUrl: book.coverImageUrl,
     coverBlurhash: book.coverBlurhash,
-    genres: JSON.parse(book.genres || '[]'),
+    genres: parseGenres(book.genres),
     level: book.level,
     language: book.language,
     publishedYear: book.publishedYear,
@@ -118,4 +113,13 @@ export async function GET(
       'Cache-Control': 'private, no-cache',
     },
   })
+}
+
+function parseGenres(raw: string): string[] {
+  try {
+    const value: unknown = JSON.parse(raw || '[]')
+    return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
+  } catch {
+    return []
+  }
 }

@@ -5,7 +5,7 @@ import { Prisma } from '@prisma/client'
 import { db } from '../../lib/db'
 import { slugify } from '../../lib/utils'
 import { revalidateUsers, revalidateBook } from '../../lib/revalidate'
-import { getCurrentUser } from '@/lib/auth-session'
+import { getVerifiedAdminUser } from '@/lib/auth-session'
 import {
   normalizePages,
   normalizeChapters,
@@ -32,6 +32,9 @@ async function assertAdminPermission(requireOwner = false): Promise<CallerAdminI
     if (payloadUser) {
       const normalizedRole: 'owner' | 'admin' | 'editor' =
         payloadUser.role === 'owner' ? 'owner' : payloadUser.role === 'admin' ? 'admin' : 'editor'
+      if (normalizedRole === 'editor') {
+        throw new Error('دسترسی غیرمجاز. این عملیات به نقش مدیر نیاز دارد.')
+      }
       if (requireOwner && normalizedRole !== 'owner') {
         throw new Error('تنها مالک اصلی پنل (Owner) مجاز به انجام این عملیات است.')
       }
@@ -42,8 +45,8 @@ async function assertAdminPermission(requireOwner = false): Promise<CallerAdminI
   }
 
   // 2. Check NextAuth session user
-  const nextAuthUser = await getCurrentUser()
-  if (nextAuthUser && !nextAuthUser.banned) {
+  const nextAuthUser = await getVerifiedAdminUser()
+  if (nextAuthUser) {
     const normalizedRole: 'owner' | 'admin' | 'editor' =
       nextAuthUser.role === 'OWNER' ? 'owner' : nextAuthUser.role === 'ADMIN' ? 'admin' : 'editor'
     if (requireOwner && normalizedRole !== 'owner') {
@@ -52,11 +55,6 @@ async function assertAdminPermission(requireOwner = false): Promise<CallerAdminI
     if (nextAuthUser.role === 'OWNER' || nextAuthUser.role === 'ADMIN') {
       return { id: nextAuthUser.id, role: normalizedRole, email: nextAuthUser.email }
     }
-  }
-
-  // In local dev environment, allow fallback if no auth configured
-  if (process.env.NODE_ENV === 'development') {
-    return { id: 'dev-admin', role: 'owner', email: 'alirezakaregar05@gmail.com' }
   }
 
   throw new Error('دسترسی غیرمجاز. شما باید به عنوان مدیر وارد شده باشید.')
@@ -70,7 +68,7 @@ export async function getCurrentAdminRole(): Promise<'owner' | 'admin' | 'editor
     const caller = await assertAdminPermission(false)
     return caller.role
   } catch {
-    return 'owner'
+    return 'editor'
   }
 }
 
@@ -460,7 +458,9 @@ async function resolveOrCreateBook(
   const bookSlug = rawData.slug?.trim() || slugify(rawData.title)
   appendLog(`در حال آماده‌سازی داده‌های کتاب: "${rawData.title}" (شناسه: ${bookSlug})...`)
 
-  const bookData = buildBookData(rawData, authorId)
+  const normalizedPages = normalizePages(rawData.pages)
+  const normalizedChapters = normalizeChapters(rawData.chapters)
+  const bookData = buildBookData(rawData, bookSlug, authorId, normalizedPages, normalizedChapters)
 
   const bookDocs = await payload.find({
     collection: 'books',

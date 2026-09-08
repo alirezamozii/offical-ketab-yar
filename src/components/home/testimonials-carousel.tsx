@@ -12,7 +12,7 @@ import {
   Trophy,
   Volume2,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 
 const FEATURE_SCENARIOS = [
@@ -58,13 +58,61 @@ const INTERVAL_MS = 5500
 export function TestimonialsCarousel() {
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const isVisibleRef = useRef(false)
 
+  // Only run the auto-advance interval when the carousel is in viewport
+  // AND the tab is active AND the user hasn't hovered (paused)
   useEffect(() => {
     if (paused) return
-    const id = setInterval(() => {
-      setIndex((i) => (i + 1) % FEATURE_SCENARIOS.length)
-    }, INTERVAL_MS)
-    return () => clearInterval(id)
+
+    const el = containerRef.current
+    if (!el) return
+
+    let intervalId: ReturnType<typeof setInterval> | undefined
+
+    const startInterval = () => {
+      if (intervalId) return
+      intervalId = setInterval(() => {
+        setIndex((i) => (i + 1) % FEATURE_SCENARIOS.length)
+      }, INTERVAL_MS)
+    }
+
+    const stopInterval = () => {
+      if (intervalId) {
+        clearInterval(intervalId)
+        intervalId = undefined
+      }
+    }
+
+    const onVisibilityChange = () => {
+      if (document.hidden || !isVisibleRef.current) {
+        stopInterval()
+      } else {
+        startInterval()
+      }
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isVisibleRef.current = entry.isIntersecting
+        if (entry.isIntersecting && !document.hidden) {
+          startInterval()
+        } else {
+          stopInterval()
+        }
+      },
+      { threshold: 0.3 },
+    )
+
+    observer.observe(el)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    return () => {
+      stopInterval()
+      observer.disconnect()
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
   }, [paused])
 
   function go(dir: 1 | -1) {
@@ -78,6 +126,7 @@ export function TestimonialsCarousel() {
 
   return (
     <div
+      ref={containerRef}
       className="relative"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
@@ -92,14 +141,14 @@ export function TestimonialsCarousel() {
           'p-10 sm:p-14',
         )}
       >
-        {/* Ambient gold halos */}
+        {/* Ambient gold halos — GPU radial gradient */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-gold-500/10 blur-3xl"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -bottom-20 -right-20 h-72 w-72 rounded-full bg-gold-700/8 blur-3xl"
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              'radial-gradient(circle at 10% 10%, rgba(212,175,55,0.10) 0%, transparent 55%), radial-gradient(circle at 90% 90%, rgba(138,104,71,0.08) 0%, transparent 55%)',
+          }}
         />
         {/* Gilded top hairline */}
         <div
@@ -117,7 +166,7 @@ export function TestimonialsCarousel() {
         <div className="relative mx-auto flex min-h-[180px] max-w-2xl flex-col items-center justify-center gap-6 text-center">
           <div
             key={index}
-            className="flex flex-col items-center gap-6 animate-in fade-in duration-300 fill-mode-both"
+            className="flex flex-col items-center gap-6 testimonial-enter"
           >
             {/* Icon chip */}
             <span

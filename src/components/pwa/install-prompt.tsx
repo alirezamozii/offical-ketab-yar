@@ -96,7 +96,7 @@ export function InstallPrompt() {
 
   useEffect(() => {
     // Check 24-hour rate limit on mount
-    if (!canShowInstallPrompt()) return
+    if (!canShowInstallPrompt()) return undefined
 
     const onBeforeInstall = (e: Event) => {
       // Re-verify 24h limit before presenting UI
@@ -116,7 +116,7 @@ export function InstallPrompt() {
       setDeferred(null)
       // Permanently hide — the app is installed, no need to re-prompt.
       writeDismissedAt(Number.MAX_SAFE_INTEGER)
-      toast.success('کتاب‌یار نصب شد!', {
+      toast.success('بوکزی نصب شد!', {
         description: 'می‌توانید آن را از صفحه اصلی باز کنید.',
       })
 
@@ -130,9 +130,9 @@ export function InstallPrompt() {
             if (book.slug) {
               fetch(`/api/books/${book.slug}`)
                 .then((res) => res.json())
-                .then((data) => {
+                .then(async (data) => {
                   if (data && data.pageCount) {
-                    prefetchBook(book.slug, book.title, data.pageCount)
+                    await prefetchBook(book.slug, book.title, data.pageCount)
                   }
                 })
                 .catch(() => {})
@@ -158,20 +158,37 @@ export function InstallPrompt() {
     try {
       await deferred.prompt()
       const choice = await deferred.userChoice
-      if (choice.outcome === 'dismissed') {
-        // User dismissed the native prompt — record cooldown so it won't show again for 24h
+      if (choice.outcome === 'accepted') {
+        toast.success('بوکزی نصب شد!', {
+          description: 'می‌توانید آن را از صفحه اصلی باز کنید.',
+        })
+
+        // Prefetch favorites in background for immediate offline availability
+        try {
+          const rawFavs = localStorage.getItem('ky_favorites')
+          if (rawFavs) {
+            const ids: string[] = JSON.parse(rawFavs)
+            if (Array.isArray(ids) && ids.length > 0) {
+              fetch('/api/books/prefetch-offline', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bookIds: ids.slice(0, 5) }),
+              }).catch(() => { /* best-effort background prefetch */ })
+            }
+          }
+        } catch { /* ignore localStorage parse error */ }
+        
+        writeDismissedAt(Number.MAX_SAFE_INTEGER)
+      } else {
         writeDismissedAt(Date.now())
         writeLastShownAt(Date.now())
-        setVisible(false)
       }
-      // `appinstalled` will fire if accepted; that handler permanently hides.
     } catch {
-      toast.error('نصب ناموفق بود', {
-        description: 'لطفاً از منوی مرورگر نصب را امتحان کنید.',
-      })
+      toast.error('نصب با خطا مواجه شد')
     } finally {
       setDeferred(null)
       setInstalling(false)
+      setVisible(false)
     }
   }
 
@@ -186,7 +203,7 @@ export function InstallPrompt() {
   return (
     <div
       role="dialog"
-      aria-label="نصب کتاب‌یار"
+      aria-label="نصب بوکزی"
       aria-live="polite"
       className="pointer-events-none fixed inset-x-0 top-3 z-[100] flex justify-center px-3"
     >
@@ -201,7 +218,7 @@ export function InstallPrompt() {
 
         <div className="min-w-0 flex-1 text-right">
           <p className="text-sm font-bold leading-tight">
-            کتاب‌یار را نصب کنید
+            بوکزی را نصب کنید
           </p>
           <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
             دسترسی سریع و مطالعه آفلاین — مستقیم از صفحه اصلی

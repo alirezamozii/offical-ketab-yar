@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Ketab-Yar — production Dockerfile
+# Bookzi (بوکزی) — production Dockerfile
 #
 # Multi-stage build:
 #   1. deps   — install bun + production dependencies (cached layer)
@@ -20,14 +20,14 @@
 #     `libssl.so.3: cannot open shared object file` at first DB call.
 #
 # Build:
-#   docker build -t ketab-yar:latest .
+#   docker build -t bookzi:latest .
 #
 # Run (standalone, with Postgres URL):
 #   docker run -p 3000:3000 \
-#     -e DATABASE_URL='postgresql://ky:ky@db:5432/ketabyar?schema=public' \
+#     -e DATABASE_URL='postgresql://ky:ky@db:5432/bookzi?schema=public' \
 #     -e NEXTAUTH_SECRET="$(openssl rand -base64 32)" \
 #     -e NEXTAUTH_URL='https://your-domain.tld' \
-#     ketab-yar:latest
+#     bookzi:latest
 # ─────────────────────────────────────────────────────────────────────────────
 
 # ── Stage 1: deps ────────────────────────────────────────────────────────────
@@ -60,13 +60,13 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/package.json ./package.json
 
 # Copy the rest of the source. (.dockerignore filters out db/*.db, .next,
-# node_modules, skills, upload, audits, ketab-yar-clone, etc.)
+# node_modules, skills, upload, audits, bookzi-clone, etc.)
 COPY . .
 
 # Disable Next.js telemetry and set build-time placeholders for env validation
 ENV NEXT_TELEMETRY_DISABLED=1 \
     NEXT_STANDALONE="true" \
-    DATABASE_URL="postgresql://ky:dummy@127.0.0.1:5432/ketabyar?schema=public" \
+    DATABASE_URL="postgresql://ky:dummy@127.0.0.1:5432/bookzi?schema=public" \
     NEXTAUTH_SECRET="development_secret_key_at_least_16_characters_long" \
     NEXTAUTH_URL="http://127.0.0.1:3000" \
     PAYLOAD_SECRET="development_secret_key_at_least_16_characters_long" \

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import fs from 'fs'
-import path from 'path'
-import { parseEpubBuffer, parseZipBuffer } from '@/lib/epub-parser'
+
+import { parseEpubBuffer } from '@/lib/epub-parser'
 import {
   EPUB_BATCH_TRANSLATE_PROMPT,
   buildEpubBatchAiPrompt,
@@ -35,7 +35,7 @@ describe('EPUB Studio & Batch Translation System', () => {
 
     expect(prompt).toContain("Harry Potter and the Philosopher's Stone")
     expect(prompt).toContain('Chapter 1: The Boy Who Lived')
-    expect(prompt).toContain('Direct Non-Interactive Mode')
+    expect(prompt).toContain('قالب الزامی خروجی')
     expect(prompt).toContain('Mr. Dursley was the director')
     expect(prompt).toContain('Mrs. Dursley was thin and blonde')
   })

@@ -24,7 +24,7 @@ export async function getSession() {
 
 export async function getCurrentUser(): Promise<SessionUser | null> {
   const session = await getSession()
-  if (!session?.user) return null
+  if (!session?.user?.id) return null
   const u = session.user
   return {
     id: u.id ?? '',
@@ -39,18 +39,28 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   }
 }
 
+/** Resolve privileged access from the database so revocations take effect immediately. */
+export async function getVerifiedAdminUser(candidate?: SessionUser | null): Promise<SessionUser | null> {
+  const user = candidate === undefined ? await getCurrentUser() : candidate
+  if (!user) return null
+  const { db } = await import('./db')
+  const current = await db.user.findUnique({
+    where: { id: user.id },
+    select: { role: true, banned: true },
+  })
+  if (!current || current.banned || !['ADMIN', 'OWNER'].includes(current.role)) return null
+  return { ...user, ...current }
+}
+
 /**
  * Guard for /admin pages. Returns 404 (not redirect) if the user is not
  * admin/owner — this hides the existence of the admin panel from
  * non-admins and logged-out visitors.
  */
 export async function requireAdmin(): Promise<SessionUser> {
-  const user = await getCurrentUser()
-  if (!user || (user.role !== 'ADMIN' && user.role !== 'OWNER')) {
+  const user = await getVerifiedAdminUser()
+  if (!user) {
     // Return 404 — hides the admin panel's existence
-    notFound()
-  }
-  if (user.banned) {
     notFound()
   }
   return user
@@ -61,11 +71,8 @@ export async function requireAdmin(): Promise<SessionUser> {
  * Also returns 404 to hide the existence of owner-level endpoints.
  */
 export async function requireOwner(): Promise<SessionUser> {
-  const user = await getCurrentUser()
+  const user = await getVerifiedAdminUser()
   if (!user || user.role !== 'OWNER') {
-    notFound()
-  }
-  if (user.banned) {
     notFound()
   }
   return user
@@ -114,9 +121,18 @@ export async function requireUserApi(): Promise<SessionUser | NextResponse> {
 }
 
 export function isAdmin(user: SessionUser | null): boolean {
-  return !!user && (user.role === 'ADMIN' || user.role === 'OWNER')
+  return !!user && !user.banned && (user.role === 'ADMIN' || user.role === 'OWNER')
 }
 
 export function isOwner(user: SessionUser | null): boolean {
-  return !!user && user.role === 'OWNER'
+  return !!user && !user.banned && user.role === 'OWNER'
+}
+
+/** Recheck privileged API access against the database, bypassing JWT staleness. */
+export async function requireAdminApi(): Promise<SessionUser | NextResponse> {
+  const sessionUser = await getCurrentUser()
+  if (!sessionUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const verified = await getVerifiedAdminUser(sessionUser)
+  if (!verified) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  return verified
 }

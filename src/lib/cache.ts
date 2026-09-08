@@ -63,6 +63,9 @@ export const cache = {
       store().delete(key)
       return undefined
     }
+    // Refresh insertion order so frequently read entries survive eviction.
+    store().delete(key)
+    store().set(key, entry)
     return entry.value
   },
 
@@ -71,11 +74,13 @@ export const cache = {
    * considered stale and subsequent `get()` calls will return `undefined`.
    */
   set<T>(key: string, value: T, ttlMs: number): void {
+    inflightStore().delete(key)
     if (ttlMs <= 0) {
       store().delete(key)
       return
     }
     const s = store()
+    s.delete(key)
     s.set(key, {
       value,
       expiresAt: Date.now() + ttlMs,
@@ -92,11 +97,13 @@ export const cache = {
   /** Remove a single key. Safe to call on a missing key. */
   delete(key: string): void {
     store().delete(key)
+    inflightStore().delete(key)
   },
 
   /** Remove every cached entry. Useful for tests / manual busting. */
   clear(): void {
     store().clear()
+    inflightStore().clear()
   },
 
   /**
@@ -122,17 +129,18 @@ export const cache = {
     const existing = inflight.get(key) as Promise<T> | undefined
     if (existing) return existing
 
-    // Build the producer promise. `Promise.resolve(fn())` ensures we capture
-    // both sync throws and async rejections in the same `.catch()` handler
-    // (a bare `fn().then(...)` would let a sync throw escape the dedup).
-    const p = Promise.resolve(fn())
+    // Defer execution until the promise is registered, including sync throws.
+    // Invalidated producers still resolve for their original callers, but
+    // must not overwrite newer data or remove a replacement producer.
+    const p = Promise.resolve().then(fn)
       .then((value) => {
-        cache.set(key, value, ttlMs)
-        inflight.delete(key)
+        if (inflight.get(key) === p) {
+          cache.set(key, value, ttlMs)
+        }
         return value
       })
       .catch((err) => {
-        inflight.delete(key)
+        if (inflight.get(key) === p) inflight.delete(key)
         throw err
       })
     inflight.set(key, p)

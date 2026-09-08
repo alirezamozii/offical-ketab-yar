@@ -150,14 +150,14 @@ export function WelcomeWidget() {
         <div className="flex-1 space-y-2 text-center sm:text-right">
           <p className="flex items-center justify-center gap-2 text-xs font-medium text-gold-700 dark:text-gold-400 sm:justify-start">
             <Sparkles className="h-3.5 w-3.5" />
-            به کتاب‌یار خوش آمدید!
+            به بوکزی خوش آمدید!
           </p>
           <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">
             <span className="text-gradient-gold">شروع یک سفر دلپذیر مطالعه</span>
           </h2>
           <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground sm:mx-0">
             {book
-              ? 'کتاب اول خود را شروع کنید و وارد دنیای دوزبانه کتاب‌یار شوید.'
+              ? 'کتاب اول خود را شروع کنید و وارد دنیای دوزبانه بوکزی شوید.'
               : 'کتابخانه را مرور کنید و اولین کتاب خود را انتخاب نمایید.'}
           </p>
 

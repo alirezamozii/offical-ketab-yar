@@ -68,7 +68,7 @@ function reasonText(rec: RecResponse, book: BookListItem): string {
     }
     return `بر اساس سلیقه شما در ژانر «${rec.topGenre}».`
   }
-  if (book.rating >= 4.5) return 'یکی از بالاترین‌امتیازترین کتاب‌های کتاب‌یار.'
+  if (book.rating >= 4.5) return 'یکی از بالاترین‌امتیازترین کتاب‌های بوکزی.'
   return 'محبوب‌ترین کتاب‌ها — شروعی عالی برای شما.'
 }
 

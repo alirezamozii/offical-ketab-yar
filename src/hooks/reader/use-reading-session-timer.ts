@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { postXP } from '@/lib/xp-events'
 import { STORAGE_KEYS } from '@/lib/storage-keys'
+import { syncReadingHistory } from '@/lib/goals'
 
 /**
  * A single reading session summary, appended to the session-history list
@@ -149,6 +150,9 @@ export function useReadingSessionTimer(
             },
           }),
         )
+        void syncReadingHistory(true).catch(() => {
+          // Local history remains authoritative until a later session syncs.
+        })
       }
     }
   }, [])

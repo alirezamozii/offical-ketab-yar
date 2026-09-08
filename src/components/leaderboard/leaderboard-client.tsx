@@ -9,7 +9,6 @@ import {
   cn,
 } from '@/lib/utils'
 import { getRankColor, getRankEmoji, toPersianNumber } from '@/lib/gamification'
-import { motion } from 'framer-motion'
 import { ArrowDown, ArrowUp, BookOpen, Crown, Minus, TrendingUp, Trophy, Zap } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -90,11 +89,7 @@ export function LeaderboardClient({
     <div className="space-y-6">
       {/* Current user's rank card */}
       {data?.currentUserRank != null && currentUser ? (
-        <motion.div
-          initial={{ opacity: 0, y: -16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
+        <div>
           <Card className="overflow-hidden border-2 border-gold-500/40 bg-gradient-to-br from-gold-500/10 via-transparent to-transparent">
             <CardContent className="pt-5 sm:pt-6">
               <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
@@ -134,7 +129,7 @@ export function LeaderboardClient({
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       ) : null}
 
       <Card>
@@ -143,7 +138,7 @@ export function LeaderboardClient({
             <Trophy className="h-6 w-6 text-gold-600 dark:text-gold-400" />
             لیدربورد
           </CardTitle>
-          <CardDescription>رتبه‌بندی برترین خوانندگان کتاب‌یار</CardDescription>
+          <CardDescription>رتبه‌بندی برترین خوانندگان بوکزی</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Period)}>
@@ -196,18 +191,8 @@ export function LeaderboardClient({
                       شروع مطالعه
                     </a>
                   </div>
-                ) : p.value === 'weekly' ? (
-                  <WeeklyLayout entries={data.entries} />
                 ) : (
-                  <div className="scroll-brand stagger-in max-h-[640px] space-y-2 overflow-y-auto pe-1">
-                    {data.entries.map((entry, idx) => (
-                      <LeaderboardRow
-                        key={entry.ownerId || `r-${idx}`}
-                        entry={entry}
-                        delay={idx * 0.04}
-                      />
-                    ))}
-                  </div>
+                  <PodiumLeaderboardLayout entries={data.entries} />
                 )}
               </TabsContent>
             ))}
@@ -218,8 +203,22 @@ export function LeaderboardClient({
   )
 }
 
-/** Top-3 podium + compact rows for the rest. Used only on the weekly tab. */
-function WeeklyLayout({ entries }: { entries: LeaderboardEntry[] }) {
+/** Top-3 podium + compact rows for the rest. Used across all leaderboard periods. */
+function PodiumLeaderboardLayout({ entries }: { entries: LeaderboardEntry[] }) {
+  if (entries.length < 3) {
+    return (
+      <div className="scroll-brand stagger-in max-h-[640px] space-y-2 overflow-y-auto pe-1">
+        {entries.map((entry, idx) => (
+          <LeaderboardRow
+            key={entry.ownerId || `r-${idx}`}
+            entry={entry}
+            delay={idx * 0.04}
+          />
+        ))}
+      </div>
+    )
+  }
+
   const top3 = entries.slice(0, 3)
   const rest = entries.slice(3)
   // Podium order is 2 - 1 - 3 (1st in the center, tallest)
@@ -253,22 +252,13 @@ function PodiumColumn({ entry }: { entry: LeaderboardEntry }) {
   const isSecond = entry.rank === 2
   const isThird = entry.rank === 3
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 + entry.rank * 0.1, type: 'spring', stiffness: 180 }}
-      className="flex flex-col items-center"
-    >
+    <div className="flex flex-col items-center">
       {/* Crown for #1 */}
       <div className="mb-1 h-6">
         {isFirst && (
-          <motion.span
-            animate={{ y: [0, -3, 0], rotate: [0, 5, -5, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            className="inline-block text-2xl"
-          >
+          <span className="inline-block text-2xl">
             👑
-          </motion.span>
+          </span>
         )}
       </div>
 
@@ -323,10 +313,7 @@ function PodiumColumn({ entry }: { entry: LeaderboardEntry }) {
       </div>
 
       {/* Podium pedestal */}
-      <motion.div
-        initial={{ scaleY: 0 }}
-        animate={{ scaleY: 1 }}
-        transition={{ delay: 0.3 + entry.rank * 0.1, type: 'spring', stiffness: 150 }}
+      <div
         className={cn(
           'mt-2 w-full max-w-[80px] origin-bottom rounded-t-lg bg-gradient-to-b text-center font-extrabold tabular-nums text-white shadow-lg sm:max-w-[100px]',
           isFirst && 'from-yellow-400 to-amber-600 h-14 sm:h-36',
@@ -337,8 +324,8 @@ function PodiumColumn({ entry }: { entry: LeaderboardEntry }) {
         <div className="flex h-full items-center justify-center pt-1 text-lg sm:pt-2 sm:text-3xl">
           {getRankEmoji(entry.rank)}
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   )
 }
 
@@ -353,14 +340,12 @@ function RankChangeChip({ delta }: { delta: number }) {
   }
   if (delta > 0) {
     return (
-      <motion.span
-        initial={{ scale: 0.8 }}
-        animate={{ scale: 1 }}
+      <span
         className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400"
       >
         <ArrowUp className="h-3 w-3" />
         صعود {toPersianNumber(delta)} رتبه
-      </motion.span>
+      </span>
     )
   }
   return (
@@ -373,17 +358,14 @@ function RankChangeChip({ delta }: { delta: number }) {
 
 function LeaderboardRow({
   entry,
-  delay,
+  delay: _delay,
 }: {
   entry: LeaderboardEntry
   delay: number
 }) {
   const isTopThree = entry.rank <= 3
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -16 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay, duration: 0.3 }}
+    <div
       className={cn(
         'relative overflow-hidden rounded-xl border p-4 transition-[transform,opacity,colors,border-color,background-color] hover:shadow-md',
         entry.isCurrentUser
@@ -394,12 +376,7 @@ function LeaderboardRow({
       )}
     >
       {isTopThree ? (
-        <motion.div
-          className="pointer-events-none absolute inset-0"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 0.18, 0] }}
-          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-        >
+        <div className="pointer-events-none absolute inset-0">
           <div
             className={cn(
               'h-full w-full bg-gradient-to-l to-transparent',
@@ -408,7 +385,7 @@ function LeaderboardRow({
               entry.rank === 3 && 'from-orange-600/30',
             )}
           />
-        </motion.div>
+        </div>
       ) : null}
 
       {isTopThree ? (
@@ -491,6 +468,6 @@ function LeaderboardRow({
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }

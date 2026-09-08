@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
-import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard,
   Home,
@@ -96,7 +95,6 @@ function useDueReviewCount(): number {
 export function BottomNav() {
   const pathname = usePathname()
   const router = useRouter()
-  const prefersReduced = useReducedMotion()
   const { toPersianDigits } = usePersianLocale()
   const { hidden } = useScrollDirection(8, 120)
   const dueCount = useDueReviewCount()
@@ -106,7 +104,7 @@ export function BottomNav() {
   const shouldHide = isReaderRoute || hidden
 
   const triggerHaptic = useCallback(() => {
-    if (prefersReduced) return
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       try {
         navigator.vibrate(8)
@@ -114,7 +112,7 @@ export function BottomNav() {
         /* no-op */
       }
     }
-  }, [prefersReduced])
+  }, [])
 
   // Center orb → resume the last-read book (if any).
   const handleFabClick = useCallback(() => {
@@ -133,18 +131,10 @@ export function BottomNav() {
       item.badgeKey === 'dueReviews' && dueCount > 0
     return (
       <li key={item.href} className="flex-1">
-        <motion.div
-          whileTap={prefersReduced ? undefined : { scale: 0.92 }}
-          transition={
-            prefersReduced
-              ? { duration: 0 }
-              : { type: 'spring', stiffness: 500, damping: 30 }
-          }
-          className="gpu h-full"
-        >
+        <div className="gpu h-full motion-safe:active:scale-[0.92] motion-safe:transition-transform duration-150">
           <Link
             href={item.href}
-            transitionTypes={['slide']}
+            prefetch={false}
             aria-current={active ? 'page' : undefined}
             aria-label={
               showBadge
@@ -167,24 +157,9 @@ export function BottomNav() {
           >
             <span className="relative flex h-7 w-12 items-center justify-center sm:h-8">
               {active && (
-                <motion.span
+                <span
                   aria-hidden="true"
-                  layoutId={
-                    prefersReduced
-                      ? undefined
-                      : 'bottom-nav-active-pill'
-                  }
-                  className="absolute inset-0 rounded-xl bg-primary/15"
-                  transition={
-                    prefersReduced
-                      ? { duration: 0 }
-                      : {
-                          type: 'spring',
-                          stiffness: 380,
-                          damping: 30,
-                          mass: 0.8,
-                        }
-                  }
+                  className="absolute inset-0 rounded-xl bg-primary/15 transition-all duration-300 motion-reduce:transition-none"
                 />
               )}
               <Icon aria-hidden="true" className="relative h-[18px] w-[18px] sm:h-5 sm:w-5" />
@@ -205,146 +180,122 @@ export function BottomNav() {
             </span>
             <span className="relative leading-none">{item.label}</span>
           </Link>
-        </motion.div>
+        </div>
       </li>
     )
   }
 
   return (
-    <AnimatePresence>
-      {!shouldHide && (
-        <motion.nav
-          role="navigation"
-          aria-label="ناوبری پایین — دسترسی سریع به بخش‌های اصلی"
-          initial={prefersReduced ? false : { y: 80, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={prefersReduced ? { opacity: 0 } : { y: 80, opacity: 0 }}
-          transition={
-            prefersReduced
-              ? { duration: 0.12 }
-              : { type: 'spring', stiffness: 500, damping: 36, mass: 0.7 }
-          }
+    <nav
+      role="navigation"
+      aria-label="ناوبری پایین — دسترسی سریع به بخش‌های اصلی"
+      className={cn(
+        'no-select fixed inset-x-0 bottom-0 z-40 md:hidden pb-safe',
+        'transition-all duration-300 ease-out motion-reduce:transition-none',
+        shouldHide
+          ? 'pointer-events-none translate-y-full opacity-0'
+          : 'translate-y-0 opacity-100',
+      )}
+    >
+      <div className="relative mx-auto max-w-md px-2">
+        {/* ─── Center orb — «ادامه» (Continue) ───
+            Per user feedback: "اورب تو توبار اسمش باید بشه ادامه" +
+            "اون ادامه عکس پلی بیاد" — the orb is now called «ادامه»
+            and shows a MINI BOOK COVER PREVIEW (using the same gradient
+            + spine + frame as the real BookCover component) so it
+            reads as "continue reading this book", not just a colored
+            circle. Tapping opens the reader at the last position. */}
+        {showOrb && lastReadBook && (
+          <button
+            type="button"
+            onClick={handleFabClick}
+            aria-label={`ادامه مطالعه ${lastReadBook.title} — ${lastReadBook.percent}٪ پیش رفته است`}
+            title={`ادامه ${lastReadBook.title}`}
+            className={cn(
+              'absolute left-1/2 -top-7 z-10 -translate-x-1/2',
+              'flex h-16 w-12 flex-col items-stretch',
+              'overflow-hidden rounded-md shadow-xl ring-2 ring-background',
+              'transition-shadow hover:shadow-2xl motion-safe:active:scale-[0.92] motion-safe:transition-transform duration-150',
+              'no-callout no-tap-highlight touch-manipulation tap-target',
+              FOCUS_RING,
+            )}
+            style={{
+              // Use the book's cover gradient — same as BookCover.tsx.
+              background: `linear-gradient(150deg, ${lastReadBook.coverFrom} 0%, ${lastReadBook.coverTo} 100%)`,
+              boxShadow: `0 10px 25px -5px ${lastReadBook.coverFrom}99, 0 0 0 1px ${lastReadBook.coverAccent}40`,
+            }}
+          >
+            {/* Spine — darker right edge (bound side), like a real book */}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 right-0 w-2"
+              style={{
+                background:
+                  'linear-gradient(to left, rgba(0,0,0,0.7), rgba(0,0,0,0.25) 60%, transparent)',
+              }}
+            />
+            {/* Inner frame — accent-tinted, like BookCover */}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-1 rounded border opacity-30"
+              style={{ borderColor: lastReadBook.coverAccent }}
+            />
+            {/* Centered book-open icon in white — small so the cover
+                colors stay the dominant visual. */}
+            <span className="relative flex flex-1 items-center justify-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2.4}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className="h-5 w-5 text-white/90 drop-shadow"
+              >
+                <path d="M12 7v14" />
+                <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" />
+              </svg>
+            </span>
+            {/* «ادامه» label below the mini cover */}
+            <span className="relative bg-black/60 py-0.5 text-center text-[8px] font-bold leading-none text-white">
+              ادامه
+            </span>
+            <span className="sr-only">
+              ادامه مطالعه {lastReadBook.title}
+            </span>
+            {/* Soft pulsing glow — uses the book's accent color */}
+            <span
+              aria-hidden="true"
+              className="absolute inset-0 -z-10 rounded-md opacity-40"
+              style={{ boxShadow: `0 0 0 2px ${lastReadBook.coverAccent}` }}
+            />
+          </button>
+        )}
+
+        {/* ─── The bar itself ───
+            5 items split around the center orb slot:
+            [Home] [Library]   [orb slot]   [Vocabulary] [Dashboard]
+            When there's no orb, the slot still takes space so the
+            layout stays balanced. */}
+        <ul
           className={cn(
-            'no-select fixed inset-x-0 bottom-0 z-40 md:hidden',
-            'pb-safe',
+            'flex items-stretch justify-around',
+            'rounded-t-2xl border-t border-border/80',
+            'bg-background/95',
+            'shadow-[0_-2px_12px_rgba(0,0,0,0.08)]',
           )}
         >
-          <div className="relative mx-auto max-w-md px-2">
-            {/* ─── Center orb — «ادامه» (Continue) ───
-                Per user feedback: "اورب تو توبار اسمش باید بشه ادامه" +
-                "اون ادامه عکس پلی بیاد" — the orb is now called «ادامه»
-                and shows a MINI BOOK COVER PREVIEW (using the same gradient
-                + spine + frame as the real BookCover component) so it
-                reads as "continue reading this book", not just a colored
-                circle. Tapping opens the reader at the last position. */}
-            {showOrb && lastReadBook && (
-              <motion.button
-                type="button"
-                onClick={handleFabClick}
-                aria-label={`ادامه مطالعه ${lastReadBook.title} — ${lastReadBook.percent}٪ پیش رفته است`}
-                title={`ادامه ${lastReadBook.title}`}
-                whileTap={prefersReduced ? undefined : { scale: 0.92 }}
-                transition={
-                  prefersReduced
-                    ? { duration: 0 }
-                    : { type: 'spring', stiffness: 600, damping: 25 }
-                }
-                className={cn(
-                  'absolute left-1/2 -top-7 z-10 -translate-x-1/2',
-                  'flex h-16 w-12 flex-col items-stretch',
-                  'overflow-hidden rounded-md shadow-xl ring-2 ring-background',
-                  'transition-shadow hover:shadow-2xl',
-                  'no-callout no-tap-highlight touch-manipulation tap-target',
-                  FOCUS_RING,
-                )}
-                style={{
-                  // Use the book's cover gradient — same as BookCover.tsx.
-                  background: `linear-gradient(150deg, ${lastReadBook.coverFrom} 0%, ${lastReadBook.coverTo} 100%)`,
-                  boxShadow: `0 10px 25px -5px ${lastReadBook.coverFrom}99, 0 0 0 1px ${lastReadBook.coverAccent}40`,
-                }}
-              >
-                {/* Spine — darker right edge (bound side), like a real book */}
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-y-0 right-0 w-2"
-                  style={{
-                    background:
-                      'linear-gradient(to left, rgba(0,0,0,0.7), rgba(0,0,0,0.25) 60%, transparent)',
-                  }}
-                />
-                {/* Inner frame — accent-tinted, like BookCover */}
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-1 rounded border opacity-30"
-                  style={{ borderColor: lastReadBook.coverAccent }}
-                />
-                {/* Centered book-open icon in white — small so the cover
-                    colors stay the dominant visual. */}
-                <span className="relative flex flex-1 items-center justify-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2.4}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                    className="h-5 w-5 text-white/90 drop-shadow"
-                  >
-                    <path d="M12 7v14" />
-                    <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" />
-                  </svg>
-                </span>
-                {/* «ادامه» label below the mini cover */}
-                <span className="relative bg-black/40 py-0.5 text-center text-[8px] font-bold leading-none text-white backdrop-blur-sm">
-                  ادامه
-                </span>
-                <span className="sr-only">
-                  ادامه مطالعه {lastReadBook.title}
-                </span>
-                {/* Soft pulsing glow — uses the book's accent color */}
-                {!prefersReduced && (
-                  <motion.span
-                    aria-hidden="true"
-                    className="absolute inset-0 -z-10 rounded-md blur-md"
-                    style={{ background: lastReadBook.coverAccent }}
-                    animate={{ opacity: [0.2, 0.45, 0.2], scale: [1, 1.08, 1] }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: 'easeInOut',
-                    }}
-                  />
-                )}
-              </motion.button>
-            )}
-
-            {/* ─── The bar itself ───
-                5 items split around the center orb slot:
-                [Home] [Library]   [orb slot]   [Vocabulary] [Dashboard]
-                When there's no orb, the slot still takes space so the
-                layout stays balanced. */}
-            <ul
-              className={cn(
-                'flex items-stretch justify-around',
-                'rounded-t-2xl border-t border-border/70',
-                'bg-background/90 backdrop-blur-xl',
-                'supports-[backdrop-filter]:bg-background/75',
-                'shadow-[0_-4px_24px_-8px_rgba(0,0,0,0.18)]',
-              )}
-            >
-              {ITEMS_LEFT.map(renderItem)}
-              {/* Center slot — reserved for the orb.
-                  Width matches the orb (w-12 = 48px). The orb sits
-                  *above* the bar (negative top), so this slot just keeps
-                  the items from crowding the center. */}
-              <li className="w-12 shrink-0" aria-hidden="true" />
-              {ITEMS_RIGHT.map(renderItem)}
-            </ul>
-          </div>
-        </motion.nav>
-      )}
-    </AnimatePresence>
+          {ITEMS_LEFT.map(renderItem)}
+          {/* Center slot — reserved for the orb.
+              Width matches the orb (w-12 = 48px). The orb sits
+              *above* the bar (negative top), so this slot just keeps
+              the items from crowding the center. */}
+          <li className="w-12 shrink-0" aria-hidden="true" />
+          {ITEMS_RIGHT.map(renderItem)}
+        </ul>
+      </div>
+    </nav>
   )
 }

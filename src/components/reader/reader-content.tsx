@@ -2,9 +2,9 @@
 
 import { useReader } from '@/components/reader/reader-context'
 import { ParagraphBlock } from '@/components/reader/reader-page-view'
-import { toPersianDigits } from '@/lib/reader/types'
+
 import { useReducedMotion } from 'framer-motion'
-import { Bookmark, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 
 /**
  * The main scrollable content area of the reader: a continuous column of
@@ -14,8 +14,6 @@ import { Bookmark, Sparkles } from 'lucide-react'
  *
  * Per-paragraph margin decoration is rendered here:
  *  • Paragraph numbers (toggleable via `prefs.showParagraphNumbers`)
- *  • A bookmark button (saves/restores paragraph position via the
- *    `bookmarks` storage key).
  *
  * The scroll container ref + paragraph refs are owned by the state hook
  * (via context) so the IntersectionObserver and scroll-progress logic
@@ -27,10 +25,6 @@ import { Bookmark, Sparkles } from 'lucide-react'
  *   navigated with the article navigation commands.
  * - `aria-label` carries the book title (and current page number once
  *   we know it) so users have orientation when focus lands in the column.
- * - Per-paragraph bookmark buttons are real `<button type="button">`
- *   elements, so they're keyboard-accessible by default. Their accessible
- *   name reflects the action ("نشان‌گذاری چپتر N" vs "حذف نشان چپتر N")
- *   and `aria-pressed` exposes the toggle state.
  * - The end-of-book "بازگشت به ابتدا" button is also `type="button"` and
  *   has an accessible label.
  */
@@ -48,10 +42,9 @@ export function ReaderContent() {
     setIsFocusMode,
     setShowControls,
     marginStyle,
+    columnMaxWidth,
     snapClass,
     fontFamilyCss,
-    isParagraphBookmarked,
-    toggleBookmark,
   } = useReader()
 
   const reduceMotion = useReducedMotion()
@@ -121,92 +114,31 @@ export function ReaderContent() {
         }}
       >
         <div
-          className="mx-auto"
+          className="mx-auto transition-[max-width,padding] duration-200"
           role="article"
           aria-label={`متن کتاب ${book.title}${book.author ? ` از ${book.author}` : ''}`}
           style={{
-            // Subtle drop shadow on the reading-text container — adds
-            // a faint "page floating over the desk" depth cue without
-            // harming readability. Very low alpha so it stays premium
-            // rather than gloppy.
+            maxWidth: columnMaxWidth || '48rem',
+            paddingLeft: marginStyle?.paddingX || '1.5rem',
+            paddingRight: marginStyle?.paddingX || '1.5rem',
+            // Subtle drop shadow on the reading-text container
             filter: 'drop-shadow(0 2px 12px rgba(0,0,0,0.04))',
           }}
         >
-          {book.pages.map((page, i) => {
-            const bookmarked = isParagraphBookmarked(i)
-            const showNumbers = prefs.showParagraphNumbers
-            return (
-              <div
-                key={i}
-                data-paragraph-index={i}
-                ref={(el) => {
-                  paragraphRefs.current[i] = el
-                }}
-                className="group relative scroll-mt-24 transition-opacity duration-300"
-                style={{
-                  paddingBottom: marginStyle.paragraphGap,
-                  scrollSnapAlign:
-                    prefs.readingRhythm === 'snap' ? 'start' : undefined,
-                }}
-              >
-                {/* ---- Decorative gold accent bar on the left edge of
-                    the paragraph — fades in on hover. Sits behind the
-                    text via -z-10 so it never interferes with selection. */}
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-y-2 left-0 -z-10 w-0.5 origin-top scale-y-0 rounded-full opacity-0 transition-[transform,opacity,colors,border-color,background-color] duration-300 ease-out-expo group-hover:scale-y-100 group-hover:opacity-100"
-                  style={{ background: themeStyle.accent }}
-                />
-
-                {/* ---- Paragraph number in the margin (toggleable) ----
-                    Decorative; the bookmark button (below) is the
-                    screen-reader-accessible per-paragraph affordance. */}
-                {showNumbers && (
-                  <span
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -start-6 top-1 hidden select-none text-[10px] font-bold tabular-nums opacity-40 sm:block"
-                    style={{ color: themeStyle.muted }}
-                  >
-                    {toPersianDigits(i + 1)}
-                  </span>
-                )}
-
-                {/* ---- Per-paragraph bookmark button (revealed on hover) ----
-                    Real button so it's keyboard-accessible. The visible
-                    focus state is handled by the global `:focus-visible`
-                    rule + the `focus-visible:opacity-100` class below so
-                    keyboard users can see the button even without mouse
-                    hover. */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    toggleBookmark(i)
-                  }}
-                  aria-label={
-                    bookmarked
-                      ? `حذف نشان چپتر ${toPersianDigits(i + 1)}`
-                      : `نشان‌گذاری چپتر ${toPersianDigits(i + 1)}`
-                  }
-                  aria-pressed={bookmarked}
-                  className="absolute -end-2 top-1 z-10 flex size-7 translate-y-0.5 items-center justify-center rounded-full opacity-0 transition-opacity duration-150 hover:bg-black/5 focus-visible:opacity-100 group-hover:opacity-100 dark:hover:bg-white/10"
-                  style={
-                    bookmarked
-                      ? {
-                          opacity: 1,
-                          color: themeStyle.accent,
-                          background: themeStyle.accent + '22',
-                        }
-                      : { color: themeStyle.muted }
-                  }
-                  title={bookmarked ? 'حذف نشان' : 'نشان‌گذاری'}
-                >
-                  <Bookmark
-                    aria-hidden="true"
-                    className="h-3.5 w-3.5"
-                    fill={bookmarked ? 'currentColor' : 'none'}
-                  />
-                </button>
+          {book.pages.map((page, i) => (
+            <div
+              key={i}
+              data-paragraph-index={i}
+              ref={(el) => {
+                paragraphRefs.current[i] = el
+              }}
+              className="group relative scroll-mt-24 transition-opacity duration-300 cull-paragraph"
+              style={{
+                paddingBottom: marginStyle.paragraphGap,
+                scrollSnapAlign:
+                  prefs.readingRhythm === 'snap' ? 'start' : undefined,
+              }}
+            >
 
                 {page.items.map((item, j) => (
                   <ParagraphBlock
@@ -214,16 +146,17 @@ export function ReaderContent() {
                     item={item}
                     prefs={prefs}
                     accent={themeStyle.accent}
-                    isFirstChild={j === 0}
                     onMouseUp={(e) => {
                       e.stopPropagation()
-                      setTimeout(handleTextSelection, 10)
+                      setTimeout(handleTextSelection, 20)
+                    }}
+                    onTouchEnd={() => {
+                      setTimeout(handleTextSelection, 60)
                     }}
                   />
                 ))}
               </div>
-            )
-          })}
+            ))}
 
           {/* End-of-book marker. The "بازگشت به ابتدا" button is a
               real button so it works with Enter/Space. */}

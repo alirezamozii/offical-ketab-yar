@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * src/lib/settings.ts — centralized user-settings module for Ketab-Yar.
+ * src/lib/settings.ts — centralized user-settings module for Bookzi.
  *
  * Spiritual successor to `src/lib/the legacy settings module` (renamed; the old
  * path is removed). The TypeScript types + React hooks + localStorage

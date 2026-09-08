@@ -1,33 +1,19 @@
-import Script from 'next/script'
 import { ConditionalLayout } from '@/components/layout/conditional-layout'
 import { safeJsonLd } from '@/lib/json-ld'
 import { SkipLink } from '@/components/layout/skip-link'
-import { AuthProvider } from '@/components/providers/auth-provider'
-import { OnboardingGate } from '@/components/providers/onboarding-gate'
-import { QueryProvider } from '@/components/providers/query-provider'
-import { SmoothScrollProvider } from '@/components/providers/smooth-scroll-provider'
-import { ThemeProvider } from '@/components/providers/theme-provider'
 import { SITE } from '@/lib/site'
 import type { Metadata, Viewport } from 'next'
-import { Inter, Vazirmatn } from 'next/font/google'
-import { Toaster } from 'sonner'
+import localFont from 'next/font/local'
 import { WebVitals } from '@/components/analytics/WebVitals'
-
-import { ClientWidgets } from '@/components/providers/client-widgets'
 import '@/app/globals.css'
 
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-})
-
-const vazirmatn = Vazirmatn({
-  subsets: ['arabic', 'latin'],
+const vazirmatn = localFont({
+  src: '../../../public/fonts/Vazirmatn-subset.woff2',
   variable: '--font-vazirmatn',
-  weight: ['400', '500', '600', '700', '800'],
-  display: 'swap',
+  display: 'optional',
+  weight: '100 900',
   preload: true,
+  adjustFontFallback: false,
 })
 
 const SITE_URL = SITE.url
@@ -35,12 +21,12 @@ const SITE_URL = SITE.url
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'کتاب‌یار | مطالعه دوزبانه کتاب انگلیسی با هوش مصنوعی',
-    template: '%s | کتاب‌یار',
+    default: 'بوکزی | زیست‌بومِ کتاب‌های دوزبانه',
+    template: '%s | بوکزی',
   },
   description:
-    'کتاب‌های انگلیسی را رایگان و دوزبانه بخوانید. ورق زدن واقعی صفحات، دیکشنری هوشمند، واژگان و چت با هوش مصنوعی. یادگیری زبان انگلیسی با کتاب.',
-  applicationName: 'کتاب‌یار',
+    'بوکزی؛ زیست‌بومِ کتاب‌های دوزبانه. مطالعه هوشمند رمان‌های انگلیسی با ترجمه موازی، دیکشنری در لحظه، واژگان‌ساز و استودیوی کوت.',
+  applicationName: 'بوکزی',
   category: 'education',
   // ─── PWA icons (PNG, satisfies Chrome's installability criteria) ──────────
   // The manifest icons (declared in /public/manifest.json) handle the PWA
@@ -60,50 +46,51 @@ export const metadata: Metadata = {
     shortcut: ['/favicon.ico'],
   },
   keywords: [
+    'بوکزی',
+    'Bookzi',
+    'زیست‌بوم کتاب‌های دوزبانه',
     'کتاب انگلیسی',
     'مطالعه آنلاین',
     'یادگیری زبان',
     'کتاب دوزبانه',
     'کتاب رایگان',
     'هوش مصنوعی',
-    'دیکشنری',
-    'کتاب‌یار',
+    'دیکشنری هوشمند',
     'English books',
     'bilingual reading',
     'learn English with books',
-    'کتاب‌های انگلیسی',
-    'آلیس در سرزمین عجایب',
+    'کتاب‌های انگلیسی با زیرنویس',
     'ترجمه فارسی کتاب',
     'مطالعه کتاب با AI',
     'واژگان انگلیسی',
     'داستان انگلیسی',
   ],
-  authors: [{ name: 'تیم کتاب‌یار' }],
-  creator: 'کتاب‌یار',
-  publisher: 'کتاب‌یار',
+  authors: [{ name: 'تیم بوکزی' }],
+  creator: 'بوکزی',
+  publisher: 'بوکزی',
   manifest: '/manifest.json',
   alternates: { canonical: SITE_URL },
   openGraph: {
     type: 'website',
     locale: 'fa_IR',
     url: SITE_URL,
-    siteName: 'کتاب‌یار',
-    title: 'کتاب‌یار - پلتفرم هوشمند مطالعه دوزبانه با AI',
+    siteName: 'بوکزی',
+    title: 'بوکزی — زیست‌بومِ کتاب‌های دوزبانه',
     description:
-      'کتاب‌های انگلیسی را رایگان و دوزبانه بخوانید. ورق زدن واقعی، دیکشنری هوشمند و چت با هوش مصنوعی.',
+      'کتاب‌های انگلیسی را با ترجمه موازی فارسی، دیکشنری در لحظه، فلش‌کارت و استودیوی کوت بخوانید.',
     images: [
       {
         url: '/logo.svg',
         width: 512,
         height: 512,
-        alt: 'کتاب‌یار',
+        alt: 'بوکزی',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'کتاب‌یار - مطالعه دوزبانه با AI',
-    description: 'کتاب‌های انگلیسی رایگان با مطالعه دوزبانه و هوش مصنوعی',
+    title: 'بوکزی — زیست‌بومِ کتاب‌های دوزبانه',
+    description: 'مطالعه هوشمند رمان‌های انگلیسی با ترجمه موازی و هوش مصنوعی در بوکزی',
     images: ['/logo.svg'],
   },
   robots: {
@@ -119,7 +106,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    title: 'کتاب‌یار',
+    title: 'بوکزی',
     statusBarStyle: 'default',
   },
   formatDetection: {
@@ -158,8 +145,8 @@ const organizationLd = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
   '@id': `${SITE_URL}/#organization`,
-  name: 'کتاب‌یار',
-  alternateName: 'Ketab-Yar',
+  name: 'بوکزی',
+  alternateName: 'Bookzi',
   url: SITE_URL,
   logo: {
     '@type': 'ImageObject',
@@ -169,7 +156,7 @@ const organizationLd = {
   },
   image: `${SITE_URL}/logo.svg`,
   description:
-    'پلتفرم هوشمند مطالعه دوزبانه کتاب‌های انگلیسی با هوش مصنوعی، دیکشنری و واژگان‌ساز.',
+    'بوکزی؛ زیست‌بومِ کتاب‌های دوزبانه. مطالعه هوشمند رمان‌های انگلیسی با ترجمه موازی، دیکشنری در لحظه، واژگان‌ساز و استودیوی کوت.',
   foundingDate: '2024',
   foundingLocation: {
     '@type': 'Place',
@@ -211,8 +198,8 @@ const websiteLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   '@id': `${SITE_URL}/#website`,
-  name: 'کتاب‌یار',
-  alternateName: 'Ketab-Yar',
+  name: 'بوکزی',
+  alternateName: 'Bookzi',
   url: SITE_URL,
   inLanguage: 'fa-IR',
   publisher: { '@id': `${SITE_URL}/#organization` },
@@ -234,6 +221,13 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl" suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
+        <script
+          id="theme-init"
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('theme');var d=t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.classList.toggle('dark',d);addEventListener('DOMContentLoaded',function(){var b=document.getElementById('theme-toggle');if(b)b.addEventListener('click',function(){var n=!document.documentElement.classList.contains('dark');document.documentElement.classList.toggle('dark',n);localStorage.setItem('theme',n?'dark':'light')})})}catch(e){}",
+          }}
+        />
         {/* The browser locale is Persian (fa-IR). Provide an English fallback
             via an alternate-language link for SEO + screen readers.
             H-19: the previous `hrefLang="en"` line pointed at `${SITE_URL}/en`
@@ -241,48 +235,25 @@ export default function RootLayout({
             the canonical fa-IR + x-default remain. */}
         <link rel="alternate" hrefLang="fa-IR" href={SITE_URL} />
         <link rel="alternate" hrefLang="x-default" href={SITE_URL} />
-        <Script
+        <script
           id="organization-jsonld"
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationLd) }}
         />
-        <Script
+        <script
           id="website-jsonld"
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteLd) }}
         />
       </head>
       <body
-        className={`${inter.variable} ${vazirmatn.variable} font-sans antialiased min-h-screen flex flex-col`}
+        className={`${vazirmatn.variable} font-sans antialiased min-h-screen flex flex-col`}
       >
         {/* SkipLink must be the FIRST focusable element on every page so
             keyboard users can immediately bypass the header / nav. */}
         <SkipLink />
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <QueryProvider>
-            <AuthProvider>
-              <SmoothScrollProvider>
-                <ConditionalLayout>
-                  <OnboardingGate>{children}</OnboardingGate>
-                </ConditionalLayout>
-              </SmoothScrollProvider>
-              <ClientWidgets />
-              <WebVitals />
-              <Toaster
-                position="bottom-center"
-                richColors
-                toastOptions={{
-                  className: 'mb-safe',
-                }}
-              />
-            </AuthProvider>
-          </QueryProvider>
-        </ThemeProvider>
+        <ConditionalLayout>{children}</ConditionalLayout>
+        {process.env.NEXT_PUBLIC_SENTRY_DSN ? <WebVitals /> : null}
       </body>
     </html>
   )

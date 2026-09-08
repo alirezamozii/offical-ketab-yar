@@ -25,6 +25,7 @@ import {
   Download,
   FileText,
   Highlighter,
+  Palette,
   Pencil,
   Search,
   Trash2,
@@ -38,11 +39,15 @@ import {
   THEME_STYLES,
   toPersianDigits,
 } from '@/lib/reader/types'
+import { QuoteStudioModal } from '@/components/quotes/quote-studio-modal'
 
 interface HighlightsPanelProps {
   highlights: Highlight[]
   currentPage: number
   theme: ReaderTheme
+  bookTitle?: string
+  bookAuthor?: string
+  bookSlug?: string
   /** ID of the highlight whose inline note editor is open (or null). */
   editingHighlightId: string | null
   /** Open the inline note editor for a highlight. */
@@ -70,6 +75,9 @@ export function HighlightsPanel({
   highlights,
   currentPage,
   theme,
+  bookTitle,
+  bookAuthor,
+  bookSlug,
   editingHighlightId,
   onEditNote,
   onSaveNote,
@@ -86,6 +94,8 @@ export function HighlightsPanel({
     null,
   )
   const [draftNote, setDraftNote] = useState('')
+  const [studioOpen, setStudioOpen] = useState(false)
+  const [selectedHighlight, setSelectedHighlight] = useState<Highlight | null>(null)
 
   const sorted = useMemo(
     () => [...highlights].sort((a, b) => b.timestamp - a.timestamp),
@@ -314,6 +324,19 @@ export function HighlightsPanel({
                     <Button
                       variant="ghost"
                       size="icon"
+                      className="h-11 w-11 text-gold-600 hover:text-gold-700 dark:text-gold-400"
+                      onClick={() => {
+                        setSelectedHighlight(h)
+                        setStudioOpen(true)
+                      }}
+                      aria-label="ساخت کارت کاغذی استوری"
+                      title="ساخت کارت کاغذی استوری"
+                    >
+                      <Palette className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       className="h-11 w-11"
                       onClick={() => onCopy(h.text)}
                       aria-label="کپی"
@@ -453,6 +476,26 @@ export function HighlightsPanel({
             </AlertDialog>
           </div>
         )}
+
+        {/* Quote Studio Modal */}
+        <QuoteStudioModal
+          open={studioOpen}
+          onOpenChange={setStudioOpen}
+          quote={
+            selectedHighlight
+              ? {
+                  id: selectedHighlight.id,
+                  text: selectedHighlight.text,
+                  textFa: selectedHighlight.note,
+                  bookSlug: bookSlug,
+                  bookTitle: bookTitle,
+                  bookAuthor: bookAuthor,
+                  pageNumber: selectedHighlight.page + 1,
+                  highlightColor: selectedHighlight.color,
+                }
+              : null
+          }
+        />
       </SheetContent>
     </Sheet>
   )

@@ -10,21 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { BookCard } from '@/components/books/book-card'
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import {
+  ArrowLeft,
   BookOpen,
   Calendar,
-  ChevronDown,
-  ChevronUp,
-  ExternalLink,
   Feather,
-  Globe,
-  Library,
   Search,
   Sparkles,
   Star,
-  Tag,
   Users,
   X,
 } from 'lucide-react'
@@ -88,7 +81,6 @@ export function AuthorsPageClient({
   const [query, setQuery] = useState('')
   const [eraFilter, setEraFilter] = useState<AuthorEra | 'all'>('all')
   const [sort, setSort] = useState<SortValue>('books')
-  const [expandedSlug, setExpandedSlug] = useState<string | null>(null)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -135,10 +127,6 @@ export function AuthorsPageClient({
   )
 
   const authorCount = authors.length
-
-  const toggleExpand = (slug: string) => {
-    setExpandedSlug((prev) => (prev === slug ? null : slug))
-  }
 
   return (
     <div className="space-y-8">
@@ -194,7 +182,7 @@ export function AuthorsPageClient({
           </h1>
 
           <p className="max-w-3xl text-sm sm:text-base leading-relaxed text-muted-foreground">
-            مجموعه‌ای گران‌بها از زبده‌ترین نویسندگان و برجسته‌ترین چهره‌های ادبیات جهان. در این بخش می‌توانید زندگی‌نامه دوزبانه، ملیت، دوران ادبی، سبک نگارش و کلیه کتاب‌های منتشرشده هر نویسنده را در کتابخانه دوزبانه کتاب‌یار کاوش نمایید.
+            مجموعه‌ای گران‌بها از زبده‌ترین نویسندگان و برجسته‌ترین چهره‌های ادبیات جهان. با انتخاب هر نویسنده می‌توانید به زندگی‌نامه دوزبانه، مشخصات، دوران ادبی و تمام آثار او دسترسی داشته باشید.
           </p>
         </div>
       </header>
@@ -305,29 +293,19 @@ export function AuthorsPageClient({
         </p>
       </div>
 
-      {/* ─── Grid with In-Page Expansion ───────────────────────────────── */}
+      {/* ─── Grid of Authors ───────────────────────────────────────────── */}
       {filtered.length === 0 ? (
         <EmptyState query={query} />
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((author) => {
-            const isExpanded = expandedSlug === author.slug
-            return (
-              <div
-                key={author.slug}
-                className={cn(
-                  'animate-in fade-in duration-300 fill-mode-both cull-offscreen',
-                  isExpanded && 'sm:col-span-2 lg:col-span-3 transition-all duration-300',
-                )}
-              >
-                <AuthorExpandableCard
-                  author={author}
-                  isExpanded={isExpanded}
-                  onToggle={() => toggleExpand(author.slug)}
-                />
-              </div>
-            )
-          })}
+          {filtered.map((author) => (
+            <div
+              key={author.slug}
+              className="animate-in fade-in duration-300 fill-mode-both cull-offscreen"
+            >
+              <AuthorCard author={author} />
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -335,129 +313,15 @@ export function AuthorsPageClient({
 }
 
 /* ----------------------------------------------------------------
- * AuthorExpandableCard — Supports inline expansion with full details & books
+ * AuthorCard — Clean, focused card linking directly to dedicated page
  * ---------------------------------------------------------------- */
 
-interface AuthorExpandableCardProps {
+interface AuthorCardProps {
   author: AuthorWithBio
-  isExpanded: boolean
-  onToggle: () => void
 }
 
-function AuthorExpandedDetails({ author, bio, locale }: { author: AuthorWithBio; bio: any; locale: any }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scaleY: 0.95 }}
-      animate={{ opacity: 1, scaleY: 1 }}
-      exit={{ opacity: 0, scaleY: 0.95 }}
-      style={{ transformOrigin: 'top' }}
-      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      className="mt-5 space-y-6 border-t border-border/60 pt-5"
-    >
-      {/* Biography */}
-      <div>
-        <h4 className="flex items-center gap-2 text-sm font-bold text-foreground mb-2">
-          <Sparkles className="h-4 w-4 text-gold-600 dark:text-gold-400" />
-          زندگی‌نامه و بیوگرافی
-        </h4>
-        <p className="text-sm leading-relaxed text-foreground/90">
-          {bio?.bioFa || bio?.bio || 'اطلاعات بیشتری ثبت نشده است.'}
-        </p>
-
-        {bio?.biographyFa && (
-          <div className="mt-3 rounded-xl border border-border/40 bg-muted/30 p-4 text-xs leading-relaxed text-muted-foreground whitespace-pre-line">
-            {bio.biographyFa}
-          </div>
-        )}
-      </div>
-
-      {/* Notable works & tags */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {bio && bio.notableWorks.length > 0 && (
-          <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
-            <h5 className="mb-2 text-xs font-semibold text-muted-foreground">
-              آثار شاخص:
-            </h5>
-            <ul className="space-y-1" dir="ltr">
-              {bio.notableWorks.map((w: string) => (
-                <li key={w} className="text-xs text-foreground/80 flex items-center gap-1.5">
-                  <span className="h-1 w-1 rounded-full bg-gold-500" />
-                  {w}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {bio && bio.tags.length > 0 && (
-          <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
-            <h5 className="mb-2 flex items-center gap-1 text-xs font-semibold text-muted-foreground">
-              <Tag className="h-3 w-3" />
-              برچسب‌ها و سبک نگارش:
-            </h5>
-            <div className="flex flex-wrap gap-1.5">
-              {bio.tags.map((t: string) => (
-                <span
-                  key={t}
-                  className="rounded-md border border-border/60 bg-background/80 px-2 py-0.5 text-xs text-foreground"
-                >
-                  {t}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* External Links */}
-      {(bio?.wikipedia || bio?.website) && (
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          {bio.wikipedia && (
-            <Button asChild variant="outline" size="sm" className="h-7 text-xs gap-1">
-              <a href={bio.wikipedia} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="h-3 w-3" />
-                ویکی‌پدیا
-              </a>
-            </Button>
-          )}
-          {bio.website && (
-            <Button asChild variant="outline" size="sm" className="h-7 text-xs gap-1">
-              <a href={bio.website} target="_blank" rel="noopener noreferrer">
-                <Globe className="h-3 w-3" />
-                وبگاه رسمی
-              </a>
-            </Button>
-          )}
-        </div>
-      )}
-
-      {/* Books in Library */}
-      <div>
-        <h4 className="mb-3 flex items-center gap-1.5 text-sm font-bold text-foreground">
-          <Library className="h-4 w-4 text-gold-600 dark:text-gold-400" />
-          کتاب‌ها در کتابخانه کتاب‌یار
-          <span className="text-xs font-normal text-muted-foreground">
-            ({locale.toPersianDigits(author.books.length)})
-          </span>
-        </h4>
-
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {author.books.map((b) => (
-            <BookCard key={b.slug} book={b} />
-          ))}
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-function AuthorExpandableCard({
-  author,
-  isExpanded,
-  onToggle,
-}: AuthorExpandableCardProps) {
+function AuthorCard({ author }: AuthorCardProps) {
   const locale = usePersianLocale()
-  const reduceMotion = useReducedMotion()
   const initials = getInitials(author.name)
   const bio = author.bio
   const photoUrl = (author as any).photoUrl || ''
@@ -474,14 +338,8 @@ function AuthorExpandableCard({
         : ''
 
   return (
-    <motion.article
-      layout
-      whileHover={reduceMotion || isExpanded ? undefined : { y: -4 }}
-      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-      className={cn(
-        'group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-card p-5 shadow-sm transition-[border-color,box-shadow,background-color] duration-300 hover:border-gold-500/40 hover:shadow-book',
-        isExpanded && 'border-gold-500/50 ring-1 ring-gold-500/20 bg-card/95 shadow-xl',
-      )}
+    <article
+      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-gold-500/40 hover:shadow-book"
     >
       {/* Decorative top hairline */}
       <span
@@ -490,45 +348,52 @@ function AuthorExpandableCard({
       />
 
       <div className="flex items-start gap-4">
-        {/* Avatar or Photo */}
-        {photoUrl ? (
-          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-gold-500/30 shadow-md">
-            <Image
-              src={photoUrl}
-              alt={author.name}
-              fill
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-              sizes="64px"
-            />
-          </div>
-        ) : (
-          <div
-            aria-hidden="true"
-            className={cn(
-              'flex h-16 w-16 shrink-0 items-center justify-center rounded-full',
-              'bg-gradient-to-br from-gold-400 via-gold-500 to-gold-700',
-              'shadow-lg shadow-gold-500/20 ring-2 ring-gold-500/15',
-              'transition-transform duration-500 ease-out-expo group-hover:scale-105',
-            )}
-          >
-            <span
-              className="font-serif text-2xl font-bold tracking-wide text-white"
-              style={{ fontFamily: 'var(--font-display), ui-serif, Georgia, serif' }}
-              dir="ltr"
+        {/* Avatar or Photo with Link */}
+        <Link
+          href={`/authors/${author.slug}`}
+          className="shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500 rounded-full"
+          tabIndex={-1}
+          aria-hidden="true"
+        >
+          {photoUrl ? (
+            <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-gold-500/30 shadow-md">
+              <Image
+                src={photoUrl}
+                alt={author.name}
+                fill
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                sizes="64px"
+              />
+            </div>
+          ) : (
+            <div
+              className={cn(
+                'flex h-16 w-16 items-center justify-center rounded-full',
+                'bg-gradient-to-br from-gold-400 via-gold-500 to-gold-700',
+                'shadow-lg shadow-gold-500/20 ring-2 ring-gold-500/15',
+                'transition-transform duration-500 ease-out-expo group-hover:scale-105',
+              )}
             >
-              {initials}
-            </span>
-          </div>
-        )}
+              <span
+                className="font-serif text-2xl font-bold tracking-wide text-white"
+                style={{ fontFamily: 'var(--font-display), ui-serif, Georgia, serif' }}
+                dir="ltr"
+              >
+                {initials}
+              </span>
+            </div>
+          )}
+        </Link>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <h3
+            <Link
+              href={`/authors/${author.slug}`}
               className="truncate text-base font-bold text-foreground group-hover:text-gold-600 dark:group-hover:text-gold-400 transition-colors"
               dir="ltr"
             >
               {author.name}
-            </h3>
+            </Link>
             {bio?.nameFa && (
               <span className="truncate text-sm font-medium text-gold-700 dark:text-gold-300">
                 {bio.nameFa}
@@ -547,16 +412,16 @@ function AuthorExpandableCard({
 
       {/* Badges row */}
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
-        {bio && (
+        {bio?.nationalityFa ? (
           <Badge
             variant="outline"
             className="gap-1 border-border/70 bg-background/60 text-foreground"
           >
-            <span aria-hidden="true">{bio.flagEmoji}</span>
+            {bio.flagEmoji && <span aria-hidden="true">{bio.flagEmoji}</span>}
             <span className="text-xs">{bio.nationalityFa}</span>
           </Badge>
-        )}
-        {bio && (
+        ) : null}
+        {bio?.eraFa ? (
           <Badge
             variant="outline"
             className="gap-1 border-gold-500/30 bg-gold-500/10 text-gold-700 dark:text-gold-300"
@@ -564,17 +429,19 @@ function AuthorExpandableCard({
             <Feather aria-hidden="true" className="h-3 w-3" />
             <span className="text-xs">{bio.eraFa}</span>
           </Badge>
+        ) : null}
+        {author.bookCount > 0 && (
+          <Badge
+            variant="secondary"
+            className="gap-1 bg-secondary/80 text-secondary-foreground"
+          >
+            <BookOpen aria-hidden="true" className="h-3 w-3" />
+            <span className="text-xs tabular-nums">
+              {locale.toPersianDigits(author.bookCount)}
+            </span>{' '}
+            کتاب
+          </Badge>
         )}
-        <Badge
-          variant="secondary"
-          className="gap-1 bg-secondary/80 text-secondary-foreground"
-        >
-          <BookOpen aria-hidden="true" className="h-3 w-3" />
-          <span className="text-xs tabular-nums">
-            {locale.toPersianDigits(author.bookCount)}
-          </span>{' '}
-          کتاب
-        </Badge>
         {author.averageRating > 0 && (
           <Badge
             variant="outline"
@@ -591,16 +458,14 @@ function AuthorExpandableCard({
         )}
       </div>
 
-      {/* Bio preview (hidden if expanded) */}
-      {!isExpanded && (
-        <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-          {bio?.bioFa ?? bio?.bio ?? author.books[0]?.description ?? '—'}
-        </p>
-      )}
+      {/* Bio preview */}
+      <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+        {bio?.bioFa ?? bio?.bio ?? author.books[0]?.description ?? '—'}
+      </p>
 
-      {/* Tags preview (if any) */}
-      {!isExpanded && bio?.tags && bio.tags.length > 0 && (
-        <div className="mt-2 flex flex-wrap items-center gap-1">
+      {/* Tags preview */}
+      {bio?.tags && bio.tags.length > 0 && (
+        <div className="mt-2.5 flex flex-wrap items-center gap-1">
           {bio.tags.slice(0, 3).map((tag) => (
             <span
               key={tag}
@@ -612,41 +477,22 @@ function AuthorExpandableCard({
         </div>
       )}
 
-      {/* Expanded Content Section */}
-      <AnimatePresence>
-        {isExpanded && <AuthorExpandedDetails author={author} bio={bio} locale={locale} />}
-      </AnimatePresence>
-
-      {/* Footer controls */}
-      <div className="mt-auto flex items-center justify-between pt-4 border-t border-border/40">
+      {/* Single Unified Action Button */}
+      <div className="mt-auto pt-4 border-t border-border/40">
         <Button
-          type="button"
-          size="sm"
-          variant={isExpanded ? 'secondary' : 'outline'}
-          onClick={onToggle}
-          aria-label={isExpanded ? 'بستن جزئیات' : 'مشاهده بیوگرافی و آثار'}
-          className="gap-1.5 border-gold-500/40 text-gold-700 transition-colors hover:bg-gold-500/10 dark:text-gold-300"
+          asChild
+          className="w-full justify-between rounded-xl bg-gold-500/10 hover:bg-gold-500 hover:text-white dark:bg-gold-500/15 dark:hover:bg-gold-500 dark:hover:text-stone-950 text-gold-700 dark:text-gold-300 border border-gold-500/30 transition-all duration-200 group/btn font-medium text-xs sm:text-sm h-10 px-4 shadow-none hover:shadow-md hover:shadow-gold-500/20"
         >
-          <BookOpen aria-hidden="true" className="h-3.5 w-3.5" />
-          {isExpanded ? (
-            <>
-              بستن جزئیات <ChevronUp className="h-3.5 w-3.5" />
-            </>
-          ) : (
-            <>
-              مشاهده بیوگرافی و آثار <ChevronDown className="h-3.5 w-3.5" />
-            </>
-          )}
-        </Button>
-
-        <Button asChild variant="ghost" size="sm" className="text-xs">
-          <Link href={`/authors/${author.slug}`} className="gap-1">
-            صفحه اختصاصی
-            <Feather className="h-3 w-3" />
+          <Link href={`/authors/${author.slug}`} aria-label={`مشاهده بیوگرافی و آثار ${author.name}`}>
+            <span className="flex items-center gap-1.5 font-semibold">
+              <BookOpen aria-hidden="true" className="h-4 w-4 text-gold-600 dark:text-gold-400 group-hover/btn:text-current transition-colors" />
+              مشاهده بیوگرافی و آثار
+            </span>
+            <ArrowLeft aria-hidden="true" className="h-4 w-4 transition-transform duration-200 group-hover/btn:-translate-x-1 text-current" />
           </Link>
         </Button>
       </div>
-    </motion.article>
+    </article>
   )
 }
 
