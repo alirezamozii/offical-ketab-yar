@@ -116,7 +116,11 @@ export function useLibraryFilters(initial: BookListItem[]) {
   const [view, setView] = useState<ViewMode>('grid')
   const [status, setStatus] = useState<StatusValue>('all')
   const [progressMap, setProgressMap] = useState<ProgressMap>({})
-  const [visible, setVisible] = useState(PAGE_SIZE_DESKTOP)
+  const [visible, setVisible] = useState(() =>
+    typeof window !== 'undefined' && window.innerWidth < 640
+      ? PAGE_SIZE_MOBILE
+      : PAGE_SIZE_DESKTOP,
+  )
   const [mounted, setMounted] = useState(false)
   const [filtersOpenMobile, setFiltersOpenMobile] = useState(false)
 
