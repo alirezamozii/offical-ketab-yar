@@ -298,10 +298,11 @@ export function AuthorsPageClient({
         <EmptyState query={query} />
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((author) => (
+          {filtered.map((author, index) => (
             <div
               key={author.slug}
-              className="animate-in fade-in duration-300 fill-mode-both cull-offscreen"
+              style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
+              className="motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 duration-300 fill-mode-both cull-offscreen"
             >
               <AuthorCard author={author} />
             </div>
@@ -339,7 +340,7 @@ function AuthorCard({ author }: AuthorCardProps) {
 
   return (
     <article
-      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-gold-500/40 hover:shadow-book"
+      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-gold-500/40 hover:shadow-book active:scale-[0.99]"
     >
       {/* Decorative top hairline */}
       <span

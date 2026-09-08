@@ -66,7 +66,7 @@ export function TrendingBadge({ viewCount, className }: TrendingBadgeProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold',
+        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold transition-all duration-200 hover:scale-105 motion-safe:animate-badge-pop',
         tier.className,
         className,
       )}

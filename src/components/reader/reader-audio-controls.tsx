@@ -29,7 +29,6 @@ import { AudioWaveBars } from '@/components/reader/audio-wave-bars'
 import { useReader } from '@/components/reader/reader-context'
 import { useTTSContext } from '@/hooks/tts-provider'
 import { toPersianDigits } from '@/lib/reader/types'
-import { useReducedMotion } from 'framer-motion'
 import { Loader2, Square, Volume2, VolumeX } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
@@ -55,7 +54,6 @@ export function ReaderAudioControls({
     currentParagraph,
     themeStyle,
   } = useReader()
-  const reduceMotion = useReducedMotion()
 
   const effectiveText = text ?? currentParagraphPlainText()
   const effectiveLang: 'en' | 'fa' = lang ?? (currentLanguage === 'farsi' ? 'fa' : 'en')
@@ -121,13 +119,11 @@ export function ReaderAudioControls({
             style={{ color: themeStyle.accent }}
             aria-hidden="true"
           />
-          {!reduceMotion && (
-            <AudioWaveBars
-              count={4}
-              className="h-4"
-              barClassName="from-gold-500 to-amber-400"
-            />
-          )}
+          <AudioWaveBars
+            count={4}
+            className="h-4"
+            barClassName="from-gold-500 to-amber-400"
+          />
         </>
       ) : tts.isPaused ? (
         <Volume2

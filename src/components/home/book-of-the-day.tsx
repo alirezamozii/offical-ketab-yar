@@ -60,7 +60,7 @@ export async function BookOfTheDay() {
         </div>
 
         {/* Book card */}
-        <div className="grid gap-6 rounded-2xl border border-gold-500/20 bg-card/80 p-5 backdrop-blur-sm sm:grid-cols-[140px_1fr] sm:p-6 lg:grid-cols-[180px_1fr]">
+        <div className="grid gap-6 rounded-2xl border border-gold-500/20 bg-card/80 p-5 backdrop-blur-sm transition-all duration-300 hover:border-gold-500/40 hover:shadow-lg sm:grid-cols-[140px_1fr] sm:p-6 lg:grid-cols-[180px_1fr]">
           {/* Cover (RTL: right side) */}
           <div className="mx-auto w-full max-w-[180px]">
             <div className="aspect-[2/3] overflow-hidden rounded-xl shadow-xl shadow-gold-500/20 ring-1 ring-border transition-transform duration-500 ease-out-expo hover:-translate-y-1 hover:rotate-1">

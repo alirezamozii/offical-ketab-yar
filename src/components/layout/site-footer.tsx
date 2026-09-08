@@ -1,20 +1,16 @@
-'use client'
-
 import Link from 'next/link'
 import {
   BookOpen,
   ChevronUp,
   Github,
-  Heart,
   Instagram,
   Send,
   Twitter,
-  Banana,
 } from 'lucide-react'
 import { NewsletterSignup } from '@/components/layout/newsletter-signup'
+import { EasterEggHeart } from '@/components/layout/easter-egg-heart'
 import { SITE } from '@/lib/site'
 import { cn } from '@/lib/utils'
-import { useState } from 'react'
 
 type LinkItem = { label: string; href: string }
 type LinkColumn = { title: string; items: LinkItem[] }
@@ -69,58 +65,6 @@ const SOCIAL: { Icon: typeof Twitter; label: string; href: string }[] = [
 const FOCUS_RING =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-md'
 
-/**
- * EasterEggHeart — per user feedback: the heart icon morphs to a BANANA
- * on click (not a book). Both have a glow. Pure CSS transition animation.
- *
- * Per user feedback: "این کتابه هم گقتم از فوتر بره به حاش موز BENANAN
- * باشه" — the morph target is a banana 🍌, not a book.
- */
-function EasterEggHeart() {
-  const [morphed, setMorphed] = useState(false)
-  return (
-    <button
-      type="button"
-      onClick={() => setMorphed((v) => !v)}
-      aria-label={morphed ? 'بازگشت به قلب' : 'ساخته شده با عشق — کلیک کنید'}
-      title={morphed ? 'موز' : 'عشق'}
-      className="group relative inline-flex h-9 w-9 items-center justify-center rounded-full transition-transform duration-300 hover:scale-110 active:scale-95 tap-target"
-    >
-      {/* Soft glow halo — both heart and banana have a glow. Color morphs
-          from red to yellow during the transition. */}
-      <span
-        aria-hidden="true"
-        className={cn(
-          'absolute inset-0 rounded-full blur-md transition-all duration-300 ease-in-out',
-          morphed
-            ? 'bg-yellow-400/50 opacity-80 scale-110'
-            : 'bg-red-500/40 opacity-60 scale-100',
-        )}
-      />
-      {/* Crossfade morph: old icon exits while new icon enters. */}
-      <span
-        className={cn(
-          'relative inline-flex items-center justify-center transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-none',
-          morphed
-            ? 'opacity-100 scale-100 rotate-0'
-            : 'absolute opacity-0 scale-50 -rotate-90 pointer-events-none',
-        )}
-      >
-        <Banana className="h-4 w-4 text-yellow-500 dark:text-yellow-400" />
-      </span>
-      <span
-        className={cn(
-          'relative inline-flex items-center justify-center transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-none',
-          !morphed
-            ? 'opacity-100 scale-100 rotate-0'
-            : 'absolute opacity-0 scale-50 rotate-90 pointer-events-none',
-        )}
-      >
-        <Heart className="h-4 w-4 fill-red-500 text-red-500" />
-      </span>
-    </button>
-  )
-}
 
 /**
  * SiteFooter — REDESIGNED per user feedback.
@@ -208,20 +152,14 @@ export function SiteFooter() {
                   {col.items.map((item) => (
                     <li key={`${col.title}-${item.label}`}>
                       {item.href === '#top' ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            window.scrollTo({
-                              top: 0,
-                              behavior: 'smooth',
-                            })
-                          }
+                        <a
+                          href="#top"
                           className={`inline-flex items-center gap-1 py-1 text-xs text-muted-foreground transition-colors hover:text-primary ${FOCUS_RING}`}
                           aria-label="بازگشت به بالای صفحه"
                         >
                           <ChevronUp className="h-3 w-3" />
                           {item.label}
-                        </button>
+                        </a>
                       ) : (
                         <Link
                           href={item.href}

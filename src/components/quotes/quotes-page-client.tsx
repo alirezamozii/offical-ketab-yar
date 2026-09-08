@@ -16,7 +16,6 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { toast } from 'sonner'
 import { useSearchParams } from 'next/navigation'
 import {
   ArrowLeft,
@@ -82,7 +81,14 @@ import {
 } from '@/lib/quotes'
 import type { BookListItem } from '@/lib/data'
 import { BookCover } from '@/components/books/book-cover'
-import { QuoteStudioModal } from './quote-studio-modal'
+
+const QuoteStudioModal = React.lazy(() =>
+  import('./quote-studio-modal').then((module) => ({ default: module.QuoteStudioModal })),
+)
+
+function notify(kind: 'success' | 'error', message: string) {
+  void import('sonner').then(({ toast }) => toast[kind](message))
+}
 
 // ---------------------------------------------------------------------------
 // Static config — theme icons + filter chips
@@ -332,7 +338,7 @@ export function QuotesPageClient({
     (id: string) => {
       setPrivateHlIds((prev) => {
         const isPriv = prev.includes(id)
-        toast.success(isPriv ? 'هایلایت در بخش عمومی به اشتراک گذاشته شد.' : 'هایلایت خصوصی شد.')
+        notify('success', isPriv ? 'هایلایت در بخش عمومی به اشتراک گذاشته شد.' : 'هایلایت خصوصی شد.')
         return isPriv ? prev.filter((x) => x !== id) : [...prev, id]
       })
     },
@@ -364,11 +370,11 @@ export function QuotesPageClient({
           const next = parsed.filter((x: { id: string }) => x.id !== id)
           localStorage.setItem(key, JSON.stringify(next))
           setHighlights((prev) => prev.filter((x) => x.id !== id))
-          toast.success('کوت حذف شد.')
+          notify('success', 'کوت حذف شد.')
         }
       }
     } catch {
-      toast.error('خطا در حذف کوت.')
+      notify('error', 'خطا در حذف کوت.')
     }
   }, [])
 
@@ -388,9 +394,9 @@ export function QuotesPageClient({
       }
       try {
         await navigator.clipboard.writeText(text)
-        toast.success('متن کوت در کلیپ‌بورد کپی شد.')
+        notify('success', 'متن کوت در کلیپ‌بورد کپی شد.')
       } catch {
-        toast.error('کپی ناموفق بود.')
+        notify('error', 'کپی ناموفق بود.')
       }
     },
     [],
@@ -625,12 +631,16 @@ export function QuotesPageClient({
       </Tabs>
 
       {/* ─── Studio Modal ─── */}
-      <QuoteStudioModal
-        open={studioOpen}
-        onOpenChange={setStudioOpen}
-        quote={studioQuote}
-        book={studioBook}
-      />
+      {studioOpen && (
+        <React.Suspense fallback={null}>
+          <QuoteStudioModal
+            open={studioOpen}
+            onOpenChange={setStudioOpen}
+            quote={studioQuote}
+            book={studioBook}
+          />
+        </React.Suspense>
+      )}
     </div>
   )
 }
@@ -734,7 +744,7 @@ function QuoteOfTheDayHero({
         <blockquote
           key={quote.id}
           dir="ltr"
-          className="font-serif text-2xl font-medium leading-snug text-foreground sm:text-3xl"
+          className="font-serif text-2xl font-medium leading-snug text-foreground sm:text-3xl motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 duration-300"
         >
           <span className="text-gold-500/60">“</span>
           {quote.text}
@@ -742,7 +752,11 @@ function QuoteOfTheDayHero({
         </blockquote>
 
         {/* Farsi translation */}
-        <p dir="rtl" className="text-base leading-relaxed text-muted-foreground sm:text-lg">
+        <p
+          key={`fa-${quote.id}`}
+          dir="rtl"
+          className="text-base leading-relaxed text-muted-foreground sm:text-lg motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 duration-300"
+        >
           {quote.textFa}
         </p>
 
@@ -753,7 +767,6 @@ function QuoteOfTheDayHero({
               <Link
                 href={`/books/read/${quote.bookSlug}`}
                 className="group flex items-center gap-3"
-                aria-label={`رفتن به کتاب ${quote.bookTitle}`}
               >
                 <div className="h-14 w-10 shrink-0 overflow-hidden rounded-md shadow-md ring-1 ring-gold-400/20 transition-transform group-hover:scale-105">
                   <BookCover
@@ -800,7 +813,7 @@ function QuoteOfTheDayHero({
                   'h-8 gap-1.5 px-2.5 rounded-lg text-xs',
                   userVote === 'like' && 'bg-rose-500/15 text-rose-600 font-bold',
                 )}
-                aria-label="پسندیدن"
+                aria-label={`پسندیدن، ${toPersianDigits(likesCount)} پسند`}
               >
                 <Heart
                   className={cn('h-3.5 w-3.5', userVote === 'like' && 'fill-rose-500 text-rose-500')}
@@ -815,7 +828,7 @@ function QuoteOfTheDayHero({
                   'h-8 gap-1 px-2 rounded-lg text-xs opacity-70',
                   userVote === 'dislike' && 'bg-black/10 dark:bg-white/10 opacity-100 font-bold',
                 )}
-                aria-label="نپسندیدن"
+                aria-label={`نپسندیدن، ${toPersianDigits(dislikesCount)} نپسند`}
               >
                 <ThumbsDown className="h-3 w-3" />
                 <span>{toPersianDigits(dislikesCount)}</span>
@@ -840,6 +853,7 @@ function QuoteOfTheDayHero({
               size="sm"
               onClick={onToggleSave}
               aria-pressed={isSaved}
+              aria-label={isSaved ? 'حذف کوت از ذخیره‌شده‌ها' : 'ذخیره کوت'}
               className={cn(
                 'gap-1.5 rounded-xl',
                 isSaved && 'border-amber-400/40 bg-amber-400/15 text-amber-700 dark:text-amber-300',
@@ -1199,10 +1213,12 @@ function QuoteCard({
 
   return (
     <article
+      style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
       className={cn(
         'group flex h-full flex-col justify-between gap-4 rounded-2xl border bg-card/70 p-5',
-        'shadow-xs transition-all duration-300 hover:-translate-y-1',
+        'shadow-xs transition-all duration-300 hover:-translate-y-1 active:scale-[0.99]',
         'border-border/60 hover:border-gold-400/50 hover:shadow-md hover:shadow-gold-500/10',
+        'motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 fill-mode-both',
       )}
     >
       {/* Top section: Header + Quotes */}
@@ -1257,7 +1273,7 @@ function QuoteCard({
             <Link
               href={`/books/read/${quote.bookSlug}`}
               className="flex shrink-0 items-center gap-2"
-              aria-label={`رفتن به کتاب ${quote.bookTitle}`}
+              aria-label={`جلد کتاب ${quote.bookTitle}`}
             >
               <div className="h-12 w-8 shrink-0 overflow-hidden rounded-sm shadow-xs ring-1 ring-gold-400/15 transition-transform group-hover:scale-105">
                 <BookCover
@@ -1305,6 +1321,7 @@ function QuoteCard({
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
             )}
             title="پسندیدن"
+            aria-label={`پسندیدن، ${toPersianDigits(likesCount)} پسند`}
           >
             <Heart className={cn('h-3.5 w-3.5', userVote === 'like' && 'fill-rose-500 text-rose-500')} />
             <span>{toPersianDigits(likesCount)}</span>
@@ -1344,6 +1361,7 @@ function QuoteCard({
               isSaved && 'text-amber-700 hover:text-amber-800 dark:text-amber-300',
             )}
             title={isSaved ? 'حذف از ذخیره‌شده‌ها' : 'ذخیره کوت'}
+            aria-label={isSaved ? 'حذف کوت از ذخیره‌شده‌ها' : 'ذخیره کوت'}
           >
             {isSaved ? <BookmarkCheck className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}
           </Button>
@@ -1637,10 +1655,12 @@ function PersonalQuoteCard({
 
   return (
     <article
+      style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
       className={cn(
         'group flex h-full flex-col justify-between gap-4 rounded-2xl border bg-card/70 p-5',
-        'shadow-xs transition-all duration-300 hover:-translate-y-1',
+        'shadow-xs transition-all duration-300 hover:-translate-y-1 active:scale-[0.99]',
         'border-border/60 hover:border-gold-400/50 hover:shadow-md hover:shadow-gold-500/10',
+        'motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 fill-mode-both',
       )}
     >
       {/* Top section: Header + Quotes */}
@@ -1810,7 +1830,7 @@ function EmptyState({
         <Icon className="h-8 w-8" aria-hidden="true" />
       </div>
       <div className="space-y-1.5">
-        <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+        <h2 className="text-lg font-semibold text-foreground">{title}</h2>
         {hint && <p className="mx-auto max-w-md text-sm text-muted-foreground">{hint}</p>}
       </div>
       {cta}

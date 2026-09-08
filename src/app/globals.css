@@ -294,6 +294,38 @@
     max-width: 100vw;
     overflow-x: hidden;
   }
+
+  /* ---------- Custom Brand Scrollbars (0 performance cost, native GPU-rendered) ---------- */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary) / 0.4) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.35);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.65);
+  }
+  .scroll-hidden::-webkit-scrollbar,
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scroll-hidden,
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "ss01", "cv01";
@@ -1182,6 +1214,131 @@ body:has([data-fullscreen-route]) .site-shell-main {
   z-index: 1;
 }
 
+/* ============================================================
+   GLOW BORDER ANIMATIONS
+   ============================================================ */
+@keyframes glow-visibility {
+  0%, 65% { opacity: 0; }
+  75%, 90% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ============================================================
+   LIQUID GLASS EFFECT (Apple macOS/iOS Premium Liquid Glass)
+   ============================================================ */
+.mac-glass-header {
+  position: relative;
+  isolation: isolate;
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+  background-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(250, 246, 238, 0.75) 50%,
+    rgba(255, 255, 255, 0.8) 100%
+  );
+  transition: opacity 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), border-radius 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.dark .mac-glass-header {
+  background-image: linear-gradient(
+    135deg,
+    rgba(30, 26, 22, 0.85) 0%,
+    rgba(18, 16, 14, 0.8) 50%,
+    rgba(25, 22, 18, 0.85) 100%
+  );
+}
+
+/* Top specular reflection edge + outer shadow definition for crisp visibility */
+.mac-glass-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow: 
+    inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 2px 0 rgba(184, 149, 106, 0.15),
+    0 10px 30px -6px rgba(0, 0, 0, 0.1),
+    0 4px 16px -2px rgba(184, 149, 106, 0.2);
+  pointer-events: none;
+  transition: opacity 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), border-radius 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.dark .mac-glass-header::before {
+  box-shadow: 
+    inset 0 1.5px 1px 0 rgba(244, 211, 94, 0.3),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.4),
+    0 16px 40px -10px rgba(0, 0, 0, 0.5),
+    0 4px 20px -2px rgba(184, 149, 106, 0.15);
+}
+
+/* ============================================================
+   ZERO-LAG HARDWARE ACCELERATION & ZERO CLS UTILITIES
+   ============================================================ */
+.gpu-layer {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform, opacity;
+}
+
+.cls-preserve-cover {
+  aspect-ratio: 2 / 3;
+  contain: layout intrinsic-size 200px 300px;
+  background-color: var(--color-gold-100);
+}
+
+.cls-preserve-avatar {
+  aspect-ratio: 1 / 1;
+  contain: layout intrinsic-size 48px 48px;
+}
+
+/* ============================================================
+   ZERO-STATE CSS SCROLL VARIABLE & FRUSTUM CULLING UTILITIES
+   ============================================================ */
+.progress-bar-gpu {
+  transform: scaleX(var(--scroll-progress, 0));
+  transform-origin: right;
+  will-change: transform;
+}
+
+.scroll-top-btn-gpu {
+  opacity: calc(var(--scroll-progress, 0) * 10);
+  pointer-events: calc(var(--scroll-progress, 0) * 10 > 1 ? auto : none);
+  transform: translateY(calc((1 - var(--scroll-progress, 0)) * 16px));
+  will-change: opacity, transform;
+}
+
+/* 
+ * Frustum Culling — STRICTLY for fixed aspect-ratio cards/containers only 
+ * (e.g. aspect-[2/3] book covers) to prevent scrollbar jumpiness.
+ */
+.cull-offscreen {
+  content-visibility: auto;
+  contain-intrinsic-size: 200px 300px;
+}
+
+.cull-paragraph {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 120px;
+}
+
+/* ============================================================
+   VIEW TRANSITIONS (CIRCULAR THEME TOGGLE)
+   Overrides default Chromium cross-fade animations so the circular
+   clip-path reveals cleanly without blending or layer artifacts.
+   ============================================================ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
 ::view-transition-new(root) {
   z-index: 9999;
 }
@@ -1194,5 +1351,178 @@ body:has([data-fullscreen-route]) .site-shell-main {
   }
 }
 
+/* ============================================================
+   SMART GPU ANIMATION ENGINE & KEYFRAMES
+   ============================================================ */
 
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heartPop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.35) rotate(-6deg); }
+  65% { transform: scale(0.9) rotate(3deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes wavePulse {
+  0%, 100% {
+    height: 4px;
+    opacity: 0.45;
+  }
+  50% {
+    height: 18px;
+    opacity: 1;
+  }
+}
+
+@keyframes crownFloat {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(6deg);
+  }
+}
+
+@keyframes confettiFlutter {
+  0% {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+  80% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(105vh) rotate(720deg) scale(0.6);
+  }
+}
+
+@keyframes testimonialFade {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes trophyEnter {
+  0% {
+    transform: scale(0) rotate(-45deg);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.18) rotate(6deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes chipPop {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-page-fade {
+  animation: pageFadeIn 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-heart-pop {
+  animation: heartPop 350ms cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+.animate-crown-float {
+  animation: crownFloat 2.5s ease-in-out infinite;
+}
+
+.testimonial-enter {
+  animation: testimonialFade 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Tactile interactive utilities */
+.btn-press {
+  transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms ease;
+}
+.btn-press:active {
+  transform: scale(0.95);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card-hover-lift {
+    transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms ease;
+  }
+  .card-hover-lift:hover {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes fadeInSlideRight {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulseSubtle {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.025);
+    opacity: 1;
+  }
+}
+
+@keyframes badgePop {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-badge-pop {
+  animation: badgePop 350ms cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 3s ease-in-out infinite;
+}
+
+.cull-offscreen {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
+}
 

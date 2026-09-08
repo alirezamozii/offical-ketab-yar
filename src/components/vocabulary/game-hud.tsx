@@ -15,7 +15,6 @@
  * animates on increment.
  */
 
-import { motion, useReducedMotion } from 'framer-motion'
 import { Clock, Flame, Heart, Zap } from 'lucide-react'
 import { useEffect } from 'react'
 import { cn } from '@/lib/utils'
@@ -52,7 +51,6 @@ export function GameHud({
   onTickLow,
   maxTime,
 }: GameHudProps) {
-  const reduceMotion = useReducedMotion()
   const lowTime = timeLeft <= 3
 
   // Fire the tick callback once per low second. We use the value itself as
@@ -76,10 +74,10 @@ export function GameHud({
             <Heart
               key={i}
               className={cn(
-                'h-5 w-5 transition-colors',
+                'h-5 w-5 transition-transform duration-200',
                 i < lives
-                  ? 'fill-red-500 text-red-500'
-                  : 'text-muted-foreground/30',
+                  ? 'fill-red-500 text-red-500 scale-100'
+                  : 'text-muted-foreground/30 scale-90',
               )}
             />
           ))}
@@ -90,27 +88,22 @@ export function GameHud({
             {totalXP} XP
           </span>
           {streak >= 2 && (
-            <motion.span
+            <span
               key={`streak-${streak}`}
-              initial={reduceMotion ? false : { scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="flex items-center gap-1 rounded-full bg-orange-500/15 px-2 py-0.5 text-xs font-bold text-orange-600 dark:text-orange-400"
+              className="flex items-center gap-1 rounded-full bg-orange-500/15 px-2 py-0.5 text-xs font-bold text-orange-600 dark:text-orange-400 motion-safe:animate-badge-pop"
             >
               <Flame className="h-3 w-3" />
               {streak}
-            </motion.span>
+            </span>
           )}
           {multiplier > 1 && (
-            <motion.span
+            <span
               key={`mult-${multiplier}`}
-              initial={reduceMotion ? false : { scale: 1.4, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 300 }}
-              className="flex items-center gap-1 rounded-full bg-gold-500/20 px-2 py-0.5 text-xs font-extrabold text-gold-700 dark:text-gold-300"
+              className="flex items-center gap-1 rounded-full bg-gold-500/20 px-2 py-0.5 text-xs font-extrabold text-gold-700 dark:text-gold-300 motion-safe:animate-badge-pop"
               aria-label={`ضریب امتیاز ${multiplier}`}
             >
               ×{multiplier}
-            </motion.span>
+            </span>
           )}
         </div>
       </div>
@@ -143,22 +136,15 @@ export function GameHud({
               )}
             />
           )}
-          <motion.span
+          <span
             key={lowTime ? `low-${timeLeft}` : `ok-${timeLeft}`}
-            initial={reduceMotion && lowTime ? false : false}
-            animate={
-              lowTime && !reduceMotion
-                ? { scale: [1, 1.15, 1] }
-                : { scale: 1 }
-            }
-            transition={{ duration: 0.4 }}
             className={cn(
-              'font-bold tabular-nums',
-              lowTime ? 'text-red-500' : '',
+              'font-bold tabular-nums transition-colors',
+              lowTime ? 'text-red-500 motion-safe:animate-pulse font-extrabold' : '',
             )}
           >
             {fmtTime(timeLeft)}
-          </motion.span>
+          </span>
           <span className="text-muted-foreground">
             · سوال {qIndex + 1} از {totalQuestions}
           </span>

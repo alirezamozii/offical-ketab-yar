@@ -99,7 +99,7 @@ export function ReadingInsights({
           return (
             <div
               key={stat.label}
-              className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-gold-500/40 hover:bg-gold-500/5 sm:p-4"
+              className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-3 transition-all duration-200 hover:-translate-y-1 hover:border-gold-500/50 hover:bg-gold-500/5 hover:shadow-md active:scale-[0.98] sm:p-4"
             >
               {/* Top hairline accent */}
               <span
@@ -110,7 +110,7 @@ export function ReadingInsights({
               <div className="flex items-center gap-2.5">
                 <span
                   className={cn(
-                    'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br sm:h-10 sm:w-10',
+                    'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br transition-transform duration-200 group-hover:scale-110 sm:h-10 sm:w-10',
                     stat.iconBg,
                   )}
                   aria-hidden="true"

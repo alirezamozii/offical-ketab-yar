@@ -13,7 +13,7 @@ export function QuoteOfTheDay({ quote }: QuoteOfTheDayProps) {
   return (
     <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
       <div
-        className="relative overflow-hidden rounded-3xl border border-gold-500/30 bg-gradient-to-br from-gold-500/10 via-card to-card p-6 shadow-sm sm:p-10"
+        className="relative overflow-hidden rounded-3xl border border-gold-500/30 bg-gradient-to-br from-gold-500/10 via-card to-card p-6 shadow-sm sm:p-10 transition-all duration-300 hover:shadow-xl hover:border-gold-500/50"
       >
         {/* Decorative gold ambient glow — GPU radial gradient */}
         <div

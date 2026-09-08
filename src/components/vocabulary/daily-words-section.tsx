@@ -231,7 +231,10 @@ export function DailyWordsSection({
             return (
               <div
                 key={`${dw.word}-${dw.bookSlug}`}
-                className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-card p-4 shadow-sm transition-shadow hover:shadow-md"
+                className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-card p-4 shadow-sm transition-all duration-200 hover:shadow-lg hover:-translate-y-1 animate-in fade-in slide-in-from-bottom-3 fill-mode-both"
+                style={{
+                  animationDelay: `${Math.min(i * 50, 350)}ms`,
+                }}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">

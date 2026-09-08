@@ -12,7 +12,6 @@ import {
 import { useReader } from '@/components/reader/reader-context'
 import { formatSessionTime } from '@/hooks/reader/use-reading-session-timer'
 import { toPersianDigits, type ReaderTheme } from '@/lib/reader/types'
-import { AnimatePresence, motion } from 'framer-motion'
 import {
   ChevronRight,
   Clock,
@@ -83,16 +82,13 @@ export function ReaderToolbar() {
 
   return (
     <>
-    <AnimatePresence>
-      {chromeVisible && (
-        <motion.header
-          initial={{ y: -64 }}
-          animate={{ y: 0 }}
-          exit={{ y: -64 }}
-          transition={{ duration: 0.25 }}
-          className="absolute inset-x-0 top-0 z-40 flex h-16 items-center border-b shadow-sm pt-safe"
-          style={{ background: themeStyle.bg, borderColor: themeStyle.border }}
-        >
+      <header
+        className={cn(
+          'fixed inset-x-0 top-0 z-40 flex h-16 items-center border-b shadow-sm pt-safe transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity]',
+          chromeVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none',
+        )}
+        style={{ background: themeStyle.bg, borderColor: themeStyle.border }}
+      >
           <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-2 px-3 sm:px-4">
             <div className="flex min-w-0 items-center gap-2">
               <a
@@ -145,7 +141,7 @@ export function ReaderToolbar() {
                 label="فهرست فصل‌ها"
                 accent={themeStyle.accent}
                 ariaKeyshortcuts="C"
-                className="hidden md:inline-flex"
+                className="inline-flex"
               >
                 <ListIcon className="h-4 w-4" />
                 <span className="hidden xl:inline text-xs font-medium">فصل‌ها</span>
@@ -329,9 +325,7 @@ export function ReaderToolbar() {
               </div>
             </div>
           </div>
-        </motion.header>
-      )}
-    </AnimatePresence>
+        </header>
 
     {/* ---- Mobile overflow Drawer — Categorized for optimal touch UX ---- */}
     <Drawer open={moreOpen} onOpenChange={setMoreOpen}>
@@ -456,10 +450,12 @@ export function ReaderToolbar() {
                 icon={<ListIcon className="h-5 w-5" />}
                 label="فصل‌ها"
                 onClick={() => {
-                  setShowChapters(true)
-                  setShowSettings(false)
-                  setShowHighlights(false)
                   setMoreOpen(false)
+                  setTimeout(() => {
+                    setShowChapters(true)
+                    setShowSettings(false)
+                    setShowHighlights(false)
+                  }, 120)
                 }}
                 accent={themeStyle.accent}
               />
@@ -468,9 +464,12 @@ export function ReaderToolbar() {
                 label="نشان‌ها"
                 badge={pageHlCount > 0 ? toPersianDigits(pageHlCount) : undefined}
                 onClick={() => {
-                  setShowHighlights(true)
-                  setShowSettings(false)
                   setMoreOpen(false)
+                  setTimeout(() => {
+                    setShowHighlights(true)
+                    setShowSettings(false)
+                    setShowChapters(false)
+                  }, 120)
                 }}
                 accent={themeStyle.accent}
               />
@@ -478,8 +477,8 @@ export function ReaderToolbar() {
                 icon={<MessageSquare className="h-5 w-5" />}
                 label="هوش مصنوعی"
                 onClick={() => {
-                  setShowChat(true)
                   setMoreOpen(false)
+                  setTimeout(() => setShowChat(true), 120)
                 }}
                 accent={themeStyle.accent}
               />
@@ -487,8 +486,8 @@ export function ReaderToolbar() {
                 icon={<Focus className="h-5 w-5" />}
                 label="حالت تمرکز"
                 onClick={() => {
-                  toggleFocusMode()
                   setMoreOpen(false)
+                  setTimeout(() => toggleFocusMode(), 120)
                 }}
                 accent={themeStyle.accent}
               />
@@ -500,9 +499,12 @@ export function ReaderToolbar() {
             <button
               type="button"
               onClick={() => {
-                setShowSettings(true)
-                setShowHighlights(false)
                 setMoreOpen(false)
+                setTimeout(() => {
+                  setShowSettings(true)
+                  setShowHighlights(false)
+                  setShowChapters(false)
+                }, 120)
               }}
               className="flex items-center justify-center gap-2 rounded-xl border py-2.5 px-3 transition-colors hover:bg-black/5 dark:hover:bg-white/5 active:scale-98"
               style={{ borderColor: themeStyle.border }}
@@ -514,8 +516,8 @@ export function ReaderToolbar() {
             <button
               type="button"
               onClick={() => {
-                handleShare()
                 setMoreOpen(false)
+                setTimeout(() => handleShare(), 120)
               }}
               className="flex items-center justify-center gap-2 rounded-xl border py-2.5 px-3 transition-colors hover:bg-black/5 dark:hover:bg-white/5 active:scale-98"
               style={{ borderColor: themeStyle.border }}

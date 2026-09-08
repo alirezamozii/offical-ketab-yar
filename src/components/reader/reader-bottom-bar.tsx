@@ -8,7 +8,7 @@ import { useReader } from '@/components/reader/reader-context'
 import { useTTSContext } from '@/hooks/tts-provider'
 import { useReaderSettingsStore } from '@/lib/store/reader-settings-store'
 import { toPersianDigits } from '@/lib/reader/types'
-import { AnimatePresence, motion } from 'framer-motion'
+import { cn } from '@/lib/utils'
 import {
   ArrowLeft,
   ArrowRight,
@@ -87,28 +87,22 @@ export function ReaderBottomBar() {
   }
 
   return (
-    <AnimatePresence>
-      {chromeVisible && (
-        <motion.div
-          initial={{ y: 80 }}
-          animate={{ y: 0 }}
-          exit={{ y: 80 }}
-          transition={{ duration: 0.25 }}
-          className="no-select absolute inset-x-0 bottom-0 z-40 border-t pb-safe shadow-lg"
-          style={{ background: themeStyle.bg, borderColor: themeStyle.border }}
-        >
-          <div className="mx-auto max-w-3xl px-3 py-2.5 sm:px-5 sm:py-3">
-            <AnimatePresence mode="wait">
+    <>
+      <div
+        className={cn(
+          'no-select fixed inset-x-0 bottom-0 z-40 border-t pb-safe shadow-lg transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity]',
+          chromeVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none',
+        )}
+        style={{ background: themeStyle.bg, borderColor: themeStyle.border }}
+      >
+        <div className="mx-auto max-w-3xl px-3 py-2.5 sm:px-5 sm:py-3">
+            <>
               {isAudioActive ? (
                 /* =========================================================
                    AUDIO PLAYER MODE (هنگام فعال بودن گوینده صوتی)
                    ========================================================= */
-                <motion.div
+                <div
                   key="audio-mode"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.2 }}
                   className="space-y-2"
                 >
                   {/* Interactive Audio progress bar with click / scrub support */}
@@ -267,17 +261,13 @@ export function ReaderBottomBar() {
                       <ArrowLeft className="h-4 w-4" />
                     </Button>
                   </div>
-                </motion.div>
+                </div>
               ) : (
                 /* =========================================================
                    READING NAVIGATION MODE (حالت عادی ناوبری و مطالعه)
                    ========================================================= */
-                <motion.div
+                <div
                   key="nav-mode"
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 8 }}
-                  transition={{ duration: 0.2 }}
                   className="space-y-1.5"
                 >
                   {/* Single Clean Meta Info Header */}
@@ -402,12 +392,11 @@ export function ReaderBottomBar() {
                     {/* Audio Listen Trigger Button (انتقال صوت از بالا به نوار پایین) */}
                     <ReaderAudioControls className="size-11 shrink-0" />
                   </div>
-                </motion.div>
+                </div>
               )}
-            </AnimatePresence>
+            </>
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        </div>
+    </>
   )
 }

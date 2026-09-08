@@ -145,7 +145,7 @@ const nodeOptions = [
   .filter(Boolean)
   .join(' ')
 
-const devProcess = spawn('npx', ['next', 'dev', '-p', process.env.PORT || '3000'], {
+const devProcess = spawn('npx', ['next', 'dev', '-H', '0.0.0.0', '-p', process.env.PORT || '3000'], {
   stdio: ['ignore', 'inherit', 'inherit'],
   shell: true,
   env: {

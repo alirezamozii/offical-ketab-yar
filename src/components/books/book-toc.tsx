@@ -91,10 +91,16 @@ export function BookToc({
       <div className="overflow-hidden rounded-2xl border border-border/60 bg-card/50 shadow-xs">
         <ol className="divide-y divide-border/40">
           {visibleChapters.map((chapter, i) => (
-            <li key={chapter.id}>
+            <li
+              key={chapter.id}
+              style={{
+                animation: 'fadeInSlideRight 250ms cubic-bezier(0.16, 1, 0.3, 1) both',
+                animationDelay: `${Math.min(i * 35, 300)}ms`,
+              }}
+            >
               <Link
                 href={`/books/read/${bookSlug}?chapter=${encodeURIComponent(chapter.slug)}`}
-                className="group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-gold-500/5 sm:px-5 sm:py-4"
+                className="group flex items-center gap-3 px-4 py-3.5 transition-all duration-200 hover:bg-gold-500/10 sm:px-5 sm:py-4"
               >
                 {/* Chapter number badge */}
                 <span

@@ -59,7 +59,7 @@ export async function fetchVocabulary(): Promise<unknown[]> {
 }
 
 export async function fetchLeaderboard(period: string): Promise<unknown> {
-  const res = await fetch(`/api/leaderboard?period=${encodeURIComponent(period)}`, { cache: 'no-store' })
+  const res = await fetch(`/api/leaderboard?period=${encodeURIComponent(period)}`)
   if (!res.ok) throw new Error('Failed to fetch leaderboard')
   return res.json()
 }

@@ -3,7 +3,6 @@
 import { useReader } from '@/components/reader/reader-context'
 import { ParagraphBlock } from '@/components/reader/reader-page-view'
 
-import { useReducedMotion } from 'framer-motion'
 import { Sparkles } from 'lucide-react'
 
 /**
@@ -46,8 +45,6 @@ export function ReaderContent() {
     snapClass,
     fontFamilyCss,
   } = useReader()
-
-  const reduceMotion = useReducedMotion()
 
   // Keyboard handler for the click-to-toggle-controls area. We still want
   // keyboard users to be able to toggle chrome with Enter / Space — but
@@ -161,10 +158,9 @@ export function ReaderContent() {
           {/* End-of-book marker. The "بازگشت به ابتدا" button is a
               real button so it works with Enter/Space. */}
           <div
-            className="mb-8 mt-12 flex flex-col items-center gap-3 text-center opacity-70"
+            className="mb-8 mt-12 flex flex-col items-center gap-3 text-center opacity-70 motion-safe:transition-opacity motion-safe:duration-200"
             role="status"
             aria-label="پایان کتاب"
-            style={reduceMotion ? undefined : { transition: 'opacity 0.2s' }}
           >
             <Sparkles
               aria-hidden="true"

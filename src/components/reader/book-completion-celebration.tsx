@@ -18,7 +18,6 @@
  */
 
 // cn not needed — classNames are inline
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { BookOpen, Sparkles, Trophy, X } from 'lucide-react'
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -64,7 +63,7 @@ function generateConfetti(count: number): ConfettiPiece[] {
 export function BookCompletionCelebration() {
   const [details, setDetails] = useState<CompletionDetails | null>(null)
   const [confetti, setConfetti] = useState<ConfettiPiece[]>([])
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const shownFor = useRef<Set<string>>(new Set())
 
   const dismiss = useCallback(() => {
@@ -106,13 +105,9 @@ export function BookCompletionCelebration() {
   }, [details, dismiss])
 
   return (
-    <AnimatePresence>
+    <>
       {details && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
+        <div
           className="fixed inset-0 z-[80] flex items-center justify-center p-4"
           role="dialog"
           aria-modal="true"
@@ -128,30 +123,17 @@ export function BookCompletionCelebration() {
           {!reduceMotion && (
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
               {confetti.map((p) => (
-                <motion.div
+                <div
                   key={p.id}
-                  initial={{
-                    x: `${p.x}vw`,
-                    y: '-10vh',
-                    rotate: 0,
-                    opacity: 1,
-                  }}
-                  animate={{
-                    y: '110vh',
-                    rotate: p.rotation,
-                    opacity: [1, 1, 0.8, 0],
-                  }}
-                  transition={{
-                    duration: p.duration,
-                    delay: p.delay,
-                    ease: [0.25, 0.46, 0.45, 0.94], // ease-in for gravity
-                  }}
                   style={{
                     position: 'absolute',
+                    left: `${p.x}vw`,
+                    top: '-4vh',
                     width: p.size,
                     height: p.size * 0.6,
                     backgroundColor: p.color,
                     borderRadius: '2px',
+                    animation: `confettiFlutter ${p.duration}s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${p.delay}s forwards`,
                   }}
                 />
               ))}
@@ -159,12 +141,8 @@ export function BookCompletionCelebration() {
           )}
 
           {/* Modal card */}
-          <motion.div
-            initial={reduceMotion ? false : { scale: 0.85, y: 20, opacity: 0 }}
-            animate={{ scale: 1, y: 0, opacity: 1 }}
-            exit={reduceMotion ? { opacity: 0 } : { scale: 0.9, opacity: 0 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border-2 border-gold-400/50 bg-gradient-to-br from-gold-50 via-card to-gold-100/50 p-8 text-center shadow-2xl shadow-gold-800/30 dark:from-background dark:via-card dark:to-gold-900/20"
+          <div
+            className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border-2 border-gold-400/50 bg-gradient-to-br from-gold-50 via-card to-gold-100/50 p-8 text-center shadow-2xl shadow-gold-800/30 dark:from-background dark:via-card dark:to-gold-900/20 animate-page-fade"
           >
             {/* Top gradient accent bar */}
             <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-l from-gold-500 via-gold-700 to-gold-800" />
@@ -184,14 +162,12 @@ export function BookCompletionCelebration() {
                 aria-hidden="true"
                 className="absolute inset-0 rounded-full bg-gold-500/30 blur-xl"
               />
-              <motion.div
-                initial={reduceMotion ? false : { scale: 0, rotate: -30 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+              <div
                 className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-gold-400 to-gold-700 shadow-lg shadow-gold-600/40"
+                style={{ animation: 'trophyEnter 600ms cubic-bezier(0.16, 1, 0.3, 1) both' }}
               >
                 <Trophy className="h-10 w-10 text-white" strokeWidth={2} />
-              </motion.div>
+              </div>
             </div>
 
             {/* Title + sparkles */}
@@ -237,9 +213,9 @@ export function BookCompletionCelebration() {
                 داشبورد
               </Link>
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   )
 }

@@ -1,7 +1,6 @@
 import { SITE } from '@/lib/site'
 import { VocabularyClient } from '@/components/vocabulary/vocabulary-client'
 import type { Metadata } from 'next'
-import { QueryProvider } from '@/components/providers/query-provider'
 
 export const metadata: Metadata = {
   alternates: { canonical: `${SITE.url}/vocabulary` },
@@ -28,9 +27,7 @@ export default function VocabularyPage() {
           بر اساس سیستم لایتنر ۷ مرحله‌ای برای همیشه در ذهن تثبیت می‌گردند.
         </p>
       </header>
-      <QueryProvider>
-        <VocabularyClient />
-      </QueryProvider>
+      <VocabularyClient />
     </div>
   )
 }

@@ -43,7 +43,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
 
   return (
     <div
-      className="min-h-0 motion-safe:animate-[testimonialFade_200ms_ease-out_both]"
+      className="min-h-0 motion-safe:animate-page-fade"
     >
       {children}
     </div>

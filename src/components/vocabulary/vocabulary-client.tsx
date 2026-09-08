@@ -2,14 +2,13 @@
 
 import { SrsDots } from '@/components/vocabulary/srs-dots'
 import type { VocabWord } from '@/components/vocabulary/word-detail-dialog'
-import dynamic from 'next/dynamic'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 
-const WordDetailDialog = dynamic(
+const WordDetailDialog = lazy(
   () =>
     import('@/components/vocabulary/word-detail-dialog').then(
-      (m) => m.WordDetailDialog,
+      (m) => ({ default: m.WordDetailDialog }),
     ),
-  { ssr: false },
 )
 import { DailyWordsSection } from '@/components/vocabulary/daily-words-section'
 import {
@@ -74,13 +73,14 @@ import {
   Volume2,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { fetchVocabulary, queryKeys } from '@/lib/api/queries'
-import { toast } from 'sonner'
+import { fetchVocabulary } from '@/lib/api/queries'
 import { cn } from '@/lib/utils'
 
 type Tab = 'all' | 'due' | 'learning' | 'familiar' | 'mastered' | 'new'
+
+function notify(kind: 'success' | 'error', message: string) {
+  void import('sonner').then(({ toast }) => toast[kind](message))
+}
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'all', label: 'همه' },
@@ -107,8 +107,8 @@ export function VocabularyClient() {
   const { toPersianDigits } = usePersianLocale()
   const tts = useTTS()
   const meta = useVocabMeta()
-  const queryClient = useQueryClient()
   const [words, setWords] = useState<VocabWord[]>([])
+  const [loading, setLoading] = useState(true)
   const [q, setQ] = useState('')
   const [newWord, setNewWord] = useState('')
   const [adding, setAdding] = useState(false)
@@ -124,20 +124,20 @@ export function VocabularyClient() {
   // New-category dialog state (inline).
   const [newCategoryLabel, setNewCategoryLabel] = useState('')
   
-  const { data: vocabWords = [], isLoading: loading } = useQuery<VocabWord[]>({
-    queryKey: queryKeys.vocabulary,
-    queryFn: async () => {
-      const data = await fetchVocabulary()
-      return data as VocabWord[]
-    },
-    staleTime: 60 * 1000,
-  })
+  const reloadVocabulary = useCallback(async () => {
+    setLoading(true)
+    try {
+      setWords((await fetchVocabulary()) as VocabWord[])
+    } catch {
+      // Keep the current local view if the API is temporarily unavailable.
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    if (vocabWords.length > 0) {
-      setWords(vocabWords)
-    }
-  }, [vocabWords])
+    void reloadVocabulary()
+  }, [reloadVocabulary])
 
   async function addManual() {
     const w = newWord.trim()
@@ -167,14 +167,14 @@ export function VocabularyClient() {
       })
       if (!res.ok) throw new Error('save failed')
       setNewWord('')
-      toast.success(
+      notify('success',
         translation
           ? `«${w}» با معنی «${translation}» اضافه شد`
           : `«${w}» اضافه شد`,
       )
-      queryClient.invalidateQueries({ queryKey: queryKeys.vocabulary })
+      await reloadVocabulary()
     } catch {
-      toast.error('خطا در افزودن واژه')
+      notify('error', 'خطا در افزودن واژه')
     } finally {
       setAdding(false)
     }
@@ -190,10 +190,9 @@ export function VocabularyClient() {
           next.delete(id)
           return next
         })
-        toast.success('حذف شد')
-        queryClient.invalidateQueries({ queryKey: queryKeys.vocabulary })
+        notify('success', 'حذف شد')
       })
-      .catch(() => toast.error('خطا'))
+      .catch(() => notify('error', 'خطا'))
   }
 
   function removeManyConfirmed(ids: string[]) {
@@ -207,10 +206,9 @@ export function VocabularyClient() {
         setWords((prev) => prev.filter((w) => !ids.includes(w.id)))
         ids.forEach((id) => srs.resetWord(id))
         setSelected(new Set())
-        toast.success(`${toPersianDigits(ids.length)} واژه حذف شد`)
-        queryClient.invalidateQueries({ queryKey: queryKeys.vocabulary })
+        notify('success', `${toPersianDigits(ids.length)} واژه حذف شد`)
       })
-      .catch(() => toast.error('خطا در حذف'))
+      .catch(() => notify('error', 'خطا در حذف'))
   }
 
   // High-quality TTS pronunciation via /api/tts (z-ai-web-dev-sdk).
@@ -258,7 +256,7 @@ export function VocabularyClient() {
 
   function exportWords(list: VocabWord[]) {
     if (list.length === 0) {
-      toast.error('واژه‌ای برای خروجی نیست')
+      notify('error', 'واژه‌ای برای خروجی نیست')
       return
     }
     const rows = list.map((w) => {
@@ -304,7 +302,7 @@ export function VocabularyClient() {
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-    toast.success(`${toPersianDigits(list.length)} واژه خروجی گرفته شد`)
+    notify('success', `${toPersianDigits(list.length)} واژه خروجی گرفته شد`)
   }
 
   /** Apply search + tab filter + category filter. */
@@ -390,7 +388,7 @@ export function VocabularyClient() {
   return (
     <div className="space-y-6">
       {/* Daily words feature — 5 new words from the books each day */}
-      <DailyWordsSection savedWords={words} onSaved={() => queryClient.invalidateQueries({ queryKey: queryKeys.vocabulary })} />
+      <DailyWordsSection savedWords={words} onSaved={reloadVocabulary} />
 
       {/* Add + search row */}
       <div className="flex flex-col gap-3 sm:flex-row">
@@ -559,7 +557,7 @@ export function VocabularyClient() {
                         const id = meta.createCategory(newCategoryLabel.trim())
                         setNewCategoryLabel('')
                         setActiveCategoryId(id)
-                        toast.success('دسته ساخته شد')
+                        notify('success', 'دسته ساخته شد')
                       }
                     }}
                     placeholder="دسته جدید..."
@@ -574,7 +572,7 @@ export function VocabularyClient() {
                       const id = meta.createCategory(newCategoryLabel.trim())
                       setNewCategoryLabel('')
                       setActiveCategoryId(id)
-                      toast.success('دسته ساخته شد')
+                      notify('success', 'دسته ساخته شد')
                     }}
                     disabled={!newCategoryLabel.trim()}
                     aria-label="ساخت دسته جدید"
@@ -884,14 +882,14 @@ export function VocabularyClient() {
         </>
       )}
 
-      <WordDetailDialog
+      {detailOpen && <Suspense fallback={null}><WordDetailDialog
         word={detailWord}
         open={detailOpen}
         onOpenChange={setDetailOpen}
         onReset={(id) => {
           srs.resetWord(id)
           setDetailOpen(false)
-          toast.success('سطح یادگیری بازنشانی شد')
+          notify('success', 'سطح یادگیری بازنشانی شد')
         }}
         onSaved={(updated) => {
           setWords((prev) =>
@@ -901,7 +899,7 @@ export function VocabularyClient() {
             prev && prev.id === updated.id ? { ...prev, ...updated } : prev,
           )
         }}
-      />
+      /></Suspense>}
 
       {/* Single-word delete confirmation */}
       <AlertDialog

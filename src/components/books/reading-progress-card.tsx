@@ -56,7 +56,7 @@ export function ReadingProgressCard({
 
   return (
     <section
-      className="relative overflow-hidden rounded-2xl border border-gold-500/30 bg-gradient-to-br from-gold-500/10 via-card to-card p-5 shadow-sm sm:p-6"
+      className="relative overflow-hidden rounded-2xl border border-gold-500/30 bg-gradient-to-br from-gold-500/10 via-card to-card p-5 shadow-sm sm:p-6 animate-in fade-in slide-in-from-bottom-3 duration-500"
       aria-label="پیشرفت مطالعه"
     >
       {/* Decorative glow */}

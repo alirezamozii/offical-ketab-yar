@@ -10,7 +10,7 @@ import '@/app/globals.css'
 const vazirmatn = localFont({
   src: '../../../public/fonts/Vazirmatn-subset.woff2',
   variable: '--font-vazirmatn',
-  display: 'optional',
+  display: 'swap',
   weight: '100 900',
   preload: true,
   adjustFontFallback: false,

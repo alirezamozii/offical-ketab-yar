@@ -24,34 +24,48 @@ node_modules
 # misc
 .DS_Store
 *.pem
+local-*
+.claude
+.z-ai-config
+/skills/
+TRACE/
+*.gz
 
-# debug
+# debug & logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.log
+dev.log
+dev.out.log
+server.log
+.server.log
+dev-server.log
+/test
+/prompt
 
-# env files (can opt-in for committing if needed)
+# env files
 .env*
 
 # vercel
 .vercel
 
-
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-local-*
-.claude
-.z-ai-config
-*.log
-dev.log
-dev.out.log
-test
-prompt
 
-server.log
-# Skills directory
-/skills/
-TRACE/
-*.gz
+# Audit & Performance Artifacts
+/artifacts/
+/lighthouse*/
+lighthouse-*.json
+*.report.json
+*.jsonl
+/.next-lighthouse/
+/--help/
+
+# SQLite Journal & Scratch Files
+*.db-shm
+*.db-wal
+/scripts/tools/test-db.ts
+test-db.ts

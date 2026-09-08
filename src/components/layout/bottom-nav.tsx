@@ -60,6 +60,7 @@ const FOCUS_RING =
 function useDueReviewCount(): number {
   const [count, setCount] = useState(0)
   useEffect(() => {
+    let cancelled = false
     const compute = () => {
       try {
         const raw = localStorage.getItem(STORAGE_KEYS.srs)
@@ -80,11 +81,29 @@ function useDueReviewCount(): number {
         return 0
       }
     }
-    setCount(compute())
-    const onChange = () => setCount(compute())
+
+    const run = () => {
+      if (!cancelled) setCount(compute())
+    }
+
+    let idleId: number | undefined
+    let timerId: ReturnType<typeof setTimeout> | undefined
+
+    if ('requestIdleCallback' in window) {
+      idleId = (window as unknown as { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback(run, { timeout: 3000 })
+    } else {
+      timerId = setTimeout(run, 1000)
+    }
+
+    const onChange = () => run()
     window.addEventListener('ky_srs:change', onChange as EventListener)
     window.addEventListener('storage', onChange)
     return () => {
+      cancelled = true
+      if (idleId !== undefined && 'cancelIdleCallback' in window) {
+        (window as unknown as { cancelIdleCallback: (id: number) => void }).cancelIdleCallback(idleId)
+      }
+      if (timerId) clearTimeout(timerId)
       window.removeEventListener('ky_srs:change', onChange as EventListener)
       window.removeEventListener('storage', onChange)
     }

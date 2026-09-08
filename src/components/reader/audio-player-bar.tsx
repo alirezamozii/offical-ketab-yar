@@ -22,8 +22,8 @@ import { useTTSContext } from '@/hooks/tts-provider'
 import { useReader } from '@/components/reader/reader-context'
 import { useReaderSettingsStore } from '@/lib/store/reader-settings-store'
 import { toPersianDigits } from '@/lib/reader/types'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Pause, Play, Square, Volume2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const SPEEDS = [0.25, 0.5, 1, 1.25, 1.5, 2]
 
@@ -38,7 +38,6 @@ function formatTime(sec: number): string {
 export function AudioPlayerBar() {
   const tts = useTTSContext()
   const { themeStyle } = useReader()
-  const reduceMotion = useReducedMotion()
   const audioSpeed = useReaderSettingsStore((state) => state.audioSpeed)
   const setAudioSpeed = useReaderSettingsStore((state) => state.setAudioSpeed)
 
@@ -53,21 +52,22 @@ export function AudioPlayerBar() {
   )
 
   return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 32 }}
-          animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
-          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 32 }}
-          transition={{ duration: 0.22, ease: 'easeOut' }}
-          className="absolute inset-x-0 bottom-20 z-30 mx-auto flex w-[min(640px,calc(100%-1.5rem))] items-center gap-2 rounded-2xl border p-2 shadow-lg backdrop-blur-md sm:gap-3 sm:p-3"
-          style={{
-            borderColor: themeStyle.accent + '44',
-            background: themeStyle.bg + 'f2',
-          }}
-          role="region"
-          aria-label="پخش صدا"
-        >
+    <div
+      className={cn(
+        'absolute inset-x-0 bottom-20 z-30 mx-auto flex w-[min(640px,calc(100%-1.5rem))] items-center gap-2 rounded-2xl border p-2 shadow-lg backdrop-blur-md sm:gap-3 sm:p-3',
+        'transition-all duration-300 ease-out motion-reduce:transition-none',
+        visible
+          ? 'translate-y-0 opacity-100 pointer-events-auto'
+          : 'translate-y-8 opacity-0 pointer-events-none',
+      )}
+      style={{
+        borderColor: themeStyle.accent + '44',
+        background: themeStyle.bg + 'f2',
+      }}
+      role="region"
+      aria-label="پخش صدا"
+      aria-hidden={!visible}
+    >
           {/* Play / Pause */}
           <Button
             type="button"
@@ -167,8 +167,6 @@ export function AudioPlayerBar() {
               «{tts.currentText}»
             </p>
           )}
-        </motion.div>
-      )}
-    </AnimatePresence>
+    </div>
   )
 }

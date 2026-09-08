@@ -11,7 +11,6 @@
  */
 
 import { Button } from '@/components/ui/button'
-import { motion, useReducedMotion } from 'framer-motion'
 import { RotateCw, Trophy } from 'lucide-react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
@@ -63,26 +62,20 @@ export function GameResult({
   containerClassName = 'mx-auto max-w-2xl px-4 py-12 sm:px-6',
   wrapTitleSubtitle = false,
 }: GameResultProps) {
-  const reduceMotion = useReducedMotion()
   const cols = stats.length === 3 ? 'grid-cols-3' : 'grid-cols-4'
   return (
     <div className={containerClassName}>
-      <motion.div
-        initial={reduceMotion ? false : { opacity: 0, scale: 0.92 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="flex flex-col items-center gap-5 rounded-3xl border border-border/60 bg-card p-10 text-center shadow-xl"
+      <div
+        className="flex flex-col items-center gap-5 rounded-3xl border border-border/60 bg-card p-10 text-center shadow-xl motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 duration-300"
       >
-        <motion.span
-          initial={reduceMotion ? false : { scale: 0, rotate: -30 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
+        <span
           className={cn(
-            'flex h-20 w-20 items-center justify-center bg-gradient-to-br from-gold-400 to-gold-600 text-white shadow-lg shadow-gold-500/40',
+            'flex h-20 w-20 items-center justify-center bg-gradient-to-br from-gold-400 to-gold-600 text-white shadow-lg shadow-gold-500/40 motion-safe:animate-trophy-enter',
             trophyClassName,
           )}
         >
           <Trophy className="h-10 w-10" />
-        </motion.span>
+        </span>
         {wrapTitleSubtitle ? (
           <div>
             <h1 className="text-3xl font-extrabold">{title}</h1>
@@ -119,7 +112,7 @@ export function GameResult({
             <Link href={backHref}>{backLabel}</Link>
           </Button>
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }

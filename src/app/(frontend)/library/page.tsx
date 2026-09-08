@@ -3,7 +3,6 @@ import { TopTrending } from '@/components/library/top-trending'
 import { getBooks, getBooksCount, getMostReadBooks } from '@/lib/data'
 import type { Metadata } from 'next'
 import { SITE } from '@/lib/site'
-import { QueryProvider } from '@/components/providers/query-provider'
 
 export const revalidate = 60
 
@@ -102,9 +101,7 @@ export default async function LibraryPage() {
           Dynamic ranking based on real viewCount, pastel palette. */}
       <TopTrending books={trending} />
 
-      <QueryProvider>
-        <LibraryClient initial={initialBooks} />
-      </QueryProvider>
+      <LibraryClient initial={initialBooks} />
     </div>
   )
 }

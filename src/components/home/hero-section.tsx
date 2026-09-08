@@ -94,7 +94,7 @@ export function HeroSection(_props: { booksCount?: number } = {}) {
                   <Button
                     asChild
                     variant="glow"
-                    className="relative h-11 w-full overflow-hidden rounded-xl px-5 text-sm font-bold sm:h-12 sm:rounded-2xl sm:px-7 sm:text-base sm:w-auto"
+                    className="relative h-11 w-full overflow-hidden rounded-xl px-5 text-sm font-bold sm:h-12 sm:rounded-2xl sm:px-7 sm:text-base sm:w-auto shadow-md transition-all active:scale-95 hover:shadow-xl"
                   >
                     <Link
                       href="/library"
@@ -145,7 +145,7 @@ export function HeroSection(_props: { booksCount?: number } = {}) {
               looks intentional rather than unfinished.
               Hidden on mobile (saves space, text-only is fine there). */}
           <div
-            className="relative hidden lg:block"
+            className="relative hidden lg:block animate-in fade-in zoom-in-95 duration-700 fill-mode-both"
             aria-label="محل نمایش تصویر برنامه (به‌زودی)"
           >
             <div className="relative aspect-[4/5] w-full max-w-md overflow-hidden rounded-3xl border border-gold-400/30 bg-gradient-to-br from-gold-500/10 via-card to-gold-700/10 shadow-2xl">

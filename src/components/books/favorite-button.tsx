@@ -31,17 +31,17 @@ export function FavoriteButton({ book, className, size = 'md' }: FavoriteButtonP
       aria-label={fav ? 'حذف از علاقه‌مندی' : 'افزودن به علاقه‌مندی'}
       aria-pressed={fav}
       className={cn(
-        'flex items-center justify-center rounded-full border border-white/20 bg-white/95 text-gold-700 shadow-lg backdrop-blur-md transition-colors hover:bg-white dark:bg-gray-900/95 dark:text-gold-400',
+        'flex items-center justify-center rounded-full border border-white/20 bg-white/95 text-gold-700 shadow-lg backdrop-blur-md transition-all duration-200 hover:scale-110 active:scale-85 hover:bg-white dark:bg-gray-900/95 dark:text-gold-400',
         dim,
         className,
       )}
     >
       {fav ? (
-        <span key="filled" className="inline-flex">
+        <span key="filled" className="inline-flex animate-heart-pop">
           <Heart className="h-4 w-4 fill-red-500 text-red-500" />
         </span>
       ) : (
-        <span key="outline" className="inline-flex">
+        <span key="outline" className="inline-flex transition-transform hover:scale-110">
           <Heart className="h-4 w-4" />
         </span>
       )}

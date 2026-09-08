@@ -39,7 +39,7 @@ export function ActiveFilterChips({
           onClick={f.onRemove}
           className={cn(
             'group inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1',
-            'text-xs font-medium text-primary transition-colors hover:bg-primary/20',
+            'text-xs font-medium text-primary transition-all duration-200 hover:bg-primary/20 active:scale-95 animate-in fade-in zoom-in-90',
           )}
           aria-label={`حذف فیلتر ${f.label}`}
         >

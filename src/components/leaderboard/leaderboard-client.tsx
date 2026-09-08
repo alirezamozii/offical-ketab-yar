@@ -11,7 +11,7 @@ import {
 import { getRankColor, getRankEmoji, toPersianNumber } from '@/lib/gamification'
 import { ArrowDown, ArrowUp, BookOpen, Crown, Minus, TrendingUp, Trophy, Zap } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { queryKeys, fetchLeaderboard } from '@/lib/api/queries'
 
 type Period = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'alltime'
@@ -69,12 +69,12 @@ export function LeaderboardClient({
 }: LeaderboardClientProps) {
   const [activeTab, setActiveTab] = useState<Period>(initialPeriod)
 
-  // Phase 3 R-FE.2: migrated from manual fetch+useState to TanStack Query.
-  // Gives automatic caching per period, retry, background refetch.
+  // Phase 3 R-FE.2: TanStack Query with caching, keepPreviousData, and instant tab switches.
   const { data: queryData, isLoading: loading } = useQuery({
     queryKey: queryKeys.leaderboard(activeTab),
     queryFn: () => fetchLeaderboard(activeTab) as Promise<LeaderboardResponse>,
     initialData: activeTab === initialPeriod ? (initialData ?? undefined) : undefined,
+    placeholderData: keepPreviousData,
     staleTime: 60_000,
   })
 
@@ -256,7 +256,7 @@ function PodiumColumn({ entry }: { entry: LeaderboardEntry }) {
       {/* Crown for #1 */}
       <div className="mb-1 h-6">
         {isFirst && (
-          <span className="inline-block text-2xl">
+          <span className="inline-block text-2xl animate-crown-float select-none">
             👑
           </span>
         )}

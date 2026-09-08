@@ -43,12 +43,12 @@ export const BookCard = memo(function BookCard({ book, progress, href, cached }:
 
   return (
     <article
-      className="group relative block h-full cull-offscreen motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.16,1,0.3,1)] motion-safe:hover:-translate-y-1"
+      className="group relative block h-full cull-offscreen motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.16,1,0.3,1)] motion-safe:hover:-translate-y-2 motion-safe:active:scale-[0.98]"
     >
-      <div className="relative h-full overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm transition-[transform,opacity,colors,border-color,background-color] duration-300 ease-out-expo group-hover:border-gold-400/40 hover:shadow-md">
+      <div className="relative h-full overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm transition-all duration-300 ease-out-expo group-hover:border-gold-400/50 group-hover:shadow-xl">
         {/* ─── COVER ─── */}
         <div className="relative aspect-[2/3] overflow-hidden">
-          <div className="absolute inset-0 transition-transform duration-700 ease-out-expo group-hover:scale-105">
+          <div className="absolute inset-0 transition-transform duration-700 ease-out-expo group-hover:scale-108">
             <BookCover
               from={book.coverFrom}
               to={book.coverTo}

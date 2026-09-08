@@ -19,7 +19,6 @@ import {
   SheetDescription,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { AnimatePresence, motion } from 'framer-motion'
 import {
   Copy,
   Download,
@@ -382,54 +381,48 @@ export function HighlightsPanel({
                 )}
 
                 {/* ---- Inline note editor ---- */}
-                <AnimatePresence initial={false}>
-                  {isEditing && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.18 }}
-                      className="overflow-hidden"
-                    >
-                      <textarea
-                        value={draftNote}
-                        onChange={(e) => setDraftNote(e.target.value)}
-                        placeholder="یادداشت خود را بنویسید…"
-                        dir="auto"
-                        rows={2}
-                        className="mt-2 w-full resize-none rounded-lg border bg-transparent px-2.5 py-1.5 text-xs leading-relaxed outline-none focus-visible:ring-1"
-                        style={{ borderColor: s.border }}
-                        aria-label="ویرایش یادداشت"
-                      />
-                      <div className="mt-1 flex justify-end gap-1.5">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-9 px-2 text-xs"
-                          onClick={() => {
-                            onEditNote(null)
-                          }}
-                        >
-                          لغو
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="h-9 px-3 text-xs"
-                          style={{
-                            background: s.accent,
-                            color: '#fff',
-                          }}
-                          onClick={() => {
-                            onSaveNote(h.id, draftNote)
-                            onEditNote(null)
-                          }}
-                        >
-                          ذخیره
-                        </Button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {isEditing && (
+                  <div
+                    className="overflow-hidden motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1 duration-200"
+                  >
+                    <textarea
+                      value={draftNote}
+                      onChange={(e) => setDraftNote(e.target.value)}
+                      placeholder="یادداشت خود را بنویسید…"
+                      dir="auto"
+                      rows={2}
+                      className="mt-2 w-full resize-none rounded-lg border bg-transparent px-2.5 py-1.5 text-xs leading-relaxed outline-none focus-visible:ring-1"
+                      style={{ borderColor: s.border }}
+                      aria-label="ویرایش یادداشت"
+                    />
+                    <div className="mt-1 flex justify-end gap-1.5">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-9 px-2 text-xs"
+                        onClick={() => {
+                          onEditNote(null)
+                        }}
+                      >
+                        لغو
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="h-9 px-3 text-xs"
+                        style={{
+                          background: s.accent,
+                          color: '#fff',
+                        }}
+                        onClick={() => {
+                          onSaveNote(h.id, draftNote)
+                          onEditNote(null)
+                        }}
+                      >
+                        ذخیره
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )
           })}

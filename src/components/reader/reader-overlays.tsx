@@ -1,40 +1,16 @@
 'use client'
 
-import dynamic from 'next/dynamic'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { useReader } from '@/components/reader/reader-context'
-import { AnimatePresence } from 'framer-motion'
-import { toast } from 'sonner'
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 
-const TextSelectionMenu = dynamic(
-  () => import('@/components/reader/text-selection-menu').then((m) => m.TextSelectionMenu),
-  { ssr: false },
-)
-const WordPopupDictionary = dynamic(
-  () => import('@/components/reader/word-popup-dictionary').then((m) => m.WordPopupDictionary),
-  { ssr: false },
-)
-const SettingsPanel = dynamic(
-  () => import('@/components/reader/settings-panel').then((m) => m.SettingsPanel),
-  { ssr: false },
-)
-const ChaptersPanel = dynamic(
-  () => import('@/components/reader/chapters-panel').then((m) => m.ChaptersPanel),
-  { ssr: false },
-)
-const HighlightsPanel = dynamic(
-  () => import('@/components/reader/highlights-panel').then((m) => m.HighlightsPanel),
-  { ssr: false },
-)
-const AIChatPanel = dynamic(
-  () => import('@/components/reader/ai-chat-panel').then((m) => m.AIChatPanel),
-  { ssr: false },
-)
-const ShortcutsHelpOverlay = dynamic(
-  () => import('@/components/reader/shortcuts-help-overlay').then((m) => m.ShortcutsHelpOverlay),
-  { ssr: false },
-)
+const TextSelectionMenu = lazy(() => import('@/components/reader/text-selection-menu').then((m) => ({ default: m.TextSelectionMenu })))
+const WordPopupDictionary = lazy(() => import('@/components/reader/word-popup-dictionary').then((m) => ({ default: m.WordPopupDictionary })))
+const SettingsPanel = lazy(() => import('@/components/reader/settings-panel').then((m) => ({ default: m.SettingsPanel })))
+const ChaptersPanel = lazy(() => import('@/components/reader/chapters-panel').then((m) => ({ default: m.ChaptersPanel })))
+const HighlightsPanel = lazy(() => import('@/components/reader/highlights-panel').then((m) => ({ default: m.HighlightsPanel })))
+const AIChatPanel = lazy(() => import('@/components/reader/ai-chat-panel').then((m) => ({ default: m.AIChatPanel })))
+const ShortcutsHelpOverlay = lazy(() => import('@/components/reader/shortcuts-help-overlay').then((m) => ({ default: m.ShortcutsHelpOverlay })))
 
 /**
  * Renders all the AnimatePresence-gated overlays:
@@ -116,7 +92,7 @@ export function ReaderOverlays() {
   return (
     <>
       {/* ---- Text selection menu ---- */}
-      <AnimatePresence>
+      <Suspense fallback={null}>
         {showTextMenu && (
           <TextSelectionMenu
             position={menuPosition}
@@ -133,37 +109,37 @@ export function ReaderOverlays() {
             onClose={() => setShowTextMenu(false)}
           />
         )}
-      </AnimatePresence>
+      </Suspense>
 
       {/* ---- Word popup dictionary (centered modal — Radix Dialog) ---- */}
       {showDictionary && (
         <ErrorBoundary>
-          <WordPopupDictionary
+          <Suspense fallback={null}><WordPopupDictionary
             open={showDictionary}
             word={dictionaryWord}
             context={currentParagraphPlainText().slice(0, 200)}
             theme={prefs.theme}
             bookSlug={book.slug}
             onClose={() => setShowDictionary(false)}
-          />
+          /></Suspense>
         </ErrorBoundary>
       )}
 
       {showSettings && (
         <ErrorBoundary>
-          <SettingsPanel
+          <Suspense fallback={null}><SettingsPanel
             prefs={prefs}
             onChange={update}
             theme={prefs.theme}
             open={showSettings}
             onClose={() => setShowSettings(false)}
-          />
+          /></Suspense>
         </ErrorBoundary>
       )}
 
       {showChapters && (
         <ErrorBoundary>
-          <ChaptersPanel
+          <Suspense fallback={null}><ChaptersPanel
             book={book}
             currentPage={currentParagraph}
             bookmarks={bookmarks}
@@ -175,13 +151,13 @@ export function ReaderOverlays() {
               setShowChapters(false)
             }}
             onToggleBookmark={toggleBookmark}
-          />
+          /></Suspense>
         </ErrorBoundary>
       )}
 
       {showHighlights && (
         <ErrorBoundary>
-          <HighlightsPanel
+          <Suspense fallback={null}><HighlightsPanel
             highlights={highlights}
             currentPage={currentParagraph}
             theme={prefs.theme}
@@ -197,19 +173,19 @@ export function ReaderOverlays() {
             onClearAll={clearAllHighlights}
             onCopy={(t) => {
               navigator.clipboard.writeText(t)
-              toast.success('کپی شد')
+              void import('sonner').then(({ toast }) => toast.success('کپی شد'))
             }}
             onJumpToPage={(p) => {
               scrollToParagraph(p)
               setShowHighlights(false)
             }}
-          />
+          /></Suspense>
         </ErrorBoundary>
       )}
 
       {showChat && (
         <ErrorBoundary>
-          <AIChatPanel
+          <Suspense fallback={null}><AIChatPanel
             bookTitle={book.title}
             bookAuthor={book.author}
             bookSlug={book.slug}
@@ -219,19 +195,19 @@ export function ReaderOverlays() {
             isMobile={isMobile}
             open={showChat}
             onClose={() => setShowChat(false)}
-          />
+          /></Suspense>
         </ErrorBoundary>
       )}
 
       {/* ---- Shortcuts help overlay (? key) ---- */}
-      <AnimatePresence>
+      <Suspense fallback={null}>
         {showHelp && (
           <ShortcutsHelpOverlay
             theme={prefs.theme}
             onClose={() => setShowHelp(false)}
           />
         )}
-      </AnimatePresence>
+      </Suspense>
     </>
   )
 }

@@ -12,7 +12,6 @@
  * from gold-400 to amber-500.
  */
 
-import { motion, useReducedMotion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 interface AudioWaveBarsProps {
@@ -32,8 +31,7 @@ export function AudioWaveBars({
   className,
   barClassName,
 }: AudioWaveBarsProps) {
-  const reduceMotion = useReducedMotion()
-  const shouldAnimate = active && !reduceMotion
+  const shouldAnimate = active
 
   // Deterministic per-bar delays so the loop feels organic but stable.
   const delays = [0, 0.15, 0.3, 0.45, 0.1, 0.25, 0.4, 0.05].slice(0, count)
@@ -50,30 +48,19 @@ export function AudioWaveBars({
       {Array.from({ length: count }).map((_, i) => {
         const baseDelay = delays[i] ?? 0
         return (
-          <motion.span
+          <span
             key={i}
             className={cn(
-              'inline-block w-[2.5px] rounded-full bg-gradient-to-t from-gold-500 to-amber-400',
+              'inline-block w-[2.5px] rounded-full bg-gradient-to-t from-gold-500 to-amber-400 transition-[height]',
               barClassName,
             )}
-            initial={{ height: 4 }}
-            animate={
-              shouldAnimate
-                ? {
-                    height: [4, 14, 6, 12, 4],
-                  }
-                : { height: 6 }
-            }
-            transition={
-              shouldAnimate
-                ? {
-                    duration: 0.9,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                    delay: baseDelay,
-                  }
-                : { duration: 0 }
-            }
+            style={{
+              height: shouldAnimate ? undefined : 6,
+              animation: shouldAnimate
+                ? `wavePulse 0.85s ease-in-out infinite alternate`
+                : 'none',
+              animationDelay: `${baseDelay}s`,
+            }}
           />
         )
       })}

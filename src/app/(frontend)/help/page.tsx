@@ -1,10 +1,3 @@
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion'
-import { Button } from '@/components/ui/button'
 import { safeJsonLd } from '@/lib/json-ld'
 import { SITE } from '@/lib/site'
 import { HelpCircle } from 'lucide-react'
@@ -127,27 +120,30 @@ export default function HelpPage() {
         </p>
       </header>
 
-      <Accordion type="single" collapsible className="space-y-3">
+      <section aria-label="پاسخ سوال‌های متداول" className="space-y-3">
         {FAQS.map((f, i) => (
-          <AccordionItem
+          <details
             key={i}
-            value={`item-${i}`}
-            className="rounded-xl border border-border/60 bg-card px-4 shadow-sm"
+            className="group rounded-xl border border-border/60 bg-card px-4 shadow-sm"
           >
-            <AccordionTrigger className="text-right font-semibold">
-              {f.q}
-            </AccordionTrigger>
-            <AccordionContent className="text-muted-foreground">
-              {f.a}
-            </AccordionContent>
-          </AccordionItem>
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-right font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+              <span>{f.q}</span>
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </summary>
+            <p className="pb-4 text-sm text-muted-foreground">{f.a}</p>
+          </details>
         ))}
-      </Accordion>
+      </section>
 
       <div className="mt-10 text-center">
-        <Button asChild variant="outline">
-          <Link href="/support">تماس با پشتیبانی</Link>
-        </Button>
+        <Link
+          href="/support"
+          className="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          تماس با پشتیبانی
+        </Link>
       </div>
       </div>
     </>

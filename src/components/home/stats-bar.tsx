@@ -55,7 +55,7 @@ export function StatsBar({
             return (
               <div
                 key={s.label}
-                className="group flex items-center gap-2.5 rounded-xl border border-border/40 bg-card/50 p-2.5 backdrop-blur-sm transition-colors hover:border-gold-400/60 hover:bg-gold-500/5 sm:px-4 sm:py-3"
+                className="group flex items-center gap-2.5 rounded-xl border border-border/40 bg-card/50 p-2.5 backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-gold-400/60 hover:bg-gold-500/5 hover:shadow-md active:scale-[0.98] sm:px-4 sm:py-3"
               >
                 <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-gold-500/20 to-gold-700/10 text-gold-700 dark:text-gold-400 sm:h-10 sm:w-10">
                   <span

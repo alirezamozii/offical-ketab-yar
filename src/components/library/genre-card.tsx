@@ -101,7 +101,7 @@ function hash(s: string): number {
 
 export function GenreCard({
   genre,
-  index: _index,
+  index,
 }: {
   genre: GenreInfo
   index: number
@@ -111,7 +111,12 @@ export function GenreCard({
   const Icon = getGenreIcon(genre.name)
 
   return (
-    <div className="transition-transform duration-300 motion-safe:hover:-translate-y-1">
+    <div
+      className="transition-all duration-300 motion-safe:hover:-translate-y-1.5 motion-safe:active:scale-[0.98] animate-in fade-in slide-in-from-bottom-3 fill-mode-both"
+      style={{
+        animationDelay: `${Math.min(index * 35, 280)}ms`,
+      }}
+    >
       <Link
         href={`/library?genre=${encodeURIComponent(genre.name)}`}
         prefetch={false}

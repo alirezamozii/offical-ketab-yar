@@ -201,8 +201,8 @@ export function ReviewForm({ bookSlug, onSubmitted }: ReviewFormProps) {
                       onClick={() => setRating(n)}
                       onKeyDown={(e) => onStarKey(e, n)}
                       className={cn(
-                        'relative transition-transform duration-200 ease-out-expo tap-target hover:scale-110',
-                        active && 'scale-105',
+                        'relative transition-transform duration-150 ease-out-expo tap-target hover:scale-125 active:scale-90',
+                        active && 'scale-110',
                       )}
                     >
                       <Star
@@ -222,7 +222,7 @@ export function ReviewForm({ bookSlug, onSubmitted }: ReviewFormProps) {
                   <span className="tabular-nums">۵</span>
                   <span
                     key={ratingLabel}
-                    className="rounded-full bg-gold-500/15 px-2 py-0.5 text-xs font-semibold text-gold-700 dark:text-gold-300"
+                    className="rounded-full bg-gold-500/15 px-2 py-0.5 text-xs font-semibold text-gold-700 dark:text-gold-300 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 duration-200"
                   >
                     {ratingLabel}
                   </span>

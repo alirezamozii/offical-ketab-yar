@@ -15,11 +15,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import dynamic from 'next/dynamic'
-
-const MobileFiltersDrawer = dynamic(
-  () => import('@/components/library/mobile-filters-drawer').then((mod) => mod.MobileFiltersDrawer),
-  { ssr: false }
-)
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import {
   BookOpen,
@@ -42,6 +37,11 @@ import {
 } from '@/hooks/reader/use-local-progress'
 import { cn } from '@/lib/utils'
 import { STORAGE_KEYS } from '@/lib/storage-keys'
+
+const MobileFiltersDrawer = dynamic(
+  () => import('@/components/library/mobile-filters-drawer').then((mod) => mod.MobileFiltersDrawer),
+  { ssr: false }
+)
 
 const GENRES = [
   'Fantasy', 'Classic', 'Adventure', 'Romance', 'Mystery', 'Children',

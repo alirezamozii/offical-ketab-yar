@@ -54,7 +54,7 @@ export function LibraryEmptyState({
       {/* Decorative SVG bookshelf illustration */}
       <svg
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-4 -z-10 mx-auto h-40 w-72 sm:h-44 sm:w-80 opacity-80"
+        className="pointer-events-none absolute inset-x-0 top-4 -z-10 mx-auto h-40 w-72 sm:h-44 sm:w-80 opacity-80 motion-safe:animate-pulse-subtle"
         viewBox="0 0 320 180"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -229,7 +229,7 @@ export function LibraryEmptyState({
 
       <div className="relative">
         <div
-          className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 text-primary ring-1 ring-primary/20"
+          className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 text-primary ring-1 ring-primary/20 motion-safe:animate-in motion-safe:zoom-in-75 duration-300"
         >
           {hasFilters ? (
             <SearchX className="h-8 w-8" />
@@ -260,7 +260,7 @@ export function LibraryEmptyState({
               onClick={() => onPickGenre(g)}
               className={cn(
                 'rounded-full border border-border bg-background px-3 py-1 text-xs font-medium',
-                'text-muted-foreground transition-colors hover:border-gold-500/50 hover:bg-gold-500/5 hover:text-foreground',
+                'text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-gold-500/50 hover:bg-gold-500/5 hover:text-foreground active:scale-95',
               )}
             >
               {g}

@@ -124,7 +124,10 @@ export const ParagraphBlock = memo(function ParagraphBlock({
 
       {prefs.showSubtitles && secondary && (
         <div
-          className={cn('mt-2 text-[0.86em] transition-opacity duration-200')}
+          className={cn(
+            'mt-2 text-[0.86em] transition-opacity duration-200',
+            'motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1',
+          )}
           dir={secondaryDir}
           style={{
             borderInlineStart: `3px solid ${accent}`,

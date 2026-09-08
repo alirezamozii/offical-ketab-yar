@@ -429,7 +429,7 @@ export default async function BookDetailPage({ params }: PageProps) {
           {/* Hero grid */}
           <div className="grid gap-8 md:grid-cols-[280px_1fr] lg:gap-12">
             {/* Cover (in RTL, the first grid cell lands on the right) */}
-            <div className="mx-auto w-full max-w-[280px]">
+            <div className="order-2 mx-auto w-full max-w-[280px] md:order-none">
               <div className="aspect-[2/3] overflow-hidden rounded-2xl shadow-2xl shadow-gold-500/20 ring-1 ring-border transition-transform duration-500 ease-out-expo hover:-translate-y-1 hover:rotate-1">
                 <BookCover
                   title={book.title}
@@ -443,7 +443,7 @@ export default async function BookDetailPage({ params }: PageProps) {
             </div>
 
             {/* Meta */}
-            <div className="space-y-5">
+            <div className="order-1 space-y-5 md:order-none">
               <div className="space-y-3">
                 <div className="flex flex-wrap gap-2">
                   {book.genres.map((g) => (
