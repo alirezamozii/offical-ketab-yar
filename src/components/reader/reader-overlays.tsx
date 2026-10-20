@@ -164,6 +164,7 @@ export function ReaderOverlays() {
             bookTitle={book.title}
             bookAuthor={book.author}
             bookSlug={book.slug}
+            pageNumbers={book.pages.map((p) => p.pageNumber)}
             editingHighlightId={editingHighlightId}
             onEditNote={setEditingHighlightId}
             onSaveNote={setHighlightNote}

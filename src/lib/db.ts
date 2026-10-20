@@ -63,7 +63,7 @@ export function resetDbOffline() {
 export async function safeQuery<T>(
   queryFn: () => Promise<T>,
   fallback: T,
-  timeoutMs = 250,
+  timeoutMs = 2000,
 ): Promise<T> {
   if (isDbOffline()) {
     return fallback

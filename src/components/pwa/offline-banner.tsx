@@ -1,7 +1,6 @@
 'use client'
 
 import { WifiOff, X } from 'lucide-react'
-import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 export function OfflineBanner() {
@@ -43,10 +42,7 @@ export function OfflineBanner() {
           <div>
             <p className="text-xs font-bold leading-tight">شما آفلاین هستید</p>
             <p className="mt-0.5 text-[11px] text-muted-foreground">
-              کتاب‌های دانلودشده همچنان در دسترس هستند.{' '}
-              <Link href="/offline" className="font-bold text-gold-600 underline hover:text-gold-500 dark:text-gold-400">
-                مشاهده لیست آفلاین
-              </Link>
+              کتاب‌های دانلودشده و صفحات بازدیدشده همچنان در دسترس هستند.
             </p>
           </div>
         </div>

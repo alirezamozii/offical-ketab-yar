@@ -16,7 +16,7 @@ export interface ThemeTransitionOptions {
   easing?: string
 }
 
-let activeAnimation: Animation | null = null
+let _activeAnimation: Animation | null = null
 let isTransitionActive = false
 let lastToggleTimestamp = 0
 let safetyTimer: ReturnType<typeof setTimeout> | null = null
@@ -36,7 +36,7 @@ export function _resetThemeTransitionStateForTesting(): void {
     clearTimeout(safetyTimer)
     safetyTimer = null
   }
-  activeAnimation = null
+  _activeAnimation = null
   isTransitionActive = false
   lastToggleTimestamp = 0
 }
@@ -149,7 +149,7 @@ export function executeThemeTransition({
       clearTimeout(safetyTimer)
       safetyTimer = null
     }
-    activeAnimation = null
+    _activeAnimation = null
     isTransitionActive = false
   }
 
@@ -188,7 +188,7 @@ export function executeThemeTransition({
             }
           )
 
-          activeAnimation = anim
+          _activeAnimation = anim
         } catch {
           // If animate throws, browser default transition completes
         }

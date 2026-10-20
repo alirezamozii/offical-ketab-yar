@@ -10,7 +10,6 @@ import {
 import { NewsletterSignup } from '@/components/layout/newsletter-signup'
 import { EasterEggHeart } from '@/components/layout/easter-egg-heart'
 import { SITE } from '@/lib/site'
-import { cn } from '@/lib/utils'
 
 type LinkItem = { label: string; href: string }
 type LinkColumn = { title: string; items: LinkItem[] }

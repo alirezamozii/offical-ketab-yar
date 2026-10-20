@@ -65,13 +65,75 @@ export function useReaderSelection({
     }
   }, [])
 
+/**
+ * Automatically snaps a Range to whole word boundaries.
+ * If a word is partially selected, it expands start and end to include the complete word.
+ */
+function snapRangeToWordBoundaries(range: Range): Range {
+  const cloned = range.cloneRange()
+
+  const isWordChar = (ch: string) => {
+    if (!ch) return false
+    return !/[\s.,!?;:)"'«»،؛؟\-\/\\`~@#$%^&*()_+={}\[\]|<>]/u.test(ch)
+  }
+
+  // Snap start backward to the beginning of the word
+  if (cloned.startContainer.nodeType === Node.TEXT_NODE) {
+    const text = cloned.startContainer.textContent || ''
+    let start = cloned.startOffset
+    while (start > 0 && isWordChar(text[start - 1])) {
+      start--
+    }
+    cloned.setStart(cloned.startContainer, start)
+  }
+
+  // Snap end forward to the end of the word
+  if (cloned.endContainer.nodeType === Node.TEXT_NODE) {
+    const text = cloned.endContainer.textContent || ''
+    let end = cloned.endOffset
+    while (end < text.length && isWordChar(text[end])) {
+      end++
+    }
+    cloned.setEnd(cloned.endContainer, end)
+  }
+
+  return cloned
+}
+
   // ---- Text selection ----
   const handleTextSelection = useCallback(() => {
     const sel = window.getSelection()
-    const text = sel?.toString().trim()
-    if (text && text.length > 0 && sel && sel.rangeCount > 0) {
+    if (!sel || sel.rangeCount === 0) {
+      setShowTextMenu(false)
+      setSelectedRange(null)
+      return
+    }
+
+    const rawRange = sel.getRangeAt(0)
+    if (rawRange.collapsed) {
+      setShowTextMenu(false)
+      setSelectedRange(null)
+      return
+    }
+
+    const initialText = sel.toString().trim()
+    if (!initialText) {
+      setShowTextMenu(false)
+      setSelectedRange(null)
+      return
+    }
+
+    // Automatically expand selection to whole words (no partial word selections)
+    const range = snapRangeToWordBoundaries(rawRange)
+
+    try {
+      sel.removeAllRanges()
+      sel.addRange(range)
+    } catch {}
+
+    const text = range.toString().trim()
+    if (text && text.length > 0) {
       setSelectedText(text)
-      const range = sel.getRangeAt(0)
       setSelectedRange(range.cloneRange())
       const rect = range.getBoundingClientRect()
       const MENU_H = 56

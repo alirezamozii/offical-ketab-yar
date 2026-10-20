@@ -11,6 +11,16 @@ import {
   paginateBookResults,
   toListItem,
 } from '@/lib/books-query'
+import { REST_DELETE, REST_GET, REST_OPTIONS, REST_PATCH, REST_POST } from '@payloadcms/next/routes'
+import config from '@/payload.config'
+
+export const dynamic = 'force-dynamic'
+
+const payloadGet = REST_GET(config)
+const payloadPost = REST_POST(config)
+const payloadOptions = REST_OPTIONS(config)
+const payloadPatch = REST_PATCH(config)
+const payloadDelete = REST_DELETE(config)
 
 const QuerySchema = z.object({
   slugs: z.string().max(2000).optional(),
@@ -31,6 +41,19 @@ const BOOKS_CACHE_CONTROL =
 
 export async function GET(req: NextRequest) {
   try {
+    const url = new URL(req.url)
+    const hasWhere = [...url.searchParams.keys()].some((k) => k === 'where' || k.startsWith('where['))
+    if (
+      hasWhere ||
+      url.searchParams.has('depth') ||
+      url.searchParams.has('page') ||
+      url.searchParams.has('draft')
+    ) {
+      return (payloadGet as any)(req, {
+        params: Promise.resolve({ slug: ['books'] }),
+      })
+    }
+
     const query = parseQuery(req, QuerySchema, 'پارامترهای جست‌وجو نامعتبر است.')
     if (!query.ok) return query.response
     const { slugs, sort, q, genre, level, limit, cursor, paginated } = query.data
@@ -86,4 +109,28 @@ export async function GET(req: NextRequest) {
       headers: { 'x-db-fallback': 'true' },
     })
   }
+}
+
+export async function POST(req: NextRequest) {
+  return (payloadPost as any)(req, {
+    params: Promise.resolve({ slug: ['books'] }),
+  })
+}
+
+export async function PATCH(req: NextRequest) {
+  return (payloadPatch as any)(req, {
+    params: Promise.resolve({ slug: ['books'] }),
+  })
+}
+
+export async function DELETE(req: NextRequest) {
+  return (payloadDelete as any)(req, {
+    params: Promise.resolve({ slug: ['books'] }),
+  })
+}
+
+export async function OPTIONS(req: NextRequest) {
+  return (payloadOptions as any)(req, {
+    params: Promise.resolve({ slug: ['books'] }),
+  })
 }

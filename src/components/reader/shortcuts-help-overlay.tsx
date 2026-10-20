@@ -20,10 +20,10 @@ const SHORTCUTS: { group: string; rows: ShortcutRow[] }[] = [
   {
     group: 'جابه‌جایی',
     rows: [
-      { keys: ['←'], action: 'چپتر بعدی' },
-      { keys: ['→'], action: 'چپتر قبلی' },
-      { keys: ['j'], action: 'چپتر بعدی (سبک Vim)' },
-      { keys: ['k'], action: 'چپتر قبلی (سبک Vim)' },
+      { keys: ['←'], action: 'صفحه بعدی' },
+      { keys: ['→'], action: 'صفحه قبلی' },
+      { keys: ['j'], action: 'صفحه بعدی (سبک Vim)' },
+      { keys: ['k'], action: 'صفحه قبلی (سبک Vim)' },
       { keys: ['Space'], action: 'یک صفحه پایین' },
       { keys: ['Shift', 'Space'], action: 'یک صفحه بالا' },
       { keys: ['Home'], action: 'ابتدای کتاب' },
@@ -46,7 +46,7 @@ const SHORTCUTS: { group: string; rows: ShortcutRow[] }[] = [
     group: 'پنل‌ها',
     rows: [
       { keys: ['S'], action: 'تنظیمات' },
-      { keys: ['C'], action: 'چپترها' },
+      { keys: ['C'], action: 'صفحه‌ها' },
       { keys: ['H'], action: 'نشان‌ها / هایلایت‌ها' },
       { keys: ['A'], action: 'گفتگو با هوش مصنوعی' },
       { keys: ['?'], action: 'این پنجره' },

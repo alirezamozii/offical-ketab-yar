@@ -1,26 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db, safeQuery } from '@/lib/db'
+import { parseGenres } from '@/lib/books-query'
 import { cache, TTL } from '@/lib/cache'
-
-function parseGenres(raw: string): string[] {
-  try {
-    const v = JSON.parse(raw)
-    return Array.isArray(v) ? v.map(String) : []
-  } catch {
-    return []
-  }
-}
 
 /**
  * Genre aggregation endpoint.
  *
- * Genres change rarely (only when books are added/removed), so this response
- * is aggressively cached — 5 min in-process + 5 min browser/CDN.
- *
- * The underlying query already uses a tight `select` projection
- * (`genres`, `viewCount` only); the win here is *caching*, not projection.
+ * Cached in-process + CDN, invalidated automatically via revalidateBook()
+ * whenever books or their categories are created/updated in the CMS.
  */
-const GENRES_CACHE_CONTROL = 'public, max-age=300, s-maxage=600'
+const GENRES_CACHE_CONTROL = 'public, max-age=60, s-maxage=120'
 
 export async function GET(req: NextRequest) {
   try {
@@ -28,13 +17,36 @@ export async function GET(req: NextRequest) {
     const cacheKey = `genres:${sort}`
 
     const genres = await cache.wrap(cacheKey, async () => {
-      const books = await safeQuery(
+      let books = await safeQuery(
         () =>
           db.book.findMany({
+            where: { isPublished: true },
             select: { genres: true, viewCount: true },
           }),
         [],
+        2500,
       )
+
+      if (!books || books.length === 0) {
+        try {
+          const { getPayloadClient } = await import('@/lib/payload')
+          const payload = await getPayloadClient()
+          const payloadBooks = await payload.find({
+            collection: 'books',
+            where: { isPublished: { equals: true } },
+            limit: 100,
+          })
+          if (payloadBooks?.docs?.length > 0) {
+            books = payloadBooks.docs.map((b: any) => ({
+              genres: JSON.stringify(parseGenres(b.genres)),
+              viewCount: Number(b.viewCount) || 0,
+            }))
+          }
+        } catch {
+          // payload fallback optional
+        }
+      }
+
       const map = new Map<string, { count: number; views: number }>()
       for (const b of books) {
         for (const g of parseGenres(b.genres)) {

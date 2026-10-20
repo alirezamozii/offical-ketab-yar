@@ -81,6 +81,9 @@ interface SearchHit {
   coverFrom: string
   coverTo: string
   coverAccent: string
+  coverImageUrl?: string
+  coverImage?: string
+  coverBlurhash?: string
   pageNumber: number
   snippetEn: string
   snippetFa: string
@@ -630,7 +633,7 @@ export function SearchClient({
                           <>
                             {' · '}
                             <span dir="rtl">
-                              صفحه {toPersianDigits(h.pageNumber + 1)}
+                              صفحه {toPersianDigits(h.pageNumber)}
                             </span>
                           </>
                         )}
@@ -775,6 +778,7 @@ export function SearchClient({
                   flatIndexOf={flatIndexOf}
                   hitRefs={hitRefs}
                   toPersianDigits={toPersianDigits}
+                  query={q.trim()}
                 />
               </motion.div>
 
@@ -863,6 +867,29 @@ function Segments({ segments }: { segments: Segment[] }) {
       )}
     </>
   )
+}
+
+/** Split a title/author string into highlight segments against the query so
+ *  metadata matches light up in the results header like page-text hits. */
+function splitHighlight(text: string, q: string): Segment[] {
+  if (!q) return [{ text, match: false }]
+  const lower = text.toLowerCase()
+  const lq = q.toLowerCase()
+  const parts: Segment[] = []
+  let last = 0
+  let idx = lower.indexOf(lq)
+  while (idx !== -1) {
+    if (idx > last) parts.push({ text: text.slice(last, idx), match: false })
+    parts.push({ text: text.slice(idx, idx + lq.length), match: true })
+    last = idx + lq.length
+    idx = lower.indexOf(lq, last)
+  }
+  if (last < text.length) parts.push({ text: text.slice(last), match: false })
+  return parts.length ? parts : [{ text, match: false }]
+}
+
+function HighlightedMeta({ text, q }: { text: string; q: string }) {
+  return <Segments segments={splitHighlight(text, q)} />
 }
 
 /** Relevance badge — color-coded by score band. */
@@ -1325,6 +1352,7 @@ interface ResultsListProps {
   flatIndexOf: (h: SearchHit) => number
   hitRefs: React.MutableRefObject<(HTMLAnchorElement | null)[]>
   toPersianDigits: (n: string | number) => string
+  query: string
 }
 
 function ResultsList({
@@ -1334,6 +1362,7 @@ function ResultsList({
   flatIndexOf,
   hitRefs,
   toPersianDigits,
+  query,
 }: ResultsListProps) {
   // Filter the grouped hits by the active tab. The flat-index lookup must
   // still map to the ORIGINAL hits array (so keyboard nav stays in sync), so
@@ -1359,7 +1388,7 @@ function ResultsList({
       {visibleGroups.map(([slug, bookHits]) => (
         <div
           key={slug}
-          className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm cull-offscreen"
+          className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm"
         >
           {/* Book header */}
           <div className="flex items-center gap-3 border-b border-border/50 bg-muted/30 p-3">
@@ -1368,6 +1397,8 @@ function ResultsList({
                 title={bookHits[0].bookTitle}
                 author={bookHits[0].bookAuthor}
                 from={bookHits[0].coverFrom}
+                imageUrl={bookHits[0].coverImageUrl || bookHits[0].coverImage || undefined}
+                blurhash={bookHits[0].coverBlurhash || undefined}
                 to={bookHits[0].coverTo}
                 accent={bookHits[0].coverAccent}
                 size="sm"
@@ -1379,11 +1410,11 @@ function ResultsList({
                 className="font-bold hover:text-primary"
                 dir="ltr"
               >
-                {bookHits[0].bookTitle}
+                <HighlightedMeta text={bookHits[0].bookTitle} q={query} />
               </Link>
               <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <User className="h-3 w-3" />
-                {bookHits[0].bookAuthor}
+                <HighlightedMeta text={bookHits[0].bookAuthor} q={query} />
               </p>
             </div>
             <Button asChild size="sm" variant="outline">
@@ -1419,7 +1450,7 @@ function ResultsList({
                       <>
                         <FileText className="h-3.5 w-3.5" />
                         <span dir="rtl">
-                          صفحه {toPersianDigits(h.pageNumber + 1)}
+                          صفحه {toPersianDigits(h.pageNumber)}
                         </span>
                       </>
                     )}

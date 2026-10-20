@@ -1,5 +1,6 @@
 import configPromise from '@/payload.config'
 import '@payloadcms/next/css'
+import '@/payload/admin-design-system.css'
 import '@/payload/custom.css'
 import { RootLayout, handleServerFunctions } from '@payloadcms/next/layouts'
 import { importMap } from './importMap'

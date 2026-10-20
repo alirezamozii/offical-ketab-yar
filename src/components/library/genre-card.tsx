@@ -9,6 +9,14 @@ import {
   BookText,
   Leaf,
   Sparkles,
+  Search,
+  Ghost,
+  Lightbulb,
+  Brain,
+  Briefcase,
+  Hourglass,
+  Atom,
+  Feather,
   type LucideIcon,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -21,50 +29,178 @@ export interface GenreInfo {
 }
 
 /**
- * Genre-specific icon mapping.
- *
- * Per user feedback: "بر اساس موضوغ هم ایکون حودش داشته باشه" — each
- * genre gets an icon that reflects its subject matter, not a generic
- * BookOpen icon for all.
- *
- * The lookup is by English genre name (case-insensitive). Falls back to
- * BookOpen for unknown genres. Add new mappings as the catalog grows.
+ * Persian translations for common genre tags so CMS-managed English genres
+ * are presented to Persian users with native terminology while preserving
+ * the English subtitle.
+ */
+const GENRE_FA_MAP: Record<string, string> = {
+  fiction: 'داستان و رمان',
+  classic: 'کلاسیک',
+  classics: 'کلاسیک',
+  drama: 'درام و نمایشنامه',
+  tragedy: 'تراژدی',
+  adventure: 'ماجراجویی',
+  fantasy: 'فانتزی و تخیلی',
+  romance: 'عاشقانه',
+  children: 'کودک و نوجوان',
+  kids: 'کودک و نوجوان',
+  'young adult': 'نوجوانان',
+  mystery: 'معمایی و کارآگاهی',
+  detective: 'کارآگاهی',
+  horror: 'وحشت و ترسناک',
+  gothic: 'گوتیک',
+  history: 'تاریخی',
+  historical: 'تاریخی',
+  philosophy: 'فلسفی',
+  philosophical: 'فلسفی',
+  psychology: 'روانشناسی',
+  'self-help': 'خودیاری و توسعه فردی',
+  business: 'کسب‌وکار و مدیریت',
+  science: 'علمی',
+  'sci-fi': 'علمی‌تخیلی',
+  'science fiction': 'علمی‌تخیلی',
+  biography: 'زندگی‌نامه',
+  memoir: 'خاطرات',
+  poetry: 'شعر و ادب منظوم',
+  comedy: 'طنز و کمدی',
+  nature: 'طبیعت',
+}
+
+/**
+ * Genre-specific icon mapping (Persian & English keywords).
  */
 const GENRE_ICONS: Record<string, LucideIcon> = {
-  // Drama / play
+  // Drama / play / tragedy
   drama: Drama,
   play: Drama,
-  // Adventure / journey / quest
+  tragedy: Drama,
+  theater: Drama,
+  درام: Drama,
+  نمایش: Drama,
+  نمایشنامه: Drama,
+  تراژدی: Drama,
+  تئاتر: Drama,
+
+  // Adventure / journey / quest / travel
   adventure: Mountain,
   quest: Mountain,
   journey: Mountain,
-  // Children / kids
+  travel: Mountain,
+  ماجراجویی: Mountain,
+  سفر: Mountain,
+  طبیعت‌گردی: Mountain,
+
+  // Children / kids / young adult
   children: Baby,
   kids: Baby,
+  'young adult': Baby,
+  کودک: Baby,
+  کودکان: Baby,
+  نوجوان: Baby,
+
   // Classic / literature
   classic: Crown,
   classics: Crown,
-  literature: BookText,
+  masterpiece: Crown,
+  کلاسیک: Crown,
+  شاهکار: Crown,
+
   // Romance / love
   romance: Heart,
   love: Heart,
-  // Fiction / novel
+  عاشقانه: Heart,
+  عشق: Heart,
+
+  // Fiction / novel / literature
   fiction: BookText,
   novel: BookText,
+  literature: BookText,
+  داستان: BookText,
+  داستانی: BookText,
+  رمان: BookText,
+  ادبیات: BookText,
+
   // Nature / pastoral
   nature: Leaf,
   pastoral: Leaf,
+  طبیعت: Leaf,
+  محیط: Leaf,
+
   // Fantasy / magic
   fantasy: Sparkles,
   magic: Sparkles,
+  myth: Sparkles,
+  فانتزی: Sparkles,
+  جادو: Sparkles,
+  افسانه: Sparkles,
+
+  // Mystery / detective / crime
+  mystery: Search,
+  detective: Search,
+  crime: Search,
+  معمایی: Search,
+  کارآگاهی: Search,
+  پلیسی: Search,
+  جنایی: Search,
+
+  // Horror / gothic
+  horror: Ghost,
+  gothic: Ghost,
+  ترسناک: Ghost,
+  وحشت: Ghost,
+  گوتیک: Ghost,
+
+  // Philosophy / wisdom
+  philosophy: Lightbulb,
+  philosophical: Lightbulb,
+  wisdom: Lightbulb,
+  فلسفه: Lightbulb,
+  فلسفی: Lightbulb,
+  حکمت: Lightbulb,
+
+  // Psychology / mind / self-help
+  psychology: Brain,
+  mind: Brain,
+  'self-help': Brain,
+  روانشناسی: Brain,
+  خودیاری: Brain,
+  توسعه: Brain,
+
+  // Business / management / finance
+  business: Briefcase,
+  management: Briefcase,
+  finance: Briefcase,
+  کسب: Briefcase,
+  مدیریت: Briefcase,
+  مالی: Briefcase,
+
+  // History / biography
+  history: Hourglass,
+  historical: Hourglass,
+  biography: Hourglass,
+  memoir: Hourglass,
+  تاریخ: Hourglass,
+  تاریخی: Hourglass,
+  زندگی: Hourglass,
+  خاطرات: Hourglass,
+
+  // Science / sci-fi
+  science: Atom,
+  'sci-fi': Atom,
+  scientific: Atom,
+  علمی: Atom,
+
+  // Poetry
+  poetry: Feather,
+  poem: Feather,
+  شعر: Feather,
+  منظوم: Feather,
 }
 
 /** Returns the genre-specific icon, or BookOpen as fallback. */
 function getGenreIcon(genreName: string): LucideIcon {
   const key = genreName.toLowerCase().trim()
-  // Direct match
   if (GENRE_ICONS[key]) return GENRE_ICONS[key]
-  // Partial match (genre name contains a known keyword)
   for (const known of Object.keys(GENRE_ICONS)) {
     if (key.includes(known)) return GENRE_ICONS[known]
   }
@@ -110,6 +246,12 @@ export function GenreCard({
   const grad = GRADIENTS[hash(genre.name) % GRADIENTS.length]
   const Icon = getGenreIcon(genre.name)
 
+  const lowerName = genre.name.toLowerCase().trim()
+  const faTranslation = GENRE_FA_MAP[lowerName]
+  const isPersian = /[\u0600-\u06FF]/.test(genre.name)
+  const displayTitle = isPersian ? genre.name : (faTranslation || genre.name)
+  const displaySubtitle = !isPersian && faTranslation ? genre.name : null
+
   return (
     <div
       className="transition-all duration-300 motion-safe:hover:-translate-y-1.5 motion-safe:active:scale-[0.98] animate-in fade-in slide-in-from-bottom-3 fill-mode-both"
@@ -121,7 +263,7 @@ export function GenreCard({
         href={`/library?genre=${encodeURIComponent(genre.name)}`}
         prefetch={false}
         className="group relative block overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-[transform,opacity,colors,border-color,background-color] duration-300 ease-out-expo hover:border-gold-500/40 hover:shadow-lg hover:shadow-gold-500/10"
-        aria-label={`ژانر ${genre.name} — ${genre.count} کتاب`}
+        aria-label={`ژانر ${displayTitle} — ${genre.count} کتاب`}
       >
         <div className="relative h-28 overflow-hidden">
           <div className={cn('absolute inset-0 bg-gradient-to-br opacity-90 transition-transform duration-500 ease-out-expo group-hover:scale-105', grad)} />
@@ -135,22 +277,24 @@ export function GenreCard({
             aria-hidden="true"
           />
           <div className="absolute inset-0 flex items-center justify-between px-5">
-            {/* Genre-specific icon — per user feedback: "بر اساس موضوغ هم
-                ایکون حودش داشته باشه". */}
             <Icon className="h-8 w-8 text-white/90 transition-transform duration-300 ease-out-expo group-hover:scale-110" />
             <ArrowLeft className="h-5 w-5 text-white/70 transition-transform duration-300 ease-out-expo group-hover:-translate-x-1" />
           </div>
-          {/* Count badge — REMOVED per user feedback: "روی تون رنکا نوشتیم
-              چند تا کناب اینو پپاک کن نمیخوایم". The count is still shown
-              in the meta section below the gradient header. */}
         </div>
         <div className="p-4">
-          <h3
-            className="text-lg font-bold transition-colors duration-300 group-hover:text-primary"
-            dir="ltr"
-          >
-            {genre.name}
-          </h3>
+          <div className="flex items-baseline justify-between gap-1.5">
+            <h3
+              className="text-base font-bold transition-colors duration-300 group-hover:text-primary sm:text-lg"
+              dir="auto"
+            >
+              {displayTitle}
+            </h3>
+            {displaySubtitle && (
+              <span className="shrink-0 text-[11px] font-medium text-muted-foreground/75 uppercase tracking-wider" dir="ltr">
+                {displaySubtitle}
+              </span>
+            )}
+          </div>
           <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <BookOpen className="h-3 w-3" />

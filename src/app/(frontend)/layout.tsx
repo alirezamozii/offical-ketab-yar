@@ -1,6 +1,7 @@
 import { ConditionalLayout } from '@/components/layout/conditional-layout'
 import { safeJsonLd } from '@/lib/json-ld'
 import { SkipLink } from '@/components/layout/skip-link'
+import { RegisterSW } from '@/components/pwa/register-sw'
 import { SITE } from '@/lib/site'
 import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
@@ -13,7 +14,8 @@ const vazirmatn = localFont({
   display: 'swap',
   weight: '100 900',
   preload: true,
-  adjustFontFallback: false,
+  fallback: ['system-ui', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif'],
+  adjustFontFallback: 'Arial',
 })
 
 const SITE_URL = SITE.url
@@ -252,6 +254,10 @@ export default function RootLayout({
         {/* SkipLink must be the FIRST focusable element on every page so
             keyboard users can immediately bypass the header / nav. */}
         <SkipLink />
+        {/* Registered immediately (not behind the deferred/interaction
+            gates): nothing renders, and without it the app cannot work
+            offline on the first minutes of a fresh visit. */}
+        <RegisterSW />
         <ConditionalLayout>{children}</ConditionalLayout>
         {process.env.NEXT_PUBLIC_SENTRY_DSN ? <WebVitals /> : null}
       </body>

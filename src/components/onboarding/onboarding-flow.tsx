@@ -791,6 +791,8 @@ function FirstBookStep({
                     title={b.title}
                     author={b.author}
                     from={b.coverFrom}
+                    imageUrl={b.coverImageUrl || b.coverImage || undefined}
+                    blurhash={b.coverBlurhash || undefined}
                     to={b.coverTo}
                     accent={b.coverAccent}
                     size="sm"

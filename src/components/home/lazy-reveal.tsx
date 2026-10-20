@@ -11,7 +11,7 @@ export function LazyReveal({ children, delay = 0, className }: LazyRevealProps) 
   return (
     <div
       className={cn(
-        'animate-in fade-in slide-in-from-bottom-5 duration-600 fill-mode-both motion-reduce:animate-none',
+        ' animate-in fade-in slide-in-from-bottom-5 duration-600 fill-mode-both motion-reduce:animate-none',
         className,
       )}
       style={delay ? { animationDelay: `${delay * 1000}ms` } : undefined}

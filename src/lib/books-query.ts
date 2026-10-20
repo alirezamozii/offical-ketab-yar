@@ -1,13 +1,53 @@
 import { Prisma } from '@prisma/client'
 import type { BookListItem } from '@/lib/data'
 
-export function parseGenres(raw: string): string[] {
-  try {
-    const v = JSON.parse(raw)
-    return Array.isArray(v) ? v.map(String) : []
-  } catch {
-    return []
+export function parseGenres(raw: unknown): string[] {
+  if (!raw) return []
+  if (Array.isArray(raw)) {
+    return Array.from(
+      new Set(
+        raw
+          .map((item) =>
+            typeof item === 'string'
+              ? item
+              : (item as any)?.value || (item as any)?.text || (item as any)?.name || String(item),
+          )
+          .map((s) => String(s).trim())
+          .filter(Boolean),
+      ),
+    )
   }
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim()
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        const v = JSON.parse(trimmed)
+        if (Array.isArray(v)) {
+          return Array.from(
+            new Set(
+              v
+                .map((item) =>
+                  typeof item === 'string'
+                    ? item
+                    : (item as any)?.value || (item as any)?.text || (item as any)?.name || String(item),
+                )
+                .map((s) => String(s).trim())
+                .filter(Boolean),
+            ),
+          )
+        }
+      } catch {}
+    }
+    return Array.from(
+      new Set(
+        trimmed
+          .split(/[,،\n]+/)
+          .map((s) => s.trim())
+          .filter(Boolean),
+      ),
+    )
+  }
+  return []
 }
 
 export const BOOK_LIST_SELECT = {

@@ -85,7 +85,8 @@ export const UsersCollection: CollectionConfig = {
       async ({ doc }) => {
         if (!doc.email) return doc
         try {
-          const { db } = await import('@/lib/db')
+          const { db, isDbOffline } = await import('@/lib/db')
+          if (isDbOffline()) return doc
           const roleMapping = doc.role === 'owner' ? 'OWNER' : doc.role === 'admin' ? 'ADMIN' : 'USER'
           await db.user.upsert({
             where: { email: doc.email },

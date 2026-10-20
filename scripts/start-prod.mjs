@@ -1,11 +1,13 @@
 import next from 'next'
 import http from 'node:http'
+import compression from 'compression'
+import net from 'node:net'
+
+const compress = compression()
 
 const dev = false
 const hostname = '0.0.0.0'
 const port = parseInt(process.env.PORT || '3000', 10)
-
-import net from 'node:net'
 
 process.on('SIGINT', () => {
   console.log('[Server] Received SIGINT, keeping server alive.')
@@ -54,17 +56,19 @@ console.log('Preparing Next.js production server...')
 await app.prepare()
 
 const server = http.createServer((req, res) => {
-  try {
-    handle(req, res).catch((err) => {
-      console.warn('[Server] Request handle error:', err?.message || err)
-      if (!res.headersSent) {
-        res.statusCode = 500
-        res.end('Internal Server Error')
-      }
-    })
-  } catch (err) {
-    console.warn('[Server] Synchronous request error:', err)
-  }
+  compress(req, res, () => {
+    try {
+      handle(req, res).catch((err) => {
+        console.warn('[Server] Request handle error:', err?.message || err)
+        if (!res.headersSent) {
+          res.statusCode = 500
+          res.end('Internal Server Error')
+        }
+      })
+    } catch (err) {
+      console.warn('[Server] Synchronous request error:', err)
+    }
+  })
 })
 
 server.on('error', (err) => {

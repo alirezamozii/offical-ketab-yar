@@ -16,8 +16,10 @@
 import { buildConfig } from 'payload'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { sqliteAdapter } from '@payloadcms/db-sqlite'
 import { en } from '@payloadcms/translations/languages/en'
 import { fa } from '@payloadcms/translations/languages/fa'
+import sharp from 'sharp'
 import { booksCollection } from './collections/Books'
 import { authorsCollection } from './collections/Authors'
 import { blogPostsCollection } from './collections/BlogPosts'
@@ -32,6 +34,7 @@ if (process.env.NODE_ENV === 'production' && !isProductionBuild && (!payloadSecr
 }
 
 export default buildConfig({
+  sharp,
   // Admin panel — mounted at /admin (Payload's default)
   admin: {
     user: UsersCollection.slug,
@@ -74,7 +77,14 @@ export default buildConfig({
   ],
 
   // Database — Postgres using the same DATABASE_URL as Prisma
-  db: postgresAdapter({
+  db: (process.env.DB_OFFLINE === 'true' || process.env.USE_SQLITE === 'true')
+    ? sqliteAdapter({
+        client: {
+          url: process.env.SQLITE_DATABASE_URL || 'file:./db/payload.db',
+        },
+        push: true,
+      })
+    : postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URL,
     },

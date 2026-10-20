@@ -55,7 +55,7 @@ interface PageProps {
 
 const SITE_URL = SITE.url
 
-export const revalidate = 60
+export const revalidate = 0 // always fresh — new CMS content must appear on the next click
 
 export async function generateStaticParams() {
   const books = await getHighestRatedBooks(10)
@@ -435,6 +435,8 @@ export default async function BookDetailPage({ params }: PageProps) {
                   title={book.title}
                   author={book.author}
                   from={book.coverFrom}
+                  imageUrl={book.coverImageUrl || book.coverImage || undefined}
+                  blurhash={book.coverBlurhash || undefined}
                   to={book.coverTo}
                   accent={book.coverAccent}
                   size="lg"

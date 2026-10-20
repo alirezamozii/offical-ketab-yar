@@ -1,5 +1,3 @@
-'use client'
-
 /**
  * src/components/books/cefr-level-indicator.tsx
  * ---------------------------------------------------------------

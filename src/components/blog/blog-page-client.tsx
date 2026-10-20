@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { BlogCover } from '@/components/blog/blog-cover'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, Calendar, Clock, BookOpen, User, Eye, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -54,15 +54,31 @@ interface BlogListResponse {
 
 type LoadState = 'loading' | 'ready' | 'error'
 
-export function BlogPageClient() {
+export function BlogPageClient({
+  initialPosts = [],
+  initialTotal = 0,
+  initialTotalPages = 1,
+}: {
+  initialPosts?: BlogPostListItem[]
+  initialTotal?: number
+  initialTotalPages?: number
+} = {}) {
   const { formatDate, toPersianDigits, formatNumber } = usePersianLocale()
 
-  const [state, setState] = useState<LoadState>('loading')
-  const [posts, setPosts] = useState<BlogPostListItem[]>([])
+  const [state, setState] = useState<LoadState>(() =>
+    initialPosts.length > 0 || initialTotal === 0 ? 'ready' : 'loading',
+  )
+  const [posts, setPosts] = useState<BlogPostListItem[]>(initialPosts)
   const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
+  const [totalPages, setTotalPages] = useState(initialTotalPages)
+
+  const isInitialMount = useRef(true)
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
     let alive = true
     setState('loading')
     fetch(`/api/blog?page=${page}`)
@@ -190,7 +206,7 @@ export function BlogPageClient() {
             {posts.map((post) => (
               <article
                 key={post.id}
-                className="group py-6 cull-offscreen"
+                className="group py-6"
               >
                 <Link
                   href={`/blog/${post.slug}`}

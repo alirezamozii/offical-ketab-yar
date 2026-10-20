@@ -1,7 +1,4 @@
-'use client'
-
 import { cn } from '@/lib/utils'
-import { memo, useState } from 'react'
 import Image from 'next/image'
 
 interface BookCoverProps {
@@ -55,7 +52,7 @@ interface BookCoverProps {
  * re-renders on prop changes, not on internal hook updates.
  */
 // fallow-ignore-next-line complexity
-export const BookCover = memo(function BookCover({
+export function BookCover({
   from,
   to,
   accent = '#ffffff',
@@ -64,7 +61,6 @@ export const BookCover = memo(function BookCover({
   imageUrl,
   blurhash,
 }: BookCoverProps) {
-  const [imgLoaded, setImgLoaded] = useState(false)
   const hasImage = !!imageUrl
 
   // Spine width scales with size — a hero cover needs a wider spine.
@@ -103,7 +99,7 @@ export const BookCover = memo(function BookCover({
               aria-hidden
               className={cn(
                 'pointer-events-none absolute inset-0 h-full w-full object-cover transition-opacity duration-700',
-                imgLoaded ? 'opacity-0' : 'opacity-100 blur-md scale-105',
+                'opacity-0 blur-md scale-105',
               )}
             />
           )}
@@ -113,10 +109,8 @@ export const BookCover = memo(function BookCover({
             aria-hidden
             fill
             sizes="(min-width: 1024px) 240px, (min-width: 640px) 180px, 140px"
-            onLoad={() => setImgLoaded(true)}
             className={cn(
-              'pointer-events-none absolute inset-0 h-full w-full object-cover transition-opacity duration-700',
-              imgLoaded ? 'opacity-100' : 'opacity-0',
+              'pointer-events-none absolute inset-0 h-full w-full animate-fade-in object-cover',
             )}
           />
           {/* Dark gradient overlay on top of the image so any text/UI that
@@ -255,4 +249,4 @@ export const BookCover = memo(function BookCover({
       />
     </div>
   )
-})
+}

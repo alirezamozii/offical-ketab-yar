@@ -17,6 +17,9 @@ interface SearchHit {
   coverFrom: string
   coverTo: string
   coverAccent: string
+  coverImageUrl?: string
+  coverImage?: string
+  coverBlurhash?: string
   pageNumber: number
   snippetEn: string
   snippetFa: string
@@ -97,6 +100,16 @@ function hasGenre(bookGenres: string, target: string): boolean {
   }
 }
 
+/** Parse the JSON string[] genres field; corrupt/empty → []. */
+function parseGenres(bookGenres: string): string[] {
+  try {
+    const v = JSON.parse(bookGenres)
+    return Array.isArray(v) ? v.map(String) : []
+  } catch {
+    return []
+  }
+}
+
 export async function GET(req: NextRequest) {
   const startedAt =
     typeof performance !== 'undefined' ? performance.now() : Date.now()
@@ -158,13 +171,13 @@ export async function GET(req: NextRequest) {
       // `all` matches either field; `en`/`fa` matches only that field.
       const pageWhere: Prisma.BookPageWhereInput = {}
       if (lang === 'en') {
-        pageWhere.english = { contains: q }
+        pageWhere.english = { contains: q, mode: 'insensitive' }
       } else if (lang === 'fa') {
-        pageWhere.farsi = { contains: q }
+        pageWhere.farsi = { contains: q, mode: 'insensitive' }
       } else {
         pageWhere.OR = [
-          { english: { contains: q } },
-          { farsi: { contains: q } },
+          { english: { contains: q, mode: 'insensitive' } },
+          { farsi: { contains: q, mode: 'insensitive' } },
         ]
       }
 
@@ -207,10 +220,10 @@ export async function GET(req: NextRequest) {
           fuzzyUsed = true
           const fuzzyWhere: Prisma.BookPageWhereInput = {}
           const tokenClausesEn = tokens.map((t) => ({
-            english: { contains: t },
+            english: { contains: t, mode: 'insensitive' as const },
           }))
           const tokenClausesFa = tokens.map((t) => ({
-            farsi: { contains: t },
+            farsi: { contains: t, mode: 'insensitive' as const },
           }))
           if (lang === 'en') {
             fuzzyWhere.OR = tokenClausesEn
@@ -242,11 +255,14 @@ export async function GET(req: NextRequest) {
         const source = matchType === 'english' ? p.english : p.farsi
 
         const authorName = p.book.author?.name ?? ''
+        const authorNameFa = p.book.author?.nameFa ?? ''
         const pageScore = scoreRelevance(source, normalized)
         const bookBoost = bookMatchBoost(
           p.book.title,
           authorName,
+          authorNameFa,
           p.book.description,
+          p.book.genres,
           normalized,
         )
         const score = pageScore + bookBoost
@@ -260,6 +276,9 @@ export async function GET(req: NextRequest) {
           coverFrom: p.book.coverFrom,
           coverTo: p.book.coverTo,
           coverAccent: p.book.coverAccent,
+          coverImageUrl: p.book.coverImageUrl || undefined,
+          coverImage: p.book.coverImage || undefined,
+          coverBlurhash: p.book.coverBlurhash || undefined,
           pageNumber: p.pageNumber,
           snippetEn: matchType === 'english' ? snippet : '',
           snippetFa: matchType === 'farsi' ? snippet : '',
@@ -288,10 +307,10 @@ export async function GET(req: NextRequest) {
         isPublished: true,
         slug: { notIn: [...slugsWithPageHits] },
         OR: [
-          { title: { contains: q } },
-          { author: { name: { contains: q } } },
-          { author: { nameFa: { contains: q } } },
-          { description: { contains: q } },
+          { title: { contains: q, mode: 'insensitive' } },
+          { author: { name: { contains: q, mode: 'insensitive' } } },
+          { author: { nameFa: { contains: q, mode: 'insensitive' } } },
+          { description: { contains: q, mode: 'insensitive' } },
         ],
       }
       if (levels.length) bookOnlyWhere.level = { in: levels }
@@ -312,13 +331,24 @@ export async function GET(req: NextRequest) {
 
       const synthetic: SearchHit[] = bookOnlyMatches.map((b) => {
         const authorName = b.author?.name ?? ''
-        const boost = bookMatchBoost(b.title, authorName, b.description, normalized)
+        const authorNameFa = b.author?.nameFa ?? ''
+        const boost = bookMatchBoost(
+          b.title,
+          authorName,
+          authorNameFa,
+          b.description,
+          b.genres,
+          normalized,
+        )
         // Classify the metadata hit: author > title (an author hit means the
         // user is searching for a person, not a book; surfacing it under the
         // "authors" tab is more useful than under "books").
         const tLower = b.title.toLowerCase()
         const aLower = authorName.toLowerCase()
-        const isAuthorHit = aLower.includes(normalized) && !tLower.includes(normalized)
+        const aFaLower = authorNameFa.toLowerCase()
+        const isAuthorHit =
+          (aLower.includes(normalized) || aFaLower.includes(normalized)) &&
+          !tLower.includes(normalized)
         const source = b.description || b.title
         const snippet = makeSnippet(source, normalized, SNIPPET_LEN)
         return {
@@ -328,6 +358,9 @@ export async function GET(req: NextRequest) {
           coverFrom: b.coverFrom,
           coverTo: b.coverTo,
           coverAccent: b.coverAccent,
+          coverImageUrl: b.coverImageUrl || undefined,
+          coverImage: b.coverImage || undefined,
+          coverBlurhash: b.coverBlurhash || undefined,
           pageNumber: 0,
           snippetEn: snippet,
           snippetFa: '',
@@ -438,17 +471,21 @@ function scoreRelevance(field: string, qLower: string): number {
  * query. Boosts are deliberately larger than the 0–100 page-text score so a
  * single title match outranks any number of page-text matches in other books.
  *
- * Ranking priority:
- *   exact title match > title starts-with > title contains > author match > description match
+ * Ranking priority (what the user "means" first):
+ *   exact title match > title starts-with > title contains
+ *   > author match (English OR Farsi name) > genre match > description match
  */
 function bookMatchBoost(
   title: string,
   author: string,
+  authorFa: string,
   description: string,
+  genresJson: string,
   qLower: string,
 ): number {
   const tLower = title.toLowerCase().trim()
   const aLower = author.toLowerCase().trim()
+  const aFaLower = authorFa.toLowerCase().trim()
   const dLower = description.toLowerCase().trim()
 
   if (!qLower) return 0
@@ -460,8 +497,14 @@ function bookMatchBoost(
   if (titleWords.some((w) => w.startsWith(qLower))) return 4_000
   if (tLower.includes(qLower)) return 2_000
 
-  if (aLower === qLower) return 1_500
-  if (aLower.includes(qLower)) return 1_000
+  if (aLower === qLower || aFaLower === qLower) return 1_500
+  if (aLower.includes(qLower) || aFaLower.includes(qLower)) return 1_000
+
+  if (
+    parseGenres(genresJson).some((g) => g.toLowerCase().includes(qLower))
+  ) {
+    return 700
+  }
 
   if (dLower.includes(qLower)) return 500
 

@@ -304,7 +304,7 @@ export function QuoteStudioModal({
           margin: 0,
           borderRadius: 0,
         }}
-        className="!fixed !inset-0 !top-0 !left-0 !right-0 !bottom-0 !translate-x-0 !translate-y-0 !transform-none !w-screen !max-w-none !h-screen !max-h-none !rounded-none !border-0 !p-0 !m-0 !gap-0 !overflow-hidden flex flex-col bg-background z-[160]"
+        className="!fixed !inset-0 !top-0 !left-0 !right-0 !bottom-0 !translate-x-0 !translate-y-0 !transform-none !w-screen !max-w-none !h-screen !max-h-none !rounded-none !border-0 !p-0 !m-0 !gap-0 !overflow-hidden flex flex-col bg-background !z-[10002]"
       >
         <DialogHeader className="sr-only">
           <DialogTitle>استودیوی طراحی کارت کوت</DialogTitle>

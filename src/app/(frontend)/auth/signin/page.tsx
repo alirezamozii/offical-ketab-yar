@@ -629,7 +629,8 @@ function SignInForm() {
 
 export default function SignInPage() {
   return (
-    <Suspense
+    <div data-fullscreen-route="auth">
+      <Suspense
       fallback={
         <div
           className="min-h-screen flex items-center justify-center"
@@ -643,6 +644,7 @@ export default function SignInPage() {
       }
     >
       <SignInForm />
-    </Suspense>
+      </Suspense>
+    </div>
   )
 }

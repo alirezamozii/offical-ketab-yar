@@ -1,4 +1,4 @@
-import { db } from '../lib/db'
+import { db, isDbOffline } from '../lib/db'
 import { slugify } from '../lib/utils'
 
 /**
@@ -37,6 +37,7 @@ export function mapAuthorPayloadToPrisma(doc: any) {
  * Syncs an Author document from Payload CMS to Prisma's Author table.
  */
 export async function syncAuthorToPrisma(doc: any, operation: 'create' | 'update') {
+  if (isDbOffline()) return
   try {
     if (!doc.name && !doc.slug) {
       console.log(`[Sync] Author ID ${doc.id} is empty; skipping Prisma sync until named.`)
@@ -83,8 +84,12 @@ export async function deleteAuthorFromPrisma(id: string | number) {
   }
 }
 
+import { parseGenres } from '../lib/books-query'
+import { revalidateBook } from '../lib/revalidate'
+
 export function mapBookPayloadToPrisma(doc: any, authorId: string) {
   const coverImageDoc = doc.coverImage && typeof doc.coverImage === 'object' ? doc.coverImage : null
+  const cleanGenres = parseGenres(doc.genres)
   return {
     slug: doc.slug?.trim() || String(doc.id || `book-${Date.now()}`),
     title: doc.title?.trim() || 'کتاب بدون عنوان',
@@ -95,7 +100,7 @@ export function mapBookPayloadToPrisma(doc: any, authorId: string) {
     coverAccent: doc.coverAccent || '#f4d35e',
     coverImageUrl: coverImageDoc?.url || '',
     coverBlurhash: coverImageDoc?.blurhash || '',
-    genres: JSON.stringify(doc.genres || []),
+    genres: JSON.stringify(cleanGenres),
     level: doc.level || 'B1',
     language: doc.language || 'en',
     rating: Number(doc.rating) || 0,
@@ -113,6 +118,7 @@ export function mapBookPayloadToPrisma(doc: any, authorId: string) {
  * Syncs a Book document from Payload CMS to Prisma's Book table (including Chapters and BookPages).
  */
 export async function syncBookToPrisma(doc: any, operation: 'create' | 'update') {
+  if (isDbOffline()) return
   try {
     if (!doc.title && !doc.slug) {
       console.log(`[Sync] Book ID ${doc.id} is empty; skipping Prisma sync until populated.`)
@@ -199,6 +205,9 @@ export async function syncBookToPrisma(doc: any, operation: 'create' | 'update')
     }
 
     console.log(`[Sync] Book ${data.slug} synced to Prisma successfully (${operation}).`)
+    try {
+      revalidateBook(data.slug)
+    } catch {}
   } catch (err) {
     console.error(`[Sync Error] Failed to sync Book ${doc.slug || doc.id} to Prisma:`, err)
   }
@@ -209,10 +218,18 @@ export async function syncBookToPrisma(doc: any, operation: 'create' | 'update')
  */
 export async function deleteBookFromPrisma(id: string | number) {
   try {
-    await db.book.delete({
-      where: { id: String(id) },
+    const existing = await db.book.findFirst({
+      where: { OR: [{ id: String(id) }, { slug: String(id) }] },
     })
-    console.log(`[Sync] Book ID ${id} deleted from Prisma.`)
+    if (existing) {
+      await db.book.delete({
+        where: { id: existing.id },
+      })
+      console.log(`[Sync] Book ${existing.slug} deleted from Prisma.`)
+      try {
+        revalidateBook(existing.slug)
+      } catch {}
+    }
   } catch (err) {
     console.error(`[Sync Error] Failed to delete Book ID ${id} from Prisma:`, err)
   }
@@ -286,6 +303,7 @@ export function mapBlogPostPayloadToPrisma(doc: any, authorId: string, textConte
  * Syncs a BlogPost document from Payload CMS to Prisma's BlogPost table.
  */
 export async function syncBlogPostToPrisma(doc: any, operation: 'create' | 'update') {
+  if (isDbOffline()) return
   try {
     if (!doc.title && !doc.slug) {
       console.log(`[Sync] BlogPost ID ${doc.id} has no title/slug yet; skipping Prisma sync until populated.`)
@@ -319,6 +337,7 @@ export async function syncBlogPostToPrisma(doc: any, operation: 'create' | 'upda
  * Deletes a BlogPost in Prisma when deleted in Payload.
  */
 export async function deleteBlogPostFromPrisma(id: string | number) {
+  if (isDbOffline()) return
   try {
     await db.blogPost.delete({
       where: { id: String(id) },
@@ -333,6 +352,7 @@ export async function deleteBlogPostFromPrisma(id: string | number) {
  * Syncs a Quote document from Payload CMS to Prisma's Quote table.
  */
 export async function syncQuoteToPrisma(doc: any, operation: 'create' | 'update') {
+  if (isDbOffline()) return
   try {
     if (!doc.text && !doc.slug) {
       console.log(`[Sync] Quote ID ${doc.id} is empty; skipping Prisma sync until populated.`)

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import Link from 'next/link'
 
 /**
  * Root error boundary — catches any unhandled error in the route tree
@@ -112,12 +113,11 @@ export default function RootError({
         >
           تلاش دوباره
         </button>
-        <a
-          href="/"
+        <Link href="/"
           className="inline-flex h-11 items-center rounded-lg border border-border px-5 font-semibold"
         >
           بازگشت به خانه
-        </a>
+        </Link>
       </div>
     </div>
   )

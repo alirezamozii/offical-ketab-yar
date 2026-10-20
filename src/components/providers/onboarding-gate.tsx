@@ -9,7 +9,6 @@
  *   - /auth/* (sign-in flow)
  *   - /api/* (server routes)
  *   - /admin/* (admins/owners bypass onboarding)
- *   - /offline (utility page)
  *   - when no session is present (logged-out users see the public page)
  */
 
@@ -17,7 +16,7 @@ import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 
-const SKIP_PREFIXES = ['/onboarding', '/auth', '/api', '/admin', '/offline']
+const SKIP_PREFIXES = ['/onboarding', '/auth', '/api', '/admin']
 const SKIP_EXACT = ['/onboarding']
 
 export function OnboardingGate({ children }: { children?: React.ReactNode } = {}) {

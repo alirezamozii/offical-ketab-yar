@@ -363,7 +363,7 @@ function CollectionCardItem({
         delay: Math.min(index * 0.04, 0.4),
       }}
       whileHover={reduceMotion ? undefined : { y: -6 }}
-      className="group relative h-full cull-offscreen"
+      className="group relative h-full"
     >
       <button
         type="button"

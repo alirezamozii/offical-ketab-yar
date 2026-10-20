@@ -10,11 +10,9 @@ import { SectionDivider } from '@/components/home/section-divider'
 import { StatsBar } from '@/components/home/stats-bar'
 import { TestimonialsSection } from '@/components/home/testimonials-section'
 import { SiteFooter } from '@/components/layout/site-footer'
+import { ContinueReadingLoader } from '@/components/home/continue-reading-loader'
 import dynamic from 'next/dynamic'
 
-const ContinueReading = dynamic(
-  () => import('@/components/home/continue-reading').then((m) => m.ContinueReading),
-)
 const HomePrefetcher = dynamic(
   () => import('@/components/home/home-prefetcher').then((m) => m.HomePrefetcher),
 )
@@ -30,7 +28,7 @@ import {
 import type { Metadata } from 'next'
 import { SITE } from '@/lib/site'
 
-export const revalidate = 60
+export const revalidate = 0 // always fresh — new CMS content must appear on the next click
 
 const SITE_URL = SITE.url
 
@@ -234,7 +232,7 @@ export default async function HomePage() {
         totalMinutes={totalMinutes}
       />
 
-      <ContinueReading />
+      <ContinueReadingLoader />
       <SectionDivider />
 
       {/* Book of the Day — daily curated recommendation */}

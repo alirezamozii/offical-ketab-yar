@@ -59,6 +59,8 @@ interface HighlightsPanelProps {
   onClearAll: () => void
   onCopy: (text: string) => void
   onJumpToPage: (page: number) => void
+  /** Real printed page number per paragraph index (DB pageNumber). */
+  pageNumbers?: number[]
 }
 
 const COLOR_FILTERS: Highlight['color'][] = [
@@ -86,8 +88,13 @@ export function HighlightsPanel({
   onClearAll,
   onCopy,
   onJumpToPage,
+  pageNumbers,
 }: HighlightsPanelProps) {
   const s = THEME_STYLES[theme]
+  // Highlight `page` is a paragraph (array) index; the printed page number
+  // comes from the book's pages so it matches the reader + DB (pageNumber
+  // can start above 1).
+  const realPageOf = (idx: number) => pageNumbers?.[idx] ?? idx + 1
   const [query, setQuery] = useState('')
   const [activeColor, setActiveColor] = useState<Highlight['color'] | null>(
     null,
@@ -125,7 +132,7 @@ export function HighlightsPanel({
     } else {
       const lines = highlights.map(
         (h) =>
-          `• [${HIGHLIGHT_LABELS[h.color]}] صفحه ${h.page + 1}\n  ${h.text}${
+          `• [${HIGHLIGHT_LABELS[h.color]}] صفحه ${realPageOf(h.page)}\n  ${h.text}${
             h.note ? `\n  یادداشت: ${h.note}` : ''
           }`,
       )
@@ -297,7 +304,7 @@ export function HighlightsPanel({
                       className="h-3 w-3 rounded-full"
                       style={{ background: HIGHLIGHT_COLORS[h.color] }}
                     />
-                    صفحه {toPersianDigits(h.page + 1)}
+                    صفحه {toPersianDigits(realPageOf(h.page))}
                   </span>
                   <div className="flex gap-1">
                     <Button
@@ -483,7 +490,7 @@ export function HighlightsPanel({
                   bookSlug: bookSlug,
                   bookTitle: bookTitle,
                   bookAuthor: bookAuthor,
-                  pageNumber: selectedHighlight.page + 1,
+                  pageNumber: realPageOf(selectedHighlight.page),
                   highlightColor: selectedHighlight.color,
                 }
               : null

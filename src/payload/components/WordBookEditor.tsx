@@ -23,6 +23,7 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import { slugify } from '@/lib/utils'
+import { alignBilingualSentences } from '@/lib/reader/sentence-aligner'
 
 export interface BookChapterItem {
   title: string
@@ -684,18 +685,18 @@ export const WordBookEditor: React.FC<WordBookEditorProps> = ({
                   {previewLayout === 'subtitles' ? (
                     <div className="sim-subtitles-stack">
                       {currentPage.english ? (
-                        currentPage.english.split(/\n\s*\n/).map((p, pIdx) => {
-                          const faParas = currentPage.farsi ? currentPage.farsi.split(/\n\s*\n/) : []
-                          const faSub = faParas[pIdx] || ''
-                          return (
-                            <div key={pIdx} className="sim-para-block">
-                              <p className="sim-en-text" dir="ltr">{p}</p>
-                              {faSub && (
-                                <p className="sim-fa-sub" dir="rtl">{faSub}</p>
-                              )}
-                            </div>
-                          )
-                        })
+                        alignBilingualSentences(
+                          currentPage.english,
+                          currentPage.farsi || '',
+                          'english',
+                        ).map((pair, pIdx) => (
+                          <div key={pair.id || pIdx} className="sim-para-block">
+                            <p className="sim-en-text" dir="ltr">{pair.primary}</p>
+                            {pair.secondary && (
+                              <p className="sim-fa-sub" dir="rtl">{pair.secondary}</p>
+                            )}
+                          </div>
+                        ))
                       ) : (
                         <p className="sim-empty">این صفحه خالی است.</p>
                       )}

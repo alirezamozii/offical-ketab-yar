@@ -1,13 +1,11 @@
 import { AuthorsPageClient, type AuthorWithBio } from '@/components/authors/authors-page-client'
-import { AuthorsDirectorySkeleton } from '@/components/authors/authors-skeleton'
 import { getAuthors, getBooksCount } from '@/lib/data'
 import { buildAuthorBio } from '@/lib/cms'
 import { safeJsonLd } from '@/lib/json-ld'
 import { SITE } from '@/lib/site'
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
 
-export const revalidate = 60
+export const revalidate = 0 // always fresh — new CMS content must appear on the next click
 
 export const metadata: Metadata = {
   title: 'فهرست نویسندگان برجسته جهان — زندگی‌نامه و بیوگرافی',
@@ -68,11 +66,12 @@ export const metadata: Metadata = {
   },
 }
 
-async function AuthorsContent() {
+export default async function AuthorsPage() {
   const [authors, totalBooks] = await Promise.all([getAuthors(), getBooksCount()])
 
   const authorsWithBios: AuthorWithBio[] = authors.map((a) => ({
     ...a,
+    books: [],
     bio: buildAuthorBio(a),
   }))
 
@@ -129,22 +128,14 @@ async function AuthorsContent() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbLd) }}
       />
-      <AuthorsPageClient
-        authors={authorsWithBios}
-        totalBooks={totalBooks}
-        totalPages={totalPages}
-      />
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <AuthorsPageClient
+          authors={authorsWithBios}
+          totalBooks={totalBooks}
+          totalPages={totalPages}
+        />
+      </div>
     </>
-  )
-}
-
-export default function AuthorsPage() {
-  return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <Suspense fallback={<AuthorsDirectorySkeleton count={6} />}>
-        <AuthorsContent />
-      </Suspense>
-    </div>
   )
 }
 

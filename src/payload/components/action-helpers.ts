@@ -8,6 +8,22 @@ import {
 
 export { normalizePages, normalizeChapters, parseAnyJsonPayload }
 
+/**
+ * Normalize a text hasMany field value to an array of trimmed strings.
+ * Accepts an array (trims & filters), a comma-separated string, or undefined.
+ */
+export function normalizeTextList(value: unknown): string[] | undefined {
+  if (value === undefined || value === null) return undefined
+  const list = Array.isArray(value)
+    ? value
+    : typeof value === 'string'
+      ? value.split(',')
+      : undefined
+  if (!list) return undefined
+  const cleaned = list.map((v) => String(v).trim()).filter(Boolean)
+  return cleaned.length > 0 ? cleaned : undefined
+}
+
 export function parseAuthorNameAndInput(rawData: any): { authorName: string; authorInput: any } {
   let authorName = ''
   let authorInput: any = null

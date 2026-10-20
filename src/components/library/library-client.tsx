@@ -1,35 +1,23 @@
 'use client'
 
 import { BookCardWithPreview } from '@/components/library/book-card-preview'
-import { BookListItemRow } from '@/components/library/book-list-item'
 import { ActiveFilterChips, type ActiveFilter } from '@/components/library/active-filter-chips'
-import { LibraryEmptyState } from '@/components/library/empty-state'
 import { LibrarySkeleton } from '@/components/library/library-skeleton'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import dynamic from 'next/dynamic'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import {
   BookOpen,
-  Filter,
+  ChevronDown,
   LayoutGrid,
   LayoutList,
   Loader2,
   Plus,
   Search,
-  SlidersHorizontal,
   X,
 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import type { BookListItem } from '@/lib/data'
 import {
   getLocalProgress,
@@ -42,12 +30,15 @@ const MobileFiltersDrawer = dynamic(
   () => import('@/components/library/mobile-filters-drawer').then((mod) => mod.MobileFiltersDrawer),
   { ssr: false }
 )
+const BookListItemRow = dynamic(
+  () => import('@/components/library/book-list-item').then((mod) => mod.BookListItemRow),
+  { ssr: false }
+)
+const LibraryEmptyState = dynamic(
+  () => import('@/components/library/empty-state').then((mod) => mod.LibraryEmptyState),
+  { ssr: false }
+)
 
-const GENRES = [
-  'Fantasy', 'Classic', 'Adventure', 'Romance', 'Mystery', 'Children',
-  'Drama', 'Historical', 'Literary', 'Nature', 'Coming of Age',
-  'Young Adult', 'Psychological', 'Detective',
-]
 const LEVELS = ['A2', 'B1', 'B2', 'C1']
 const SORTS = [
   { value: 'recent', label: 'جدیدترین' },
@@ -121,51 +112,67 @@ export function useLibraryFilters(initial: BookListItem[]) {
       ? PAGE_SIZE_MOBILE
       : PAGE_SIZE_DESKTOP,
   )
-  const [mounted, setMounted] = useState(false)
-  const [filtersOpenMobile, setFiltersOpenMobile] = useState(false)
+    const [filtersOpenMobile, setFiltersOpenMobile] = useState(false)
 
-  const refreshProgress = useCallback(() => {
-    setProgressMap(getLocalProgress())
-  }, [])
-
-  const { data: popularGenres = [] } = useQuery<string[]>({
-    queryKey: ['genres', 'popular'],
-    queryFn: async () => {
-      const res = await fetch('/api/genres?sort=count')
-      if (!res.ok) return []
-      const gs = await res.json()
-      return gs.map((g: any) => g.name)
-    },
-    enabled: filtersOpenMobile || Boolean(genre),
-    staleTime: 24 * 60 * 60 * 1000,
-  })
-
-  const { data: books = initial, isLoading: loading } = useQuery<BookListItem[]>({
-    queryKey: ['books', { q: debouncedQ, genre, level, sort }],
-    queryFn: async () => {
-      const params = new URLSearchParams()
-      if (debouncedQ) params.set('q', debouncedQ)
-      if (genre) params.set('genre', genre)
-      if (level) params.set('level', level)
-      if (sort) params.set('sort', sort)
-      const res = await fetch(`/api/books?${params.toString()}`)
-      if (!res.ok) throw new Error('Failed to fetch books')
-      return res.json() as Promise<BookListItem[]>
-    },
-    enabled: Boolean(debouncedQ || genre || level || (sort && sort !== 'recent')),
-    initialData: initial,
-    staleTime: 60_000,
-  })
+  
+  const [popularGenres, setPopularGenres] = useState<string[]>([])
+  const [books, setBooks] = useState<BookListItem[]>(initial)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
-    try {
+    if (!filtersOpenMobile && !genre) return
+    if (popularGenres.length > 0) return
+    let active = true
+    fetch('/api/genres?sort=count')
+      .then((res) => (res.ok ? res.json() : []))
+      .then((gs: any[]) => {
+        if (active && Array.isArray(gs)) setPopularGenres(gs.map((g) => g.name))
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [filtersOpenMobile, genre, popularGenres.length])
+
+  useEffect(() => {
+    const hasFilter = Boolean(debouncedQ || genre || level || (sort && sort !== 'recent'))
+    if (!hasFilter) {
+      setBooks(initial)
+      return
+    }
+    let active = true
+    setLoading(true)
+    const params = new URLSearchParams()
+    if (debouncedQ) params.set('q', debouncedQ)
+    if (genre) params.set('genre', genre)
+    if (level) params.set('level', level)
+    if (sort) params.set('sort', sort)
+
+    fetch(`/api/books?${params.toString()}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data: BookListItem[]) => {
+        if (active && Array.isArray(data)) {
+          setBooks(data)
+          setLoading(false)
+        }
+      })
+      .catch(() => {
+        if (active) setLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [debouncedQ, genre, level, sort, initial])
+
+  useEffect(() => {
+        try {
       const v = localStorage.getItem(VIEW_KEY) as ViewMode | null
-      if (v && (v === 'grid' || v === 'list') && v !== view) setView(v)
+      if (v && (v === 'grid' || v === 'list')) setView(v)
     } catch {}
     try {
       const s = localStorage.getItem(STATUS_KEY) as StatusValue | null
-      if (s && STATUS_OPTIONS.some((o) => o.value === s) && s !== status) setStatus(s)
+      if (s && STATUS_OPTIONS.some((o) => o.value === s)) setStatus(s)
     } catch {}
     const p = getLocalProgress()
     if (Object.keys(p).length > 0) {
@@ -193,6 +200,16 @@ export function useLibraryFilters(initial: BookListItem[]) {
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 640
     setVisible(isMobile ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP)
   }, [q, genre, level, sort, status, minRating])
+
+  // Genres derive from the CMS catalog (API by popularity + genres present
+  // in the already-loaded books) — no hardcoded genre list.
+  const dynamicGenres = useMemo(() => {
+    const set = new Set(popularGenres)
+    for (const b of books) {
+      for (const g of b.genres) set.add(g)
+    }
+    return Array.from(set)
+  }, [popularGenres, books])
 
   const filteredBooks = useMemo(() => {
     let arr = books
@@ -282,6 +299,7 @@ export function useLibraryFilters(initial: BookListItem[]) {
     visible, setVisible,
     filtersOpenMobile, setFiltersOpenMobile,
     popularGenres,
+    dynamicGenres,
     loading,
     filteredBooks,
     visibleBooks,
@@ -306,6 +324,7 @@ export function LibraryClient({ initial }: { initial: BookListItem[] }) {
     visible, setVisible,
     filtersOpenMobile, setFiltersOpenMobile,
     popularGenres,
+    dynamicGenres,
     loading,
     filteredBooks,
     visibleBooks,
@@ -333,34 +352,37 @@ export function LibraryClient({ initial }: { initial: BookListItem[] }) {
       {/* ─── Compact filter row ─── */}
       <div className="flex flex-wrap items-center gap-2">
         {/* Sort */}
-        <Select value={sort} onValueChange={setSort}>
-          <SelectTrigger className="w-[130px] h-9 rounded-lg" aria-label="مرتب‌سازی">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
+        <div className="relative">
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            aria-label="مرتب‌سازی"
+            className="h-9 rounded-lg border border-border/70 bg-background/80 pe-7 ps-3 text-xs font-medium text-foreground shadow-sm transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer"
+          >
             {SORTS.map((s) => (
-              <SelectItem key={s.value} value={s.value}>
+              <option key={s.value} value={s.value} className="bg-background text-foreground">
                 {s.label}
-              </SelectItem>
+              </option>
             ))}
-          </SelectContent>
-        </Select>
+          </select>
+          <ChevronDown className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+        </div>
 
         {/* Level */}
-        <Select
-          value={level || 'all'}
-          onValueChange={(v) => setLevel(v === 'all' ? '' : v)}
-        >
-          <SelectTrigger className="w-[100px] h-9 rounded-lg" aria-label="سطح">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">همه سطوح</SelectItem>
+        <div className="relative">
+          <select
+            value={level || 'all'}
+            onChange={(e) => setLevel(e.target.value === 'all' ? '' : e.target.value)}
+            aria-label="سطح"
+            className="h-9 rounded-lg border border-border/70 bg-background/80 pe-7 ps-3 text-xs font-medium text-foreground shadow-sm transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer"
+          >
+            <option value="all" className="bg-background text-foreground">همه سطوح</option>
             {LEVELS.map((l) => (
-              <SelectItem key={l} value={l}>{l}</SelectItem>
+              <option key={l} value={l} className="bg-background text-foreground">{l}</option>
             ))}
-          </SelectContent>
-        </Select>
+          </select>
+          <ChevronDown className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+        </div>
 
         {/* Mobile filter button & drawer */}
         <MobileFiltersDrawer
@@ -374,7 +396,7 @@ export function LibraryClient({ initial }: { initial: BookListItem[] }) {
           genre={genre}
           setGenre={setGenre}
           popularGenres={popularGenres}
-          genres={GENRES}
+          genres={dynamicGenres}
           statusOptions={STATUS_OPTIONS}
           ratingOptions={RATING_OPTIONS}
           activeFilters={activeFilters}
@@ -404,21 +426,34 @@ export function LibraryClient({ initial }: { initial: BookListItem[] }) {
           </div>
 
           {/* View toggle */}
-          <ToggleGroup
-            type="single"
-            value={view}
-            onValueChange={(v) => { if (v === 'grid' || v === 'list') setView(v) }}
-            variant="outline"
-            size="sm"
-            aria-label="نوع نمایش"
-          >
-            <ToggleGroupItem value="grid" aria-label="شبکه‌ای">
+          <div className="flex items-center rounded-lg border border-border/60 bg-background/60 p-0.5" role="group" aria-label="نوع نمایش">
+            <button
+              type="button"
+              onClick={() => setView('grid')}
+              aria-label="شبکه‌ای"
+              className={cn(
+                'rounded p-1.5 text-xs transition-colors',
+                view === 'grid'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
               <LayoutGrid className="h-4 w-4" />
-            </ToggleGroupItem>
-            <ToggleGroupItem value="list" aria-label="لیستی">
+            </button>
+            <button
+              type="button"
+              onClick={() => setView('list')}
+              aria-label="لیستی"
+              className={cn(
+                'rounded p-1.5 text-xs transition-colors',
+                view === 'list'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
               <LayoutList className="h-4 w-4" />
-            </ToggleGroupItem>
-          </ToggleGroup>
+            </button>
+          </div>
 
           {/* Clear filters */}
           {activeFilters.length > 0 && (
@@ -433,7 +468,7 @@ export function LibraryClient({ initial }: { initial: BookListItem[] }) {
       {/* Desktop genre chips — single clean row, scrollable */}
       <div className="hidden sm:flex sm:flex-wrap gap-1.5">
         <Chip active={!genre} onClick={() => setGenre('')}>همه</Chip>
-        {(popularGenres.length > 0 ? popularGenres : GENRES).slice(0, 10).map((g) => (
+        {dynamicGenres.slice(0, 10).map((g) => (
           <Chip key={g} active={genre === g} onClick={() => setGenre(genre === g ? '' : g)}>
             {g}
           </Chip>

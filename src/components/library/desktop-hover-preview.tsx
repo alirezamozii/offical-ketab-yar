@@ -9,7 +9,7 @@ import { BookCover } from '@/components/books/book-cover'
 import { AddToCollectionButton } from '@/components/books/add-to-collection-button'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { BookOpen, Clock, Library, Quote, Star } from 'lucide-react'
+import { BookOpen, Clock, Quote, Star } from 'lucide-react'
 import Link from 'next/link'
 import type { BookListItem } from '@/lib/data'
 

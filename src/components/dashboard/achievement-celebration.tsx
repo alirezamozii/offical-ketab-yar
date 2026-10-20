@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion'
 import { Sparkles, X, Zap } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAchievements } from '@/hooks/reader/use-achievements'
 import { toPersianNumber } from '@/lib/gamification'
 
@@ -84,47 +84,71 @@ export function AchievementCelebration() {
   const [confetti, setConfetti] = useState<ConfettiPiece[]>([])
   const [current, setCurrent] = useState<string | null>(null)
   const [goldBurst, setGoldBurst] = useState<ConfettiPiece[]>([])
+  // Queue of achievement ids still waiting for their one-time popup. Each
+  // newly unlocked achievement is celebrated exactly once, sequentially.
+  const [queue, setQueue] = useState<string[]>([])
+  const achievementsRef = useRef(achievements)
+  achievementsRef.current = achievements
 
-  // Fire the celebration only when `newlyUnlocked` changes — NOT every time
-  // the `achievements` array reference changes (it's memoized in the hook
-  // but depending on it directly risks re-triggering on unrelated renders).
-  // We look up the achievement object lazily inside the effect.
+  const close = () => {
+    setShow(false)
+    setCurrent(null)
+    setQueue((q) => q.slice(1))
+  }
+
+  // Enqueue newly unlocked achievements (never duplicate / re-show).
   useEffect(() => {
     if (newlyUnlocked.length === 0) return
-    const id = newlyUnlocked[0]
-    const ach = achievements.find((a) => a.id === id)
-    if (!ach) return
-    // `achievements` is intentionally omitted: we only want to fire on `newlyUnlocked` changes (a new unlock), not every time the achievements array reference changes.
-    setCurrent(id)
-    // Bigger confetti count + dedicated gold burst for a "spectacular" feel.
-    setConfetti(generateConfetti(90))
-    setGoldBurst(
-      Array.from({ length: 36 }, (_, i) => ({
-        id: 10_000 + i,
-        x: 50 + (Math.random() - 0.5) * 12,
-        y: 35 + (Math.random() - 0.5) * 10,
-        rotation: Math.random() * 360,
-        color: GOLD_TONES[i % GOLD_TONES.length],
-        delay: Math.random() * 0.2,
-        size: 8 + Math.random() * 14,
-        shape: Math.random() < 0.5 ? ('star' as const) : ('gold-bar' as const),
-        duration: 1.8 + Math.random() * 1.2,
-      })),
-    )
-    setShow(true)
+    setQueue((prev) => {
+      const add = newlyUnlocked.filter((id) => !prev.includes(id))
+      return add.length ? [...prev, ...add] : prev
+    })
+  }, [newlyUnlocked])
+
+  // Fire the celebration for the head of the queue once the previous card
+  // (if any) has exited. Confetti/gold-burst are regenerated per card.
+  useEffect(() => {
+    if (show || queue.length === 0) return
+    const id = queue[0]
+    const t = setTimeout(() => {
+      if (!achievementsRef.current.some((a) => a.id === id)) {
+        setQueue((q) => q.slice(1))
+        return
+      }
+      setCurrent(id)
+      // Bigger confetti count + dedicated gold burst for a "spectacular" feel.
+      setConfetti(generateConfetti(90))
+      setGoldBurst(
+        Array.from({ length: 36 }, (_, i) => ({
+          id: 10_000 + i,
+          x: 50 + (Math.random() - 0.5) * 12,
+          y: 35 + (Math.random() - 0.5) * 10,
+          rotation: Math.random() * 360,
+          color: GOLD_TONES[i % GOLD_TONES.length],
+          delay: Math.random() * 0.2,
+          size: 8 + Math.random() * 14,
+          shape: Math.random() < 0.5 ? ('star' as const) : ('gold-bar' as const),
+          duration: 1.8 + Math.random() * 1.2,
+        })),
+      )
+      setShow(true)
+    }, 400)
+    return () => clearTimeout(t)
+  }, [show, queue])
+
+  // Auto-advance to the next queued achievement.
+  useEffect(() => {
+    if (!show) return
     const t = setTimeout(() => {
       setShow(false)
       setCurrent(null)
+      setQueue((q) => q.slice(1))
     }, 5500)
     return () => clearTimeout(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- achievements intentionally omitted: we only fire on newlyUnlocked changes (new unlock), not on achievements ref changes.
-  }, [newlyUnlocked])
+  }, [show])
 
   const ach = current ? achievements.find((a) => a.id === current) : null
-  const xpGained = useMemo(
-    () => (current ? ACHIEVEMENT_XP[current] ?? 100 : 0),
-    [current],
-  )
+  const xpGained = current ? ACHIEVEMENT_XP[current] ?? 100 : 0
 
   return (
     <AnimatePresence>
@@ -267,10 +291,7 @@ export function AchievementCelebration() {
             </motion.div>
 
             <button
-              onClick={() => {
-                setShow(false)
-                setCurrent(null)
-              }}
+              onClick={close}
               className="absolute end-4 top-4 text-muted-foreground hover:text-foreground"
               aria-label="بستن"
             >

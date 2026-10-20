@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { SITE } from '@/lib/site'
 
-export const revalidate = 60
+export const revalidate = 0 // always fresh — new CMS content must appear on the next click
 
 export async function generateStaticParams() {
   const { getHighestRatedBooks } = await import('@/lib/data')

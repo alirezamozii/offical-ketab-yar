@@ -1,8 +1,9 @@
 import { BlogPageClient } from '@/components/blog/blog-page-client'
+import { getPublishedBlogPosts } from '@/lib/cms'
 import type { Metadata } from 'next'
 import { SITE } from '@/lib/site'
 
-export const revalidate = 60
+export const revalidate = 0 // always fresh — new CMS content must appear on the next click
 
 export const metadata: Metadata = {
   title: 'بلاگ — مقالات و راهنماهای مطالعه دوزبانه | بوکزی',
@@ -36,6 +37,13 @@ export const metadata: Metadata = {
   },
 }
 
-export default function BlogPage() {
-  return <BlogPageClient />
+export default async function BlogPage() {
+  const { posts, total, totalPages } = await getPublishedBlogPosts(1, 10)
+  return (
+    <BlogPageClient
+      initialPosts={posts}
+      initialTotal={total}
+      initialTotalPages={totalPages}
+    />
+  )
 }

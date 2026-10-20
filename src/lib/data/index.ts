@@ -1,32 +1,5 @@
 import { cache } from 'react'
 import { db, safeQuery } from '@/lib/db'
-import { SEED_BOOKS, SEED_REVIEWS, type SeedBook } from './seed-data'
-
-export function seedToListItem(s: SeedBook): BookListItem {
-  return {
-    id: s.slug,
-    slug: s.slug,
-    title: s.title,
-    author: s.author,
-    description: s.description,
-    coverFrom: s.coverFrom,
-    coverTo: s.coverTo,
-    coverAccent: s.coverAccent,
-    coverImage: null,
-    coverImageUrl: '',
-    coverBlurhash: '',
-    genres: s.genres,
-    level: s.level,
-    rating: s.rating,
-    reviewCount: s.reviewCount,
-    viewCount: s.viewCount,
-    pageCount: s.pages.length,
-    isPremium: s.isPremium,
-    isPublished: true,
-    publishedYear: s.publishedYear,
-    allowDownload: true,
-  }
-}
 
 // Re-export the canonical reader types so callers can import them from a
 // single module (`@/lib/data`). The definitions live in `@/lib/reader/types`
@@ -126,15 +99,6 @@ function parseGenres(raw: unknown): string[] {
   return []
 }
 
-/** Parse JSON notableWorks field from Prisma */
-function parseNotableWorks(raw: unknown): string[] {
-  if (Array.isArray(raw)) return raw
-  if (typeof raw === 'string') {
-    try { return JSON.parse(raw) } catch { return [] }
-  }
-  return []
-}
-
 /** Convert a Prisma Book record (with optional Author relation) to BookListItem */
 function toListItem(b: any): BookListItem {
   const author = b.author && typeof b.author === 'object' ? b.author : null
@@ -200,87 +164,59 @@ const bookSelect = {
 } as const
 
 export const getBooks = cache(async function getBooks(): Promise<BookListItem[]> {
-  try {
-    const books = await safeQuery(
-      () =>
-        db.book.findMany({
-          where: { isPublished: true },
-          select: bookSelect,
-          orderBy: { createdAt: 'desc' },
-          take: 100,
-        }),
-      [],
-      250,
-    )
-    if (books.length > 0) return books.map(toListItem)
-    return SEED_BOOKS.map(seedToListItem)
-  } catch {
-    console.warn('[getBooks] DB offline, using seed catalog.')
-    return SEED_BOOKS.map(seedToListItem)
-  }
+  return safeQuery(
+    () =>
+      db.book.findMany({
+        where: { isPublished: true },
+        select: bookSelect,
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+      }),
+    [],
+    250,
+  ).then((books) => books.map(toListItem))
 })
 
 export const getRecentlyAddedBooks = cache(async function getRecentlyAddedBooks(limit = 12): Promise<BookListItem[]> {
-  try {
-    const books = await safeQuery(
-      () =>
-        db.book.findMany({
-          where: { isPublished: true },
-          select: bookSelect,
-          orderBy: { createdAt: 'desc' },
-          take: limit,
-        }),
-      [],
-      250,
-    )
-    if (books.length > 0) return books.map(toListItem)
-    return SEED_BOOKS.slice(0, limit).map(seedToListItem)
-  } catch {
-    console.warn('[getRecentlyAddedBooks] DB offline, using seed catalog.')
-    return SEED_BOOKS.slice(0, limit).map(seedToListItem)
-  }
+  return safeQuery(
+    () =>
+      db.book.findMany({
+        where: { isPublished: true },
+        select: bookSelect,
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+      }),
+    [],
+    250,
+  ).then((books) => books.map(toListItem))
 })
 
 export const getHighestRatedBooks = cache(async function getHighestRatedBooks(limit = 12): Promise<BookListItem[]> {
-  try {
-    const books = await safeQuery(
-      () =>
-        db.book.findMany({
-          where: { isPublished: true },
-          select: bookSelect,
-          orderBy: { rating: 'desc' },
-          take: limit,
-        }),
-      [],
-      250,
-    )
-    if (books.length > 0) return books.map(toListItem)
-    return [...SEED_BOOKS].sort((a, b) => b.rating - a.rating).slice(0, limit).map(seedToListItem)
-  } catch {
-    console.warn('[getHighestRatedBooks] DB offline, using seed catalog.')
-    return [...SEED_BOOKS].sort((a, b) => b.rating - a.rating).slice(0, limit).map(seedToListItem)
-  }
+  return safeQuery(
+    () =>
+      db.book.findMany({
+        where: { isPublished: true },
+        select: bookSelect,
+        orderBy: { rating: 'desc' },
+        take: limit,
+      }),
+    [],
+    250,
+  ).then((books) => books.map(toListItem))
 })
 
 export const getMostReadBooks = cache(async function getMostReadBooks(limit = 12): Promise<BookListItem[]> {
-  try {
-    const books = await safeQuery(
-      () =>
-        db.book.findMany({
-          where: { isPublished: true },
-          select: bookSelect,
-          orderBy: { viewCount: 'desc' },
-          take: limit,
-        }),
-      [],
-      250,
-    )
-    if (books.length > 0) return books.map(toListItem)
-    return [...SEED_BOOKS].sort((a, b) => b.viewCount - a.viewCount).slice(0, limit).map(seedToListItem)
-  } catch {
-    console.warn('[getMostReadBooks] DB offline, using seed catalog.')
-    return [...SEED_BOOKS].sort((a, b) => b.viewCount - a.viewCount).slice(0, limit).map(seedToListItem)
-  }
+  return safeQuery(
+    () =>
+      db.book.findMany({
+        where: { isPublished: true },
+        select: bookSelect,
+        orderBy: { viewCount: 'desc' },
+        take: limit,
+      }),
+    [],
+    250,
+  ).then((books) => books.map(toListItem))
 })
 
 /**
@@ -299,72 +235,39 @@ export async function getBookOfTheDay(): Promise<BookListItem | null> {
 }
 
 export async function getBookBySlug(slug: string): Promise<BookDetail | null> {
-  try {
-    const book = await safeQuery(
-      () =>
-        db.book.findUnique({
-          where: { slug },
-          include: {
-            author: true,
-            chapters: { orderBy: { order: 'asc' } },
-            reviews: { orderBy: { createdAt: 'desc' }, take: 20 },
-          },
-        }),
-      null,
-      250,
-    )
-    if (book) {
-      const base = toListItem(book)
-      return {
-        ...base,
-        chapters: (book.chapters || []).map((c) => ({
-          id: c.id,
-          title: c.title,
-          titleFa: c.titleFa || '',
-          slug: c.slug,
-          order: c.order ?? 0,
-          startPage: c.startPage ?? 1,
-        })),
-        reviews: (book.reviews || []).map((r) => ({
-          id: r.id,
-          userName: r.userName,
-          userAvatar: r.userAvatar,
-          rating: r.rating,
-          comment: r.comment,
-          createdAt: r.createdAt.toISOString(),
-        })),
-      }
-    }
-  } catch {
-    console.warn('[getBookBySlug] DB offline, using seed book.')
-  }
+  const book = await safeQuery(
+    () =>
+      db.book.findUnique({
+        where: { slug },
+        include: {
+          author: true,
+          chapters: { orderBy: { order: 'asc' } },
+          reviews: { orderBy: { createdAt: 'desc' }, take: 20 },
+        },
+      }),
+    null,
+    250,
+  )
+  if (!book) return null
 
-  const seed = SEED_BOOKS.find((b) => b.slug === slug)
-  if (!seed) return null
-
-  const seedReviews = SEED_REVIEWS.filter((r) => r.bookSlug === slug).map((r, i) => ({
-    id: `rev-${slug}-${i}`,
-    userName: r.userName,
-    userAvatar: r.userAvatar,
-    rating: r.rating,
-    comment: r.comment,
-    createdAt: new Date().toISOString(),
-  }))
-
-  const base = seedToListItem(seed)
   return {
-    ...base,
-    chapters: [
-      {
-        id: `ch-1-${slug}`,
-        title: 'Chapter 1',
-        titleFa: 'فصل اول',
-        slug: 'chapter-1',
-        order: 1,
-        startPage: 1,
-      },
-    ],
-    reviews: seedReviews,
+    ...toListItem(book),
+    chapters: (book.chapters || []).map((c) => ({
+      id: c.id,
+      title: c.title,
+      titleFa: c.titleFa || '',
+      slug: c.slug,
+      order: c.order ?? 0,
+      startPage: c.startPage ?? 1,
+    })),
+    reviews: (book.reviews || []).map((r) => ({
+      id: r.id,
+      userName: r.userName,
+      userAvatar: r.userAvatar,
+      rating: r.rating,
+      comment: r.comment,
+      createdAt: r.createdAt.toISOString(),
+    })),
   }
 }
 
@@ -373,91 +276,47 @@ export async function getReaderBook(
   from?: number,
   to?: number,
 ): Promise<ReaderBook | null> {
-  try {
-    const book = await safeQuery(
-      () =>
-        db.book.findUnique({
-          where: { slug },
-          include: {
-            author: true,
-            chapters: { orderBy: { order: 'asc' } },
-            pages: {
-              where:
-                from !== undefined && to !== undefined
-                  ? { pageNumber: { gte: from, lte: to } }
-                  : undefined,
-              orderBy: { pageNumber: 'asc' },
-            },
+  const book = await safeQuery(
+    () =>
+      db.book.findUnique({
+        where: { slug },
+        include: {
+          author: true,
+          chapters: { orderBy: { order: 'asc' } },
+          pages: {
+            where:
+              from !== undefined && to !== undefined
+                ? { pageNumber: { gte: from, lte: to } }
+                : undefined,
+            orderBy: { pageNumber: 'asc' },
           },
-        }),
-      null,
-      250,
-    )
-    if (book) {
-      return {
-        slug: book.slug,
-        title: book.title,
-        author: book.author?.name ?? '',
-        authorNameFa: book.author?.nameFa ?? '',
-        authorSlug: book.author?.slug ?? '',
-        level: book.level,
-        coverImageUrl: book.coverImageUrl ?? '',
-        coverBlurhash: book.coverBlurhash ?? '',
-        pageCount: book.pageCount,
-        chapters: (book.chapters || []).map((c) => ({
-          id: c.id,
-          title: c.title,
-          titleFa: c.titleFa || '',
-          slug: c.slug,
-          order: c.order ?? 0,
-          startPage: c.startPage ?? 1,
-        })),
-        pages: (book.pages || []).map((p) => ({
-          pageNumber: p.pageNumber,
-          items: [
-            {
-              english: p.english,
-              farsi: p.farsi || '',
-              type: (p.type === 'heading' ? 'heading' : 'text') as 'text' | 'heading',
-            },
-          ],
-        })),
-      }
-    }
-  } catch {
-    console.warn('[getReaderBook] DB offline, using seed reader book.')
-  }
-
-  const seed = SEED_BOOKS.find((b) => b.slug === slug)
-  if (!seed) return null
-
-  let pages = seed.pages
-  if (from !== undefined && to !== undefined) {
-    pages = pages.slice(Math.max(0, from - 1), to)
-  }
+        },
+      }),
+    null,
+    250,
+  )
+  if (!book) return null
 
   return {
-    slug: seed.slug,
-    title: seed.title,
-    author: seed.author,
-    authorNameFa: '',
-    authorSlug: seed.author.toLowerCase().replace(/\s+/g, '-'),
-    level: seed.level,
-    coverImageUrl: '',
-    coverBlurhash: '',
-    pageCount: seed.pages.length,
-    chapters: [
-      {
-        id: `ch-1-${seed.slug}`,
-        title: 'Chapter 1',
-        titleFa: 'فصل اول',
-        slug: 'chapter-1',
-        order: 1,
-        startPage: 1,
-      },
-    ],
-    pages: pages.map((p, i) => ({
-      pageNumber: (from ?? 1) + i,
+    slug: book.slug,
+    title: book.title,
+    author: book.author?.name ?? '',
+    authorNameFa: book.author?.nameFa ?? '',
+    authorSlug: book.author?.slug ?? '',
+    level: book.level,
+    coverImageUrl: book.coverImageUrl ?? '',
+    coverBlurhash: book.coverBlurhash ?? '',
+    pageCount: book.pageCount,
+    chapters: (book.chapters || []).map((c) => ({
+      id: c.id,
+      title: c.title,
+      titleFa: c.titleFa || '',
+      slug: c.slug,
+      order: c.order ?? 0,
+      startPage: c.startPage ?? 1,
+    })),
+    pages: (book.pages || []).map((p) => ({
+      pageNumber: p.pageNumber,
       items: [
         {
           english: p.english,
@@ -578,46 +437,30 @@ export interface CatalogStats {
 }
 
 export const getCatalogStats = cache(async function getCatalogStats(): Promise<CatalogStats> {
-  try {
-    const aggregate = await safeQuery(
-      () =>
-        db.book.aggregate({
-          where: { isPublished: true },
-          _count: { id: true },
-          _sum: { pageCount: true, viewCount: true },
-        }),
-      null,
-      250,
-    )
-    if (aggregate && aggregate._count.id && aggregate._count.id > 0) {
-      const booksCount = aggregate._count.id
-      const pagesCount = aggregate._sum.pageCount || 0
-      const totalReads = aggregate._sum.viewCount || 0
-      const totalMinutes = Math.round((totalReads * 12) / 60)
-      return { booksCount, pagesCount, totalReads, totalMinutes }
-    }
-  } catch {
-    console.warn('[getCatalogStats] DB offline, using seed catalog stats.')
-  }
-  const booksCount = SEED_BOOKS.length
-  const pagesCount = SEED_BOOKS.reduce((s, b) => s + b.pages.length, 0)
-  const totalReads = 42350
-  const totalMinutes = 684200
+  const aggregate = await safeQuery(
+    () =>
+      db.book.aggregate({
+        where: { isPublished: true },
+        _count: { id: true },
+        _sum: { pageCount: true, viewCount: true },
+      }),
+    null,
+    250,
+  )
+  const booksCount = aggregate?._count.id ?? 0
+  const pagesCount = aggregate?._sum.pageCount || 0
+  const totalReads = aggregate?._sum.viewCount || 0
+  const totalMinutes = Math.round((totalReads * 12) / 60)
   return { booksCount, pagesCount, totalReads, totalMinutes }
 })
 
 export async function getBooksCount(): Promise<number> {
-  try {
-    const count = await safeQuery(
-      () => db.book.count({ where: { isPublished: true } }),
-      0,
-      250,
-    )
-    if (count > 0) return count
-  } catch {
-    // fallback
-  }
-  return SEED_BOOKS.length
+  const count = await safeQuery(
+    () => db.book.count({ where: { isPublished: true } }),
+    0,
+    250,
+  )
+  return count
 }
 
 export async function searchBooks(
@@ -628,172 +471,85 @@ export async function searchBooks(
   const q = query.trim()
   if (!q) return { items: [], nextCursor: null, hasMore: false }
 
-  try {
-    const ql = q.toLowerCase()
+  const ql = q.toLowerCase()
 
-    const books = await db.book.findMany({
-      where: {
-        isPublished: true,
-        OR: [
-          { title: { contains: q, mode: 'insensitive' } },
-          { description: { contains: q, mode: 'insensitive' } },
-          { author: { name: { contains: q, mode: 'insensitive' } } },
-          { author: { nameFa: { contains: q, mode: 'insensitive' } } },
-        ],
-      },
-      select: bookSelect,
-      take: 100,
-    })
+  const books = await db.book.findMany({
+    where: {
+      isPublished: true,
+      OR: [
+        { title: { contains: q, mode: 'insensitive' } },
+        { description: { contains: q, mode: 'insensitive' } },
+        { author: { name: { contains: q, mode: 'insensitive' } } },
+        { author: { nameFa: { contains: q, mode: 'insensitive' } } },
+      ],
+    },
+    select: bookSelect,
+    take: 100,
+  })
 
-    if (books.length > 0) {
-      const rank = (b: any): number => {
-        let score = 0
-        if (b.title.toLowerCase().includes(ql)) score += 3
-        if (b.author?.name?.toLowerCase().includes(ql)) score += 2
-        if (b.author?.nameFa?.includes(q)) score += 2
-        if (b.description?.toLowerCase().includes(ql)) score += 1
-        return score
-      }
-
-      const sorted = books.sort((a, z) => {
-        const ra = rank(a)
-        const rz = rank(z)
-        if (rz !== ra) return rz - ra
-        return (z.rating ?? 0) - (a.rating ?? 0)
-      })
-
-      const offset = cursor ? Number(cursor) : 0
-      const paginated = sorted.slice(offset, offset + limit + 1)
-      const hasMore = paginated.length > limit
-      const items = hasMore ? paginated.slice(0, limit) : paginated
-      const nextCursor = hasMore ? String(offset + limit) : null
-
-      return {
-        items: items.map(toListItem),
-        nextCursor,
-        hasMore,
-      }
-    }
-  } catch (err) {
-    console.warn('[searchBooks] DB offline, searching seed catalog.')
+  const rank = (b: any): number => {
+    let score = 0
+    if (b.title.toLowerCase().includes(ql)) score += 3
+    if (b.author?.name?.toLowerCase().includes(ql)) score += 2
+    if (b.author?.nameFa?.includes(q)) score += 2
+    if (b.description?.toLowerCase().includes(ql)) score += 1
+    return score
   }
 
-  const ql = q.toLowerCase()
-  const seedMatches = SEED_BOOKS.filter(
-    (b) =>
-      b.title.toLowerCase().includes(ql) ||
-      b.author.toLowerCase().includes(ql) ||
-      b.description.toLowerCase().includes(ql),
-  ).map(seedToListItem)
+  const sorted = books.sort((a, z) => {
+    const ra = rank(a)
+    const rz = rank(z)
+    if (rz !== ra) return rz - ra
+    return (z.rating ?? 0) - (a.rating ?? 0)
+  })
 
   const offset = cursor ? Number(cursor) : 0
-  const paginated = seedMatches.slice(offset, offset + limit + 1)
+  const paginated = sorted.slice(offset, offset + limit + 1)
   const hasMore = paginated.length > limit
   const items = hasMore ? paginated.slice(0, limit) : paginated
   const nextCursor = hasMore ? String(offset + limit) : null
 
   return {
-    items,
+    items: items.map(toListItem),
     nextCursor,
     hasMore,
   }
 }
 
 export async function getRandomBook(): Promise<BookListItem | null> {
-  try {
-    const count = await db.book.count({ where: { isPublished: true } })
-    if (count > 0) {
-      const skip = Math.floor(Math.random() * count)
-      const books = await db.book.findMany({
-        where: { isPublished: true },
-        select: bookSelect,
-        skip,
-        take: 1,
-      })
-      if (books.length > 0) return toListItem(books[0])
-    }
-  } catch {
-    // fallback
-  }
-  const random = SEED_BOOKS[Math.floor(Math.random() * SEED_BOOKS.length)]
-  return random ? seedToListItem(random) : null
+  const count = await db.book.count({ where: { isPublished: true } })
+  if (count === 0) return null
+  const skip = Math.floor(Math.random() * count)
+  const books = await db.book.findMany({
+    where: { isPublished: true },
+    select: bookSelect,
+    skip,
+    take: 1,
+  })
+  return books.length > 0 ? toListItem(books[0]) : null
 }
 
 export async function getAuthors(): Promise<AuthorSummary[]> {
-  try {
-    const authors = await safeQuery(
-      () =>
-        db.author.findMany({
-          orderBy: [{ featured: 'desc' }, { name: 'asc' }],
-          take: 100,
-          include: {
-            books: {
-              where: { isPublished: true },
-              select: bookSelect,
-              orderBy: { createdAt: 'desc' },
-              take: 100,
-            },
+  const authors = await safeQuery(
+    () =>
+      db.author.findMany({
+        orderBy: [{ featured: 'desc' }, { name: 'asc' }],
+        take: 100,
+        include: {
+          books: {
+            where: { isPublished: true },
+            select: bookSelect,
+            orderBy: { createdAt: 'desc' },
+            take: 100,
           },
-        }),
-      [],
-      250,
-    )
+        },
+      }),
+    [],
+    250,
+  )
 
-    if (authors.length > 0) {
-      return authors.map((a) => {
-        const items = a.books.map(toListItem)
-        const genres = Array.from(new Set(items.flatMap((b) => b.genres))).sort()
-        const totalPages = items.reduce((sum, b) => sum + b.pageCount, 0)
-        const rated = items.filter((b) => b.rating > 0)
-        const averageRating =
-          rated.length > 0
-            ? rated.reduce((s, b) => s + b.rating, 0) / rated.length
-            : 0
-        const years = items.map((b) => b.publishedYear).filter((y) => y > 0)
-        const yearsActive =
-          years.length > 0
-            ? { min: Math.min(...years), max: Math.max(...years) }
-            : { min: 0, max: 0 }
-
-        const summary: AuthorSummary = {
-          name: a.name,
-          slug: a.slug,
-          bookCount: items.length,
-          books: items,
-          totalPages,
-          genres,
-          averageRating: Math.round(averageRating * 10) / 10,
-          yearsActive,
-        }
-
-        return Object.assign(summary, {
-          bio: a.bio || '',
-          bioFa: a.bioFa || '',
-          nameFa: a.nameFa || '',
-          photoUrl: a.photoUrl || '',
-          photoBlurhash: a.photoBlurhash || '',
-          birthYear: a.birthYear || null,
-          deathYear: a.deathYear || null,
-          nationality: a.nationality || '',
-          nationalityFa: a.nationalityFa || '',
-          flagEmoji: a.flagEmoji || '',
-          era: a.era || '',
-        })
-      })
-    }
-  } catch {
-    console.warn('[getAuthors] DB offline, using seed authors.')
-  }
-
-  const authorMap = new Map<string, SeedBook[]>()
-  for (const b of SEED_BOOKS) {
-    const list = authorMap.get(b.author) || []
-    list.push(b)
-    authorMap.set(b.author, list)
-  }
-
-  return Array.from(authorMap.entries()).map(([name, books]) => {
-    const items = books.map(seedToListItem)
+  return authors.map((a) => {
+    const items = a.books.map(toListItem)
     const genres = Array.from(new Set(items.flatMap((b) => b.genres))).sort()
     const totalPages = items.reduce((sum, b) => sum + b.pageCount, 0)
     const rated = items.filter((b) => b.rating > 0)
@@ -805,11 +561,11 @@ export async function getAuthors(): Promise<AuthorSummary[]> {
     const yearsActive =
       years.length > 0
         ? { min: Math.min(...years), max: Math.max(...years) }
-        : { min: 1850, max: 1920 }
+        : { min: 0, max: 0 }
 
-    return {
-      name,
-      slug: name.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, ''),
+    const summary: AuthorSummary = {
+      name: a.name,
+      slug: a.slug,
       bookCount: items.length,
       books: items,
       totalPages,
@@ -817,5 +573,19 @@ export async function getAuthors(): Promise<AuthorSummary[]> {
       averageRating: Math.round(averageRating * 10) / 10,
       yearsActive,
     }
+
+    return Object.assign(summary, {
+      bio: a.bio || '',
+      bioFa: a.bioFa || '',
+      nameFa: a.nameFa || '',
+      photoUrl: a.photoUrl || '',
+      photoBlurhash: a.photoBlurhash || '',
+      birthYear: a.birthYear || null,
+      deathYear: a.deathYear || null,
+      nationality: a.nationality || '',
+      nationalityFa: a.nationalityFa || '',
+      flagEmoji: a.flagEmoji || '',
+      era: a.era || '',
+    })
   })
 }

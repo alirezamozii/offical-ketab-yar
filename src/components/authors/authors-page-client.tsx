@@ -302,7 +302,7 @@ export function AuthorsPageClient({
             <div
               key={author.slug}
               style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
-              className="motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 duration-300 fill-mode-both cull-offscreen"
+              className="motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 duration-300 fill-mode-both"
             >
               <AuthorCard author={author} />
             </div>

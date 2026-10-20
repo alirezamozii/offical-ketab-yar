@@ -17,7 +17,7 @@ export const QuickPanelNavLinks: React.FC = () => {
       title: 'آمار و تحلیل سیستم',
       desc: 'شاخص‌ها و گزارش عملکرد پلتفرم',
       icon: BarChart3,
-      accentColor: '#38bdf8',
+      accentColor: 'var(--ky-info)',
       bgActive: 'linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(56, 189, 248, 0.05))',
       borderActive: 'rgba(56, 189, 248, 0.5)',
       glow: '0 4px 16px rgba(56, 189, 248, 0.12)',
@@ -28,7 +28,7 @@ export const QuickPanelNavLinks: React.FC = () => {
       title: 'مدیریت کاربران اپلیکیشن',
       desc: 'مسدودسازی، سطح دسترسی و سوابق',
       icon: Users,
-      accentColor: '#f4d35e',
+      accentColor: 'var(--ky-gold)',
       bgActive: 'linear-gradient(135deg, rgba(244, 211, 94, 0.20), rgba(244, 211, 94, 0.06))',
       borderActive: 'rgba(244, 211, 94, 0.6)',
       glow: '0 4px 16px rgba(244, 211, 94, 0.15)',
@@ -39,7 +39,7 @@ export const QuickPanelNavLinks: React.FC = () => {
       title: 'استودیو محتوا و پرامپت AI',
       desc: 'درون‌ریزی JSON، ویرایش صفحات و پیش‌نمایش',
       icon: FileCode2,
-      accentColor: '#c084fc',
+      accentColor: 'var(--ky-purple)',
       bgActive: 'linear-gradient(135deg, rgba(192, 132, 252, 0.18), rgba(192, 132, 252, 0.05))',
       borderActive: 'rgba(192, 132, 252, 0.5)',
       glow: '0 4px 16px rgba(192, 132, 252, 0.12)',
@@ -83,7 +83,7 @@ export const QuickPanelNavLinks: React.FC = () => {
               <div className="quick-panel-card-text-container">
                 <span 
                   className="quick-panel-card-heading" 
-                  style={{ color: isActive ? item.accentColor : '#fff' }}
+                  style={{ color: isActive ? item.accentColor : 'var(--ky-text)' }}
                 >
                   {item.title}
                 </span>
@@ -93,7 +93,7 @@ export const QuickPanelNavLinks: React.FC = () => {
               <ArrowLeft 
                 size={16} 
                 className={`quick-panel-arrow ${isActive ? 'active' : ''}`}
-                style={{ color: isActive ? item.accentColor : '#666' }}
+                style={{ color: isActive ? item.accentColor : 'var(--ky-text-disabled)' }}
               />
             </Link>
           )

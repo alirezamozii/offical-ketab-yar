@@ -15,14 +15,14 @@ import type { BookListItem } from '@/lib/data'
 export function BookListItemRow({
   book,
   progress,
-  index = 0,
+  index: _index = 0,
 }: {
   book: BookListItem
   progress?: number
   index?: number
 }) {
   return (
-    <div className="cull-offscreen">
+    <div className="">
       <Link
         href={`/books/${book.slug}`}
         className="group flex gap-3 rounded-2xl border border-border/60 bg-card p-3 shadow-sm transition-[transform,opacity,colors,border-color,background-color] hover:border-primary/50 hover:shadow-md sm:gap-4 sm:p-4"
@@ -34,6 +34,8 @@ export function BookListItemRow({
               title={book.title}
               author={book.author}
               from={book.coverFrom}
+              imageUrl={book.coverImageUrl || book.coverImage || undefined}
+              blurhash={book.coverBlurhash || undefined}
               to={book.coverTo}
               accent={book.coverAccent}
               size="sm"

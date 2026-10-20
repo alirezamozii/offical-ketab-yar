@@ -31,7 +31,7 @@ export async function BookOfTheDay() {
   if (!book) return null
 
   return (
-    <section className="relative overflow-hidden border-y border-gold-500/20 bg-gradient-to-br from-gold-50/80 via-card to-gold-100/40 dark:from-gold-900/10 dark:via-card dark:to-gold-800/5">
+    <section className=" relative overflow-hidden border-y border-gold-500/20 bg-gradient-to-br from-gold-50/80 via-card to-gold-100/40 dark:from-gold-900/10 dark:via-card dark:to-gold-800/5">
       {/* Ambient gold glow — GPU-accelerated radial gradient */}
       <div
         aria-hidden="true"
@@ -68,6 +68,8 @@ export async function BookOfTheDay() {
                 title={book.title}
                 author={book.author}
                 from={book.coverFrom}
+                imageUrl={book.coverImageUrl || book.coverImage || undefined}
+                blurhash={book.coverBlurhash || undefined}
                 to={book.coverTo}
                 accent={book.coverAccent}
                 size="md"

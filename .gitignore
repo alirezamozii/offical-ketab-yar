@@ -69,3 +69,17 @@ lighthouse-*.json
 *.db-wal
 /scripts/tools/test-db.ts
 test-db.ts
+
+# SQLite & DB files
+*.db
+*.db-shm
+*.db-wal
+
+# Temp files
+*.rar
+*.zip
+*.7z
+.zcode/
+*.html
+public/media/
+

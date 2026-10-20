@@ -71,6 +71,12 @@ export interface Highlight {
   page: number
   text: string
   color: HighlightColor
+  /**
+   * Sentence pair ids (from `data-pair-id` spans) the selection intersects.
+   * Lets the reader mirror the highlight onto the counterpart sentences in
+   * the other language ("هایلایت دوزبانه").
+   */
+  pairIds?: string[]
   /** Optional user note attached to the highlight. */
   note?: string
   timestamp: number

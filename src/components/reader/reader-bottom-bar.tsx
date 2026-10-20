@@ -39,6 +39,7 @@ function formatTime(sec: number): string {
  */
 export function ReaderBottomBar() {
   const {
+    book,
     themeStyle,
     currentParagraph,
     totalPages,
@@ -49,6 +50,14 @@ export function ReaderBottomBar() {
     scrollToParagraph,
     chromeVisible,
   } = useReader()
+
+  // Real printed page numbers from the DB (pageNumber can start above 1,
+  // e.g. 3..84) — never display the array index for these.
+  const realPage =
+    book.pages[currentParagraph]?.pageNumber ?? currentParagraph + 1
+  const lastRealPage =
+    book.pages[book.pages.length - 1]?.pageNumber ?? totalPages
+  const pageAt = (i: number) => book.pages[i]?.pageNumber ?? i + 1
 
   const tts = useTTSContext()
   const audioSpeed = useReaderSettingsStore((state) => state.audioSpeed)
@@ -143,7 +152,7 @@ export function ReaderBottomBar() {
                         className="font-bold shrink-0"
                         style={{ color: themeStyle.accent }}
                       >
-                        صوت چپتر {toPersianDigits(currentParagraph + 1)}
+                        صوت صفحه {toPersianDigits(realPage)}
                       </span>
                       {tts.currentText && (
                         <span
@@ -277,8 +286,8 @@ export function ReaderBottomBar() {
                       aria-live="polite"
                       style={{ color: themeStyle.accent }}
                     >
-                      چپتر {toPersianDigits(currentParagraph + 1)} از{' '}
-                      {toPersianDigits(totalPages)}
+                      صفحه {toPersianDigits(realPage)} از{' '}
+                      {toPersianDigits(lastRealPage)}
                     </span>
                     <div className="flex items-center gap-3 text-[11px] font-medium" style={{ color: themeStyle.text }}>
                       <span
@@ -323,7 +332,7 @@ export function ReaderBottomBar() {
                         <div
                           className="flex h-10 items-center justify-between gap-1.5 px-1"
                           role="tablist"
-                          aria-label="انتخاب چپتر"
+                          aria-label="انتخاب صفحه"
                         >
                           {Array.from({ length: totalPages }, (_, i) => (
                             <button
@@ -331,10 +340,10 @@ export function ReaderBottomBar() {
                               type="button"
                               role="tab"
                               aria-selected={i === currentParagraph}
-                              aria-label={`چپتر ${toPersianDigits(i + 1)}`}
+                              aria-label={`صفحه ${toPersianDigits(pageAt(i))}`}
                               onClick={() => scrollToParagraph(i)}
                               className="group relative flex-1 py-2"
-                              title={`چپتر ${toPersianDigits(i + 1)}`}
+                              title={`صفحه ${toPersianDigits(pageAt(i))}`}
                             >
                               <span
                                 className="block h-2 w-full rounded-full transition-all duration-200 group-hover:h-2.5"
@@ -349,7 +358,7 @@ export function ReaderBottomBar() {
                           max={Math.max(totalPages - 1, 1)}
                           step={1}
                           onValueChange={(v) => scrollToParagraph(v[0])}
-                          aria-label="جابه‌جایی بین چپترها"
+                          aria-label="جابه‌جایی بین صفحه‌ها"
                         />
                       )}
                     </div>

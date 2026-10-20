@@ -314,8 +314,10 @@ function OnboardingContent() {
 
 export default function OnboardingPage() {
   return (
-    <AuthProvider>
-      <OnboardingContent />
-    </AuthProvider>
+    <div data-fullscreen-route="onboarding">
+      <AuthProvider>
+        <OnboardingContent />
+      </AuthProvider>
+    </div>
   )
 }

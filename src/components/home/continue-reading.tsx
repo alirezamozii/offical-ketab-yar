@@ -71,6 +71,8 @@ export function ContinueReading() {
               title={featured.title}
               author={featured.author}
               from={featured.coverFrom}
+              imageUrl={featured.coverImageUrl || featured.coverImage || undefined}
+              blurhash={featured.coverBlurhash || undefined}
               to={featured.coverTo}
               accent={featured.coverAccent}
               size="sm"

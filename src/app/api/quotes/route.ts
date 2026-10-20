@@ -36,6 +36,16 @@ const CACHE_CONTROL = 'public, max-age=300, s-maxage=600'
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url)
+    const hasWhere = [...url.searchParams.keys()].some((k) => k === 'where' || k.startsWith('where['))
+    if (hasWhere || url.searchParams.has('depth') || (url.searchParams.has('limit') && url.searchParams.has('page'))) {
+      // Delegate admin-style queries straight to Payload's REST layer so
+      // `where[...]` filters work exactly like every other collection.
+      const { REST_GET } = await import('@payloadcms/next/routes')
+      const config = (await import('@/payload.config')).default
+      return (REST_GET(config) as any)(request, {
+        params: Promise.resolve({ slug: ['quotes'] }),
+      })
+    }
     const sp = url.searchParams
 
     const rawLimit = sp.get('limit')
@@ -89,15 +99,47 @@ export async function GET(request: Request) {
     })
   } catch (err) {
     console.error('[/api/quotes] GET failed:', err)
-    const { SEED_QUOTES } = await import('@/lib/cms')
     return NextResponse.json(
       {
-        quotes: SEED_QUOTES,
-        quoteOfTheDay: SEED_QUOTES[0] ?? null,
-        total: SEED_QUOTES.length,
-        filtered: SEED_QUOTES.length,
+        quotes: [],
+        quoteOfTheDay: null,
+        total: 0,
+        filtered: 0,
       },
       { headers: { 'Cache-Control': CACHE_CONTROL } },
     )
   }
 }
+
+export async function POST(request: Request) {
+  const { REST_POST } = await import('@payloadcms/next/routes')
+  const config = (await import('@/payload.config')).default
+  return (REST_POST(config) as any)(request, {
+    params: Promise.resolve({ slug: ['quotes'] }),
+  })
+}
+
+export async function PATCH(request: Request) {
+  const { REST_PATCH } = await import('@payloadcms/next/routes')
+  const config = (await import('@/payload.config')).default
+  return (REST_PATCH(config) as any)(request, {
+    params: Promise.resolve({ slug: ['quotes'] }),
+  })
+}
+
+export async function DELETE(request: Request) {
+  const { REST_DELETE } = await import('@payloadcms/next/routes')
+  const config = (await import('@/payload.config')).default
+  return (REST_DELETE(config) as any)(request, {
+    params: Promise.resolve({ slug: ['quotes'] }),
+  })
+}
+
+export async function OPTIONS(request: Request) {
+  const { REST_OPTIONS } = await import('@payloadcms/next/routes')
+  const config = (await import('@/payload.config')).default
+  return (REST_OPTIONS(config) as any)(request, {
+    params: Promise.resolve({ slug: ['quotes'] }),
+  })
+}
+

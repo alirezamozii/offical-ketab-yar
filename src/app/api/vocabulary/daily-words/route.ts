@@ -5,8 +5,9 @@ import { getOrCreateGuestId } from '@/lib/session'
 /**
  * GET /api/vocabulary/daily-words
  *
- * Returns 5 "کلمات روزانه" — English words extracted from random book
- * pages. The selection is deterministic for a given (guest, day) so the
+ * Returns 5 "کلمات روزانه" — English words extracted from the reader's
+ * in-progress books first (ReadingProgress), then the rest of the catalog.
+ * Returns [] when the catalog is empty — no hardcoded fallback words. The selection is deterministic for a given (guest, day) so the
  * same 5 words are shown all day, rotating at midnight local time.
  *
  * Each item has: { word, context, bookSlug, bookTitle, bookAuthor } — no
@@ -84,21 +85,48 @@ export async function GET(req: NextRequest) {
     // Seeded RNG so the same (day, guestId) returns the same word set.
     const rng = seededRandom(`${day}:${guestId}`)
 
-    // Grab up to 200 text pages, then seeded-shuffle to pick a varied subset.
-    const pages = await db.bookPage.findMany({
-      take: 200,
-      where: { type: 'text', book: { isPublished: true } },
-      orderBy: { id: 'asc' },
-      select: {
-        english: true,
-        book: { select: { slug: true, title: true, author: { select: { name: true } } } },
-      },
+    // Personalized source: prefer pages from books the reader is actually
+    // reading (ReadingProgress for this guest), then top up from the rest of
+    // the published catalog so there are always enough candidates.
+    const progress = await db.readingProgress.findMany({
+      where: { guestId },
+      select: { bookSlug: true },
+      orderBy: { lastReadAt: 'desc' },
+      take: 20,
     })
+    const mySlugs = Array.from(new Set(progress.map((p) => p.bookSlug)))
 
-    // Empty DB (fresh install) → return fallback words
+    const pageSelect = {
+      english: true,
+      book: { select: { slug: true, title: true, author: { select: { name: true } } } },
+    } as const
+
+    const pages = mySlugs.length
+      ? await db.bookPage.findMany({
+          take: 200,
+          where: { type: 'text', book: { isPublished: true, slug: { in: mySlugs } } },
+          orderBy: { id: 'asc' },
+          select: pageSelect,
+        })
+      : []
+
+    if (pages.length < 50) {
+      const rest = await db.bookPage.findMany({
+        take: 200,
+        where: {
+          type: 'text',
+          book: { isPublished: true, ...(mySlugs.length ? { slug: { notIn: mySlugs } } : {}) },
+        },
+        orderBy: { id: 'asc' },
+        select: pageSelect,
+      })
+      pages.push(...rest)
+    }
+
+    // No pages at all (empty catalog) → return an empty list
     if (pages.length === 0) {
-      return NextResponse.json(FALLBACK_DAILY_WORDS, {
-        headers: { 'Cache-Control': 'public, max-age=3600' },
+      return NextResponse.json([], {
+        headers: { 'Cache-Control': 'public, max-age=60' },
       })
     }
 
@@ -126,8 +154,20 @@ export async function GET(req: NextRequest) {
             !STOPWORDS.has(t),
         )
       if (tokens.length === 0) continue
-      const candidate = tokens[Math.floor(rng() * tokens.length)]
-      if (seen.has(candidate)) continue
+      // Prefer a shuffled token that is not a proper noun (must appear in
+      // lowercase form in the page text) and has not been picked yet.
+      let candidate: string | null = null
+      for (let k = tokens.length - 1; k > 0; k--) {
+        const j = Math.floor(rng() * (k + 1))
+        ;[tokens[k], tokens[j]] = [tokens[j], tokens[k]]
+      }
+      for (const t of tokens) {
+        if (seen.has(t)) continue
+        if (!new RegExp(`\\b${t}\\b`).test(page.english)) continue // proper noun (only capitalized)
+        candidate = t
+        break
+      }
+      if (!candidate) continue
       seen.add(candidate)
 
       const sentences = page.english.split(/(?<=[.!?])\s+/)
@@ -146,8 +186,8 @@ export async function GET(req: NextRequest) {
     }
 
     if (out.length === 0) {
-      return NextResponse.json(FALLBACK_DAILY_WORDS, {
-        headers: { 'Cache-Control': 'public, max-age=3600' },
+      return NextResponse.json([], {
+        headers: { 'Cache-Control': 'public, max-age=60' },
       })
     }
 
@@ -158,47 +198,10 @@ export async function GET(req: NextRequest) {
     })
   } catch (err) {
     console.warn('[/api/vocabulary/daily-words] DB offline or query error, returning fallback:', err)
-    return NextResponse.json(FALLBACK_DAILY_WORDS, {
+    return NextResponse.json([], {
       status: 200,
-      headers: { 'x-db-fallback': 'true', 'Cache-Control': 'public, max-age=3600' },
+      headers: { 'Cache-Control': 'public, max-age=60' },
     })
   }
 }
 
-const FALLBACK_DAILY_WORDS = [
-  {
-    word: 'curious',
-    context: 'Alice was beginning to get very tired of sitting by her sister on the bank, and of having nothing to do.',
-    bookSlug: 'alice-in-wonderland',
-    bookTitle: "Alice's Adventures in Wonderland",
-    bookAuthor: 'Lewis Carroll',
-  },
-  {
-    word: 'affection',
-    context: 'It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.',
-    bookSlug: 'pride-and-prejudice',
-    bookTitle: 'Pride and Prejudice',
-    bookAuthor: 'Jane Austen',
-  },
-  {
-    word: 'essential',
-    context: 'It is only with the heart that one can see rightly; what is essential is invisible to the eye.',
-    bookSlug: 'the-little-prince',
-    bookTitle: 'The Little Prince',
-    bookAuthor: 'Antoine de Saint-Exupéry',
-  },
-  {
-    word: 'restless',
-    context: 'So we beat on, boats against the current, borne back ceaselessly into the past.',
-    bookSlug: 'the-great-gatsby',
-    bookTitle: 'The Great Gatsby',
-    bookAuthor: 'F. Scott Fitzgerald',
-  },
-  {
-    word: 'generous',
-    context: 'No one is useless in this world who lightens the burdens of another.',
-    bookSlug: 'a-christmas-carol',
-    bookTitle: 'A Christmas Carol',
-    bookAuthor: 'Charles Dickens',
-  },
-]

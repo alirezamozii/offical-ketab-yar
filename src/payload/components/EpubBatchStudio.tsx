@@ -59,6 +59,7 @@ export const EpubBatchStudio: React.FC<EpubBatchStudioProps> = ({ onBookCreated 
   const [endPage, setEndPage] = useState<number>(20)
   const [includeRules, setIncludeRules] = useState<boolean>(true)
   const [copiedPrompt, setCopiedPrompt] = useState(false)
+  const [showPromptModal, setShowPromptModal] = useState<boolean>(false)
 
   // State 3: Translation Ingestion & Synchronization
   const [persianJsonInput, setPersianJsonInput] = useState<string>('')
@@ -786,6 +787,15 @@ export const EpubBatchStudio: React.FC<EpubBatchStudioProps> = ({ onBookCreated 
 
               {/* Prompt Buttons */}
               <div className="prompt-action-toolbar">
+                <button
+                  type="button"
+                  onClick={() => setShowPromptModal(true)}
+                  className="download-prompt-icon-btn"
+                  title="مشاهده متن کامل پرامپت مهندسی‌شده"
+                >
+                  <Eye className="w-4 h-4 text-amber-400" />
+                  <span>مشاهده پرامپت</span>
+                </button>
                 <button type="button" onClick={handleCopyPrompt} className="copy-prompt-primary-btn">
                   {copiedPrompt ? (<><Check className="w-4 h-4 text-zinc-950" /><span>پرامپت کپی شد!</span></>) : (<><Copy className="w-4 h-4" /><span>کپی پرامپت آماده هوش مصنوعی ({selectedPages.length} صفحه)</span></>)}
                 </button>
@@ -1194,6 +1204,66 @@ export const EpubBatchStudio: React.FC<EpubBatchStudioProps> = ({ onBookCreated 
               >
                 اعمال تصمیمات انتخابی
               </button>
+            </div>
+                </div>
+        </div>
+      )}
+
+      {/* Generated AI Prompt Modal */}
+      {showPromptModal && (
+        <div className="modal-backdrop-fixed fade-in" onClick={() => setShowPromptModal(false)}>
+          <div
+            className="conflict-modal-window max-w-4xl max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+            dir="rtl"
+          >
+            <div className="modal-header-strip flex items-center justify-between pb-3 border-b border-zinc-800">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-400" />
+                <h3 className="text-base font-bold text-zinc-100">
+                  متن کامل پرامپت آماده ترجمه هوش مصنوعی ({selectedPages.length} صفحه)
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleDownloadPrompt}
+                  className="action-btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
+                  title="دانلود به عنوان فایل متنی .txt"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>دانلود .txt</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyPrompt}
+                  className="copy-prompt-primary-btn text-xs px-3 py-1.5 flex items-center gap-1.5"
+                >
+                  {copiedPrompt ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-zinc-950" />
+                      <span>کپی شد!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>کپی تمام پرامپت</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPromptModal(false)}
+                  className="close-alert-btn"
+                  title="بستن پنجره"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto mt-3 p-4 bg-zinc-950 rounded-lg border border-zinc-800/80 font-mono text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap select-all max-h-[65vh]">
+              {generatedAiPrompt}
             </div>
           </div>
         </div>

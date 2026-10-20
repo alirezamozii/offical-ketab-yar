@@ -52,6 +52,11 @@ export function useAchievements() {
   const [newlyUnlocked, setNewlyUnlocked] = useState<string[]>([])
   const [seen, setSeen] = useState<Set<string>>(() => new Set())
   const [gamesPlayed, setGamesPlayed] = useState(0)
+  // `seen` starts EMPTY and is hydrated from localStorage in an effect — the
+  // detection effect below must not run before that, or every mount would
+  // re-report already-seen achievements as "newly unlocked" and the dashboard
+  // celebration popup would fire on every visit.
+  const [loaded, setLoaded] = useState(false)
 
   // compute current progress data
   const progressMap = typeof window !== 'undefined' ? getLocalProgress() : {}
@@ -73,6 +78,7 @@ export function useAchievements() {
   useEffect(() => {
     setSeen(loadSeen())
     setGamesPlayed(loadGamesPlayed())
+    setLoaded(true)
     const onStorage = (e: StorageEvent) => {
       if (e.key === SEEN_KEY) setSeen(loadSeen())
       if (e.key === GAMES_PLAYED_KEY) setGamesPlayed(loadGamesPlayed())
@@ -223,6 +229,7 @@ export function useAchievements() {
   // primitives we already list here, so depending on the primitives is
   // sufficient (and avoids an extra reference check).
   useEffect(() => {
+    if (!loaded) return
     const newly: string[] = []
     for (const a of achievements) {
       if (a.unlocked && !seen.has(a.id)) {
@@ -236,7 +243,7 @@ export function useAchievements() {
       setSeen(next)
       saveSeen(next)
     }
-  }, [achievements, seen, booksStarted, booksCompleted, longestStreak, totalReadingDays, currentStreak, vocabCount, gamesPlayed])
+  }, [loaded, achievements, seen, booksStarted, booksCompleted, longestStreak, totalReadingDays, currentStreak, vocabCount, gamesPlayed])
 
   // Clear the "newly unlocked" notification after a 6-second delay. Lives in
   // its own effect so the timer isn't cancelled by unrelated re-renders.

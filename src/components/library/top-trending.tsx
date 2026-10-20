@@ -12,7 +12,7 @@ export function TopTrending({ books }: { books: BookListItem[] }) {
   return (
     <section
       aria-labelledby="top-trending-title"
-      className="mb-8 space-y-4"
+      className=" mb-8 space-y-4"
     >
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -38,7 +38,7 @@ export function TopTrending({ books }: { books: BookListItem[] }) {
           {books.slice(0, 10).map((b) => (
             <div
               key={b.id}
-              className="relative w-[44%] shrink-0 snap-start sm:w-[31%] md:w-[23%] lg:w-[18.5%] xl:w-[15.5%]"
+              className=" relative w-[44%] shrink-0 snap-start sm:w-[31%] md:w-[23%] lg:w-[18.5%] xl:w-[15.5%]"
             >
               <BookCard book={b} />
             </div>

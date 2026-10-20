@@ -127,6 +127,7 @@ export function useReaderHighlights({
   }, [bookmarks, book.slug])
 
   // ---- Restore highlights across the whole continuous column ----
+  // ---- Restore highlights across the whole continuous column ----
   // Each highlight is scoped to its paragraph element (data-paragraph-index).
   // Idempotent: removes any existing highlight spans, then re-wraps each
   // highlight's text inside its paragraph.
@@ -141,6 +142,15 @@ export function useReaderHighlights({
         parent.removeChild(el)
       }
     })
+    // Reset mirrored sentence-pair highlights (other-language counterparts).
+    root.querySelectorAll('[data-hl-pair-for]').forEach((el) => {
+      const span = el as HTMLSpanElement
+      span.removeAttribute('data-hl-pair-for')
+      span.removeAttribute('style')
+    })
+    // Normalize paragraphs to merge text nodes after unwrapping
+    root.querySelectorAll('[data-paragraph-index]').forEach((p) => p.normalize())
+
     if (highlights.length === 0) return
     highlights.forEach((hl) => {
       // Defensive: skip out-of-range highlights (book content may have changed).
@@ -170,6 +180,26 @@ export function useReaderHighlights({
           break
         }
       }
+
+      // Mirror the highlight onto the counterpart sentences in the other
+      // language: every matched sentence pair gets the same color, so
+      // selecting N English sentences also lights up their N Persian twins.
+      if (hl.pairIds && hl.pairIds.length > 0) {
+        for (const pid of hl.pairIds) {
+          paraEl
+            .querySelectorAll(`span[data-pair-id="${pid}"]`)
+            .forEach((el) => {
+              const span = el as HTMLSpanElement
+              // Skip the side already covered by the wrapped text above.
+              if (span.querySelector('[data-hl-id]') || span.closest('[data-hl-id]')) {
+                return
+              }
+              span.setAttribute('data-hl-pair-for', hl.id)
+              span.style.background = HIGHLIGHT_COLORS[hl.color]
+              span.style.borderRadius = '0.25rem'
+            })
+        }
+      }
     })
   }, [highlights, totalPages, scrollRef])
 
@@ -185,31 +215,78 @@ export function useReaderHighlights({
   }, [restoreHighlights, currentLanguage, prefsShowSubtitles])
 
   // ---- Add a highlight wrapping the current selection ----
+  // Captures the sentence-pair ids the selection intersects so the
+  // counterpart sentences in the other language get mirrored too.
+  const capturePairIds = useCallback((): string[] => {
+    const root = scrollRef.current
+    const range = selectedRange
+    if (!root || !range) return []
+    const paraEl = root.querySelector(
+      `[data-paragraph-index="${currentParagraph}"]`,
+    )
+    if (!paraEl) return []
+    const pairIds = new Set<string>()
+    paraEl
+      .querySelectorAll('span[data-pair-id]')
+      .forEach((span) => {
+        if (range.intersectsNode(span)) {
+          pairIds.add(span.getAttribute('data-pair-id') || '')
+        }
+      })
+    pairIds.delete('')
+    return Array.from(pairIds)
+  }, [scrollRef, selectedRange, currentParagraph])
+
   const addHighlight = useCallback(
     (color: Highlight['color']) => {
-      if (!selectedText || !selectedRange) return
+      if (!selectedText) return
+      const trimmedText = selectedText.trim()
+      if (!trimmedText) return
+
+      const pairIds = capturePairIds()
       const id = `hl_${Date.now()}`
-      setHighlights((prev) => [
-        ...prev,
-        {
-          id,
-          text: selectedText,
-          page: currentParagraph,
-          color,
-          timestamp: Date.now(),
-        },
-      ])
-      try {
-        const span = document.createElement('span')
-        span.className = 'reader-highlight'
-        span.setAttribute('data-hl-id', id)
-        span.style.background = HIGHLIGHT_COLORS[color]
-        selectedRange.surroundContents(span)
-      } catch {}
-      // Note: caller closes the text menu + clears the selection.
+      setHighlights((prev) => {
+        // Prevent stacking duplicate/overlapping highlights on the same page:
+        // If the same or overlapping text is already highlighted, update its color!
+        const existingIdx = prev.findIndex(
+          (h) =>
+            h.page === currentParagraph &&
+            (h.text === trimmedText ||
+              h.text.includes(trimmedText) ||
+              trimmedText.includes(h.text)),
+        )
+
+        if (existingIdx !== -1) {
+          const updated = [...prev]
+          updated[existingIdx] = {
+            ...updated[existingIdx],
+            text: trimmedText,
+            color,
+            pairIds: pairIds.length > 0 ? pairIds : updated[existingIdx].pairIds,
+            timestamp: Date.now(),
+          }
+          return updated
+        }
+
+        return [
+          ...prev,
+          {
+            id,
+            text: trimmedText,
+            page: currentParagraph,
+            color,
+            pairIds: pairIds.length > 0 ? pairIds : undefined,
+            timestamp: Date.now(),
+          },
+        ]
+      })
+
+      // Clear the browser selection
+      window.getSelection()?.removeAllRanges()
+
       emit({ type: 'highlight-added' })
     },
-    [selectedText, selectedRange, currentParagraph, emit],
+    [selectedText, currentParagraph, emit, capturePairIds],
   )
 
   const removeHighlight = useCallback((id: string) => {

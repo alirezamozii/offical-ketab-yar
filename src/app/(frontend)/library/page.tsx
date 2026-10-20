@@ -1,11 +1,10 @@
 import { LibraryClient } from '@/components/library/library-client'
-import { QueryProvider } from '@/components/providers/query-provider'
 import { TopTrending } from '@/components/library/top-trending'
 import { getBooks, getBooksCount, getMostReadBooks } from '@/lib/data'
 import type { Metadata } from 'next'
 import { SITE } from '@/lib/site'
 
-export const revalidate = 60
+export const revalidate = 0 // always fresh — new CMS content must appear on the next click
 
 export const metadata: Metadata = {
   title: 'کتابخانه دوزبانه',
@@ -102,9 +101,7 @@ export default async function LibraryPage() {
           Dynamic ranking based on real viewCount, pastel palette. */}
       <TopTrending books={trending} />
 
-      <QueryProvider>
-        <LibraryClient initial={initialBooks} />
-      </QueryProvider>
+      <LibraryClient initial={initialBooks} />
     </div>
   )
 }

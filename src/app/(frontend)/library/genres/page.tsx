@@ -8,7 +8,8 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
-import { db } from '@/lib/db'
+import { db, safeQuery } from '@/lib/db'
+import { parseGenres } from '@/lib/books-query'
 import { SITE } from '@/lib/site'
 
 export const dynamic = 'force-dynamic'
@@ -69,15 +70,6 @@ export const metadata: Metadata = {
   },
 }
 
-function parseGenres(raw: string): string[] {
-  try {
-    const v = JSON.parse(raw)
-    return Array.isArray(v) ? v.map(String) : []
-  } catch {
-    return []
-  }
-}
-
 const SORTS = [
   { value: 'views', label: 'محبوب‌ترین', icon: Flame },
   { value: 'count', label: 'بر اساس تعداد', icon: BookOpen },
@@ -91,9 +83,37 @@ export default async function GenresPage({
   const sp = await searchParams
   const requestedSort = sp.sort === 'count' ? 'count' : 'views'
 
-  const books = await db.book.findMany({
-    select: { genres: true, viewCount: true },
-  })
+  let books = await safeQuery(
+    () =>
+      db.book.findMany({
+        where: { isPublished: true },
+        select: { genres: true, viewCount: true },
+      }),
+    [],
+    2500,
+  )
+
+  // Direct Payload CMS fallback if Prisma has no rows
+  if (!books || books.length === 0) {
+    try {
+      const { getPayloadClient } = await import('@/lib/payload')
+      const payload = await getPayloadClient()
+      const payloadBooks = await payload.find({
+        collection: 'books',
+        where: { isPublished: { equals: true } },
+        limit: 100,
+      })
+      if (payloadBooks?.docs?.length > 0) {
+        books = payloadBooks.docs.map((b: any) => ({
+          genres: JSON.stringify(parseGenres(b.genres)),
+          viewCount: Number(b.viewCount) || 0,
+        }))
+      }
+    } catch {
+      // payload fallback optional
+    }
+  }
+
   const map = new Map<string, { count: number; views: number }>()
   for (const b of books) {
     for (const g of parseGenres(b.genres)) {

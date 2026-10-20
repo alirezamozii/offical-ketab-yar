@@ -40,7 +40,10 @@ import {
   Eye,
   MoreVertical,
 } from 'lucide-react'
-import { ContentStudio } from './ContentStudio'
+import dynamic from 'next/dynamic'
+const ContentStudio = dynamic(() => import('./ContentStudio').then((mod) => mod.ContentStudio), {
+  ssr: false,
+})
 import {
   fetchStats,
   searchUsers,

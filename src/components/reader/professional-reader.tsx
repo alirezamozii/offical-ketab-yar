@@ -111,6 +111,7 @@ export function ProfessionalReader({ book }: ReaderProps) {
     <ReaderProvider value={state}>
       <TTSProvider>
         <div
+          data-fullscreen-route="reader"
           role="application"
           aria-label={`خواننده کتاب: ${book.title}${book.author ? ` از ${book.author}` : ''}`}
           aria-keyshortcuts="ArrowRight ArrowLeft PageUp PageDown Escape"

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { toPersianDigits } from '@/lib/typography'
 
 function easeOutExpo(x: number): number {
@@ -8,54 +8,55 @@ function easeOutExpo(x: number): number {
 }
 
 export function CountUp({ to, duration = 1400 }: { to: number; duration?: number }) {
-  const [value, setValue] = useState(to)
   const ref = useRef<HTMLSpanElement>(null)
-  const [hasAnimated, setHasAnimated] = useState(false)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setValue(to)
       return
     }
 
     const node = ref.current
     if (!node) return
 
+    let rafId: number | null = null
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !hasAnimated) {
-          setHasAnimated(true)
-          setValue(0)
+        if (entries[0].isIntersecting) {
+          observer.disconnect()
           let startTimestamp: number | null = null
 
           const step = (timestamp: number) => {
             if (!startTimestamp) startTimestamp = timestamp
             const progress = Math.min((timestamp - startTimestamp) / duration, 1)
             const currentVal = Math.floor(easeOutExpo(progress) * to)
-            setValue(currentVal)
+            if (node) {
+              node.textContent = toPersianDigits(currentVal)
+            }
 
             if (progress < 1) {
-              requestAnimationFrame(step)
-            } else {
-              setValue(to)
+              rafId = requestAnimationFrame(step)
+            } else if (node) {
+              node.textContent = toPersianDigits(to)
             }
           }
 
-          requestAnimationFrame(step)
-          observer.disconnect()
+          rafId = requestAnimationFrame(step)
         }
       },
       { threshold: 0.15 },
     )
 
     observer.observe(node)
-    return () => observer.disconnect()
-  }, [to, duration, hasAnimated])
+    return () => {
+      observer.disconnect()
+      if (rafId !== null) cancelAnimationFrame(rafId)
+    }
+  }, [to, duration])
 
   return (
     <span ref={ref} aria-live="polite" className="tabular-nums">
-      {toPersianDigits(value)}
+      {toPersianDigits(to)}
     </span>
   )
 }

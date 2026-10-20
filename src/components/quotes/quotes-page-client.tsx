@@ -52,18 +52,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from '@/components/ui/tabs'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
-
 import { cn } from '@/lib/utils'
 import { usePersianLocale } from '@/hooks/use-persian-locale'
 import { useStorageSync, STORAGE_KEYS } from '@/lib/storage-keys'
@@ -486,15 +474,10 @@ export function QuotesPageClient({
       )}
 
       {/* ─── Tabs ─── */}
-      <Tabs
-        value={tab}
-        onValueChange={(v) => setTab(v as 'curated' | 'highlights' | 'saved')}
-        className="w-full space-y-6"
-        dir="rtl"
-      >
+      <div className="w-full space-y-6" dir="rtl">
         <div className="flex w-full justify-start items-center">
-          <TabsList className="h-auto flex-wrap gap-1 rounded-xl p-1 justify-start">
-            <TabsTrigger value="highlights" className="gap-1.5 rounded-lg px-3 py-1.5">
+          <div className="inline-flex h-auto flex-wrap items-center justify-start gap-1 rounded-xl bg-muted p-1 text-muted-foreground" role="tablist" aria-label="بخش‌های کوت‌ها">
+            <QuoteTabButton active={tab === 'highlights'} onClick={() => setTab('highlights')}>
               <BookOpen className="h-4 w-4" aria-hidden="true" />
               کوت‌های من
               {highlights.length > 0 && (
@@ -505,9 +488,9 @@ export function QuotesPageClient({
                   {toPersianDigits(highlights.length)}
                 </Badge>
               )}
-            </TabsTrigger>
+            </QuoteTabButton>
 
-            <TabsTrigger value="curated" className="gap-1.5 rounded-lg px-3 py-1.5">
+            <QuoteTabButton active={tab === 'curated'} onClick={() => setTab('curated')}>
               <Globe className="h-4 w-4" aria-hidden="true" />
               کوت‌های عمومی
               <Badge
@@ -516,9 +499,9 @@ export function QuotesPageClient({
               >
                 {toPersianDigits(initialQuotes.length)}
               </Badge>
-            </TabsTrigger>
+            </QuoteTabButton>
 
-            <TabsTrigger value="saved" className="gap-1.5 rounded-lg px-3 py-1.5">
+            <QuoteTabButton active={tab === 'saved'} onClick={() => setTab('saved')}>
               <Bookmark className="h-4 w-4" aria-hidden="true" />
               ذخیره‌شده‌ها
               {savedQuotes.length > 0 && (
@@ -529,12 +512,12 @@ export function QuotesPageClient({
                   {toPersianDigits(savedQuotes.length)}
                 </Badge>
               )}
-            </TabsTrigger>
-          </TabsList>
+            </QuoteTabButton>
+          </div>
         </div>
 
         {/* ─── Curated tab ─── */}
-        <TabsContent value="curated" className="w-full space-y-6 outline-none">
+        {tab === 'curated' && <div role="tabpanel" className="w-full space-y-6 outline-none">
           <FilterBar
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
@@ -582,10 +565,10 @@ export function QuotesPageClient({
               toPersianDigits={toPersianDigits}
             />
           )}
-        </TabsContent>
+        </div>}
 
         {/* ─── Highlights tab (کوت‌های من) ─── */}
-        <TabsContent value="highlights" className="w-full space-y-6 outline-none">
+        {tab === 'highlights' && <div role="tabpanel" className="w-full space-y-6 outline-none">
           <HighlightsTab
             highlights={highlights}
             bookLookup={initialBookLookup}
@@ -596,10 +579,10 @@ export function QuotesPageClient({
             onShare={share}
             toPersianDigits={toPersianDigits}
           />
-        </TabsContent>
+        </div>}
 
         {/* ─── Saved tab ─── */}
-        <TabsContent value="saved" className="w-full space-y-6 outline-none">
+        {tab === 'saved' && <div role="tabpanel" className="w-full space-y-6 outline-none">
           {savedQuotes.length === 0 ? (
             <EmptyState
               icon={Bookmark}
@@ -627,8 +610,8 @@ export function QuotesPageClient({
               savedMode
             />
           )}
-        </TabsContent>
-      </Tabs>
+        </div>}
+      </div>
 
       {/* ─── Studio Modal ─── */}
       {studioOpen && (
@@ -665,6 +648,31 @@ interface QuoteOfTheDayHeroProps {
   total: number
 }
 
+function QuoteTabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={cn(
+        'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-transparent px-3 py-1.5 text-sm font-medium text-foreground transition-[color,box-shadow,background-color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60',
+        active && 'bg-background shadow-sm dark:border-input dark:bg-input/30 dark:text-foreground',
+      )}
+    >
+      {children}
+    </button>
+  )
+}
+
 function QuoteOfTheDayHero({
   quote,
   book,
@@ -675,7 +683,7 @@ function QuoteOfTheDayHero({
   reaction,
   onVote,
   toPersianDigits,
-  prefersReduced,
+  prefersReduced: _prefersReduced,
   heroIdx,
   total,
 }: QuoteOfTheDayHeroProps) {
@@ -773,6 +781,8 @@ function QuoteOfTheDayHero({
                     title={book.title}
                     author={book.author}
                     from={book.coverFrom}
+                    imageUrl={book.coverImageUrl || book.coverImage || undefined}
+                    blurhash={book.coverBlurhash || undefined}
                     to={book.coverTo}
                     accent={book.coverAccent}
                     size="sm"
@@ -1076,19 +1086,15 @@ function FilterBar({
               </button>
             ))}
             {sort === 'random' && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={onReshuffle}
-                    aria-label="بُرش تصادفی دوباره"
-                    className="rounded-lg p-1 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                  >
-                    <Shuffle className="h-3.5 w-3.5" aria-hidden="true" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top">بُرش تصادفی دوباره</TooltipContent>
-              </Tooltip>
+              <button
+                type="button"
+                onClick={onReshuffle}
+                aria-label="بُرش تصادفی دوباره"
+                title="بُرش تصادفی دوباره"
+                className="rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <Shuffle className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
             )}
           </div>
         </div>
@@ -1204,7 +1210,7 @@ function QuoteCard({
   onOpenStudio,
   onShare,
   onToggleSave,
-  prefersReduced,
+  prefersReduced: _prefersReduced,
   toPersianDigits,
   index,
 }: QuoteCardProps) {
@@ -1280,6 +1286,8 @@ function QuoteCard({
                   title={book.title}
                   author={book.author}
                   from={book.coverFrom}
+                  imageUrl={book.coverImageUrl || book.coverImage || undefined}
+                  blurhash={book.coverBlurhash || undefined}
                   to={book.coverTo}
                   accent={book.coverAccent}
                   size="sm"
@@ -1741,6 +1749,8 @@ function PersonalQuoteCard({
                   title={book.title}
                   author={book.author}
                   from={book.coverFrom}
+                  imageUrl={book.coverImageUrl || book.coverImage || undefined}
+                  blurhash={book.coverBlurhash || undefined}
                   to={book.coverTo}
                   accent={book.coverAccent}
                   size="sm"

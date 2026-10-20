@@ -1,14 +1,12 @@
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
 import { getActiveQuotes, getQuoteOfTheDayFromDB } from '@/lib/cms'
 import type { CuratedQuote } from '@/lib/quotes'
 import type { BookListItem } from '@/lib/data'
 import { getBooks } from '@/lib/data'
 import { SITE } from '@/lib/site'
 import { QuotesPageClient } from '@/components/quotes/quotes-page-client'
-import { QuotesSkeleton } from '@/components/quotes/quotes-skeleton'
 
-export const revalidate = 60
+export const revalidate = 0 // always fresh — new CMS content must appear on the next click
 
 export const metadata: Metadata = {
   title: 'کوت‌ها | بوکزی',
@@ -75,15 +73,12 @@ export const metadata: Metadata = {
  * Admin edits made through `/admin/quotes` show up here on the next render
  * (no deploy needed) — the Quote table is the single source of truth.
  */
-async function QuotesContent() {
+export default async function QuotesPage() {
   const [allBooks, quotes, quoteOfTheDay] = await Promise.all([
     getBooks(),
     getActiveQuotes(),
     getQuoteOfTheDayFromDB(),
   ])
-  const bookLookup: Record<string, BookListItem> = {}
-  for (const b of allBooks) bookLookup[b.slug] = b
-
   const curatedQuotes: CuratedQuote[] = quotes
   const quoteOfDay: CuratedQuote =
     quoteOfTheDay ?? quotes[0] ?? {
@@ -98,21 +93,26 @@ async function QuotesContent() {
       length: 'کوتاه',
     }
 
-  return (
-    <QuotesPageClient
-      initialQuotes={curatedQuotes}
-      initialBookLookup={bookLookup}
-      initialQuoteOfTheDay={quoteOfDay}
-    />
+  const neededSlugs = new Set(
+    [quoteOfDay.bookSlug, ...curatedQuotes.map((q) => q.bookSlug)].filter(Boolean),
   )
-}
+  const bookLookup: Record<string, BookListItem> = {}
+  for (const b of allBooks) {
+    if (neededSlugs.has(b.slug)) {
+      bookLookup[b.slug] = {
+        ...b,
+        description: '',
+      }
+    }
+  }
 
-export default function QuotesPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 pt-20 sm:pt-24 pb-16 sm:px-6">
-      <Suspense fallback={<QuotesSkeleton />}>
-        <QuotesContent />
-      </Suspense>
+      <QuotesPageClient
+        initialQuotes={curatedQuotes}
+        initialBookLookup={bookLookup}
+        initialQuoteOfTheDay={quoteOfDay}
+      />
     </div>
   )
 }

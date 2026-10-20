@@ -2,27 +2,42 @@ import { GenreCard } from '@/components/library/genre-card'
 import { SectionHeader } from '@/components/layout/section-header'
 import { LazyReveal } from '@/components/home/lazy-reveal'
 import { db, safeQuery } from '@/lib/db'
+import { parseGenres } from '@/lib/books-query'
 import Link from 'next/link'
 import { ChevronLeft, Compass } from 'lucide-react'
 
-function parseGenres(raw: string): string[] {
-  try {
-    const v = JSON.parse(raw)
-    return Array.isArray(v) ? v.map(String) : []
-  } catch {
-    return []
-  }
-}
-
 async function getTopGenres() {
-  const books = await safeQuery(
+  let books = await safeQuery(
     () =>
       db.book.findMany({
+        where: { isPublished: true },
         select: { genres: true, viewCount: true },
       }),
     [],
-    250,
+    2500,
   )
+
+  // Direct Payload CMS fallback if Prisma has no rows yet (e.g. freshly created books)
+  if (!books || books.length === 0) {
+    try {
+      const { getPayloadClient } = await import('@/lib/payload')
+      const payload = await getPayloadClient()
+      const payloadBooks = await payload.find({
+        collection: 'books',
+        where: { isPublished: { equals: true } },
+        limit: 100,
+      })
+      if (payloadBooks?.docs?.length > 0) {
+        books = payloadBooks.docs.map((b: any) => ({
+          genres: JSON.stringify(parseGenres(b.genres)),
+          viewCount: Number(b.viewCount) || 0,
+        }))
+      }
+    } catch {
+      // payload fallback optional
+    }
+  }
+
   const map = new Map<string, { count: number; views: number }>()
   for (const b of books) {
     for (const g of parseGenres(b.genres)) {
@@ -34,7 +49,7 @@ async function getTopGenres() {
   }
   return Array.from(map.entries())
     .map(([name, v]) => ({ name, ...v }))
-    .sort((a, b) => b.count - a.count)
+    .sort((a, b) => b.count - a.count || b.views - a.views)
     .slice(0, 8)
 }
 

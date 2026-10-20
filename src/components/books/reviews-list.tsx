@@ -52,6 +52,29 @@ const NEW_REVIEW_KEY = STORAGE_KEYS.newReview
  *   3. Inside the circle, show the first letter of the user's name (Persian
  *      or Latin, whichever the name starts with).
  */
+function computeReviewHelpfulness(reviewId: string, votes: Record<string, { up: number; down: number }>) {
+  const v = votes[reviewId]
+  return v ? v.up - v.down : 0
+}
+
+function compareReviews(a: ReviewWithVote, b: ReviewWithVote, sort: 'newest' | 'highest' | 'lowest' | 'helpful', votes: Record<string, any>) {
+  if (sort === 'newest') {
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  }
+  if (sort === 'highest' || sort === 'lowest') {
+    const dir = sort === 'highest' ? -1 : 1
+    if (b.rating !== a.rating) return dir * (b.rating - a.rating)
+    const ha = computeReviewHelpfulness(a.id, votes)
+    const hb = computeReviewHelpfulness(b.id, votes)
+    if (hb !== ha) return hb - ha
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  }
+  const ha = computeReviewHelpfulness(a.id, votes)
+  const hb = computeReviewHelpfulness(b.id, votes)
+  if (hb !== ha) return hb - ha
+  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+}
+
 export function ReviewsList({
   reviews,
   sort = 'helpful',
@@ -137,28 +160,6 @@ export function ReviewsList({
     voteMutation.mutate({ reviewId, direction })
   }
 
-function computeReviewHelpfulness(reviewId: string, votes: Record<string, { up: number; down: number }>) {
-  const v = votes[reviewId]
-  return v ? v.up - v.down : 0
-}
-
-function compareReviews(a: ReviewWithVote, b: ReviewWithVote, sort: 'newest' | 'highest' | 'lowest' | 'helpful', votes: Record<string, any>) {
-  if (sort === 'newest') {
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  }
-  if (sort === 'highest' || sort === 'lowest') {
-    const dir = sort === 'highest' ? -1 : 1
-    if (b.rating !== a.rating) return dir * (b.rating - a.rating)
-    const ha = computeReviewHelpfulness(a.id, votes)
-    const hb = computeReviewHelpfulness(b.id, votes)
-    if (hb !== ha) return hb - ha
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  }
-  const ha = computeReviewHelpfulness(a.id, votes)
-  const hb = computeReviewHelpfulness(b.id, votes)
-  if (hb !== ha) return hb - ha
-  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-}
 
   const sorted = useMemo(() => {
     return [...reviews].sort((a, b) => compareReviews(a, b, sort, votes))

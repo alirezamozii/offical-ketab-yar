@@ -225,7 +225,7 @@ function AchievementCard({
         ease: [0.22, 1, 0.36, 1],
       }}
       whileHover={reduceMotion ? undefined : { y: -5 }}
-      className="group relative cull-offscreen"
+      className="group relative"
     >
       <button
         type="button"

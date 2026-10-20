@@ -22,10 +22,9 @@ export interface LastReadBook {
   coverFrom: string
   coverTo: string
   coverAccent: string
-  /** Optional uploaded cover image URL (when the admin has uploaded a
-   *  real cover image). The orb still shows the GRADIENT (not the image)
-   *  per user feedback, but this field is available for future use. */
+  /** Uploaded cover image URL (admin upload) — preferred over gradient. */
   coverImage?: string | null
+  coverImageUrl?: string | null
   percent: number
   lastReadAt: number
 }
@@ -78,7 +77,7 @@ export function useLastReadBook(): {
             coverFrom: found.coverFrom,
             coverTo: found.coverTo,
             coverAccent: found.coverAccent,
-            coverImage: found.coverImage,
+            coverImage: found.coverImageUrl || found.coverImage || null,
             percent: progress.percent,
             lastReadAt: progress.lastReadAt ?? progress.ts ?? 0,
           })

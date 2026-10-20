@@ -2,7 +2,7 @@
 
 import { headers } from 'next/headers'
 import { Prisma } from '@prisma/client'
-import { db } from '../../lib/db'
+import { db, isDbOffline } from '../../lib/db'
 import { slugify } from '../../lib/utils'
 import { revalidateUsers, revalidateBook } from '../../lib/revalidate'
 import { getVerifiedAdminUser } from '@/lib/auth-session'
@@ -91,6 +91,18 @@ export interface DashboardStats {
  */
 export async function fetchStats(): Promise<DashboardStats> {
   await assertAdminPermission(false)
+  if (isDbOffline()) {
+    return {
+      totalUsers: 0,
+      activeUsers: 0,
+      totalReadingSessions: 0,
+      totalPagesRead: 0,
+      totalMinutesRead: 0,
+      totalDownloads: 0,
+      openTickets: 0,
+      averagePagesPerUser: 0,
+    }
+  }
   try {
     const [
       totalUsers,
@@ -127,9 +139,18 @@ export async function fetchStats(): Promise<DashboardStats> {
       openTickets,
       averagePagesPerUser,
     }
-  } catch (err) {
-    console.error('[Actions] Failed to fetch stats:', err)
-    throw new Error('Failed to load database stats.')
+  } catch (err: any) {
+    console.warn('[Actions] Failed to fetch stats:', err?.message || String(err))
+    return {
+      totalUsers: 0,
+      activeUsers: 0,
+      totalReadingSessions: 0,
+      totalPagesRead: 0,
+      totalMinutesRead: 0,
+      totalDownloads: 0,
+      openTickets: 0,
+      averagePagesPerUser: 0,
+    }
   }
 }
 
@@ -169,6 +190,9 @@ export interface ManagedUser {
  */
 export async function searchUsers(query: string): Promise<ManagedUser[]> {
   await assertAdminPermission(false)
+  if (isDbOffline()) {
+    return []
+  }
   try {
     const q = query.trim()
     const where: Prisma.UserWhereInput = {}
@@ -246,9 +270,9 @@ export async function searchUsers(query: string): Promise<ManagedUser[]> {
         totalMinutesRead: u.userStats?.pagesRead ? Math.round(u.userStats.pagesRead * 1.5) : 0,
       },
     }))
-  } catch (err) {
-    console.error('[Actions] Failed to search users:', err)
-    throw new Error('Failed to retrieve user list.')
+  } catch (err: any) {
+    console.warn('[Actions] Failed to search users:', err?.message || String(err))
+    return []
   }
 }
 
@@ -285,7 +309,7 @@ export async function updateUserRole(userId: string, role: string) {
     })
     revalidateUsers()
     return { success: true }
-  } catch (err) {
+  } catch (err: any) {
     console.error(`[Actions] Failed to update user role for ${userId}:`, err)
     throw err instanceof Error ? err : new Error('Failed to update user role.')
   }
@@ -331,7 +355,7 @@ export async function banUser(userId: string, reason: string) {
     })
     revalidateUsers()
     return { success: true }
-  } catch (err) {
+  } catch (err: any) {
     console.error(`[Actions] Failed to ban user ${userId}:`, err)
     throw err instanceof Error ? err : new Error('Failed to ban user.')
   }
@@ -369,7 +393,7 @@ export async function unbanUser(userId: string) {
     })
     revalidateUsers()
     return { success: true }
-  } catch (err) {
+  } catch (err: any) {
     console.error(`[Actions] Failed to unban user ${userId}:`, err)
     throw err instanceof Error ? err : new Error('Failed to unban user.')
   }
@@ -402,7 +426,7 @@ export async function deleteUser(userId: string) {
     })
     revalidateUsers()
     return { success: true }
-  } catch (err) {
+  } catch (err: any) {
     console.error(`[Actions] Failed to delete user ${userId}:`, err)
     throw err instanceof Error ? err : new Error('Failed to delete user.')
   }
@@ -518,7 +542,7 @@ export async function importBookAction(jsonString: string): Promise<{ success: b
 
     appendLog(`عملیات درون‌ریزی با موفقیت به پایان رسید.`)
     return { success: true, log }
-  } catch (err) {
+  } catch (err: any) {
     appendLog(`خطا در حین درون‌ریزی: ${err instanceof Error ? err.message : String(err)}`)
     console.error('[Actions] Book import failed:', err)
     return { success: false, log }

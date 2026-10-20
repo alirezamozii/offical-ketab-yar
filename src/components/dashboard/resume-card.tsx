@@ -81,6 +81,8 @@ export function ResumeCard() {
             title={book.title}
             author={book.author}
             from={book.coverFrom}
+            imageUrl={book.coverImageUrl || book.coverImage || undefined}
+            blurhash={book.coverBlurhash || undefined}
             to={book.coverTo}
             accent={book.coverAccent}
             size="sm"

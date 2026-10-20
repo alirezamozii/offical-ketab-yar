@@ -3,42 +3,25 @@
 /**
  * DailyWordsSection — "کلمات روزانه" widget.
  *
- * Fetches 5 deterministic-per-day English words from book pages via
- * `/api/vocabulary/daily-words`. Each card shows the word, the source
- * book + the example sentence it came from, and a "یاد بگیر" button
- * that calls the dictionary API to auto-fill the translation before
- * saving the word to the user's vocabulary list.
+ * Shows a daily practice set of 5 words picked deterministically from the
+ * user's OWN saved vocabulary (the words they marked as unknown while
+ * reading). Nothing is auto-extracted from book text — if the user hasn't
+ * saved any words, we show an empty state guiding them to the reader.
  *
- * Already-saved words are detected by checking the loaded vocabulary
- * ids set passed in from the parent (so the button becomes a "✓ اضافه
- * شد" state).
+ * The pick is stable for the whole day and rotates at midnight local time.
  */
 
-import { useVocabMeta } from '@/components/vocabulary/use-vocab-meta'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
 import { usePersianLocale } from '@/hooks/use-persian-locale'
 import {
   BookOpen,
   CalendarDays,
-  Check,
-  Loader2,
-  Plus,
   Sparkles,
   Volume2,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
-
-interface DailyWord {
-  word: string
-  context: string
-  bookSlug: string
-  bookTitle: string
-  bookAuthor: string
-}
+import { useMemo } from 'react'
 
 interface SavedWord {
   id: string
@@ -49,127 +32,46 @@ interface SavedWord {
   bookSlug: string
 }
 
-const FALLBACK_DAILY_WORDS: DailyWord[] = [
-  {
-    word: 'curious',
-    context: 'Alice was beginning to get very tired of sitting by her sister on the bank, and of having nothing to do.',
-    bookSlug: 'alice-in-wonderland',
-    bookTitle: "Alice's Adventures in Wonderland",
-    bookAuthor: 'Lewis Carroll',
-  },
-  {
-    word: 'affection',
-    context: 'It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.',
-    bookSlug: 'pride-and-prejudice',
-    bookTitle: 'Pride and Prejudice',
-    bookAuthor: 'Jane Austen',
-  },
-  {
-    word: 'essential',
-    context: 'It is only with the heart that one can see rightly; what is essential is invisible to the eye.',
-    bookSlug: 'the-little-prince',
-    bookTitle: 'The Little Prince',
-    bookAuthor: 'Antoine de Saint-Exupéry',
-  },
-  {
-    word: 'restless',
-    context: 'So we beat on, boats against the current, borne back ceaselessly into the past.',
-    bookSlug: 'the-great-gatsby',
-    bookTitle: 'The Great Gatsby',
-    bookAuthor: 'F. Scott Fitzgerald',
-  },
-  {
-    word: 'generous',
-    context: 'No one is useless in this world who lightens the burdens of another.',
-    bookSlug: 'a-christmas-carol',
-    bookTitle: 'A Christmas Carol',
-    bookAuthor: 'Charles Dickens',
-  },
-]
+const WORDS_PER_DAY = 5
 
-export function DailyWordsSection({
-  savedWords,
-  onSaved,
-}: {
-  savedWords: SavedWord[]
-  onSaved?: () => void
-}) {
-  const { toPersianDigits, formatDate } = usePersianLocale()
-  const [daily, setDaily] = useState<DailyWord[]>(FALLBACK_DAILY_WORDS)
-  const [loading, setLoading] = useState(false)
-  const [addingWord, setAddingWord] = useState<string | null>(null)
-  // words just saved in this session (so the button flips immediately)
-  const [justSaved, setJustSaved] = useState<Set<string>>(new Set())
-  const meta = useVocabMeta()
-
-  useEffect(() => {
-    let cancelled = false
-    fetch('/api/vocabulary/daily-words')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: DailyWord[] | null) => {
-        if (!cancelled && Array.isArray(d) && d.length > 0) {
-          setDaily(d)
-        }
-      })
-      .catch(() => {})
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  /** Set of lowercase saved words for "already added" detection. */
-  const savedWordsLower = new Set(
-    savedWords.map((w) => w.word.toLowerCase().trim()),
-  )
-
-  async function learn(dw: DailyWord) {
-    if (addingWord) return
-    setAddingWord(dw.word)
-    try {
-      let definition = ''
-      let translation = ''
-      try {
-        const dictRes = await fetch('/api/dictionary', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ word: dw.word, context: dw.context }),
-        })
-        if (dictRes.ok) {
-          const dict = await dictRes.json()
-          definition = dict.definition || ''
-          translation = dict.translation || ''
-        }
-      } catch {
-        /* dictionary fetch failed — save word without definition */
-      }
-      const res = await fetch('/api/vocabulary', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          word: dw.word,
-          definition,
-          translation,
-          context: dw.context,
-          bookSlug: dw.bookSlug,
-        }),
-      })
-      if (!res.ok) throw new Error('save failed')
-      // Auto-tag the new word with the system "from book" category so it
-      // shows up in the book-filter tab.
-      meta.ensureBookCategory(dw.bookSlug, dw.bookTitle)
-      setJustSaved((prev) => new Set(prev).add(dw.word.toLowerCase()))
-      toast.success(
-        translation
-          ? `«${dw.word}» با معنی «${translation}» اضافه شد`
-          : `«${dw.word}» اضافه شد`,
-      )
-      onSaved?.()
-    } catch {
-      toast.error('خطا در افزودن واژه')
-    } finally {
-      setAddingWord(null)
-    }
+/** FNV-1a → mulberry32 deterministic PRNG from a string seed. */
+function seededRandom(seed: string): () => number {
+  let h = 2166136261
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i)
+    h = Math.imul(h, 16777619)
   }
+  let state = h >>> 0
+  return () => {
+    state |= 0
+    state = (state + 0x6d2b79f5) | 0
+    let t = Math.imul(state ^ (state >>> 15), 1 | state)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+function todayKey(d = new Date()): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+export function DailyWordsSection({ savedWords }: { savedWords: SavedWord[] }) {
+  const { toPersianDigits, formatDate } = usePersianLocale()
+
+  // Deterministic per-day pick from the user's own saved words.
+  const daily = useMemo(() => {
+    if (savedWords.length === 0) return []
+    const rng = seededRandom(`daily-words:${todayKey()}`)
+    const pool = [...savedWords]
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1))
+      ;[pool[i], pool[j]] = [pool[j], pool[i]]
+    }
+    return pool.slice(0, Math.min(WORDS_PER_DAY, pool.length))
+  }, [savedWords])
 
   function speak(w: string) {
     try {
@@ -194,16 +96,12 @@ export function DailyWordsSection({
             کلمات روزانه
           </h2>
           <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-            {toPersianDigits(5)} کلمه جدید از کتاب‌ها برای امروز —{' '}
-            {formatDate(new Date(), 'long')}
+            {daily.length > 0
+              ? `${toPersianDigits(daily.length)} کلمه از واژه‌های ذخیره‌شده‌ات برای امروز — ${formatDate(new Date(), 'long')}`
+              : `واژه‌های ذخیره‌شده‌ات برای امروز — ${formatDate(new Date(), 'long')}`}
           </p>
         </div>
-        <Button
-          asChild
-          variant="outline"
-          size="sm"
-          className="shrink-0"
-        >
+        <Button asChild variant="outline" size="sm" className="shrink-0">
           <Link href="/library">
             <BookOpen className="h-4 w-4" />
             کتابخانه
@@ -211,100 +109,68 @@ export function DailyWordsSection({
         </Button>
       </header>
 
-      {loading ? (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-32 w-full rounded-2xl" />
-          ))}
-        </div>
-      ) : daily.length === 0 ? (
+      {daily.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-          هنوز کلمه روزانه‌ای موجود نیست.
+          هنوز واژه‌ای ذخیره نکرده‌ای. موقع مطالعه، کلمه‌های ناآشنا رو انتخاب کن
+          و به واژگانت اضافه‌شون کن تا اینجا هر روز برای مرور نمایش داده بشن.
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {daily.map((dw, i) => {
-            const isSaved =
-              justSaved.has(dw.word.toLowerCase()) ||
-              savedWordsLower.has(dw.word.toLowerCase())
-            const isAdding = addingWord === dw.word
-            return (
-              <div
-                key={`${dw.word}-${dw.bookSlug}`}
-                className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-card p-4 shadow-sm transition-all duration-200 hover:shadow-lg hover:-translate-y-1 animate-in fade-in slide-in-from-bottom-3 fill-mode-both"
-                style={{
-                  animationDelay: `${Math.min(i * 50, 350)}ms`,
-                }}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => speak(dw.word)}
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-gold-500/15 text-gold-700 transition-transform hover:scale-110 dark:text-gold-400"
-                      aria-label={`تلفظ ${dw.word}`}
-                    >
-                      <Volume2 className="h-4 w-4" />
-                    </button>
-                    <h3
-                      className="text-lg font-extrabold leading-none"
-                      dir="ltr"
-                    >
-                      {dw.word}
-                    </h3>
-                  </div>
-                  {isSaved && (
-                    <Badge
-                      variant="secondary"
-                      className="gap-1 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                    >
-                      <Check className="h-3 w-3" />
-                      اضافه شد
-                    </Badge>
-                  )}
+          {daily.map((dw, i) => (
+            <div
+              key={dw.id}
+              className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-card p-4 shadow-sm transition-all duration-200 hover:shadow-lg hover:-translate-y-1 animate-in fade-in slide-in-from-bottom-3 fill-mode-both"
+              style={{
+                animationDelay: `${Math.min(i * 50, 350)}ms`,
+              }}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => speak(dw.word)}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-gold-500/15 text-gold-700 transition-transform hover:scale-110 dark:text-gold-400"
+                    aria-label={`تلفظ ${dw.word}`}
+                  >
+                    <Volume2 className="h-4 w-4" />
+                  </button>
+                  <h3 className="text-lg font-extrabold leading-none" dir="ltr">
+                    {dw.word}
+                  </h3>
                 </div>
+                {dw.translation && (
+                  <Badge variant="secondary" className="max-w-[60%] truncate">
+                    {dw.translation}
+                  </Badge>
+                )}
+              </div>
 
+              {dw.context && (
                 <p
                   className="line-clamp-2 text-xs italic text-muted-foreground"
                   dir="ltr"
                 >
                   “{dw.context}”
                 </p>
+              )}
 
-                <div className="mt-auto flex items-center justify-between gap-2 pt-2">
-                  <Link
-                    href={`/books/${dw.bookSlug}`}
-                    className="flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground hover:text-gold-700 dark:hover:text-gold-400"
-                  >
-                    <BookOpen className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{dw.bookTitle}</span>
-                  </Link>
-                  <Button
-                    size="sm"
-                    variant={isSaved ? 'secondary' : 'glow'}
-                    className="h-7 shrink-0 gap-1 px-2 text-xs"
-                    disabled={isSaved || isAdding}
-                    onClick={() => learn(dw)}
-                    aria-label={`یاد گرفتن ${dw.word}`}
-                  >
-                    {isAdding ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : isSaved ? (
-                      <Check className="h-3 w-3" />
-                    ) : (
-                      <Plus className="h-3 w-3" />
-                    )}
-                    {isSaved ? 'اضافه شد' : 'یاد بگیر'}
-                  </Button>
-                </div>
+              <div className="mt-auto flex items-center justify-between gap-2 pt-2">
+                <Link
+                  href={`/books/${dw.bookSlug}`}
+                  className="flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground hover:text-gold-700 dark:hover:text-gold-400"
+                >
+                  <BookOpen className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{dw.bookSlug}</span>
+                </Link>
               </div>
-            )
-          })}
+            </div>
+          ))}
         </div>
       )}
 
       <p className="mt-3 flex items-center gap-1 text-[11px] text-muted-foreground">
         <Sparkles className="h-3 w-3" />
-        هر روز ساعت ۰، ۵ کلمه جدید از کتاب‌های شما انتخاب می‌شوند.
+        هر روز {toPersianDigits(WORDS_PER_DAY)} کلمه از واژه‌های ذخیره‌شده‌ی خودت
+        انتخاب می‌شود.
       </p>
     </section>
   )

@@ -197,7 +197,7 @@ export async function generateStaticParams() {
 }
 
 /** Re-render published posts at most once per hour (ISR). */
-export const revalidate = 3600
+export const revalidate = 0 // always fresh — new CMS content must appear on the next click
 
 export const dynamic = 'force-dynamic'
 

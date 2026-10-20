@@ -4,7 +4,7 @@ import { readFileSync, existsSync } from 'node:fs'
 
 // Rebuild after Next so navigation caches follow the deployed HTML/assets.
 const hash = createHash('sha256')
-for (const path of ['src/app/sw.ts', 'public/offline.html', 'public/manifest.json', '.next/BUILD_ID']) {
+for (const path of ['src/app/sw.ts', 'public/manifest.json', '.next/BUILD_ID']) {
   if (existsSync(path)) hash.update(readFileSync(path))
 }
 await build({

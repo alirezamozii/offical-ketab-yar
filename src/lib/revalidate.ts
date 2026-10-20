@@ -17,6 +17,7 @@
  */
 
 import { revalidatePath } from 'next/cache'
+import { cache } from '@/lib/cache'
 
 /**
  * Revalidate public pages affected by a book mutation.
@@ -29,7 +30,13 @@ export function revalidateBook(
   bookSlug?: string | null,
   ...authorSlugs: (string | undefined | null)[]
 ): void {
+  try {
+    cache.delete('genres:count')
+    cache.delete('genres:views')
+  } catch {}
+
   revalidatePath('/library')
+  revalidatePath('/library/genres')
   revalidatePath('/books')
   revalidatePath('/')
   if (bookSlug) {

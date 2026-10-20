@@ -8,6 +8,7 @@ import fs from 'node:fs'
 if (os.platform() === 'win32') {
   const localAppData = process.env.LOCALAPPDATA || (process.env.USERPROFILE ? path.join(process.env.USERPROFILE, 'AppData', 'Local') : '')
   const candidatePaths = [
+    'D:\\Programs\\Docker\\Docker\\resources\\bin',
     'C:\\Program Files\\Docker\\Docker\\resources\\bin',
     path.join(localAppData, 'Programs', 'DockerDesktop', 'resources', 'bin'),
     path.join(localAppData, 'Programs', 'Docker', 'resources', 'bin'),
@@ -22,6 +23,7 @@ if (os.platform() === 'win32') {
 
   // If docker is installed but not running, try launching Docker Desktop
   const dockerDesktopCandidates = [
+    'D:\\Programs\\Docker\\Docker\\Docker Desktop.exe',
     path.join(localAppData, 'Programs', 'DockerDesktop', 'Docker Desktop.exe'),
     path.join(localAppData, 'Programs', 'Docker', 'Docker Desktop.exe'),
     'C:\\Program Files\\Docker\\Docker\\Docker Desktop.exe',
@@ -55,17 +57,26 @@ if (os.platform() === 'win32') {
 
 console.log('🚀 Starting Bookzi (بوکزی) development environment...\n')
 
+const composeCmd = (() => {
+  try {
+    execSync('docker compose version', { stdio: 'ignore' })
+    return 'docker compose'
+  } catch {
+    return 'docker-compose'
+  }
+})()
+
 // 1. Ensure Docker Postgres container is up and healthy
 try {
   console.log('📦 Ensuring PostgreSQL Docker container is running...')
-  execSync('docker compose up -d db', { stdio: 'inherit' })
+  execSync(`${composeCmd} up -d db`, { stdio: 'inherit' })
 
   // Wait for Postgres to be ready (healthcheck)
   console.log('⏳ Waiting for Postgres to accept connections...')
   let ready = false
   for (let i = 0; i < 30; i++) {
     try {
-      execSync('docker compose exec -T db pg_isready -U ky', {
+      execSync(`${composeCmd} exec -T db pg_isready -U ky`, {
         stdio: 'ignore',
       })
       ready = true
@@ -84,8 +95,8 @@ try {
     console.log('✅ Postgres container is ready.\n')
     // Ensure payload schema exists for Payload CMS isolation
     try {
-      const dbName = process.env.POSTGRES_DB || 'bookzi'
-      execSync(`docker compose exec -T db psql -U ky -d ${dbName} -c "CREATE SCHEMA IF NOT EXISTS payload;"`, {
+      const dbName = process.env.POSTGRES_DB || 'ketabyar'
+      execSync(`${composeCmd} exec -T db psql -U ky -d ${dbName} -c "CREATE SCHEMA IF NOT EXISTS payload;"`, {
         stdio: 'ignore',
       })
       console.log('✅ Payload PostgreSQL schema verified.\n')

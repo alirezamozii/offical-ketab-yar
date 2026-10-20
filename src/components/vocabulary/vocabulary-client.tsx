@@ -10,21 +10,16 @@ const WordDetailDialog = lazy(
       (m) => ({ default: m.WordDetailDialog }),
     ),
 )
+const VocabularyConfirmDialog = lazy(() =>
+  import('@/components/vocabulary/vocabulary-confirm-dialog').then((m) => ({
+    default: m.VocabularyConfirmDialog,
+  })),
+)
 import { DailyWordsSection } from '@/components/vocabulary/daily-words-section'
 import {
   useVocabMeta,
   categoryColorClass,
 } from '@/components/vocabulary/use-vocab-meta'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -388,7 +383,7 @@ export function VocabularyClient() {
   return (
     <div className="space-y-6">
       {/* Daily words feature — 5 new words from the books each day */}
-      <DailyWordsSection savedWords={words} onSaved={reloadVocabulary} />
+      <DailyWordsSection savedWords={words} />
 
       {/* Add + search row */}
       <div className="flex flex-col gap-3 sm:flex-row">
@@ -901,68 +896,37 @@ export function VocabularyClient() {
         }}
       /></Suspense>}
 
-      {/* Single-word delete confirmation */}
-      <AlertDialog
-        open={!!pendingDelete}
-        onOpenChange={(o) => !o && setPendingDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>حذف واژه؟</AlertDialogTitle>
-            <AlertDialogDescription>
-              آیا از حذف «{pendingDelete?.word}» مطمئن هستید؟ این عمل قابل بازگشت
-              نیست. وضعیت یادگیری آن هم پاک می‌شود.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>لغو</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 text-white hover:bg-red-700"
-              onClick={() => {
-                if (pendingDelete) {
-                  removeConfirmed(pendingDelete.id)
-                  setPendingDelete(null)
-                }
-              }}
-            >
-              <Trash2 className="h-4 w-4" />
-              حذف کن
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {pendingDelete && (
+        <Suspense fallback={null}>
+          <VocabularyConfirmDialog
+            open
+            title="حذف واژه؟"
+            description={`آیا از حذف «${pendingDelete.word}» مطمئن هستید؟ این عمل قابل بازگشت نیست. وضعیت یادگیری آن هم پاک می‌شود.`}
+            confirmLabel="حذف کن"
+            onOpenChange={(open) => !open && setPendingDelete(null)}
+            onConfirm={() => {
+              removeConfirmed(pendingDelete.id)
+              setPendingDelete(null)
+            }}
+          />
+        </Suspense>
+      )}
 
-      {/* Bulk delete confirmation */}
-      <AlertDialog
-        open={!!pendingDeleteMany}
-        onOpenChange={(o) => !o && setPendingDeleteMany(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              حذف {toPersianDigits(pendingDeleteMany?.length ?? 0)} واژه؟
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              آیا از حذف این واژگان مطمئن هستید؟ این عمل قابل بازگشت نیست.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>لغو</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 text-white hover:bg-red-700"
-              onClick={() => {
-                if (pendingDeleteMany) {
-                  removeManyConfirmed(pendingDeleteMany.map((w) => w.id))
-                  setPendingDeleteMany(null)
-                }
-              }}
-            >
-              <Trash2 className="h-4 w-4" />
-              حذف همه
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {pendingDeleteMany && (
+        <Suspense fallback={null}>
+          <VocabularyConfirmDialog
+            open
+            title={`حذف ${toPersianDigits(pendingDeleteMany.length)} واژه؟`}
+            description="آیا از حذف این واژگان مطمئن هستید؟ این عمل قابل بازگشت نیست."
+            confirmLabel="حذف همه"
+            onOpenChange={(open) => !open && setPendingDeleteMany(null)}
+            onConfirm={() => {
+              removeManyConfirmed(pendingDeleteMany.map((word) => word.id))
+              setPendingDeleteMany(null)
+            }}
+          />
+        </Suspense>
+      )}
     </div>
   )
 }

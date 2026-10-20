@@ -35,7 +35,7 @@ function pageLabel(book: ReaderBook, pageIndex: number): string {
     const words = first.english.split(/\s+/).slice(0, 8).join(' ')
     return `${words}…`
   }
-  return `Page ${pageIndex + 1}`
+  return `Page ${book.pages[pageIndex]?.pageNumber ?? pageIndex + 1}`
 }
 
 export function ChaptersPanel({
@@ -63,9 +63,9 @@ export function ChaptersPanel({
             Radix Dialog (which Sheet is built on) requires a Title; the
             Description is optional but recommended. Both are hidden from
             sighted users. */}
-        <SheetTitle className="sr-only">فهرست چپترها</SheetTitle>
+        <SheetTitle className="sr-only">فهرست صفحه‌ها</SheetTitle>
         <SheetDescription className="sr-only">
-          فهرست همهٔ چپترهای این کتاب — برای پرش به چپتر دلخواه روی آن کلیک کنید.
+          فهرست همهٔ صفحه‌های این کتاب — برای پرش به صفحه دلخواه روی آن کلیک کنید.
         </SheetDescription>
 
         {/* Header — visible title + close button */}
@@ -76,7 +76,7 @@ export function ChaptersPanel({
           <div className="flex items-center gap-2">
             <List className="h-5 w-5" style={{ color: s.accent }} />
             <h2 className="text-lg font-bold" aria-hidden>
-              فهرست چپترها
+              فهرست صفحه‌ها
             </h2>
             <span
               className="rounded-full px-2 py-0.5 text-xs font-bold"
@@ -122,7 +122,7 @@ export function ChaptersPanel({
                   onClick={() => onJumpToPage(i)}
                   className="flex min-w-0 flex-1 items-center gap-3 py-0.5 text-start"
                   aria-current={active ? 'page' : undefined}
-                  aria-label={`چپتر ${toPersianDigits(i + 1)}: ${label}`}
+                  aria-label={`صفحه ${toPersianDigits(page.pageNumber)}: ${label}`}
                 >
                   <span
                     className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold"
@@ -134,7 +134,7 @@ export function ChaptersPanel({
                     {active ? (
                       <Check className="h-3.5 w-3.5" />
                     ) : (
-                      toPersianDigits(i + 1)
+                      toPersianDigits(page.pageNumber)
                     )}
                   </span>
                   <span className="min-w-0 flex-1">
@@ -150,7 +150,7 @@ export function ChaptersPanel({
                       {label}
                     </span>
                     <span className="text-[11px]" style={{ color: s.muted }}>
-                      چپتر {toPersianDigits(i + 1)}
+                      صفحه {toPersianDigits(page.pageNumber)}
                       {isBookmarked && ' · نشان‌شده'}
                     </span>
                   </span>
@@ -169,8 +169,8 @@ export function ChaptersPanel({
                     onClick={() => onToggleBookmark(i)}
                     aria-label={
                       isBookmarked
-                        ? `حذف نشان چپتر ${toPersianDigits(i + 1)}`
-                        : `نشان‌گذاری چپتر ${toPersianDigits(i + 1)}`
+                        ? `حذف نشان صفحه ${toPersianDigits(page.pageNumber)}`
+                        : `نشان‌گذاری صفحه ${toPersianDigits(page.pageNumber)}`
                     }
                     aria-pressed={isBookmarked}
                     style={isBookmarked ? { color: s.accent } : undefined}
@@ -191,7 +191,7 @@ export function ChaptersPanel({
           className="border-t px-5 py-3 text-center text-xs opacity-60"
           style={{ borderColor: s.border }}
         >
-          {toPersianDigits(book.pages.length)} چپتر — {' '}
+          {toPersianDigits(book.pages.length)} صفحه — {' '}
           {toPersianDigits(Math.round(((currentPage + 1) / book.pages.length) * 100))}٪
           مطالعه شده
         </div>

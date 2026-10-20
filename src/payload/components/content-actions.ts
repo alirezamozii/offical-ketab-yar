@@ -12,6 +12,7 @@ import {
   parseAuthorNameAndInput,
   buildBookData,
   parseAnyJsonPayload,
+  normalizeTextList,
 } from './action-helpers'
 
 /**
@@ -79,8 +80,13 @@ export async function importAuthorAction(jsonString: string): Promise<{ success:
       nationalityFa: data.nationalityFa?.trim() || '',
       era: data.era || 'Modern',
       eraFa: data.eraFa?.trim() || '',
-      notableWorks: data.notableWorks?.trim() || '',
-      notableWorksFa: data.notableWorksFa?.trim() || '',
+      notableWorks: normalizeTextList(data.notableWorks) || [],
+      featured: Boolean(data.featured),
+      biography: data.biography?.trim() || '',
+      biographyFa: data.biographyFa?.trim() || '',
+      tags: normalizeTextList(data.tags) || [],
+      website: data.website?.trim() || '',
+      wikipedia: data.wikipedia?.trim() || '',
     }
 
     let authorId: string | number
@@ -120,18 +126,21 @@ export async function importBookInfoAction(jsonString: string): Promise<{ succes
 
   try {
     const data = parseAnyJsonPayload(jsonString)
-    if (!data.title) throw new Error('فیلد title برای کتاب الزامی است.')
+    const bookTitle = (data.title || data.book?.title || '').trim()
+    if (!bookTitle) throw new Error('فیلد title برای کتاب الزامی است.')
 
     const { getPayloadClient } = await import('@/lib/payload')
     const payload = await getPayloadClient()
 
-    const bookSlug = data.slug?.trim() || slugify(data.title)
-    append(`در حال پردازش مشخصات کتاب: "${data.title}" (${bookSlug})...`)
+    const rawSlug = data.slug?.trim() || data.book?.slug?.trim() || bookTitle
+    const bookSlug = slugify(rawSlug)
+    append(`در حال پردازش مشخصات کتاب: "${bookTitle}" (${bookSlug})...`)
 
     // Resolve Author
     let authorId: string | number | undefined
-    if (data.author) {
-      const authorRes = await importAuthorAction(JSON.stringify(typeof data.author === 'string' ? { name: data.author } : data.author))
+    const authorPayload = data.author || data.book?.author
+    if (authorPayload) {
+      const authorRes = await importAuthorAction(JSON.stringify(typeof authorPayload === 'string' ? { name: authorPayload } : authorPayload))
       authorId = authorRes.authorId
       log += authorRes.log
     }
@@ -150,26 +159,32 @@ export async function importBookInfoAction(jsonString: string): Promise<{ succes
       }
     }
 
+    const rawLevel = data.level || data.book?.level || 'B1'
+    const validLevel = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].includes(rawLevel) ? rawLevel : 'B1'
+    const rawGenres = data.genres || data.book?.genres || ['Classic']
+    const genres = Array.isArray(rawGenres) ? rawGenres : [String(rawGenres)]
+
     const bookData = {
-      title: data.title.trim(),
+      title: bookTitle,
       slug: bookSlug,
       author: authorId,
-      description: data.description?.trim() || '',
-      level: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].includes(data.level) ? data.level : 'B1',
-      genres: Array.isArray(data.genres) ? data.genres : data.genres ? [String(data.genres)] : ['Classic'],
-      pageCount: Number(data.pageCount) || (Array.isArray(data.pages) ? data.pages.length : 0),
-      publishedYear: Number(data.publishedYear) || 1950,
-      coverFrom: data.coverFrom || '#3b2d1f',
-      coverTo: data.coverTo || '#1a140e',
-      coverAccent: data.coverAccent || '#f4d35e',
+      description: (data.description || data.book?.description || '').trim(),
+      level: validLevel,
+      genres,
+      pageCount: Number(data.pageCount || data.book?.pageCount) || (Array.isArray(data.pages) ? data.pages.length : 0),
+      publishedYear: Number(data.publishedYear || data.book?.publishedYear) || 1950,
+      coverFrom: data.coverFrom || data.book?.coverFrom || '#3b2d1f',
+      coverTo: data.coverTo || data.book?.coverTo || '#1a140e',
+      coverAccent: data.coverAccent || data.book?.coverAccent || '#f4d35e',
       isPublished: data.isPublished !== undefined ? Boolean(data.isPublished) : true,
+      isPremium: Boolean(data.isPremium),
       allowDownload: data.allowDownload !== undefined ? Boolean(data.allowDownload) : true,
     }
 
     const existing = await payload.find({
       collection: 'books',
       where: {
-        or: [{ slug: { equals: bookSlug } }, { title: { equals: data.title.trim() } }],
+        or: [{ slug: { equals: bookSlug } }, { title: { equals: bookTitle } }],
       },
       limit: 1,
     })
@@ -209,7 +224,7 @@ export async function importBookContentAction(jsonString: string): Promise<{ suc
 
   try {
     const data = parseAnyJsonPayload(jsonString)
-    const bookSlug = data.bookSlug?.trim() || data.slug?.trim()
+    const bookSlug = data.bookSlug?.trim() || data.slug?.trim() || data.book?.slug?.trim()
     if (!bookSlug) throw new Error('فیلد bookSlug برای شناسایی کتاب الزامی است.')
 
     const { getPayloadClient } = await import('@/lib/payload')
@@ -227,8 +242,8 @@ export async function importBookContentAction(jsonString: string): Promise<{ suc
     }
 
     const bookDoc = books.docs[0]
-    const chapters = normalizeChapters(data.chapters || [])
-    const pages = normalizePages(data.pages || [])
+    const chapters = normalizeChapters(data.chapters || data.book?.chapters || [])
+    const pages = normalizePages(data.pages || data.book?.pages || [])
 
     append(`تعداد ${chapters.length} فصل و ${pages.length} صفحه شناسایی شد.`)
     append(`در حال بروزرسانی محتوای کتاب در دیتابیس...`)
@@ -262,36 +277,44 @@ export async function importFullBookBundleAction(jsonString: string): Promise<{ 
 
   try {
     const data = parseAnyJsonPayload(jsonString)
-    if (!data.title) throw new Error('فیلد title اجباری است.')
+    const bookTitle = (data.title || data.book?.title || '').trim()
+    if (!bookTitle) throw new Error('فیلد title (یا book.title) اجباری است.')
 
     const { getPayloadClient } = await import('@/lib/payload')
     const payload = await getPayloadClient()
 
-    const bookSlug = data.slug?.trim() || slugify(data.title)
-    append(`شروع فرآیند ثبت بسته کامل کتاب: "${data.title}"`)
+    const rawSlug = data.slug?.trim() || data.book?.slug?.trim() || bookTitle
+    const bookSlug = slugify(rawSlug)
+    append(`شروع فرآیند ثبت بسته کامل کتاب: "${bookTitle}" (${bookSlug})`)
 
     // Step 1: Author
-    const authorRes = await importAuthorAction(JSON.stringify(typeof data.author === 'string' ? { name: data.author } : data.author || { name: 'Unknown Author' }))
+    const authorPayload = data.author || data.book?.author || { name: 'Unknown Author' }
+    const authorRes = await importAuthorAction(JSON.stringify(typeof authorPayload === 'string' ? { name: authorPayload } : authorPayload))
     log += authorRes.log
     const authorId = authorRes.authorId
 
     // Step 2: Book Info + Chapters + Pages
-    const chapters = normalizeChapters(data.chapters || [])
-    const pages = normalizePages(data.pages || [])
-    const pageCount = pages.length > 0 ? pages.length : Number(data.pageCount) || 0
+    const chapters = normalizeChapters(data.chapters || data.book?.chapters || [])
+    const pages = normalizePages(data.pages || data.book?.pages || [])
+    const pageCount = pages.length > 0 ? pages.length : Number(data.pageCount || data.book?.pageCount) || 0
+
+    const rawLevel = data.level || data.book?.level || 'B1'
+    const validLevel = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].includes(rawLevel) ? rawLevel : 'B1'
+    const rawGenres = data.genres || data.book?.genres || ['Classic']
+    const genres = Array.isArray(rawGenres) ? rawGenres : [String(rawGenres)]
 
     const bookData = {
-      title: data.title.trim(),
+      title: bookTitle,
       slug: bookSlug,
       author: authorId,
-      description: data.description?.trim() || '',
-      level: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].includes(data.level) ? data.level : 'B1',
-      genres: Array.isArray(data.genres) ? data.genres : ['Classic'],
+      description: (data.description || data.book?.description || '').trim(),
+      level: validLevel,
+      genres,
       pageCount,
-      publishedYear: Number(data.publishedYear) || 1950,
-      coverFrom: data.coverFrom || '#1e3a8a',
-      coverTo: data.coverTo || '#0f172a',
-      coverAccent: data.coverAccent || '#f4d35e',
+      publishedYear: Number(data.publishedYear || data.book?.publishedYear) || 1950,
+      coverFrom: data.coverFrom || data.book?.coverFrom || '#1e3a8a',
+      coverTo: data.coverTo || data.book?.coverTo || '#0f172a',
+      coverAccent: data.coverAccent || data.book?.coverAccent || '#f4d35e',
       isPublished: true,
       allowDownload: true,
       chapters,
@@ -301,7 +324,7 @@ export async function importFullBookBundleAction(jsonString: string): Promise<{ 
     const existing = await payload.find({
       collection: 'books',
       where: {
-        or: [{ slug: { equals: bookSlug } }, { title: { equals: data.title.trim() } }],
+        or: [{ slug: { equals: bookSlug } }, { title: { equals: bookTitle } }],
       },
       limit: 1,
     })
@@ -981,6 +1004,3 @@ export async function parseEpubFileAction(
     }
   }
 }
-
-
-
