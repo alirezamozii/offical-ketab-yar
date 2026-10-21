@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import { SrsDots } from '@/components/vocabulary/srs-dots'
+import { SrsDots } from '@/components/vocabulary/srs-dots';
 import {
   useVocabMeta,
   DIFFICULTY_LEVELS,
@@ -8,16 +8,16 @@ import {
   difficultyColor,
   categoryColorClass,
   type VocabCategory,
-} from '@/components/vocabulary/use-vocab-meta'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+} from '@/components/vocabulary/use-vocab-meta';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -25,9 +25,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   boxIntervalLabel,
   boxLabel,
@@ -35,10 +35,10 @@ import {
   masteryLabel,
   useSrs,
   type SrsBox,
-} from '@/hooks/reader/use-srs'
-import { usePersianLocale } from '@/hooks/use-persian-locale'
-import { useTTS } from '@/hooks/use-tts'
-import { AudioWaveBars } from '@/components/reader/audio-wave-bars'
+} from '@/hooks/reader/use-srs';
+import { usePersianLocale } from '@/hooks/use-persian-locale';
+import { useTTS } from '@/hooks/use-tts';
+import { AudioWaveBars } from '@/components/reader/audio-wave-bars';
 import {
   BookMarked,
   Check,
@@ -55,26 +55,26 @@ import {
   SquareAsterisk,
   Volume2,
   X,
-} from 'lucide-react'
-import Link from 'next/link'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
+} from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 export interface VocabWord {
-  id: string
-  word: string
-  definition: string
-  translation: string
-  context: string
-  bookSlug: string
-  createdAt: string
+  id: string;
+  word: string;
+  definition: string;
+  translation: string;
+  context: string;
+  bookSlug: string;
+  createdAt: string;
 }
 
 interface BookInfo {
-  slug: string
-  title: string
-  author: string
+  slug: string;
+  title: string;
+  author: string;
 }
 
 // fallow-ignore-next-line complexity
@@ -85,123 +85,112 @@ export function WordDetailDialog({
   onReset,
   onSaved, // fired after a successful PATCH so the parent list can refresh
 }: {
-  word: VocabWord | null
-  open: boolean
-  onOpenChange: (v: boolean) => void
-  onReset?: (id: string) => void
-  onSaved?: (w: VocabWord) => void
+  word: VocabWord | null;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onReset?: (id: string) => void;
+  onSaved?: (w: VocabWord) => void;
 }) {
-  const srs = useSrs()
-  const { toPersianDigits } = usePersianLocale()
-  const tts = useTTS()
-  const [book, setBook] = useState<BookInfo | null>(null)
-  const [editing, setEditing] = useState(false)
-  const [editTranslation, setEditTranslation] = useState('')
-  const [editDefinition, setEditDefinition] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [newSynonym, setNewSynonym] = useState('')
-  const [newAntonym, setNewAntonym] = useState('')
-  const [newCategory, setNewCategory] = useState('')
+  const srs = useSrs();
+  const { toPersianDigits } = usePersianLocale();
+  const tts = useTTS();
+  const [book, setBook] = useState<BookInfo | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [editTranslation, setEditTranslation] = useState('');
+  const [editDefinition, setEditDefinition] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [newSynonym, setNewSynonym] = useState('');
+  const [newAntonym, setNewAntonym] = useState('');
+  const [newCategory, setNewCategory] = useState('');
 
   // useVocabMeta with the current word's bookSlug so system book-categories
   // appear automatically. We pass just the one word to keep the auto-derive
   // list small and reference-stable.
-  const wordsForMeta = useMemo(
-    () => (word ? [word] : undefined),
-    [word],
-  )
-  const meta = useVocabMeta(wordsForMeta)
+  const wordsForMeta = useMemo(() => (word ? [word] : undefined), [word]);
+  const meta = useVocabMeta(wordsForMeta);
 
   // Fetch book title when word changes (if it has a bookSlug).
   useEffect(() => {
     if (!word?.bookSlug) {
-      setBook(null)
-      return
+      setBook(null);
+      return;
     }
-    let cancelled = false
+    let cancelled = false;
     fetch(`/api/books?slugs=${encodeURIComponent(word.bookSlug)}`)
       .then((r) => (r.ok ? r.json() : []))
       .then((arr: BookInfo[]) => {
-        if (cancelled) return
-        const b = arr[0] ?? null
-        setBook(b)
-        if (b) meta.ensureBookCategory(word.bookSlug, b.title)
+        if (cancelled) return;
+        const b = arr[0] ?? null;
+        setBook(b);
+        if (b) meta.ensureBookCategory(word.bookSlug, b.title);
       })
-      .catch(() => !cancelled && setBook(null))
+      .catch(() => !cancelled && setBook(null));
     return () => {
-      cancelled = true
-    }
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `meta` is intentionally omitted: we only refetch when `word.bookSlug` changes; `meta.ensureBookCategory` is a stable callback.
-  }, [word?.bookSlug])
+  }, [word?.bookSlug]);
 
   // Reset TTS playback + editing state when the dialog closes (only on true -> false transition).
-  const prevOpenRef = useRef(open)
-  const stopTTS = tts.stop
+  const prevOpenRef = useRef(open);
+  const stopTTS = tts.stop;
   useEffect(() => {
     if (prevOpenRef.current && !open) {
-      setEditing(false)
-      setNewSynonym('')
-      setNewAntonym('')
-      setNewCategory('')
-      stopTTS()
+      setEditing(false);
+      setNewSynonym('');
+      setNewAntonym('');
+      setNewCategory('');
+      stopTTS();
     }
-    prevOpenRef.current = open
-  }, [open, stopTTS])
+    prevOpenRef.current = open;
+  }, [open, stopTTS]);
 
   // Cleanup TTS on unmount
   useEffect(() => {
     return () => {
-      stopTTS()
-    }
-  }, [stopTTS])
+      stopTTS();
+    };
+  }, [stopTTS]);
 
   // Sync the edit fields when entering edit mode.
   useEffect(() => {
     if (editing && word) {
-      setEditTranslation(word.translation || '')
-      setEditDefinition(word.definition || '')
+      setEditTranslation(word.translation || '');
+      setEditDefinition(word.definition || '');
     }
-  }, [editing, word])
+  }, [editing, word]);
 
-  if (!word) return null
-  const status = srs.getStatus(word.id)
-  const box = status.box as SrsBox
-  const mastery = masteryFor(box)
-  const wordMeta = meta.getMeta(word.id)
-  const wordCategories = meta.categoriesFor(word.id)
+  if (!word) return null;
+  const status = srs.getStatus(word.id);
+  const box = status.box as SrsBox;
+  const mastery = masteryFor(box);
+  const wordMeta = meta.getMeta(word.id);
+  const wordCategories = meta.categoriesFor(word.id);
 
   // High-quality TTS pronunciation (via /api/tts using z-ai-web-dev-sdk).
   // Falls back to the browser's speechSynthesis for the "slow" variant
   // since the upstream TTS route doesn't expose a per-call speed dial here.
   const speakTTS = () => {
-    if (!word) return
+    if (!word) return;
     if (tts.isPlaying || tts.isPaused) {
-      tts.stop()
-      return
+      tts.stop();
+      return;
     }
     try {
-      window.speechSynthesis?.cancel()
+      window.speechSynthesis?.cancel();
     } catch {}
-    void tts.speak(word.word, 'en')
-  }
+    void tts.speak(word.word, 'en');
+  };
 
-  // Slowed-down pronunciation using the built-in SpeechSynthesis API.
-  // Stops any TTS playback first so the two don't overlap.
-  function speakSlow(rate: number = 0.6) {
-    if (!word) return
-    tts.stop()
-    try {
-      window.speechSynthesis.cancel()
-      const u = new SpeechSynthesisUtterance(word.word)
-      u.lang = 'en-US'
-      u.rate = rate
-      window.speechSynthesis.speak(u)
-    } catch {}
+  // Slowed-down high-fidelity neural pronunciation.
+  function speakSlow(rate: number = 0.65) {
+    if (!word) return;
+    void tts.speak(word.word, 'en', rate);
   }
 
   async function saveEdit() {
-    if (!word) return
-    setSaving(true)
+    if (!word) return;
+    setSaving(true);
     try {
       const res = await fetch('/api/vocabulary', {
         method: 'PATCH',
@@ -211,65 +200,65 @@ export function WordDetailDialog({
           translation: editTranslation.trim(),
           definition: editDefinition.trim(),
         }),
-      })
-      if (!res.ok) throw new Error('save failed')
-      const updated: VocabWord = await res.json()
-      toast.success('تغییرات ذخیره شد')
-      setEditing(false)
-      onSaved?.(updated)
+      });
+      if (!res.ok) throw new Error('save failed');
+      const updated: VocabWord = await res.json();
+      toast.success('تغییرات ذخیره شد');
+      setEditing(false);
+      onSaved?.(updated);
     } catch {
-      toast.error('خطا در ذخیره تغییرات')
+      toast.error('خطا در ذخیره تغییرات');
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
   function addSynonym() {
-    if (!word) return
-    const v = newSynonym.trim()
-    if (!v) return
-    const cur = wordMeta.synonyms ?? []
+    if (!word) return;
+    const v = newSynonym.trim();
+    if (!v) return;
+    const cur = wordMeta.synonyms ?? [];
     if (cur.includes(v)) {
-      setNewSynonym('')
-      return
+      setNewSynonym('');
+      return;
     }
-    meta.setMeta(word.id, { synonyms: [...cur, v] })
-    setNewSynonym('')
+    meta.setMeta(word.id, { synonyms: [...cur, v] });
+    setNewSynonym('');
   }
 
   function removeSynonym(v: string) {
-    if (!word) return
-    const cur = wordMeta.synonyms ?? []
-    meta.setMeta(word.id, { synonyms: cur.filter((s) => s !== v) })
+    if (!word) return;
+    const cur = wordMeta.synonyms ?? [];
+    meta.setMeta(word.id, { synonyms: cur.filter((s) => s !== v) });
   }
 
   function addAntonym() {
-    if (!word) return
-    const v = newAntonym.trim()
-    if (!v) return
-    const cur = wordMeta.antonyms ?? []
+    if (!word) return;
+    const v = newAntonym.trim();
+    if (!v) return;
+    const cur = wordMeta.antonyms ?? [];
     if (cur.includes(v)) {
-      setNewAntonym('')
-      return
+      setNewAntonym('');
+      return;
     }
-    meta.setMeta(word.id, { antonyms: [...cur, v] })
-    setNewAntonym('')
+    meta.setMeta(word.id, { antonyms: [...cur, v] });
+    setNewAntonym('');
   }
 
   function removeAntonym(v: string) {
-    if (!word) return
-    const cur = wordMeta.antonyms ?? []
-    meta.setMeta(word.id, { antonyms: cur.filter((s) => s !== v) })
+    if (!word) return;
+    const cur = wordMeta.antonyms ?? [];
+    meta.setMeta(word.id, { antonyms: cur.filter((s) => s !== v) });
   }
 
   function createCategoryFromDialog() {
-    if (!word) return
-    const label = newCategory.trim()
-    if (!label) return
-    const id = meta.createCategory(label)
-    meta.addToCategory(word.id, id)
-    setNewCategory('')
-    toast.success(`دسته «${label}» ساخته شد`)
+    if (!word) return;
+    const label = newCategory.trim();
+    if (!label) return;
+    const id = meta.createCategory(label);
+    meta.addToCategory(word.id, id);
+    setNewCategory('');
+    toast.success(`دسته «${label}» ساخته شد`);
   }
 
   return (
@@ -277,9 +266,7 @@ export function WordDetailDialog({
       <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="sr-only">جزئیات واژه</DialogTitle>
-          <DialogDescription className="sr-only">
-            مشاهده کامل جزئیات این واژه
-          </DialogDescription>
+          <DialogDescription className="sr-only">مشاهده کامل جزئیات این واژه</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5">
@@ -330,9 +317,7 @@ export function WordDetailDialog({
                   {word.word}
                 </h2>
                 {word.translation && !editing && (
-                  <p className="mt-1 font-medium text-muted-foreground">
-                    {word.translation}
-                  </p>
+                  <p className="mt-1 font-medium text-muted-foreground">{word.translation}</p>
                 )}
                 <Badge
                   variant="secondary"
@@ -340,10 +325,8 @@ export function WordDetailDialog({
                     'mt-1.5 gap-1 text-[10px]',
                     mastery === 'mastered' &&
                       'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
-                    mastery === 'familiar' &&
-                      'bg-gold-500/15 text-gold-700 dark:text-gold-300',
-                    mastery === 'learning' &&
-                      'bg-amber-500/15 text-amber-700 dark:text-amber-300',
+                    mastery === 'familiar' && 'bg-gold-500/15 text-gold-700 dark:text-gold-300',
+                    mastery === 'learning' && 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
                     mastery === 'new' && 'bg-muted text-muted-foreground',
                   )}
                 >
@@ -448,9 +431,7 @@ export function WordDetailDialog({
             </p>
             <div className="mb-2 flex flex-wrap gap-1.5">
               {(wordMeta.synonyms ?? []).length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  هنوز مترادفی اضافه نشده.
-                </p>
+                <p className="text-xs text-muted-foreground">هنوز مترادفی اضافه نشده.</p>
               ) : (
                 (wordMeta.synonyms ?? []).map((s) => (
                   <Badge
@@ -499,9 +480,7 @@ export function WordDetailDialog({
             </p>
             <div className="mb-2 flex flex-wrap gap-1.5">
               {(wordMeta.antonyms ?? []).length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  هنوز متضادی اضافه نشده.
-                </p>
+                <p className="text-xs text-muted-foreground">هنوز متضادی اضافه نشده.</p>
               ) : (
                 (wordMeta.antonyms ?? []).map((s) => (
                   <Badge
@@ -553,7 +532,7 @@ export function WordDetailDialog({
               </p>
               <div className="flex flex-wrap gap-1">
                 {DIFFICULTY_LEVELS.map((lvl) => {
-                  const active = wordMeta.difficulty === lvl
+                  const active = wordMeta.difficulty === lvl;
                   return (
                     <button
                       key={lvl}
@@ -573,7 +552,7 @@ export function WordDetailDialog({
                     >
                       {lvl}
                     </button>
-                  )
+                  );
                 })}
               </div>
               {wordMeta.difficulty && (
@@ -591,9 +570,7 @@ export function WordDetailDialog({
               </p>
               <div className="mb-2 flex flex-wrap gap-1">
                 {wordCategories.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">
-                    عضو هیچ دسته‌ای نیست.
-                  </p>
+                  <p className="text-xs text-muted-foreground">عضو هیچ دسته‌ای نیست.</p>
                 ) : (
                   wordCategories.map((c: VocabCategory) => (
                     <Badge
@@ -632,14 +609,12 @@ export function WordDetailDialog({
                     </div>
                   )}
                   {meta.allCategories.map((c) => {
-                    const checked = (wordMeta.categoryIds ?? []).includes(c.id)
+                    const checked = (wordMeta.categoryIds ?? []).includes(c.id);
                     return (
                       <DropdownMenuCheckboxItem
                         key={c.id}
                         checked={checked}
-                        onCheckedChange={() =>
-                          meta.toggleCategory(word.id, c.id)
-                        }
+                        onCheckedChange={() => meta.toggleCategory(word.id, c.id)}
                       >
                         <span className="flex items-center gap-1.5">
                           <span
@@ -655,13 +630,11 @@ export function WordDetailDialog({
                           />
                           {c.label}
                           {c.system && (
-                            <span className="text-[10px] text-muted-foreground">
-                              (سیستمی)
-                            </span>
+                            <span className="text-[10px] text-muted-foreground">(سیستمی)</span>
                           )}
                         </span>
                       </DropdownMenuCheckboxItem>
-                    )
+                    );
                   })}
                   <DropdownMenuSeparator />
                   <div className="flex items-center gap-1 px-1 py-1">
@@ -670,8 +643,8 @@ export function WordDetailDialog({
                       onChange={(e) => setNewCategory(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
-                          e.preventDefault()
-                          createCategoryFromDialog()
+                          e.preventDefault();
+                          createCategoryFromDialog();
                         }
                       }}
                       placeholder="دسته جدید..."
@@ -706,9 +679,7 @@ export function WordDetailDialog({
                   {book.title}
                 </Link>
               ) : (
-                <span className="font-mono text-xs text-muted-foreground">
-                  {word.bookSlug}
-                </span>
+                <span className="font-mono text-xs text-muted-foreground">{word.bookSlug}</span>
               )}
             </div>
           )}
@@ -730,9 +701,7 @@ export function WordDetailDialog({
                 value={
                   status.reviewCount > 0
                     ? `${toPersianDigits(
-                        Math.round(
-                          (status.correctCount / status.reviewCount) * 100,
-                        ),
+                        Math.round((status.correctCount / status.reviewCount) * 100),
                       )}٪`
                     : '—'
                 }
@@ -765,16 +734,14 @@ export function WordDetailDialog({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg bg-background p-2">
-      <div className="text-sm font-bold text-gold-700 dark:text-gold-400">
-        {value}
-      </div>
+      <div className="text-sm font-bold text-gold-700 dark:text-gold-400">{value}</div>
       <div className="text-[10px] text-muted-foreground">{label}</div>
     </div>
-  )
+  );
 }

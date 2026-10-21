@@ -45,7 +45,7 @@ export interface WordBoundary {
 }
 
 export interface UseTTSReturn {
-  speak: (text: string, lang?: TTSLang) => Promise<void>;
+  speak: (text: string, lang?: TTSLang, speedOverride?: number) => Promise<void>;
   stop: () => void;
   pause: () => void;
   resume: () => void;
@@ -150,6 +150,7 @@ export function useTTS(): UseTTSReturn {
   // Queue of pending chunks for long-form playback (e.g. a full reader page).
   const queueRef = useRef<string[]>([]);
   const queueLangRef = useRef<TTSLang>('en');
+  const queueSpeedRef = useRef<number | undefined>(undefined);
   const totalChunksRef = useRef<number>(0);
   const chunkIndexRef = useRef<number>(0);
   const isFallbackActiveRef = useRef<boolean>(false);
@@ -428,15 +429,16 @@ export function useTTS(): UseTTSReturn {
 
   // ---- Fetch a single chunk's audio (cache-aware) and load it into the element ----
   const loadChunk = useCallback(
-    async (text: string, lang: TTSLang): Promise<boolean> => {
+    async (text: string, lang: TTSLang, speedOverride?: number): Promise<boolean> => {
       const el = getAudio();
       const { voiceId, audioSpeed } = useReaderSettingsStore.getState();
+      const effectiveSpeed = speedOverride ?? queueSpeedRef.current ?? audioSpeed;
       const selectedVoice = voiceId.startsWith(lang)
         ? voiceId
         : lang === 'fa'
           ? 'fa-IR-DilaraNeural'
           : 'en-US-AvaMultilingualNeural';
-      const key = cacheKey(text, lang, selectedVoice, audioSpeed);
+      const key = cacheKey(text, lang, selectedVoice, effectiveSpeed);
 
       let cached = cacheRef.current.get(key);
       if (!cached && prefetchPromiseMap.current.has(key)) {
@@ -461,7 +463,7 @@ export function useTTS(): UseTTSReturn {
               text,
               lang,
               voice: selectedVoice,
-              speed: audioSpeed,
+              speed: effectiveSpeed,
             }),
             signal: ctrl.signal,
           });
@@ -543,7 +545,7 @@ export function useTTS(): UseTTSReturn {
 
       const lang = queueLangRef.current;
       utterance.lang = lang === 'fa' ? 'fa-IR' : 'en-US';
-      utterance.rate = audioSpeed;
+      utterance.rate = queueSpeedRef.current ?? audioSpeed;
 
       // Select suitable voice
       const voices = window.speechSynthesis.getVoices();
@@ -637,7 +639,7 @@ export function useTTS(): UseTTSReturn {
 
   // ---- Core: speak arbitrary text (auto-chunks if too long) ----
   const speak = useCallback(
-    async (text: string, lang: TTSLang = 'en') => {
+    async (text: string, lang: TTSLang = 'en', speedOverride?: number) => {
       const clean = String(text || '').trim();
       if (!clean) return;
 
@@ -645,6 +647,8 @@ export function useTTS(): UseTTSReturn {
       if (chunks.length === 0) return;
 
       const { voiceId, audioSpeed } = useReaderSettingsStore.getState();
+      const effectiveSpeed =
+        speedOverride && Number.isFinite(speedOverride) ? speedOverride : audioSpeed;
       const selectedVoice = voiceId.startsWith(lang)
         ? voiceId
         : lang === 'fa'
@@ -654,7 +658,7 @@ export function useTTS(): UseTTSReturn {
       // If the same single-chunk text is already playing, do nothing.
       if (
         chunks.length === 1 &&
-        currentKeyRef.current === cacheKey(chunks[0], lang, selectedVoice, audioSpeed) &&
+        currentKeyRef.current === cacheKey(chunks[0], lang, selectedVoice, effectiveSpeed) &&
         audioRef.current &&
         !audioRef.current.paused
       ) {
@@ -677,6 +681,7 @@ export function useTTS(): UseTTSReturn {
       }
       queueRef.current = chunks.slice(1); // remaining chunks after the first
       queueLangRef.current = lang;
+      queueSpeedRef.current = speedOverride;
       totalChunksRef.current = chunks.length;
       chunkIndexRef.current = 0;
       setTotalChunks(chunks.length);
@@ -696,7 +701,7 @@ export function useTTS(): UseTTSReturn {
         startBackgroundPrefetch(chunks.slice(1), lang);
       }
 
-      const ok = await loadChunk(chunks[0], lang);
+      const ok = await loadChunk(chunks[0], lang, effectiveSpeed);
       if (!ok) {
         // API failed! Fallback to Web Speech API
         isFallbackActiveRef.current = true;
@@ -707,6 +712,9 @@ export function useTTS(): UseTTSReturn {
       setIsLoading(false);
       startTick();
       try {
+        try {
+          el.playbackRate = effectiveSpeed;
+        } catch {}
         await el.play();
         setIsPlaying(true);
         setIsPaused(false);
