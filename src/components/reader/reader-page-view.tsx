@@ -24,7 +24,7 @@ interface ParagraphGroup {
  * the TTS engine's `activeWordIndex` (which is 0-based relative to `ttsText`).
  * Returns -1 if this paragraph is not currently speaking.
  */
-function getActiveWordInParagraph(
+export function getActiveWordInParagraph(
   primary: string,
   ttsText: string | null | undefined,
   activeWordIndex: number,
