@@ -47,14 +47,42 @@ export const ParagraphBlock = memo(function ParagraphBlock({
 
   const tts = useTTSContext();
 
-  // Check if TTS is currently reading this paragraph
-  const isSpeakingThis = Boolean(
-    (tts.isPlaying || tts.isPaused) &&
-      tts.currentText &&
-      (tts.currentText.includes(primary) ||
-        primary.includes(tts.currentText) ||
-        tts.currentText.trim() === primary.trim()),
-  );
+  // Match TTS reading position accurately within this paragraph
+  const spokenWordOffsetInParagraph = useMemo(() => {
+    if (!tts.isPlaying && !tts.isPaused) return -1;
+    const ttsClean = tts.currentText?.trim();
+    const primaryClean = primary?.trim();
+    if (!ttsClean || !primaryClean) return -1;
+
+    // 1. Direct substring in primary text (e.g. selected sentence)
+    if (primary.includes(ttsClean)) {
+      const charIndex = primary.indexOf(ttsClean);
+      return primary.slice(0, charIndex).split(/\s+/).filter(Boolean).length;
+    }
+
+    // 2. Direct exact or multi-paragraph inclusion
+    if (ttsClean.includes(primary)) {
+      const charIndex = ttsClean.indexOf(primary);
+      const prefixWords = ttsClean.slice(0, charIndex).split(/\s+/).filter(Boolean).length;
+      return -prefixWords;
+    }
+
+    // 3. Normalized whitespace comparison
+    const normPrimary = primary.replace(/\s+/g, ' ');
+    const normTTS = ttsClean.replace(/\s+/g, ' ');
+    const matchIdx = normPrimary.indexOf(normTTS);
+    if (matchIdx !== -1) {
+      return normPrimary.slice(0, matchIdx).split(/\s+/).filter(Boolean).length;
+    }
+
+    return -1;
+  }, [tts.isPlaying, tts.isPaused, tts.currentText, primary]);
+
+  const isSpeakingThis = spokenWordOffsetInParagraph !== -1;
+  const targetWordInParagraph =
+    isSpeakingThis && tts.activeWordIndex >= 0
+      ? spokenWordOffsetInParagraph + tts.activeWordIndex
+      : -1;
 
   const sentencePairs = useMemo<MatchedSentencePair[]>(() => {
     if (isHeading) {
@@ -96,7 +124,7 @@ export const ParagraphBlock = memo(function ParagraphBlock({
   // highlighting when TTS is speaking this block.
   const renderSentence = (text: string, pairId: string, startWordOffset: number) => {
     let content: React.ReactNode = text;
-    if (isSpeakingThis && tts.activeWordIndex >= 0) {
+    if (targetWordInParagraph >= 0) {
       let wordIdx = startWordOffset - 1;
       const tokens = text.split(/(\s+)/);
       content = tokens.map((token, idx) => {
@@ -104,7 +132,7 @@ export const ParagraphBlock = memo(function ParagraphBlock({
           return token;
         }
         wordIdx++;
-        const isActive = wordIdx === tts.activeWordIndex;
+        const isActive = wordIdx === targetWordInParagraph;
         return (
           <span
             key={idx}

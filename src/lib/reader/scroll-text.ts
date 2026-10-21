@@ -29,8 +29,13 @@ export function getVisibleReadingText(
   // The reading line is ~100px from the container top (just beneath the toolbar)
   const readingLine = containerRect.top + 100;
 
-  // Query all item containers that have data-item-index
-  const itemElements = Array.from(scrollEl.querySelectorAll<HTMLElement>('[data-item-index]'));
+  // Query item containers within current page first, falling back to full container
+  const currentPageEl = scrollEl.querySelector<HTMLElement>(
+    `[data-paragraph-index="${currentParagraph}"]`,
+  );
+  const itemElements = currentPageEl
+    ? Array.from(currentPageEl.querySelectorAll<HTMLElement>('[data-item-index]'))
+    : Array.from(scrollEl.querySelectorAll<HTMLElement>('[data-item-index]'));
 
   let targetPageIndex = currentParagraph;
   let targetItemIndex = 0;

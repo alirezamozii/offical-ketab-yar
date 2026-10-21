@@ -89,6 +89,7 @@ export function ReaderAudioControls({ text, lang, className }: ReaderAudioContro
       type="button"
       variant="ghost"
       size="sm"
+      onMouseDown={(e) => e.preventDefault()}
       onClick={handleClick}
       title={label}
       aria-label={label}

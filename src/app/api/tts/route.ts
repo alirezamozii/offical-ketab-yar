@@ -165,7 +165,7 @@ import asyncio, sys, json, edge_tts
 async def run():
     rate_pct = int(round((float(sys.argv[3]) - 1.0) * 100))
     rate_str = f"+{rate_pct}%" if rate_pct >= 0 else f"{rate_pct}%"
-    comm = edge_tts.Communicate(sys.argv[1], sys.argv[2], rate=rate_str)
+    comm = edge_tts.Communicate(sys.argv[1], sys.argv[2], rate=rate_str, boundary="WordBoundary")
     chunks = []
     bounds = []
     async for chunk in comm.stream():
