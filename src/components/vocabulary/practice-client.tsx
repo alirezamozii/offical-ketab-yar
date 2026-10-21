@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
-import { AnimatePresence, motion } from 'framer-motion'
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft,
   ArrowRight,
@@ -18,75 +18,71 @@ import {
   Trophy,
   Volume2,
   X,
-} from 'lucide-react'
-import Link from 'next/link'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { cn } from '@/lib/utils'
-import { useSrs } from '@/hooks/reader/use-srs'
-import { GameResult } from '@/components/vocabulary/game-result'
-import { STORAGE_KEYS } from '@/lib/storage-keys'
-import { recordVocabReview } from '@/components/vocabulary/use-vocab-activity'
+} from 'lucide-react';
+import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { cn } from '@/lib/utils';
+import { useTTSOrStandalone } from '@/hooks/tts-provider';
+import { useSrs } from '@/hooks/reader/use-srs';
+import { GameResult } from '@/components/vocabulary/game-result';
+import { STORAGE_KEYS } from '@/lib/storage-keys';
+import { recordVocabReview } from '@/components/vocabulary/use-vocab-activity';
 
 interface VocabWord {
-  id: string
-  word: string
-  definition: string
-  translation: string
-  context: string
-  bookSlug: string
+  id: string;
+  word: string;
+  definition: string;
+  translation: string;
+  context: string;
+  bookSlug: string;
 }
 
-type Mode = 'flashcard' | 'quiz'
-type QuizStatus = 'idle' | 'correct' | 'wrong'
+type Mode = 'flashcard' | 'quiz';
+type QuizStatus = 'idle' | 'correct' | 'wrong';
 
-const STATS_KEY = STORAGE_KEYS.practiceStats
+const STATS_KEY = STORAGE_KEYS.practiceStats;
 
 interface PracticeStats {
-  totalSessions: number
-  totalAnswered: number
-  totalCorrect: number
-  bestStreak: number
+  totalSessions: number;
+  totalAnswered: number;
+  totalCorrect: number;
+  bestStreak: number;
 }
 
 export function loadStats(): PracticeStats {
   if (typeof window === 'undefined')
-    return { totalSessions: 0, totalAnswered: 0, totalCorrect: 0, bestStreak: 0 }
+    return { totalSessions: 0, totalAnswered: 0, totalCorrect: 0, bestStreak: 0 };
   try {
-    const raw = localStorage.getItem(STATS_KEY)
-    if (!raw)
-      return { totalSessions: 0, totalAnswered: 0, totalCorrect: 0, bestStreak: 0 }
-    return JSON.parse(raw)
+    const raw = localStorage.getItem(STATS_KEY);
+    if (!raw) return { totalSessions: 0, totalAnswered: 0, totalCorrect: 0, bestStreak: 0 };
+    return JSON.parse(raw);
   } catch {
-    return { totalSessions: 0, totalAnswered: 0, totalCorrect: 0, bestStreak: 0 }
+    return { totalSessions: 0, totalAnswered: 0, totalCorrect: 0, bestStreak: 0 };
   }
 }
 
 export function saveStats(s: PracticeStats) {
   try {
-    localStorage.setItem(STATS_KEY, JSON.stringify(s))
+    localStorage.setItem(STATS_KEY, JSON.stringify(s));
   } catch {}
 }
 
 export function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr]
+  const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
-  return a
+  return a;
 }
 
 /** Build a deck with due-words first, then fill with others up to size. */
-export function buildDeck(
-  words: VocabWord[],
-  dueIds: Set<string>,
-  size: number,
-): VocabWord[] {
-  if (words.length === 0) return []
-  const due = shuffle(words.filter((w) => dueIds.has(w.id)))
-  const others = shuffle(words.filter((w) => !dueIds.has(w.id)))
-  const deck = [...due, ...others].slice(0, Math.min(size, words.length))
-  return deck
+export function buildDeck(words: VocabWord[], dueIds: Set<string>, size: number): VocabWord[] {
+  if (words.length === 0) return [];
+  const due = shuffle(words.filter((w) => dueIds.has(w.id)));
+  const others = shuffle(words.filter((w) => !dueIds.has(w.id)));
+  const deck = [...due, ...others].slice(0, Math.min(size, words.length));
+  return deck;
 }
 
 function FlashcardCard({
@@ -96,17 +92,14 @@ function FlashcardCard({
   onFlip,
   onSpeak,
 }: {
-  flipped: boolean
-  current: VocabWord
-  known: boolean
-  onFlip: () => void
-  onSpeak: (w: string) => void
+  flipped: boolean;
+  current: VocabWord;
+  known: boolean;
+  onFlip: () => void;
+  onSpeak: (w: string) => void;
 }) {
   return (
-    <div
-      className="group relative h-72 cursor-pointer perspective-1000"
-      onClick={onFlip}
-    >
+    <div className="group relative h-72 cursor-pointer perspective-1000" onClick={onFlip}>
       <AnimatePresence mode="wait">
         <motion.div
           key={flipped ? 'back' : 'front'}
@@ -126,39 +119,29 @@ function FlashcardCard({
               <span className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
                 English
               </span>
-              <h2
-                className="text-3xl font-extrabold sm:text-4xl"
-                dir="ltr"
-              >
+              <h2 className="text-3xl font-extrabold sm:text-4xl" dir="ltr">
                 {current.word}
               </h2>
               <button
                 onClick={(e) => {
-                  e.stopPropagation()
-                  onSpeak(current.word)
+                  e.stopPropagation();
+                  onSpeak(current.word);
                 }}
                 className="mt-4 flex h-10 w-10 items-center justify-center rounded-full bg-gold-500/15 text-gold-600 transition-transform hover:scale-110 dark:text-gold-400"
                 aria-label="تلفظ"
               >
                 <Volume2 className="h-5 w-5" />
               </button>
-              <p className="mt-6 text-xs text-muted-foreground">
-                برای دیدن ترجمه کلیک کنید
-              </p>
+              <p className="mt-6 text-xs text-muted-foreground">برای دیدن ترجمه کلیک کنید</p>
             </>
           ) : (
             <>
               <span className="mb-2 text-xs font-bold uppercase tracking-widest text-gold-600 dark:text-gold-400">
                 فارسی
               </span>
-              <p className="text-2xl font-bold leading-relaxed">
-                {current.translation || '—'}
-              </p>
+              <p className="text-2xl font-bold leading-relaxed">{current.translation || '—'}</p>
               {current.definition && (
-                <p
-                  className="mt-3 max-w-md text-sm text-muted-foreground"
-                  dir="ltr"
-                >
+                <p className="mt-3 max-w-md text-sm text-muted-foreground" dir="ltr">
                   {current.definition}
                 </p>
               )}
@@ -173,7 +156,7 @@ function FlashcardCard({
         </motion.div>
       </AnimatePresence>
     </div>
-  )
+  );
 }
 
 function FlashcardControls({
@@ -185,13 +168,13 @@ function FlashcardControls({
   onMarkKnown,
   onMarkUnknown,
 }: {
-  index: number
-  total: number
-  isKnown: boolean
-  onPrev: () => void
-  onNext: () => void
-  onMarkKnown: () => void
-  onMarkUnknown: () => void
+  index: number;
+  total: number;
+  isKnown: boolean;
+  onPrev: () => void;
+  onNext: () => void;
+  onMarkKnown: () => void;
+  onMarkUnknown: () => void;
 }) {
   return (
     <div className="space-y-4">
@@ -237,7 +220,7 @@ function FlashcardControls({
         نمی‌دانم
       </p>
     </div>
-  )
+  );
 }
 
 function QuizCard({ word, onSpeak }: { word: string; onSpeak: (w: string) => void }) {
@@ -257,15 +240,15 @@ function QuizCard({ word, onSpeak }: { word: string; onSpeak: (w: string) => voi
         <Volume2 className="h-4 w-4" />
       </button>
     </div>
-  )
+  );
 }
 
 function CelebrationToast({
   celebration,
   onClose,
 }: {
-  celebration: VocabWord
-  onClose: () => void
+  celebration: VocabWord;
+  onClose: () => void;
 }) {
   return (
     <AnimatePresence>
@@ -291,140 +274,137 @@ function CelebrationToast({
         </div>
       </motion.div>
     </AnimatePresence>
-  )
+  );
 }
 
 export function PracticeClient() {
-  const srs = useSrs()
-  const [words, setWords] = useState<VocabWord[]>([])
-  const [loading, setLoading] = useState(true)
-  const [mode, setMode] = useState<Mode>('flashcard')
-  const [deck, setDeck] = useState<VocabWord[]>([])
-  const [index, setIndex] = useState(0)
-  const [flipped, setFlipped] = useState(false)
-  const [knownIds, setKnownIds] = useState<Set<string>>(new Set())
-  const [quizStatus, setQuizStatus] = useState<QuizStatus>('idle')
-  const [quizOptions, setQuizOptions] = useState<string[]>([])
-  const [picked, setPicked] = useState<string | null>(null)
-  const [score, setScore] = useState(0)
-  const [streak, setStreak] = useState(0)
-  const [finished, setFinished] = useState(false)
-  const [stats, setStats] = useState<PracticeStats>(loadStats)
-  const [celebration, setCelebration] = useState<VocabWord | null>(null)
-  const [learnedCount, setLearnedCount] = useState(0)
+  const srs = useSrs();
+  const tts = useTTSOrStandalone();
+  const [words, setWords] = useState<VocabWord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [mode, setMode] = useState<Mode>('flashcard');
+  const [deck, setDeck] = useState<VocabWord[]>([]);
+  const [index, setIndex] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+  const [knownIds, setKnownIds] = useState<Set<string>>(new Set());
+  const [quizStatus, setQuizStatus] = useState<QuizStatus>('idle');
+  const [quizOptions, setQuizOptions] = useState<string[]>([]);
+  const [picked, setPicked] = useState<string | null>(null);
+  const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [finished, setFinished] = useState(false);
+  const [stats, setStats] = useState<PracticeStats>(loadStats);
+  const [celebration, setCelebration] = useState<VocabWord | null>(null);
+  const [learnedCount, setLearnedCount] = useState(0);
 
   const buildQuiz = useCallback((d: VocabWord[], i: number) => {
     if (d.length < 4) {
-      setQuizOptions([])
-      return
+      setQuizOptions([]);
+      return;
     }
-    const correct = d[i].translation || d[i].definition || d[i].word
-    const pool = d.filter((_, idx) => idx !== i)
+    const correct = d[i].translation || d[i].definition || d[i].word;
+    const pool = d.filter((_, idx) => idx !== i);
     const distractors = shuffle(pool)
       .slice(0, 3)
-      .map((w) => w.translation || w.definition || w.word)
-    setQuizOptions(shuffle([correct, ...distractors]))
-    setQuizStatus('idle')
-    setPicked(null)
-  }, [])
+      .map((w) => w.translation || w.definition || w.word);
+    setQuizOptions(shuffle([correct, ...distractors]));
+    setQuizStatus('idle');
+    setPicked(null);
+  }, []);
 
   // Once words load + srs ready, build the initial deck (due-first).
   useEffect(() => {
     fetch('/api/vocabulary')
       .then((r) => (r.ok ? r.json() : []))
       .then((d: VocabWord[]) => {
-        setWords(d)
+        setWords(d);
         if (d.length > 0) {
-          const dueIds = new Set(srs.getDueWordIds(d.map((w) => w.id)))
-          const built = buildDeck(d, dueIds, 20)
-          setDeck(built)
-          buildQuiz(built, 0)
+          const dueIds = new Set(srs.getDueWordIds(d.map((w) => w.id)));
+          const built = buildDeck(d, dueIds, 20);
+          setDeck(built);
+          buildQuiz(built, 0);
         }
       })
       .catch(() => setWords([]))
-      .finally(() => setLoading(false))
-  }, [srs.isReady, srs, buildQuiz])
+      .finally(() => setLoading(false));
+  }, [srs.isReady, srs, buildQuiz]);
 
-  const current = deck[index]
+  const current = deck[index];
 
   const dueTodayCount = useMemo(
     () => (words.length ? srs.getDueWordIds(words.map((w) => w.id)).length : 0),
     [words, srs],
-  )
+  );
 
   const learnedTotal = useMemo(
-    () =>
-      words.filter((w) => srs.getStatus(w.id).box >= 5).length,
+    () => words.filter((w) => srs.getStatus(w.id).box >= 5).length,
     [words, srs],
-  )
+  );
 
   function restart() {
-    if (words.length === 0) return
-    const dueIds = new Set(srs.getDueWordIds(words.map((w) => w.id)))
-    const built = buildDeck(words, dueIds, 20)
-    setDeck(built)
-    setIndex(0)
-    setFlipped(false)
-    setKnownIds(new Set())
-    setScore(0)
-    setStreak(0)
-    setFinished(false)
-    setLearnedCount(0)
-    buildQuiz(built, 0)
+    if (words.length === 0) return;
+    const dueIds = new Set(srs.getDueWordIds(words.map((w) => w.id)));
+    const built = buildDeck(words, dueIds, 20);
+    setDeck(built);
+    setIndex(0);
+    setFlipped(false);
+    setKnownIds(new Set());
+    setScore(0);
+    setStreak(0);
+    setFinished(false);
+    setLearnedCount(0);
+    buildQuiz(built, 0);
   }
 
   function next() {
     if (index + 1 >= deck.length) {
-      setFinished(true)
+      setFinished(true);
       const newStats: PracticeStats = {
         totalSessions: stats.totalSessions + 1,
         totalAnswered: stats.totalAnswered + deck.length,
         totalCorrect: stats.totalCorrect + score,
         bestStreak: Math.max(stats.bestStreak, streak),
-      }
-      setStats(newStats)
-      saveStats(newStats)
-      return
+      };
+      setStats(newStats);
+      saveStats(newStats);
+      return;
     }
-    const ni = index + 1
-    setIndex(ni)
-    setFlipped(false)
-    buildQuiz(deck, ni)
+    const ni = index + 1;
+    setIndex(ni);
+    setFlipped(false);
+    buildQuiz(deck, ni);
   }
 
   function prev() {
-    if (index === 0) return
-    const ni = index - 1
-    setIndex(ni)
-    setFlipped(false)
-    buildQuiz(deck, ni)
+    if (index === 0) return;
+    const ni = index - 1;
+    setIndex(ni);
+    setFlipped(false);
+    buildQuiz(deck, ni);
   }
 
   function markKnown() {
-    if (!current) return
-    setKnownIds((prev) => new Set(prev).add(current.id))
-    setFlipped(true)
+    if (!current) return;
+    setKnownIds((prev) => new Set(prev).add(current.id));
+    setFlipped(true);
     // SRS review (correct)
-    const result = srs.review(current.id, true)
-    recordVocabReview(1)
+    const result = srs.review(current.id, true);
+    recordVocabReview(1);
     if (result.leveledTo5 || result.leveledToMastered) {
-      setCelebration(current)
-      setLearnedCount((c) => c + 1)
+      setCelebration(current);
+      setLearnedCount((c) => c + 1);
     }
   }
 
   function markUnknown() {
-    if (!current) return
-    srs.review(current.id, false)
-    recordVocabReview(1)
+    if (!current) return;
+    srs.review(current.id, false);
+    recordVocabReview(1);
   }
 
   function speak(w: string) {
-    try {
-      const u = new SpeechSynthesisUtterance(w)
-      u.lang = 'en-US'
-      window.speechSynthesis.speak(u)
-    } catch {}
+    if (!w) return;
+    void tts.speak(w, 'en');
   }
 
   // ---- Flashcard keyboard shortcuts ----
@@ -438,73 +418,67 @@ export function PracticeClient() {
   // mirrors the click-based flow where each card requires an explicit
   // "next" press.
   useEffect(() => {
-    if (mode !== 'flashcard' || !current) return
+    if (mode !== 'flashcard' || !current) return;
     function onKey(e: KeyboardEvent) {
-      const target = e.target as HTMLElement | null
-      const tag = target?.tagName
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
       // Don't hijack typing in inputs / textareas / contenteditable.
-      if (
-        tag === 'INPUT' ||
-        tag === 'TEXTAREA' ||
-        target?.isContentEditable
-      ) {
-        return
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || target?.isContentEditable) {
+        return;
       }
       switch (e.key) {
         case ' ':
         case 'Enter':
-          e.preventDefault()
-          setFlipped((f) => !f)
-          break
+          e.preventDefault();
+          setFlipped((f) => !f);
+          break;
         case 'ArrowRight':
-          e.preventDefault()
-          markKnown()
-          break
+          e.preventDefault();
+          markKnown();
+          break;
         case 'ArrowLeft':
-          e.preventDefault()
-          markUnknown()
-          break
+          e.preventDefault();
+          markUnknown();
+          break;
         case '1':
-          e.preventDefault()
-          markUnknown()
-          break
+          e.preventDefault();
+          markUnknown();
+          break;
         case '2':
-          e.preventDefault()
-          markKnown()
-          break
+          e.preventDefault();
+          markKnown();
+          break;
       }
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, current, knownIds])
+  }, [mode, current, knownIds]);
 
   function answer(opt: string) {
-    if (quizStatus !== 'idle' || !current) return
-    const correct = current.translation || current.definition || current.word
-    setPicked(opt)
+    if (quizStatus !== 'idle' || !current) return;
+    const correct = current.translation || current.definition || current.word;
+    setPicked(opt);
     if (opt === correct) {
-      setQuizStatus('correct')
-      setScore((s) => s + 1)
-      setStreak((s) => s + 1)
-      const result = srs.review(current.id, true)
-      recordVocabReview(1)
+      setQuizStatus('correct');
+      setScore((s) => s + 1);
+      setStreak((s) => s + 1);
+      const result = srs.review(current.id, true);
+      recordVocabReview(1);
       if (result.leveledTo5 || result.leveledToMastered) {
-        setCelebration(current)
-        setLearnedCount((c) => c + 1)
+        setCelebration(current);
+        setLearnedCount((c) => c + 1);
       }
     } else {
-      setQuizStatus('wrong')
-      setStreak(0)
-      srs.review(current.id, false)
-      recordVocabReview(1)
+      setQuizStatus('wrong');
+      setStreak(0);
+      srs.review(current.id, false);
+      recordVocabReview(1);
     }
   }
 
   const accuracy =
-    stats.totalAnswered > 0
-      ? Math.round((stats.totalCorrect / stats.totalAnswered) * 100)
-      : 0
+    stats.totalAnswered > 0 ? Math.round((stats.totalCorrect / stats.totalAnswered) * 100) : 0;
 
   if (loading) {
     return (
@@ -512,7 +486,7 @@ export function PracticeClient() {
         <Skeleton className="mb-6 h-10 w-48" />
         <Skeleton className="h-64 w-full rounded-3xl" />
       </div>
-    )
+    );
   }
 
   if (words.length === 0) {
@@ -524,8 +498,8 @@ export function PracticeClient() {
           </span>
           <h1 className="text-2xl font-bold">واژه‌ای برای تمرین نیست</h1>
           <p className="max-w-md text-sm text-muted-foreground">
-            ابتدا هنگام مطالعه، کلمات ناشناخته را به واژگان اضافه کنید. سپس برای
-            تمرین به اینجا برگردید.
+            ابتدا هنگام مطالعه، کلمات ناشناخته را به واژگان اضافه کنید. سپس برای تمرین به اینجا
+            برگردید.
           </p>
           <Button asChild variant="glow">
             <Link href="/library">
@@ -535,11 +509,11 @@ export function PracticeClient() {
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   if (finished) {
-    const acc = Math.round((score / deck.length) * 100)
+    const acc = Math.round((score / deck.length) * 100);
     return (
       <GameResult
         title="تمرین تمام شد!"
@@ -564,7 +538,7 @@ export function PracticeClient() {
         onPlayAgain={restart}
         playAgainLabel="تمرین دوباره"
       />
-    )
+    );
   }
 
   return (
@@ -572,9 +546,7 @@ export function PracticeClient() {
       {/* Header + stats — SRS-aware */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-            تمرین واژگان
-          </h1>
+          <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">تمرین واژگان</h1>
           <p className="text-sm text-muted-foreground">
             {deck.length} واژه در دسته — صفحه {index + 1} از {deck.length}
           </p>
@@ -604,8 +576,8 @@ export function PracticeClient() {
         <ModeButton
           active={mode === 'flashcard'}
           onClick={() => {
-            setMode('flashcard')
-            setFlipped(false)
+            setMode('flashcard');
+            setFlipped(false);
           }}
         >
           <Layers className="h-4 w-4" />
@@ -614,8 +586,8 @@ export function PracticeClient() {
         <ModeButton
           active={mode === 'quiz'}
           onClick={() => {
-            setMode('quiz')
-            buildQuiz(deck, index)
+            setMode('quiz');
+            buildQuiz(deck, index);
           }}
         >
           <Brain className="h-4 w-4" />
@@ -658,11 +630,10 @@ export function PracticeClient() {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 {quizOptions.map((opt, i) => {
-                  const correct =
-                    current.translation || current.definition || current.word
-                  const isCorrect = opt === correct
-                  const isPicked = opt === picked
-                  const showState = quizStatus !== 'idle'
+                  const correct = current.translation || current.definition || current.word;
+                  const isCorrect = opt === correct;
+                  const isPicked = opt === picked;
+                  const showState = quizStatus !== 'idle';
                   return (
                     <motion.button
                       key={i}
@@ -672,8 +643,7 @@ export function PracticeClient() {
                       disabled={showState}
                       className={cn(
                         'flex items-center justify-between rounded-xl border-2 p-4 text-start font-medium transition-colors',
-                        !showState &&
-                          'border-border bg-card hover:border-primary/50',
+                        !showState && 'border-border bg-card hover:border-primary/50',
                         showState &&
                           isCorrect &&
                           'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
@@ -681,21 +651,16 @@ export function PracticeClient() {
                           isPicked &&
                           !isCorrect &&
                           'border-red-500 bg-red-500/10 text-red-700 dark:text-red-400',
-                        showState &&
-                          !isCorrect &&
-                          !isPicked &&
-                          'border-border bg-card opacity-60',
+                        showState && !isCorrect && !isPicked && 'border-border bg-card opacity-60',
                       )}
                     >
                       <span>{opt}</span>
-                      {showState && isCorrect && (
-                        <Check className="h-5 w-5 text-emerald-500" />
-                      )}
+                      {showState && isCorrect && <Check className="h-5 w-5 text-emerald-500" />}
                       {showState && isPicked && !isCorrect && (
                         <X className="h-5 w-5 text-red-500" />
                       )}
                     </motion.button>
-                  )
+                  );
                 })}
               </div>
 
@@ -713,9 +678,7 @@ export function PracticeClient() {
                     )}
                   >
                     <span className="font-bold">
-                      {quizStatus === 'correct'
-                        ? 'آفرین! درست بود'
-                        : 'نادرست — دفعه بعد!'}
+                      {quizStatus === 'correct' ? 'آفرین! درست بود' : 'نادرست — دفعه بعد!'}
                     </span>
                     <Button onClick={next} size="sm" variant="glow">
                       {index + 1 >= deck.length ? 'پایان' : 'بعدی'}
@@ -749,13 +712,10 @@ export function PracticeClient() {
       </div>
 
       {celebration && (
-        <CelebrationToast
-          celebration={celebration}
-          onClose={() => setCelebration(null)}
-        />
+        <CelebrationToast celebration={celebration} onClose={() => setCelebration(null)} />
       )}
     </div>
-  )
+  );
 }
 
 function ModeButton({
@@ -763,9 +723,9 @@ function ModeButton({
   onClick,
   children,
 }: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
 }) {
   return (
     <button
@@ -779,7 +739,7 @@ function ModeButton({
     >
       {children}
     </button>
-  )
+  );
 }
 
 function MiniStat({
@@ -788,18 +748,16 @@ function MiniStat({
   label,
   highlight,
 }: {
-  icon: React.ReactNode
-  value: string
-  label: string
-  highlight?: boolean
+  icon: React.ReactNode;
+  value: string;
+  label: string;
+  highlight?: boolean;
 }) {
   return (
     <div
       className={cn(
         'flex items-center gap-2 rounded-lg border bg-card px-3 py-1.5 shadow-sm',
-        highlight
-          ? 'border-gold-400/60 bg-gold-500/5'
-          : 'border-border',
+        highlight ? 'border-gold-400/60 bg-gold-500/5' : 'border-border',
       )}
     >
       <span className="text-gold-600 dark:text-gold-400">{icon}</span>
@@ -808,7 +766,5 @@ function MiniStat({
         <div className="text-[10px] text-muted-foreground">{label}</div>
       </div>
     </div>
-  )
+  );
 }
-
-

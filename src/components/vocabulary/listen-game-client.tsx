@@ -1,57 +1,49 @@
-'use client'
+'use client';
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { AnimatePresence, motion } from 'framer-motion'
-import { Ear, Volume2 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-import { cn } from '@/lib/utils'
-import { useVocabGame } from '@/hooks/reader/use-vocab-game'
-import { GameEmpty, GameLoading } from '@/components/vocabulary/game-states'
-import { GameHud } from '@/components/vocabulary/game-hud'
-import { GameIntro } from '@/components/vocabulary/game-intro'
-import { GameResult } from '@/components/vocabulary/game-result'
-import {
-  normalize,
-  shuffle,
-  type VocabWord,
-} from '@/components/vocabulary/game-utils'
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Ear, Volume2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { cn } from '@/lib/utils';
+import { useTTSOrStandalone } from '@/hooks/tts-provider';
+import { useVocabGame } from '@/hooks/reader/use-vocab-game';
+import { GameEmpty, GameLoading } from '@/components/vocabulary/game-states';
+import { GameHud } from '@/components/vocabulary/game-hud';
+import { GameIntro } from '@/components/vocabulary/game-intro';
+import { GameResult } from '@/components/vocabulary/game-result';
+import { normalize, shuffle, type VocabWord } from '@/components/vocabulary/game-utils';
 
 interface Question {
-  word: VocabWord
+  word: VocabWord;
 }
 
-const QUESTIONS_PER_GAME = 10
-const SECONDS_PER_QUESTION = 15
-const XP_PER_CORRECT = 20
-const XP_TIME_BONUS = 1
+const QUESTIONS_PER_GAME = 10;
+const SECONDS_PER_QUESTION = 15;
+const XP_PER_CORRECT = 20;
+const XP_TIME_BONUS = 1;
 
 function buildQuestions(words: VocabWord[]): Question[] {
-  const withWord = words.filter((w) => w.word && w.word.trim())
-  if (withWord.length < 4) return []
-  const pool = shuffle(withWord)
-  const count = Math.min(QUESTIONS_PER_GAME, pool.length)
-  return pool.slice(0, count).map((word) => ({ word }))
+  const withWord = words.filter((w) => w.word && w.word.trim());
+  if (withWord.length < 4) return [];
+  const pool = shuffle(withWord);
+  const count = Math.min(QUESTIONS_PER_GAME, pool.length);
+  return pool.slice(0, count).map((word) => ({ word }));
 }
 
 export function ListenGameClient() {
-  const [speechOk, setSpeechOk] = useState(true)
-  const inputRef = useRef<HTMLInputElement | null>(null)
+  const [speechOk, setSpeechOk] = useState(true);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const tts = useTTSOrStandalone();
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    setSpeechOk('speechSynthesis' in window)
-  }, [])
+    if (typeof window === 'undefined') return;
+    setSpeechOk(true);
+  }, []);
 
-  function speak(text: string, opts?: { rate?: number }) {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
-    try {
-      window.speechSynthesis.cancel()
-      const u = new SpeechSynthesisUtterance(text)
-      u.lang = 'en-US'
-      u.rate = opts?.rate ?? 0.9
-      window.speechSynthesis.speak(u)
-    } catch {}
+  function speak(text: string) {
+    if (!text) return;
+    void tts.speak(text, 'en');
   }
 
   const game = useVocabGame<Question>({
@@ -65,23 +57,22 @@ export function ListenGameClient() {
     emptyMessage: 'حداقل ۴ واژه لازم است',
     wordFilter: (w) => !!(w.word && w.word.trim()),
     buildQuestions,
-    checkCorrect: (q, value) =>
-      normalize(value) === normalize(q.word.word),
+    checkCorrect: (q, value) => normalize(value) === normalize(q.word.word),
     getWordId: (q) => q.word.id,
     gameMode: 'listen',
     onStart: (q) => {
       // Let the UI settle on the first transition, then play + focus.
-      setTimeout(() => speak(q.word.word), 350)
-      setTimeout(() => inputRef.current?.focus(), 400)
+      setTimeout(() => speak(q.word.word), 350);
+      setTimeout(() => inputRef.current?.focus(), 400);
     },
     onAdvance: (q) => {
-      setTimeout(() => speak(q.word.word), 250)
-      setTimeout(() => inputRef.current?.focus(), 300)
+      setTimeout(() => speak(q.word.word), 250);
+      setTimeout(() => inputRef.current?.focus(), 300);
     },
-  })
+  });
 
   if (game.loading) {
-    return <GameLoading />
+    return <GameLoading />;
   }
 
   if (!game.hasEnoughWords) {
@@ -92,14 +83,12 @@ export function ListenGameClient() {
           'برای بازی شنیداری حداقل ۴ واژه لازم است. هنگام مطالعه کلمات را ذخیره کنید یا دستی اضافه کنید.'
         }
       />
-    )
+    );
   }
 
   if (game.state === 'finished') {
     const accuracy =
-      game.questions.length > 0
-        ? Math.round((game.score / game.questions.length) * 100)
-        : 0
+      game.questions.length > 0 ? Math.round((game.score / game.questions.length) * 100) : 0;
     return (
       <GameResult
         title="بازی تمام شد!"
@@ -123,7 +112,7 @@ export function ListenGameClient() {
         onPlayAgain={game.startGame}
         playAgainLabel="دوباره بازی"
       />
-    )
+    );
   }
 
   if (game.state === 'idle') {
@@ -149,19 +138,18 @@ export function ListenGameClient() {
         warning={
           !speechOk ? (
             <p className="rounded-xl bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">
-              ⚠️ مرورگر شما از تلفظ پشتیبانی نمی‌کند. برای تجربه بهتر از Chrome
-              یا Edge استفاده کنید.
+              ⚠️ مرورگر شما از تلفظ پشتیبانی نمی‌کند. برای تجربه بهتر از Chrome یا Edge استفاده کنید.
             </p>
           ) : undefined
         }
       />
-    )
+    );
   }
 
   // PLAYING state
-  const q = game.currentQuestion
-  if (!q) return null
-  const showAnswer = game.feedback !== 'none'
+  const q = game.currentQuestion;
+  if (!q) return null;
+  const showAnswer = game.feedback !== 'none';
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
@@ -197,9 +185,7 @@ export function ListenGameClient() {
             >
               <Volume2 className="h-7 w-7" />
             </button>
-            <p className="mt-3 text-xs text-muted-foreground">
-              برای پخش دوباره روی آیکون کلیک کن
-            </p>
+            <p className="mt-3 text-xs text-muted-foreground">برای پخش دوباره روی آیکون کلیک کن</p>
           </div>
 
           {/* Input */}
@@ -242,19 +228,15 @@ export function ListenGameClient() {
               <p className="font-bold">
                 {game.feedback === 'correct'
                   ? `✓ آفرین! +${Math.round(
-                      (XP_PER_CORRECT + game.timeLeft * XP_TIME_BONUS) *
-                        game.multiplier,
+                      (XP_PER_CORRECT + game.timeLeft * XP_TIME_BONUS) * game.multiplier,
                     )} XP${game.multiplier > 1 ? ` (×${game.multiplier})` : ''}`
                   : '✗ نادرست'}
               </p>
               {game.feedback === 'wrong' && (
                 <p className="mt-1 text-sm" dir="ltr">
-                  پاسخ درست:{' '}
-                  <span className="font-bold">{q.word.word}</span>
+                  پاسخ درست: <span className="font-bold">{q.word.word}</span>
                   {q.word.translation && (
-                    <span className="ms-2 text-muted-foreground">
-                      ({q.word.translation})
-                    </span>
+                    <span className="ms-2 text-muted-foreground">({q.word.translation})</span>
                   )}
                 </p>
               )}
@@ -263,5 +245,5 @@ export function ListenGameClient() {
         </motion.div>
       </AnimatePresence>
     </div>
-  )
+  );
 }

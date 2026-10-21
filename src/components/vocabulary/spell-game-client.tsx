@@ -1,55 +1,46 @@
-'use client'
+'use client';
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { AnimatePresence, motion } from 'framer-motion'
-import { Eye, EyeOff, Sparkles, Volume2 } from 'lucide-react'
-import { useRef, useState } from 'react'
-import { cn } from '@/lib/utils'
-import { useVocabGame } from '@/hooks/reader/use-vocab-game'
-import { GameEmpty, GameLoading } from '@/components/vocabulary/game-states'
-import { GameHud } from '@/components/vocabulary/game-hud'
-import { GameIntro } from '@/components/vocabulary/game-intro'
-import { GameResult } from '@/components/vocabulary/game-result'
-import {
-  diffChars,
-  normalize,
-  shuffle,
-  type VocabWord,
-} from '@/components/vocabulary/game-utils'
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Eye, EyeOff, Sparkles, Volume2 } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { cn } from '@/lib/utils';
+import { useTTSOrStandalone } from '@/hooks/tts-provider';
+import { useVocabGame } from '@/hooks/reader/use-vocab-game';
+import { GameEmpty, GameLoading } from '@/components/vocabulary/game-states';
+import { GameHud } from '@/components/vocabulary/game-hud';
+import { GameIntro } from '@/components/vocabulary/game-intro';
+import { GameResult } from '@/components/vocabulary/game-result';
+import { diffChars, normalize, shuffle, type VocabWord } from '@/components/vocabulary/game-utils';
 
 interface Question {
-  word: VocabWord
+  word: VocabWord;
 }
 
-const QUESTIONS_PER_GAME = 10
-const SECONDS_PER_QUESTION = 20
-const XP_PER_CORRECT = 25
-const XP_TIME_BONUS = 2
+const QUESTIONS_PER_GAME = 10;
+const SECONDS_PER_QUESTION = 20;
+const XP_PER_CORRECT = 25;
+const XP_TIME_BONUS = 2;
 
 function buildQuestions(words: VocabWord[]): Question[] {
   const usable = words.filter(
     (w) => w.word && w.word.trim() && w.translation && w.translation.trim(),
-  )
-  if (usable.length < 4) return []
-  const pool = shuffle(usable)
-  const count = Math.min(QUESTIONS_PER_GAME, pool.length)
-  return pool.slice(0, count).map((word) => ({ word }))
+  );
+  if (usable.length < 4) return [];
+  const pool = shuffle(usable);
+  const count = Math.min(QUESTIONS_PER_GAME, pool.length);
+  return pool.slice(0, count).map((word) => ({ word }));
 }
 
 export function SpellGameClient() {
-  const [showHint, setShowHint] = useState(false)
-  const inputRef = useRef<HTMLInputElement | null>(null)
+  const [showHint, setShowHint] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const tts = useTTSOrStandalone();
 
   function speak(text: string) {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
-    try {
-      window.speechSynthesis.cancel()
-      const u = new SpeechSynthesisUtterance(text)
-      u.lang = 'en-US'
-      u.rate = 0.9
-      window.speechSynthesis.speak(u)
-    } catch {}
+    if (!text) return;
+    void tts.speak(text, 'en');
   }
 
   const game = useVocabGame<Question>({
@@ -61,29 +52,27 @@ export function SpellGameClient() {
     wrongDelayMs: 2200,
     correctDelayMs: 1300,
     emptyMessage: 'حداقل ۴ واژه با ترجمه لازم است',
-    wordFilter: (w) =>
-      !!(w.word && w.word.trim() && w.translation && w.translation.trim()),
+    wordFilter: (w) => !!(w.word && w.word.trim() && w.translation && w.translation.trim()),
     buildQuestions,
-    checkCorrect: (q, value) =>
-      normalize(value) === normalize(q.word.word),
+    checkCorrect: (q, value) => normalize(value) === normalize(q.word.word),
     getWordId: (q) => q.word.id,
     gameMode: 'spell',
     onStart: () => {
-      setShowHint(false)
-      setTimeout(() => inputRef.current?.focus(), 300)
+      setShowHint(false);
+      setTimeout(() => inputRef.current?.focus(), 300);
     },
     onAdvance: () => {
-      setShowHint(false)
-      setTimeout(() => inputRef.current?.focus(), 300)
+      setShowHint(false);
+      setTimeout(() => inputRef.current?.focus(), 300);
     },
     onWrong: (q) => {
       // Play the correct word on reveal.
-      speak(q.word.word)
+      speak(q.word.word);
     },
-  })
+  });
 
   if (game.loading) {
-    return <GameLoading />
+    return <GameLoading />;
   }
 
   if (!game.hasEnoughWords) {
@@ -94,14 +83,12 @@ export function SpellGameClient() {
           'برای بازی هجی‌کردن حداقل ۴ واژه با ترجمه لازم است. هنگام مطالعه کلمات را ذخیره کنید (معنی خودکار گرفته می‌شود).'
         }
       />
-    )
+    );
   }
 
   if (game.state === 'finished') {
     const accuracy =
-      game.questions.length > 0
-        ? Math.round((game.score / game.questions.length) * 100)
-        : 0
+      game.questions.length > 0 ? Math.round((game.score / game.questions.length) * 100) : 0;
     return (
       <GameResult
         title="بازی تمام شد!"
@@ -125,7 +112,7 @@ export function SpellGameClient() {
         onPlayAgain={game.startGame}
         playAgainLabel="دوباره بازی"
       />
-    )
+    );
   }
 
   if (game.state === 'idle') {
@@ -149,17 +136,14 @@ export function SpellGameClient() {
         onToggleSound={game.sound.toggle}
         onStart={game.startGame}
       />
-    )
+    );
   }
 
   // PLAYING state
-  const q = game.currentQuestion
-  if (!q) return null
-  const showAnswer = game.feedback !== 'none'
-  const diff =
-    showAnswer && game.feedback === 'wrong'
-      ? diffChars(q.word.word, game.picked)
-      : null
+  const q = game.currentQuestion;
+  if (!q) return null;
+  const showAnswer = game.feedback !== 'none';
+  const diff = showAnswer && game.feedback === 'wrong' ? diffChars(q.word.word, game.picked) : null;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
@@ -208,10 +192,7 @@ export function SpellGameClient() {
               )}
             </button>
             {showHint && q.word.definition && (
-              <p
-                className="mt-2 text-sm italic text-muted-foreground"
-                dir="ltr"
-              >
+              <p className="mt-2 text-sm italic text-muted-foreground" dir="ltr">
                 {q.word.definition}
               </p>
             )}
@@ -257,8 +238,7 @@ export function SpellGameClient() {
               <p className="flex items-center justify-center gap-2 font-bold">
                 {game.feedback === 'correct' ? (
                   `✓ آفرین! +${Math.round(
-                    (XP_PER_CORRECT + game.timeLeft * XP_TIME_BONUS) *
-                      game.multiplier,
+                    (XP_PER_CORRECT + game.timeLeft * XP_TIME_BONUS) * game.multiplier,
                   )} XP${game.multiplier > 1 ? ` (×${game.multiplier})` : ''}`
                 ) : (
                   <>
@@ -270,18 +250,12 @@ export function SpellGameClient() {
               {game.feedback === 'wrong' && (
                 <div className="mt-2">
                   <p className="text-xs text-muted-foreground">پاسخ درست:</p>
-                  <p
-                    className="text-xl font-bold tracking-wide"
-                    dir="ltr"
-                  >
+                  <p className="text-xl font-bold tracking-wide" dir="ltr">
                     {q.word.word}
                   </p>
                   {/* Char-level diff */}
                   {diff && (
-                    <p
-                      className="mt-1 text-sm tracking-widest"
-                      dir="ltr"
-                    >
+                    <p className="mt-1 text-sm tracking-widest" dir="ltr">
                       {diff.map((d, i) => (
                         <span
                           key={i}
@@ -289,8 +263,7 @@ export function SpellGameClient() {
                             d.status === 'ok' && 'text-muted-foreground',
                             d.status === 'missing' &&
                               'text-red-500 underline decoration-red-500/50',
-                            d.status === 'extra' &&
-                              'text-amber-500 line-through',
+                            d.status === 'extra' && 'text-amber-500 line-through',
                           )}
                         >
                           {d.ch === ' ' ? '·' : d.ch}
@@ -305,5 +278,5 @@ export function SpellGameClient() {
         </motion.div>
       </AnimatePresence>
     </div>
-  )
+  );
 }

@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 /**
  * DailyWordsSection — "کلمات روزانه" widget.
@@ -11,74 +11,69 @@
  * The pick is stable for the whole day and rotates at midnight local time.
  */
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { usePersianLocale } from '@/hooks/use-persian-locale'
-import {
-  BookOpen,
-  CalendarDays,
-  Sparkles,
-  Volume2,
-} from 'lucide-react'
-import Link from 'next/link'
-import { useMemo } from 'react'
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { usePersianLocale } from '@/hooks/use-persian-locale';
+import { useTTSOrStandalone } from '@/hooks/tts-provider';
+import { BookOpen, CalendarDays, Sparkles, Volume2 } from 'lucide-react';
+import Link from 'next/link';
+import { useMemo } from 'react';
 
 interface SavedWord {
-  id: string
-  word: string
-  definition: string
-  translation: string
-  context: string
-  bookSlug: string
+  id: string;
+  word: string;
+  definition: string;
+  translation: string;
+  context: string;
+  bookSlug: string;
 }
 
-const WORDS_PER_DAY = 5
+const WORDS_PER_DAY = 5;
 
 /** FNV-1a → mulberry32 deterministic PRNG from a string seed. */
 function seededRandom(seed: string): () => number {
-  let h = 2166136261
+  let h = 2166136261;
   for (let i = 0; i < seed.length; i++) {
-    h ^= seed.charCodeAt(i)
-    h = Math.imul(h, 16777619)
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
   }
-  let state = h >>> 0
+  let state = h >>> 0;
   return () => {
-    state |= 0
-    state = (state + 0x6d2b79f5) | 0
-    let t = Math.imul(state ^ (state >>> 15), 1 | state)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
+    state |= 0;
+    state = (state + 0x6d2b79f5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
 function todayKey(d = new Date()): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 export function DailyWordsSection({ savedWords }: { savedWords: SavedWord[] }) {
-  const { toPersianDigits, formatDate } = usePersianLocale()
+  const { toPersianDigits, formatDate } = usePersianLocale();
 
   // Deterministic per-day pick from the user's own saved words.
   const daily = useMemo(() => {
-    if (savedWords.length === 0) return []
-    const rng = seededRandom(`daily-words:${todayKey()}`)
-    const pool = [...savedWords]
+    if (savedWords.length === 0) return [];
+    const rng = seededRandom(`daily-words:${todayKey()}`);
+    const pool = [...savedWords];
     for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(rng() * (i + 1))
-      ;[pool[i], pool[j]] = [pool[j], pool[i]]
+      const j = Math.floor(rng() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
     }
-    return pool.slice(0, Math.min(WORDS_PER_DAY, pool.length))
-  }, [savedWords])
+    return pool.slice(0, Math.min(WORDS_PER_DAY, pool.length));
+  }, [savedWords]);
+
+  const tts = useTTSOrStandalone();
 
   function speak(w: string) {
-    try {
-      const u = new SpeechSynthesisUtterance(w)
-      u.lang = 'en-US'
-      window.speechSynthesis.speak(u)
-    } catch {}
+    if (!w) return;
+    void tts.speak(w, 'en');
   }
 
   return (
@@ -111,8 +106,8 @@ export function DailyWordsSection({ savedWords }: { savedWords: SavedWord[] }) {
 
       {daily.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-          هنوز واژه‌ای ذخیره نکرده‌ای. موقع مطالعه، کلمه‌های ناآشنا رو انتخاب کن
-          و به واژگانت اضافه‌شون کن تا اینجا هر روز برای مرور نمایش داده بشن.
+          هنوز واژه‌ای ذخیره نکرده‌ای. موقع مطالعه، کلمه‌های ناآشنا رو انتخاب کن و به واژگانت اضافه‌شون
+          کن تا اینجا هر روز برای مرور نمایش داده بشن.
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -145,10 +140,7 @@ export function DailyWordsSection({ savedWords }: { savedWords: SavedWord[] }) {
               </div>
 
               {dw.context && (
-                <p
-                  className="line-clamp-2 text-xs italic text-muted-foreground"
-                  dir="ltr"
-                >
+                <p className="line-clamp-2 text-xs italic text-muted-foreground" dir="ltr">
                   “{dw.context}”
                 </p>
               )}
@@ -169,9 +161,8 @@ export function DailyWordsSection({ savedWords }: { savedWords: SavedWord[] }) {
 
       <p className="mt-3 flex items-center gap-1 text-[11px] text-muted-foreground">
         <Sparkles className="h-3 w-3" />
-        هر روز {toPersianDigits(WORDS_PER_DAY)} کلمه از واژه‌های ذخیره‌شده‌ی خودت
-        انتخاب می‌شود.
+        هر روز {toPersianDigits(WORDS_PER_DAY)} کلمه از واژه‌های ذخیره‌شده‌ی خودت انتخاب می‌شود.
       </p>
     </section>
-  )
+  );
 }
