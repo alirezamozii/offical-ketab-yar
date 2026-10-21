@@ -668,7 +668,7 @@ export async function POST(req: NextRequest) {
       partOfSpeech,
       pos: partOfSpeech, // backwards-compat alias
       phonetic,
-      audioUrl: freeApi?.audioUrl || `/api/tts?text=${encodeURIComponent(cleanWord)}&lang=en`,
+      audioUrl: `/api/tts?text=${encodeURIComponent(cleanWord)}&lang=en`,
       definition:
         freeApi?.meanings?.[0]?.definitionEn ||
         wiktionary?.extraMeanings?.[0]?.definitionEn ||

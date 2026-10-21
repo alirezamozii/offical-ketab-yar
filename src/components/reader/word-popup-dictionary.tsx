@@ -228,7 +228,13 @@ export function useWordPopupState(
     if (!clean) return;
     setIsPlayingAudio(true);
 
+    let finished = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
     const fallbackSpeak = () => {
+      if (finished) return;
+      finished = true;
+      if (timer) clearTimeout(timer);
       try {
         window.speechSynthesis?.cancel();
         const u = new SpeechSynthesisUtterance(clean);
@@ -241,16 +247,37 @@ export function useWordPopupState(
       }
     };
 
-    const targetAudioUrl = result?.audioUrl || `/api/tts?text=${encodeURIComponent(clean)}&lang=en`;
+    const targetAudioUrl = `/api/tts?text=${encodeURIComponent(clean)}&lang=en`;
     try {
       const audio = new Audio(targetAudioUrl);
-      audio.onended = () => setIsPlayingAudio(false);
+
+      // Strict 2.5s watchdog: Never let word pronunciation hang
+      timer = setTimeout(() => {
+        if (!finished) {
+          try {
+            audio.pause();
+            audio.removeAttribute('src');
+            audio.load();
+          } catch {}
+          fallbackSpeak();
+        }
+      }, 2500);
+
+      audio.onplay = () => {
+        finished = true;
+        if (timer) clearTimeout(timer);
+      };
+      audio.onended = () => {
+        finished = true;
+        if (timer) clearTimeout(timer);
+        setIsPlayingAudio(false);
+      };
       audio.onerror = () => fallbackSpeak();
       audio.play().catch(() => fallbackSpeak());
     } catch {
       fallbackSpeak();
     }
-  }, [word, result]);
+  }, [word]);
 
   const addToVocab = useCallback(() => {
     if (!result) return;
