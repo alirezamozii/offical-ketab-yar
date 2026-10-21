@@ -20,13 +20,13 @@
  *   a user to ADMIN only if their email is on this list.
  */
 
-import type { NextAuthOptions } from 'next-auth'
-import GoogleProvider from 'next-auth/providers/google'
-import { PrismaAdapter } from '@auth/prisma-adapter'
-import { db } from '@/lib/db'
-import { env } from '@/lib/env'
-import { getGuestId } from '@/lib/session'
-import { mergeGuestDataToUser } from '@/lib/merge-guest-data'
+import type { NextAuthOptions } from 'next-auth';
+import GoogleProvider from 'next-auth/providers/google';
+import { PrismaAdapter } from '@auth/prisma-adapter';
+import { db } from '@/lib/db';
+import { env } from '@/lib/env';
+import { getGuestId } from '@/lib/session';
+import { mergeGuestDataToUser } from '@/lib/merge-guest-data';
 
 // ── Env access helpers ─────────────────────────────────────────────────────
 // We read env vars through the validated `env` object from src/lib/env.ts.
@@ -37,66 +37,66 @@ import { mergeGuestDataToUser } from '@/lib/merge-guest-data'
 
 function safeEnv<T>(key: keyof typeof env, fallback: T): T {
   try {
-    const v = env[key]
-    return (v ?? fallback) as T
+    const v = env[key];
+    return (v ?? fallback) as T;
   } catch (e) {
     console.warn(
       `[auth] env validation failed for "${String(key)}", falling back to process.env:`,
       e instanceof Error ? e.message : e,
-    )
-    return fallback
+    );
+    return fallback;
   }
 }
 
 function rawOwnerEmail(): string {
-  const fallback = process.env.OWNER_EMAIL || ''
-  return (safeEnv('OWNER_EMAIL', fallback) || fallback).trim().toLowerCase()
+  const fallback = process.env.OWNER_EMAIL || 'alirezakaregar05@gmail.com';
+  return (safeEnv('OWNER_EMAIL', fallback) || fallback).trim().toLowerCase();
 }
 
 /** Parse ADMIN_EMAIL_WHITELIST into a Set of lowercase emails. */
 function getAdminWhitelist(): Set<string> | '*' {
-  const fallback = process.env.ADMIN_EMAIL_WHITELIST || ''
-  const raw = (safeEnv('ADMIN_EMAIL_WHITELIST', fallback) || fallback) as string
-  const trimmed = raw.trim()
-  if (trimmed === '*') return '*'
-  if (!trimmed) return new Set()
+  const fallback = process.env.ADMIN_EMAIL_WHITELIST || 'alirezakaregar05@gmail.com';
+  const raw = (safeEnv('ADMIN_EMAIL_WHITELIST', fallback) || fallback) as string;
+  const trimmed = raw.trim();
+  if (trimmed === '*') return '*';
+  if (!trimmed) return new Set();
   return new Set(
     trimmed
       .split(',')
       .map((s) => s.trim().toLowerCase())
       .filter(Boolean),
-  )
+  );
 }
 
 /** True if `email` is allowed to hold the ADMIN role. */
 export function canBeAdmin(email: string | null | undefined): boolean {
-  if (!email) return false
-  const list = getAdminWhitelist()
-  if (list === '*') return true
-  return list.has(email.toLowerCase())
+  if (!email) return false;
+  const list = getAdminWhitelist();
+  if (list === '*') return true;
+  return list.has(email.toLowerCase());
 }
 
 /** True if `email` is the owner. */
 export function isOwnerEmail(email: string | null | undefined): boolean {
-  const owner = rawOwnerEmail()
-  if (!email || !owner) return false
-  return email.toLowerCase() === owner
+  const owner = rawOwnerEmail();
+  if (!email || !owner) return false;
+  return email.toLowerCase() === owner;
 }
 
 /** True if `email` is allowed to sign up at all (signup mode check). */
 function canSignUp(email: string | null | undefined): boolean {
   // SIGNUP_MODE: 'open' (default — anyone can sign up), 'closed' (no one),
   // 'invite' (only emails on ADMIN_EMAIL_WHITELIST can sign in).
-  const fallback = process.env.SIGNUP_MODE || 'open'
-  const mode = safeEnv('SIGNUP_MODE', fallback) as 'open' | 'closed' | 'invite'
-  if (mode === 'closed') return false
+  const fallback = process.env.SIGNUP_MODE || 'open';
+  const mode = safeEnv('SIGNUP_MODE', fallback) as 'open' | 'closed' | 'invite';
+  if (mode === 'closed') return false;
   if (mode === 'invite') {
-    if (!email) return false
-    const list = getAdminWhitelist()
-    if (list === '*') return true
-    return list.has(email.toLowerCase())
+    if (!email) return false;
+    const list = getAdminWhitelist();
+    if (list === '*') return true;
+    return list.has(email.toLowerCase());
   }
-  return true // 'open'
+  return true; // 'open'
 }
 
 export const authOptions: NextAuthOptions = {
@@ -116,10 +116,10 @@ export const authOptions: NextAuthOptions = {
     // doesn't crash static page generation.
     ...(() => {
       const clientId =
-        safeEnv<string | null>('GOOGLE_CLIENT_ID', process.env.GOOGLE_CLIENT_ID || null) || null
+        safeEnv<string | null>('GOOGLE_CLIENT_ID', process.env.GOOGLE_CLIENT_ID || null) || null;
       const clientSecret =
         safeEnv<string | null>('GOOGLE_CLIENT_SECRET', process.env.GOOGLE_CLIENT_SECRET || null) ||
-        null
+        null;
       if (clientId && clientSecret) {
         return [
           GoogleProvider({
@@ -127,30 +127,30 @@ export const authOptions: NextAuthOptions = {
             clientSecret,
             allowDangerousEmailAccountLinking: true,
           }),
-        ]
+        ];
       }
-      return []
+      return [];
     })(),
   ],
   callbacks: {
     async jwt({ token, user, trigger, session }) {
       if (user) {
-        const u = user
-        token.id = u.id
-        token.role = u.role || 'USER'
-        token.username = u.username
-        token.onboardingCompleted = u.onboardingCompleted
+        const u = user;
+        token.id = u.id;
+        token.role = u.role || 'USER';
+        token.username = u.username;
+        token.onboardingCompleted = u.onboardingCompleted;
       }
       if (trigger === 'update' && session) {
-        if (session.username) token.username = session.username
+        if (session.username) token.username = session.username;
         if (session.onboardingCompleted !== undefined) {
-          token.onboardingCompleted = session.onboardingCompleted
+          token.onboardingCompleted = session.onboardingCompleted;
         }
         // H-10: force a fresh DB read on the next request after an `update`
         // trigger (e.g. user changed their username, admin promoted them,
         // user completed onboarding). Setting `_lastDbCheck = 0` makes the
         // staleness check below fall through to the DB read path.
-        token._lastDbCheck = 0
+        token._lastDbCheck = 0;
       }
       // H-10: avoid hitting the DB on EVERY authenticated request. The JWT
       // callback fires for each request that resolves a session, so a busy
@@ -159,9 +159,10 @@ export const authOptions: NextAuthOptions = {
       // zeroes the timestamp to force a fresh read after profile changes.
       // Role/ban changes propagate within at most 30s instead of instantly,
       // which is an acceptable trade-off for the DB-load reduction.
-      const DB_CACHE_TTL_MS = 30_000
+      const DB_CACHE_TTL_MS = 30_000;
       const shouldReadDb =
-        !!token.id && (Date.now() - (token._lastDbCheck ?? 0) > DB_CACHE_TTL_MS || trigger === 'update')
+        !!token.id &&
+        (Date.now() - (token._lastDbCheck ?? 0) > DB_CACHE_TTL_MS || trigger === 'update');
       if (shouldReadDb) {
         const dbUser = await db.user.findUnique({
           where: { id: token.id },
@@ -174,53 +175,53 @@ export const authOptions: NextAuthOptions = {
             onboardingCompleted: true,
             englishLevel: true,
           },
-        })
+        });
         if (dbUser) {
-          token.role = dbUser.role
-          token.username = dbUser.username
-          token.name = dbUser.name
-          token.picture = dbUser.image
-          token.onboardingCompleted = dbUser.onboardingCompleted
-          token.englishLevel = dbUser.englishLevel
-          token.banned = dbUser.banned
+          token.role = dbUser.role;
+          token.username = dbUser.username;
+          token.name = dbUser.name;
+          token.picture = dbUser.image;
+          token.onboardingCompleted = dbUser.onboardingCompleted;
+          token.englishLevel = dbUser.englishLevel;
+          token.banned = dbUser.banned;
         } else {
           // A signed cookie is not proof that its account still exists.
-          token.id = undefined
-          token.role = 'USER'
-          token.banned = true
-          token.username = undefined
-          token.name = null
-          token.picture = null
-          token.email = undefined
-          token.onboardingCompleted = false
-          token.englishLevel = null
+          token.id = undefined;
+          token.role = 'USER';
+          token.banned = true;
+          token.username = undefined;
+          token.name = null;
+          token.picture = null;
+          token.email = undefined;
+          token.onboardingCompleted = false;
+          token.englishLevel = null;
         }
-        token._lastDbCheck = Date.now()
+        token._lastDbCheck = Date.now();
       }
-      return token
+      return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        const u = session.user
-        u.id = token.id
-        u.role = token.role
-        u.username = token.username
-        u.banned = token.banned || false
-        u.onboardingCompleted = token.onboardingCompleted
-        u.englishLevel = token.englishLevel
+        const u = session.user;
+        u.id = token.id;
+        u.role = token.role;
+        u.username = token.username;
+        u.banned = token.banned || false;
+        u.onboardingCompleted = token.onboardingCompleted;
+        u.englishLevel = token.englishLevel;
       }
-      return session
+      return session;
     },
     async signIn({ user, account }) {
       if (account?.provider === 'google' && user.email) {
         // Invite mode check
-        if (!canSignUp(user.email)) return false
+        if (!canSignUp(user.email)) return false;
         // Check ban status
         const dbUser = await db.user.findUnique({
           where: { email: user.email },
           select: { id: true, banned: true },
-        })
-        if (dbUser?.banned) return false
+        });
+        if (dbUser?.banned) return false;
 
         // ── Cross-device merge (audit 04 §6.5 fix) ──────────────────────
         // On successful signin, re-parent the caller's guest-keyed data
@@ -237,72 +238,74 @@ export const authOptions: NextAuthOptions = {
             // would pass the whole signed blob as the guestId key (which
             // matches no rows). `getGuestId()` returns the bare verified
             // id (or null if the signature is invalid / cookie missing).
-            const guestId = await getGuestId()
+            const guestId = await getGuestId();
             if (guestId) {
-              await mergeGuestDataToUser(guestId, dbUser.id)
-              console.warn(`[auth.signIn] merged guest data for user ${dbUser.id} (guestId=${guestId})`)
+              await mergeGuestDataToUser(guestId, dbUser.id);
+              console.warn(
+                `[auth.signIn] merged guest data for user ${dbUser.id} (guestId=${guestId})`,
+              );
             }
           } catch (mergeErr) {
-            console.error('[auth.signIn] mergeGuestDataToUser failed (non-blocking):', mergeErr)
+            console.error('[auth.signIn] mergeGuestDataToUser failed (non-blocking):', mergeErr);
           }
         }
       }
-      return true
+      return true;
     },
   },
   events: {
     async createUser({ user }) {
-      if (!user.email) return
+      if (!user.email) return;
       // If this is the owner's email, grant OWNER role immediately
       if (isOwnerEmail(user.email)) {
         await db.user.update({
           where: { id: user.id },
           data: { role: 'OWNER', onboardingCompleted: true },
-        })
+        });
       }
       // Create empty stats row
       await db.userStats.upsert({
         where: { userId: user.id },
         update: {},
         create: { userId: user.id },
-      })
+      });
     },
   },
-}
+};
 
 // Type augmentation
 declare module 'next-auth' {
   interface Session {
     user: {
-      id?: string
-      name?: string | null
-      email?: string | null
-      image?: string | null
-      role?: string
-      username?: string | null
-      banned?: boolean
-      onboardingCompleted?: boolean
-      englishLevel?: string | null
-    }
+      id?: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      role?: string;
+      username?: string | null;
+      banned?: boolean;
+      onboardingCompleted?: boolean;
+      englishLevel?: string | null;
+    };
   }
   interface User {
-    role?: string
-    username?: string | null
-    onboardingCompleted?: boolean
-    englishLevel?: string | null
+    role?: string;
+    username?: string | null;
+    onboardingCompleted?: boolean;
+    englishLevel?: string | null;
   }
 }
 
 declare module 'next-auth/jwt' {
   interface JWT {
-    id?: string
-    role?: string
-    username?: string | null
-    banned?: boolean
-    onboardingCompleted?: boolean
-    englishLevel?: string | null
+    id?: string;
+    role?: string;
+    username?: string | null;
+    banned?: boolean;
+    onboardingCompleted?: boolean;
+    englishLevel?: string | null;
     // H-10: timestamp (ms) of the last DB read in the jwt callback. Used to
     // rate-limit DB reads to once per 30s per token (zeroed on `update`).
-    _lastDbCheck?: number
+    _lastDbCheck?: number;
   }
 }

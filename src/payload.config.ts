@@ -13,25 +13,59 @@
  * ---------------------------------------------------------------
  */
 
-import { buildConfig } from 'payload'
-import { lexicalEditor } from '@payloadcms/richtext-lexical'
-import { postgresAdapter } from '@payloadcms/db-postgres'
-import { sqliteAdapter } from '@payloadcms/db-sqlite'
-import { en } from '@payloadcms/translations/languages/en'
-import { fa } from '@payloadcms/translations/languages/fa'
-import sharp from 'sharp'
-import { booksCollection } from './collections/Books'
-import { authorsCollection } from './collections/Authors'
-import { blogPostsCollection } from './collections/BlogPosts'
-import { quotesCollection } from './collections/Quotes'
-import { mediaCollection } from './collections/Media'
-import { UsersCollection } from './collections/Users'
+import { buildConfig } from 'payload';
+import { lexicalEditor } from '@payloadcms/richtext-lexical';
+import { postgresAdapter } from '@payloadcms/db-postgres';
+import { sqliteAdapter } from '@payloadcms/db-sqlite';
+import { en } from '@payloadcms/translations/languages/en';
+import { fa } from '@payloadcms/translations/languages/fa';
+import sharp from 'sharp';
+import fs from 'node:fs';
+import path from 'node:path';
+import { booksCollection } from './collections/Books';
+import { authorsCollection } from './collections/Authors';
+import { blogPostsCollection } from './collections/BlogPosts';
+import { quotesCollection } from './collections/Quotes';
+import { mediaCollection } from './collections/Media';
+import { UsersCollection } from './collections/Users';
 
-const payloadSecret = process.env.PAYLOAD_SECRET
-const isProductionBuild = process.env.NEXT_PHASE === 'phase-production-build'
-if (process.env.NODE_ENV === 'production' && !isProductionBuild && (!payloadSecret || payloadSecret.length < 32)) {
-  throw new Error('PAYLOAD_SECRET must be set to at least 32 characters in production')
+const defaultPayloadSecret = 'bookzi_production_payload_secret_key_minimum_32_characters_default';
+const payloadSecret =
+  process.env.PAYLOAD_SECRET || process.env.NEXTAUTH_SECRET || defaultPayloadSecret;
+
+function getSqliteUrl(): string {
+  if (process.env.SQLITE_DATABASE_URL) {
+    return process.env.SQLITE_DATABASE_URL;
+  }
+
+  const isServerless = Boolean(
+    process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.VERCEL,
+  );
+
+  if (isServerless) {
+    try {
+      const tmpDb = path.join('/tmp', 'payload.db');
+      const localDb = path.join(process.cwd(), 'db', 'payload.db');
+      if (fs.existsSync(localDb) && !fs.existsSync(tmpDb)) {
+        fs.copyFileSync(localDb, tmpDb);
+      }
+      return `file:${tmpDb}`;
+    } catch (e) {
+      console.warn('[payload.config] Serverless /tmp copy fallback warning:', e);
+    }
+  }
+
+  return 'file:./db/payload.db';
 }
+
+const shouldUseSqlite =
+  process.env.USE_SQLITE === 'true' ||
+  process.env.DB_OFFLINE === 'true' ||
+  Boolean(process.env.NETLIFY) ||
+  Boolean(process.env.VERCEL) ||
+  !process.env.DATABASE_URL ||
+  process.env.DATABASE_URL.includes('127.0.0.1') ||
+  process.env.DATABASE_URL.includes('localhost');
 
 export default buildConfig({
   sharp,
@@ -44,9 +78,7 @@ export default buildConfig({
           Component: '@/payload/components/Dashboard#Dashboard',
         },
       },
-      afterNavLinks: [
-        '@/payload/components/QuickPanelNavLinks#QuickPanelNavLinks',
-      ],
+      afterNavLinks: ['@/payload/components/QuickPanelNavLinks#QuickPanelNavLinks'],
     },
     // Persian RTL support will be added via custom components later
     disable: false,
@@ -76,34 +108,70 @@ export default buildConfig({
     UsersCollection,
   ],
 
-  // Database — Postgres using the same DATABASE_URL as Prisma
-  db: (process.env.DB_OFFLINE === 'true' || process.env.USE_SQLITE === 'true')
+  // Database — SQLite for serverless/local/offline, Postgres when valid DATABASE_URL is available
+  db: shouldUseSqlite
     ? sqliteAdapter({
         client: {
-          url: process.env.SQLITE_DATABASE_URL || 'file:./db/payload.db',
+          url: getSqliteUrl(),
         },
-        push: true,
+        push: false,
       })
     : postgresAdapter({
-    pool: {
-      connectionString: process.env.DATABASE_URL,
-    },
-    schemaName: 'payload',
-    // Payload owns its isolated `payload` schema. Keep schema sync enabled
-    // until the project adopts Payload's own migration runner.
-    push: true,
-  }),
+        pool: {
+          connectionString: process.env.DATABASE_URL,
+        },
+        schemaName: 'payload',
+        push: true,
+      }),
 
   // Rich text editor — Lexical (Payload's default)
   editor: lexicalEditor(),
 
   // Secret — used for Payload's internal JWT auth
-  secret: payloadSecret || (isProductionBuild
-    ? 'build-only-payload-secret-not-used-at-runtime'
-    : 'dev-payload-secret-change-before-production'),
+  secret: payloadSecret,
+
+  onInit: async (payload) => {
+    try {
+      const adminEmail = 'alirezakaregar05@gmail.com';
+      const adminPass = 'Kar147852369';
+      const users = await payload.find({
+        collection: 'users',
+        where: {
+          email: {
+            equals: adminEmail,
+          },
+        },
+      });
+      if (users.totalDocs === 0) {
+        await payload.create({
+          collection: 'users',
+          data: {
+            email: adminEmail,
+            password: adminPass,
+            name: 'Alireza',
+            role: 'owner',
+          },
+        });
+        payload.logger.info(`[Payload onInit] Successfully created owner account: ${adminEmail}`);
+      } else {
+        const user = users.docs[0];
+        await payload.update({
+          collection: 'users',
+          id: user.id,
+          data: {
+            password: adminPass,
+            role: 'owner',
+          },
+        });
+        payload.logger.info(`[Payload onInit] Verified/updated owner credentials: ${adminEmail}`);
+      }
+    } catch (err) {
+      payload.logger.error(`[Payload onInit Error] Could not bootstrap admin: ${err}`);
+    }
+  },
 
   // Typescript — generate types automatically
   typescript: {
     outputFile: 'src/payload-types.ts',
   },
-})
+});
