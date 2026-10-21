@@ -42,16 +42,34 @@ function getSqliteUrl(): string {
     process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.VERCEL,
   );
 
+  const tmpDbPath = path.join('/tmp', 'payload.db');
+
   if (isServerless) {
     try {
-      const tmpDb = path.join('/tmp', 'payload.db');
-      const localDb = path.join(process.cwd(), 'db', 'payload.db');
-      if (fs.existsSync(localDb) && !fs.existsSync(tmpDb)) {
-        fs.copyFileSync(localDb, tmpDb);
+      const candidates = [
+        path.join(process.cwd(), 'db', 'payload.db'),
+        path.resolve('db/payload.db'),
+        path.join('/var/task', 'db', 'payload.db'),
+        path.join(__dirname, '..', '..', 'db', 'payload.db'),
+      ];
+
+      let foundSource: string | null = null;
+      for (const cand of candidates) {
+        if (fs.existsSync(cand)) {
+          foundSource = cand;
+          break;
+        }
       }
-      return `file:${tmpDb}`;
+
+      if (foundSource) {
+        if (!fs.existsSync(tmpDbPath) || fs.statSync(tmpDbPath).size === 0) {
+          fs.copyFileSync(foundSource, tmpDbPath);
+        }
+      }
+      return `file:${tmpDbPath}`;
     } catch (e) {
       console.warn('[payload.config] Serverless /tmp copy fallback warning:', e);
+      return `file:${tmpDbPath}`;
     }
   }
 
@@ -114,7 +132,7 @@ export default buildConfig({
         client: {
           url: getSqliteUrl(),
         },
-        push: false,
+        push: true,
       })
     : postgresAdapter({
         pool: {

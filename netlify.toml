@@ -5,3 +5,8 @@
 [build.environment]
   NODE_VERSION = "20"
   USE_SQLITE = "true"
+  DB_OFFLINE = "true"
+  PAYLOAD_SECRET = "bookzi_production_payload_secret_key_minimum_32_characters_default"
+
+[functions]
+  included_files = ["db/**"]

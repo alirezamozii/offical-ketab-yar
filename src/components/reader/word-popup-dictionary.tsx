@@ -247,11 +247,11 @@ export function useWordPopupState(
       }
     };
 
-    const targetAudioUrl = `/api/tts?text=${encodeURIComponent(clean)}&lang=en`;
+    const targetAudioUrl = result?.audioUrl || `/api/tts?text=${encodeURIComponent(clean)}&lang=en`;
     try {
       const audio = new Audio(targetAudioUrl);
 
-      // Strict 2.5s watchdog: Never let word pronunciation hang
+      // 4s watchdog: Never let word pronunciation hang indefinitely
       timer = setTimeout(() => {
         if (!finished) {
           try {
@@ -261,7 +261,7 @@ export function useWordPopupState(
           } catch {}
           fallbackSpeak();
         }
-      }, 2500);
+      }, 4000);
 
       audio.onplay = () => {
         finished = true;
@@ -277,7 +277,7 @@ export function useWordPopupState(
     } catch {
       fallbackSpeak();
     }
-  }, [word]);
+  }, [word, result?.audioUrl]);
 
   const addToVocab = useCallback(() => {
     if (!result) return;

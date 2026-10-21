@@ -1,9 +1,9 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client';
 
 const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-  dbOfflineUntil?: number
-}
+  prisma: PrismaClient | undefined;
+  dbOfflineUntil?: number;
+};
 
 /**
  * Prisma client singleton.
@@ -32,32 +32,41 @@ const globalForPrisma = globalThis as unknown as {
  * short-lived clients.
  */
 function getDb(): PrismaClient {
-  const cached = globalForPrisma.prisma
-  if (cached && 'userStats' in cached) return cached
-  const client = new PrismaClient({ log: ['error', 'warn'] })
-  if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = client
+  const cached = globalForPrisma.prisma;
+  if (cached && 'userStats' in cached) return cached;
+  const client = new PrismaClient({ log: ['error', 'warn'] });
+  if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = client;
 
-  return client
+  return client;
 }
 
-export const db = getDb()
+export const db = getDb();
 
 export function isDbOffline(): boolean {
-  if (process.env.DB_OFFLINE === 'true' || process.env.DB_OFFLINE === '1') {
-    return true
+  if (
+    process.env.DB_OFFLINE === 'true' ||
+    process.env.DB_OFFLINE === '1' ||
+    process.env.USE_SQLITE === 'true' ||
+    Boolean(process.env.NETLIFY) ||
+    Boolean(process.env.VERCEL) ||
+    !process.env.DATABASE_URL ||
+    process.env.DATABASE_URL.includes('127.0.0.1') ||
+    process.env.DATABASE_URL.includes('localhost')
+  ) {
+    return true;
   }
   return (
     typeof globalForPrisma.dbOfflineUntil === 'number' &&
     Date.now() < globalForPrisma.dbOfflineUntil
-  )
+  );
 }
 
 export function tripDbOffline(cooldownMs = 30000) {
-  globalForPrisma.dbOfflineUntil = Date.now() + cooldownMs
+  globalForPrisma.dbOfflineUntil = Date.now() + cooldownMs;
 }
 
 export function resetDbOffline() {
-  globalForPrisma.dbOfflineUntil = 0
+  globalForPrisma.dbOfflineUntil = 0;
 }
 
 export async function safeQuery<T>(
@@ -66,42 +75,42 @@ export async function safeQuery<T>(
   timeoutMs = 2000,
 ): Promise<T> {
   if (isDbOffline()) {
-    return fallback
+    return fallback;
   }
 
-  let timer: NodeJS.Timeout | undefined
+  let timer: NodeJS.Timeout | undefined;
   const timeout = new Promise<T>((resolve) => {
     timer = setTimeout(() => {
-      tripDbOffline(15000)
-      resolve(fallback)
-    }, timeoutMs)
-  })
+      tripDbOffline(15000);
+      resolve(fallback);
+    }, timeoutMs);
+  });
 
   try {
     const queryPromise = queryFn()
       .then((res) => {
-        resetDbOffline()
-        return res
+        resetDbOffline();
+        return res;
       })
       .catch((err: unknown) => {
-        const msg = (err as { message?: string })?.message || ''
-        const code = (err as { code?: string })?.code || ''
+        const msg = (err as { message?: string })?.message || '';
+        const code = (err as { code?: string })?.code || '';
         if (code === 'P1001' || msg.includes("Can't reach database server")) {
-          tripDbOffline(30000)
+          tripDbOffline(30000);
         }
-        return fallback
-      })
+        return fallback;
+      });
 
-    const result = await Promise.race([queryPromise, timeout])
-    return result
+    const result = await Promise.race([queryPromise, timeout]);
+    return result;
   } catch (err: unknown) {
-    const msg = (err as { message?: string })?.message || ''
-    const code = (err as { code?: string })?.code || ''
+    const msg = (err as { message?: string })?.message || '';
+    const code = (err as { code?: string })?.code || '';
     if (code === 'P1001' || msg.includes("Can't reach database server")) {
-      tripDbOffline(30000)
+      tripDbOffline(30000);
     }
-    return fallback
+    return fallback;
   } finally {
-    if (timer) clearTimeout(timer)
+    if (timer) clearTimeout(timer);
   }
 }

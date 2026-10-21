@@ -1692,10 +1692,10 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
         self.location.hostname.endsWith('.space-z.ai') ||
         self.location.hostname.endsWith('.preview.z.ai')),
     Dt = [
-      { url: '/', revision: '47e2825d89ee34bb' },
-      { url: '/manifest.json', revision: '47e2825d89ee34bb' },
-      { url: '/icons/icon-192.png', revision: '47e2825d89ee34bb' },
-      { url: '/icons/icon-512.png', revision: '47e2825d89ee34bb' },
+      { url: '/', revision: '3ee690af846e9ede' },
+      { url: '/manifest.json', revision: '3ee690af846e9ede' },
+      { url: '/icons/icon-192.png', revision: '3ee690af846e9ede' },
+      { url: '/icons/icon-512.png', revision: '3ee690af846e9ede' },
     ],
     St = ({ url: e, request: t }) =>
       e.origin !== self.location.origin

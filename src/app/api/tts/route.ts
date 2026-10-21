@@ -425,21 +425,26 @@ async function generateWithZai(
   speed: number,
 ): Promise<Buffer | null> {
   try {
-    const zai = await getZai();
-    const voice = lang === 'fa' ? 'tongtong' : 'jam';
+    const zaiPromise = (async () => {
+      const zai = await getZai();
+      const voice = lang === 'fa' ? 'tongtong' : 'jam';
 
-    const response = await zai.audio.tts.create({
-      input: text,
-      voice,
-      speed,
-      response_format: 'wav',
-      stream: false,
-    });
+      const response = await zai.audio.tts.create({
+        input: text,
+        voice,
+        speed,
+        response_format: 'wav',
+        stream: false,
+      });
 
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(new Uint8Array(arrayBuffer));
-    if (!buffer || buffer.length === 0) return null;
-    return buffer;
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(new Uint8Array(arrayBuffer));
+      if (!buffer || buffer.length === 0) return null;
+      return buffer;
+    })();
+
+    const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3500));
+    return await Promise.race([zaiPromise, timeoutPromise]);
   } catch (err) {
     console.error('[tts] z-ai fallback failed:', err);
     return null;
@@ -464,7 +469,7 @@ async function synthesizeAudio(
   if (cached) return cached;
 
   // 1. Python Edge TTS (highest quality, v2 Sec-MS-GEC support)
-  const pyTimeout = isShort ? 4500 : 9000;
+  const pyTimeout = isShort ? 6500 : 9000;
   const pyResult = await generateWithPythonEdgeTTS(text, voice, speed, pyTimeout);
   if (pyResult && pyResult.buffer.length > 0) {
     const entry: CachedAudioEntry = {
