@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 /**
  * SentenceGameClient — "جمله‌سازی" (sentence building) game mode.
@@ -20,34 +20,29 @@
  *   hard   ≤ 12 tokens, 30s
  */
 
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { AlignLeft, Check, Delete, X } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { toast } from 'sonner'
-import {
-  GameEmpty,
-  GameLoading,
-} from '@/components/vocabulary/game-states'
-import { GameIntro } from '@/components/vocabulary/game-intro'
-import { GameResult } from '@/components/vocabulary/game-result'
-import { useVocabSounds } from '@/components/vocabulary/use-vocab-sounds'
-import { recordVocabReview } from '@/components/vocabulary/use-vocab-activity'
-import { useSrs } from '@/hooks/reader/use-srs'
-import { postXP } from '@/lib/xp-events'
-import {
-  shuffle,
-  type VocabWord,
-} from '@/components/vocabulary/game-utils'
-import type { Difficulty } from '@/hooks/reader/use-vocab-game'
-import { Button } from '@/components/ui/button'
-import { STORAGE_KEYS } from '@/lib/storage-keys'
-import { cn } from '@/lib/utils'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AlignLeft, Check, Delete, Volume2, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTTSOrStandalone } from '@/hooks/tts-provider';
+import { toast } from 'sonner';
+import { GameEmpty, GameLoading } from '@/components/vocabulary/game-states';
+import { GameIntro } from '@/components/vocabulary/game-intro';
+import { GameResult } from '@/components/vocabulary/game-result';
+import { useVocabSounds } from '@/components/vocabulary/use-vocab-sounds';
+import { recordVocabReview } from '@/components/vocabulary/use-vocab-activity';
+import { useSrs } from '@/hooks/reader/use-srs';
+import { postXP } from '@/lib/xp-events';
+import { shuffle, type VocabWord } from '@/components/vocabulary/game-utils';
+import type { Difficulty } from '@/hooks/reader/use-vocab-game';
+import { Button } from '@/components/ui/button';
+import { STORAGE_KEYS } from '@/lib/storage-keys';
+import { cn } from '@/lib/utils';
 
 interface SentenceQuestion {
-  word: VocabWord // for SRS tracking
-  sentence: string // the target English sentence
-  translation: string // the Persian prompt (word.translation)
-  tokens: string[] // split + cleaned tokens of `sentence`
+  word: VocabWord; // for SRS tracking
+  sentence: string; // the target English sentence
+  translation: string; // the Persian prompt (word.translation)
+  tokens: string[]; // split + cleaned tokens of `sentence`
 }
 
 const DIFFICULTY_CONFIG: Record<
@@ -57,36 +52,33 @@ const DIFFICULTY_CONFIG: Record<
   easy: { maxTokens: 6, seconds: 40, xpPerCorrect: 25 },
   medium: { maxTokens: 8, seconds: 35, xpPerCorrect: 35 },
   hard: { maxTokens: 12, seconds: 30, xpPerCorrect: 50 },
-}
+};
 
-const MAX_HEARTS = 3
-const QUESTIONS_PER_GAME = 5
-const PREFS_KEY = `${STORAGE_KEYS.vocabGamePrefs}:sentence`
+const MAX_HEARTS = 3;
+const QUESTIONS_PER_GAME = 5;
+const PREFS_KEY = `${STORAGE_KEYS.vocabGamePrefs}:sentence`;
 
 function loadPrefs(): { difficulty: Difficulty; soundEnabled: boolean } {
-  if (typeof window === 'undefined')
-    return { difficulty: 'medium', soundEnabled: true }
+  if (typeof window === 'undefined') return { difficulty: 'medium', soundEnabled: true };
   try {
-    const raw = localStorage.getItem(PREFS_KEY)
-    if (!raw) return { difficulty: 'medium', soundEnabled: true }
-    const v = JSON.parse(raw)
+    const raw = localStorage.getItem(PREFS_KEY);
+    if (!raw) return { difficulty: 'medium', soundEnabled: true };
+    const v = JSON.parse(raw);
     return {
       difficulty:
-        v?.difficulty === 'easy' ||
-        v?.difficulty === 'medium' ||
-        v?.difficulty === 'hard'
+        v?.difficulty === 'easy' || v?.difficulty === 'medium' || v?.difficulty === 'hard'
           ? v.difficulty
           : 'medium',
       soundEnabled: typeof v?.soundEnabled === 'boolean' ? v.soundEnabled : true,
-    }
+    };
   } catch {
-    return { difficulty: 'medium', soundEnabled: true }
+    return { difficulty: 'medium', soundEnabled: true };
   }
 }
 
 function savePrefs(p: { difficulty: Difficulty; soundEnabled: boolean }) {
   try {
-    localStorage.setItem(PREFS_KEY, JSON.stringify(p))
+    localStorage.setItem(PREFS_KEY, JSON.stringify(p));
   } catch {}
 }
 
@@ -96,146 +88,144 @@ function tokenize(s: string): string[] {
     .replace(/['".,!?;:()[]{}—–-]/g, ' ')
     .split(/\s+/)
     .map((t) => t.trim())
-    .filter((t) => t.length > 0)
+    .filter((t) => t.length > 0);
 }
 
 /** Reconstruct the normalised sentence from tokens for comparison. */
 function joinTokens(tokens: string[]): string {
-  return tokens.map((t) => t.toLowerCase()).join(' ')
+  return tokens.map((t) => t.toLowerCase()).join(' ');
 }
 
-function buildQuestions(
-  words: VocabWord[],
-  difficulty: Difficulty,
-): SentenceQuestion[] {
-  const cfg = DIFFICULTY_CONFIG[difficulty]
+function buildQuestions(words: VocabWord[], difficulty: Difficulty): SentenceQuestion[] {
+  const cfg = DIFFICULTY_CONFIG[difficulty];
   const eligible = words.filter((w) => {
-    if (!w.context || !w.context.trim()) return false
-    const tokens = tokenize(w.context)
-    return tokens.length >= 4 && tokens.length <= cfg.maxTokens
-  })
-  if (eligible.length < 3) return []
-  const pool = shuffle(eligible)
-  const count = Math.min(QUESTIONS_PER_GAME, pool.length)
+    if (!w.context || !w.context.trim()) return false;
+    const tokens = tokenize(w.context);
+    return tokens.length >= 4 && tokens.length <= cfg.maxTokens;
+  });
+  if (eligible.length < 3) return [];
+  const pool = shuffle(eligible);
+  const count = Math.min(QUESTIONS_PER_GAME, pool.length);
   return pool.slice(0, count).map((w) => {
     // We've already filtered out words without a non-empty context.
-    const ctx = (w.context ?? '').trim()
-    const tokens = tokenize(ctx)
+    const ctx = (w.context ?? '').trim();
+    const tokens = tokenize(ctx);
     return {
       word: w,
       sentence: ctx,
       translation: w.translation || '(بدون ترجمه)',
       tokens,
-    }
-  })
+    };
+  });
 }
 
 // fallow-ignore-next-line complexity
 export function SentenceGameClient() {
-  const srs = useSrs()
-  const sound = useVocabSounds()
-  const reduceMotion = useReducedMotion()
+  const srs = useSrs();
+  const sound = useVocabSounds();
+  const reduceMotion = useReducedMotion();
+  const tts = useTTSOrStandalone();
 
-  const [words, setWords] = useState<VocabWord[]>([])
-  const [loading, setLoading] = useState(true)
-  const [difficulty, setDifficultyState] = useState<Difficulty>('medium')
-  const [state, setState] = useState<'idle' | 'playing' | 'finished'>('idle')
-  const [questions, setQuestions] = useState<SentenceQuestion[]>([])
-  const [qIndex, setQIndex] = useState(0)
-  const [hearts, setHearts] = useState(MAX_HEARTS)
-  const [timeLeft, setTimeLeft] = useState(35)
-  const [score, setScore] = useState(0)
-  const [streak, setStreak] = useState(0)
-  const [, setBestStreak] = useState(0)
-  const [multiplier, setMultiplier] = useState(1)
-  const [bestMultiplier, setBestMultiplier] = useState(1)
-  const [totalXP, setTotalXP] = useState(0)
-  const [learnedCount, setLearnedCount] = useState(0)
-  const [feedback, setFeedback] = useState<'none' | 'correct' | 'wrong'>('none')
+  const [words, setWords] = useState<VocabWord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [difficulty, setDifficultyState] = useState<Difficulty>('medium');
+  const [state, setState] = useState<'idle' | 'playing' | 'finished'>('idle');
+  const [questions, setQuestions] = useState<SentenceQuestion[]>([]);
+  const [qIndex, setQIndex] = useState(0);
+  const [hearts, setHearts] = useState(MAX_HEARTS);
+  const [timeLeft, setTimeLeft] = useState(35);
+  const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [, setBestStreak] = useState(0);
+  const [multiplier, setMultiplier] = useState(1);
+  const [bestMultiplier, setBestMultiplier] = useState(1);
+  const [totalXP, setTotalXP] = useState(0);
+  const [learnedCount, setLearnedCount] = useState(0);
+  const [feedback, setFeedback] = useState<'none' | 'correct' | 'wrong'>('none');
 
   // The order the user has clicked tiles in (indexes into `shuffledTokens`).
-  const [placedOrder, setPlacedOrder] = useState<number[]>([])
+  const [placedOrder, setPlacedOrder] = useState<number[]>([]);
   // The shuffled token layout (stable per question).
-  const [shuffledTokens, setShuffledTokens] = useState<string[]>([])
+  const [shuffledTokens, setShuffledTokens] = useState<string[]>([]);
 
-  const stateRef = useRef(state)
-  const heartsRef = useRef(hearts)
-  const soundRef = useRef(sound)
-  const difficultyRef = useRef(difficulty)
-  const srsReviewRef = useRef(srs.review)
-  const feedbackRef = useRef(feedback)
-  const qIndexRef = useRef(qIndex)
-  const questionsRef = useRef(questions)
-  const placedRef = useRef(placedOrder)
-  const multiplierRef = useRef(multiplier)
-  const streakRef = useRef(streak)
-  const cfgRef = useRef(DIFFICULTY_CONFIG[difficulty])
+  const stateRef = useRef(state);
+  const heartsRef = useRef(hearts);
+  const soundRef = useRef(sound);
+  const difficultyRef = useRef(difficulty);
+  const srsReviewRef = useRef(srs.review);
+  const feedbackRef = useRef(feedback);
+  const qIndexRef = useRef(qIndex);
+  const questionsRef = useRef(questions);
+  const placedRef = useRef(placedOrder);
+  const multiplierRef = useRef(multiplier);
+  const streakRef = useRef(streak);
+  const cfgRef = useRef(DIFFICULTY_CONFIG[difficulty]);
 
   useEffect(() => {
-    stateRef.current = state
-  }, [state])
+    stateRef.current = state;
+  }, [state]);
   useEffect(() => {
-    heartsRef.current = hearts
-  }, [hearts])
+    heartsRef.current = hearts;
+  }, [hearts]);
   useEffect(() => {
-    soundRef.current = sound
-  }, [sound])
+    soundRef.current = sound;
+  }, [sound]);
   useEffect(() => {
-    difficultyRef.current = difficulty
-    cfgRef.current = DIFFICULTY_CONFIG[difficulty]
-  }, [difficulty])
+    difficultyRef.current = difficulty;
+    cfgRef.current = DIFFICULTY_CONFIG[difficulty];
+  }, [difficulty]);
   useEffect(() => {
-    srsReviewRef.current = srs.review
-  }, [srs.review])
+    srsReviewRef.current = srs.review;
+  }, [srs.review]);
   useEffect(() => {
-    feedbackRef.current = feedback
-  }, [feedback])
+    feedbackRef.current = feedback;
+  }, [feedback]);
   useEffect(() => {
-    qIndexRef.current = qIndex
-  }, [qIndex])
+    qIndexRef.current = qIndex;
+  }, [qIndex]);
   useEffect(() => {
-    questionsRef.current = questions
-  }, [questions])
+    questionsRef.current = questions;
+  }, [questions]);
   useEffect(() => {
-    placedRef.current = placedOrder
-  }, [placedOrder])
+    placedRef.current = placedOrder;
+  }, [placedOrder]);
   useEffect(() => {
-    multiplierRef.current = multiplier
-  }, [multiplier])
+    multiplierRef.current = multiplier;
+  }, [multiplier]);
   useEffect(() => {
-    streakRef.current = streak
-  }, [streak])
+    streakRef.current = streak;
+  }, [streak]);
 
   // Load prefs + words on mount.
   useEffect(() => {
-    const p = loadPrefs()
-    setDifficultyState(p.difficulty)
+    const p = loadPrefs();
+    setDifficultyState(p.difficulty);
     fetch('/api/vocabulary')
       .then((r) => (r.ok ? r.json() : []))
       .then((d: VocabWord[]) => setWords(d))
       .catch(() => setWords([]))
-      .finally(() => setLoading(false))
-  }, [])
+      .finally(() => setLoading(false));
+  }, []);
 
-  const cfg = DIFFICULTY_CONFIG[difficulty]
+  const cfg = DIFFICULTY_CONFIG[difficulty];
 
   const hasEnoughWords = useMemo(() => {
     return (
       words.filter((w) => {
-        if (!w.context || !w.context.trim()) return false
-        const tokens = tokenize(w.context)
-        return tokens.length >= 4 && tokens.length <= cfg.maxTokens
+        if (!w.context || !w.context.trim()) return false;
+        const tokens = tokenize(w.context);
+        return tokens.length >= 4 && tokens.length <= cfg.maxTokens;
       }).length >= 3
-    )
-  }, [words, cfg])
+    );
+  }, [words, cfg]);
 
   const setDifficulty = useCallback((d: Difficulty) => {
-    setDifficultyState(d)
-    savePrefs({ difficulty: d, soundEnabled: soundRef.current.enabled })
-  }, [])
+    setDifficultyState(d);
+    savePrefs({ difficulty: d, soundEnabled: soundRef.current.enabled });
+  }, []);
 
   const finishGame = useCallback(() => {
-    setState('finished')
+    setState('finished');
     if (totalXP > 0) {
       postXP({
         pagesRead: 0,
@@ -243,144 +233,144 @@ export function SentenceGameClient() {
         bookLevel: 'beginner',
         isFirstReadToday: false,
         vocabGameXP: totalXP,
-      }).catch(() => {})
+      }).catch(() => {});
     }
-    soundRef.current.play('gameover')
-  }, [totalXP])
+    soundRef.current.play('gameover');
+  }, [totalXP]);
 
-  const current = questions[qIndex]
+  const current = questions[qIndex];
 
   const loadQuestion = useCallback((q: SentenceQuestion) => {
     // Shuffle the tokens for display. Keep the original `q.tokens` for
     // answer-checking.
-    setShuffledTokens(shuffle(q.tokens))
-    setPlacedOrder([])
-    setFeedback('none')
-    setTimeLeft(cfgRef.current.seconds)
-  }, [])
+    setShuffledTokens(shuffle(q.tokens));
+    setPlacedOrder([]);
+    setFeedback('none');
+    setTimeLeft(cfgRef.current.seconds);
+  }, []);
 
   const startGame = useCallback(() => {
-    const qs = buildQuestions(words, difficulty)
+    const qs = buildQuestions(words, difficulty);
     if (qs.length === 0) {
-      toast.error('جمله‌های کافی نیست — هنگام مطالعه کلمات را ذخیره کنید')
-      return
+      toast.error('جمله‌های کافی نیست — هنگام مطالعه کلمات را ذخیره کنید');
+      return;
     }
-    setQuestions(qs)
-    setQIndex(0)
-    setHearts(MAX_HEARTS)
-    setScore(0)
-    setStreak(0)
-    setBestStreak(0)
-    setMultiplier(1)
-    setBestMultiplier(1)
-    setTotalXP(0)
-    setLearnedCount(0)
-    setFeedback('none')
-    setState('playing')
-    loadQuestion(qs[0])
-  }, [words, difficulty, loadQuestion])
+    setQuestions(qs);
+    setQIndex(0);
+    setHearts(MAX_HEARTS);
+    setScore(0);
+    setStreak(0);
+    setBestStreak(0);
+    setMultiplier(1);
+    setBestMultiplier(1);
+    setTotalXP(0);
+    setLearnedCount(0);
+    setFeedback('none');
+    setState('playing');
+    loadQuestion(qs[0]);
+  }, [words, difficulty, loadQuestion]);
 
   // Countdown timer.
   useEffect(() => {
-    if (state !== 'playing' || feedback !== 'none') return
+    if (state !== 'playing' || feedback !== 'none') return;
     const id = setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) {
-          return 0
+          return 0;
         }
-        if (t <= 3) soundRef.current.play('tick')
-        return t - 1
-      })
-    }, 1000)
-    return () => clearInterval(id)
-  }, [state, feedback, qIndex])
+        if (t <= 3) soundRef.current.play('tick');
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [state, feedback, qIndex]);
 
   // Advance to next question, or finish if there are no more.
   const advanceOrFinish = useCallback(() => {
     if (qIndexRef.current + 1 >= questionsRef.current.length) {
-      finishGame()
-      return
+      finishGame();
+      return;
     }
-    const ni = qIndexRef.current + 1
-    setQIndex(ni)
-    loadQuestion(questionsRef.current[ni])
-  }, [finishGame, loadQuestion])
+    const ni = qIndexRef.current + 1;
+    setQIndex(ni);
+    loadQuestion(questionsRef.current[ni]);
+  }, [finishGame, loadQuestion]);
 
   // Timeout: count as wrong + advance.
   useEffect(() => {
-    if (state !== 'playing' || feedback !== 'none') return
-    if (timeLeft > 0) return
+    if (state !== 'playing' || feedback !== 'none') return;
+    if (timeLeft > 0) return;
     // Time's up — mark wrong (no SRS review on timeout).
-    setFeedback('wrong')
-    setStreak(0)
-    setMultiplier(1)
-    setHearts((h) => Math.max(0, h - 1))
-    soundRef.current.play('timeout')
-    recordVocabReview(1)
-    const id = setTimeout(() => advanceOrFinish(), 1800)
-    return () => clearTimeout(id)
-  }, [timeLeft, state, feedback, advanceOrFinish])
+    setFeedback('wrong');
+    setStreak(0);
+    setMultiplier(1);
+    setHearts((h) => Math.max(0, h - 1));
+    soundRef.current.play('timeout');
+    recordVocabReview(1);
+    const id = setTimeout(() => advanceOrFinish(), 1800);
+    return () => clearTimeout(id);
+  }, [timeLeft, state, feedback, advanceOrFinish]);
 
   // End game when hearts hit 0.
   useEffect(() => {
-    if (state !== 'playing') return
+    if (state !== 'playing') return;
     if (hearts <= 0 && feedback === 'none') {
-      finishGame()
+      finishGame();
     }
-  }, [hearts, state, feedback, finishGame])
+  }, [hearts, state, feedback, finishGame]);
 
   function clickTile(tileIdx: number) {
-    if (feedback !== 'none') return
-    if (placedOrder.includes(tileIdx)) return
-    setPlacedOrder((prev) => [...prev, tileIdx])
+    if (feedback !== 'none') return;
+    if (placedOrder.includes(tileIdx)) return;
+    setPlacedOrder((prev) => [...prev, tileIdx]);
   }
 
   function removeLast() {
-    if (feedback !== 'none') return
-    setPlacedOrder((prev) => prev.slice(0, -1))
+    if (feedback !== 'none') return;
+    setPlacedOrder((prev) => prev.slice(0, -1));
   }
 
   function submit() {
-    if (feedback !== 'none' || !current) return
-    const arranged = placedOrder.map((i) => shuffledTokens[i])
-    const userAnswer = joinTokens(arranged)
-    const target = joinTokens(current.tokens)
+    if (feedback !== 'none' || !current) return;
+    const arranged = placedOrder.map((i) => shuffledTokens[i]);
+    const userAnswer = joinTokens(arranged);
+    const target = joinTokens(current.tokens);
     if (userAnswer !== target) {
-      setFeedback('wrong')
-      setStreak(0)
-      setMultiplier(1)
-      setHearts((h) => Math.max(0, h - 1))
-      soundRef.current.play('wrong')
-      recordVocabReview(1)
-      srsReviewRef.current(current.word.id, false)
-      setTimeout(() => advanceOrFinish(), 2200)
-      return
+      setFeedback('wrong');
+      setStreak(0);
+      setMultiplier(1);
+      setHearts((h) => Math.max(0, h - 1));
+      soundRef.current.play('wrong');
+      recordVocabReview(1);
+      srsReviewRef.current(current.word.id, false);
+      setTimeout(() => advanceOrFinish(), 2200);
+      return;
     }
     // Correct!
-    const newStreak = streakRef.current + 1
-    const newMultiplier = Math.min(3, 1 + Math.floor(newStreak / 3) * 0.5)
-    const gained = Math.round(cfgRef.current.xpPerCorrect * newMultiplier)
-    setStreak(newStreak)
-    setBestStreak((b) => Math.max(b, newStreak))
+    const newStreak = streakRef.current + 1;
+    const newMultiplier = Math.min(3, 1 + Math.floor(newStreak / 3) * 0.5);
+    const gained = Math.round(cfgRef.current.xpPerCorrect * newMultiplier);
+    setStreak(newStreak);
+    setBestStreak((b) => Math.max(b, newStreak));
     if (newMultiplier > multiplierRef.current) {
-      setMultiplier(newMultiplier)
-      setBestMultiplier((b) => Math.max(b, newMultiplier))
-      soundRef.current.play('streak')
+      setMultiplier(newMultiplier);
+      setBestMultiplier((b) => Math.max(b, newMultiplier));
+      soundRef.current.play('streak');
     }
-    setScore((s) => s + 1)
-    setTotalXP((x) => x + gained)
-    setFeedback('correct')
-    soundRef.current.play('correct')
-    recordVocabReview(1)
-    const result = srsReviewRef.current(current.word.id, true)
+    setScore((s) => s + 1);
+    setTotalXP((x) => x + gained);
+    setFeedback('correct');
+    soundRef.current.play('correct');
+    recordVocabReview(1);
+    const result = srsReviewRef.current(current.word.id, true);
     if (result.leveledTo5 || result.leveledToMastered) {
-      setLearnedCount((c) => c + 1)
+      setLearnedCount((c) => c + 1);
     }
-    setTimeout(() => advanceOrFinish(), 1500)
+    setTimeout(() => advanceOrFinish(), 1500);
   }
 
   if (loading) {
-    return <GameLoading />
+    return <GameLoading />;
   }
 
   if (!hasEnoughWords) {
@@ -391,14 +381,11 @@ export function SentenceGameClient() {
           'برای بازی جمله‌سازی، حداقل ۳ واژه با جملهٔ نمونه لازم است. هنگام مطالعه کلمات را از داخل کتاب به واژگان اضافه کنید (جملهٔ نمونه خودکار ذخیره می‌شود).'
         }
       />
-    )
+    );
   }
 
   if (state === 'finished') {
-    const acc =
-      questions.length > 0
-        ? Math.round((score / questions.length) * 100)
-        : 0
+    const acc = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
     return (
       <GameResult
         title="بازی تمام شد!"
@@ -415,14 +402,12 @@ export function SentenceGameClient() {
         ]}
         bestMultiplier={bestMultiplier}
         learnedContent={
-          learnedCount > 0 ? (
-            <>{learnedCount} واژه به سطح «یاد گرفته شد» رسید!</>
-          ) : undefined
+          learnedCount > 0 ? <>{learnedCount} واژه به سطح «یاد گرفته شد» رسید!</> : undefined
         }
         onPlayAgain={startGame}
         playAgainLabel="دوباره بازی"
       />
-    )
+    );
   }
 
   if (state === 'idle') {
@@ -446,15 +431,15 @@ export function SentenceGameClient() {
         onToggleSound={sound.toggle}
         onStart={startGame}
       />
-    )
+    );
   }
 
   // PLAYING state
-  if (!current) return null
-  const arranged = placedOrder.map((i) => shuffledTokens[i])
-  const showState = feedback !== 'none'
-  const userAnswerStr = arranged.join(' ')
-  const targetStr = current.tokens.join(' ')
+  if (!current) return null;
+  const arranged = placedOrder.map((i) => shuffledTokens[i]);
+  const showState = feedback !== 'none';
+  const userAnswerStr = arranged.join(' ');
+  const targetStr = current.tokens.join(' ');
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
@@ -473,9 +458,7 @@ export function SentenceGameClient() {
           ))}
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <span className="font-bold text-gold-600 dark:text-gold-400">
-            {totalXP} XP
-          </span>
+          <span className="font-bold text-gold-600 dark:text-gold-400">{totalXP} XP</span>
           {streak >= 2 && (
             <motion.span
               key={`s-${streak}`}
@@ -514,12 +497,7 @@ export function SentenceGameClient() {
         ))}
       </div>
       <div className="mb-4 flex items-center justify-center gap-2 text-sm">
-        <span
-          className={cn(
-            'font-bold tabular-nums',
-            timeLeft <= 5 ? 'text-red-500' : '',
-          )}
-        >
+        <span className={cn('font-bold tabular-nums', timeLeft <= 5 ? 'text-red-500' : '')}>
           {timeLeft}ث
         </span>
         <span className="text-muted-foreground">
@@ -588,7 +566,7 @@ export function SentenceGameClient() {
           {!showState && (
             <div className="flex flex-wrap justify-center gap-2" dir="ltr">
               {shuffledTokens.map((tok, i) => {
-                const used = placedOrder.includes(i)
+                const used = placedOrder.includes(i);
                 return (
                   <motion.button
                     key={`pool-${i}`}
@@ -605,7 +583,7 @@ export function SentenceGameClient() {
                   >
                     {tok}
                   </motion.button>
-                )
+                );
               })}
             </div>
           )}
@@ -626,8 +604,7 @@ export function SentenceGameClient() {
                 variant="glow"
                 onClick={submit}
                 disabled={
-                  placedOrder.length !== shuffledTokens.length ||
-                  shuffledTokens.length === 0
+                  placedOrder.length !== shuffledTokens.length || shuffledTokens.length === 0
                 }
                 className="gap-1"
               >
@@ -666,9 +643,7 @@ export function SentenceGameClient() {
               </p>
               {feedback === 'wrong' && (
                 <p className="mt-2 text-sm" dir="ltr">
-                  <span className="text-xs text-muted-foreground">
-                    جمله درست:
-                  </span>{' '}
+                  <span className="text-xs text-muted-foreground">جمله درست:</span>{' '}
                   <span className="font-bold">{targetStr}</span>
                 </p>
               )}
@@ -678,6 +653,18 @@ export function SentenceGameClient() {
                   <span>{userAnswerStr}</span>
                 </p>
               )}
+              <div className="mt-3 flex items-center justify-center">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8 gap-1.5 rounded-full text-xs"
+                  onClick={() => void tts.speak(targetStr, 'en')}
+                >
+                  <Volume2 className="h-3.5 w-3.5" />
+                  شنیدن جمله
+                </Button>
+              </div>
             </motion.div>
           )}
         </motion.div>
@@ -690,5 +677,5 @@ export function SentenceGameClient() {
         </Button>
       </div>
     </div>
-  )
+  );
 }
