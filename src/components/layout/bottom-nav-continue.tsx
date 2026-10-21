@@ -1,13 +1,10 @@
-'use client'
+'use client';
 
-import Link from 'next/link'
-import { Play } from 'lucide-react'
-import { useLastReadBook } from '@/hooks/reader/use-last-read-book'
-import {
-  calculateRingDashOffset,
-  formatReadingPercent,
-} from '@/lib/reader/progress'
-import { useEffect, useState } from 'react'
+import Link from 'next/link';
+import { Play } from 'lucide-react';
+import { useLastReadBook } from '@/hooks/reader/use-last-read-book';
+import { calculateRingDashOffset, formatReadingPercent } from '@/lib/reader/progress';
+import { useEffect, useState } from 'react';
 
 /**
  * Center dock of the bottom-nav — a notched CIRCLE, raised above the
@@ -28,58 +25,55 @@ import { useEffect, useState } from 'react'
  */
 
 interface SimpleBook {
-  slug: string
-  title: string
-  coverFrom: string
-  coverTo: string
-  coverAccent: string
-  coverImage?: string | null
-  coverImageUrl?: string | null
+  slug: string;
+  title: string;
+  coverFrom: string;
+  coverTo: string;
+  coverAccent: string;
+  coverImage?: string | null;
+  coverImageUrl?: string | null;
 }
 
 /** Deterministic per-day pick — day-of-year rotation over the catalog. */
 function pickBookOfTheDay(books: SimpleBook[]): SimpleBook | null {
-  if (books.length === 0) return null
-  const now = new Date()
+  if (books.length === 0) return null;
+  const now = new Date();
   const dayOfYear = Math.floor(
     (now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000,
-  )
-  return books[dayOfYear % books.length] ?? null
+  );
+  return books[dayOfYear % books.length] ?? null;
 }
 
 export function BottomNavContinue() {
-  const { book, loading } = useLastReadBook()
-  const [botd, setBotd] = useState<SimpleBook | null>(null)
+  const { book, loading } = useLastReadBook();
+  const [botd, setBotd] = useState<SimpleBook | null>(null);
 
-  const inProgress = !!book && book.percent < 100
+  const inProgress = !!book && book.percent < 100;
 
   // Only fetch the book-of-the-day when there is nothing in progress.
   useEffect(() => {
-    if (loading || inProgress || botd) return
-    let cancelled = false
+    if (loading || inProgress || botd) return;
+    let cancelled = false;
     fetch('/api/books')
       .then((r) => (r.ok ? r.json() : []))
       .then((books: SimpleBook[]) => {
-        if (!cancelled) setBotd(pickBookOfTheDay(books))
+        if (!cancelled) setBotd(pickBookOfTheDay(books));
       })
-      .catch(() => {})
+      .catch(() => {});
     return () => {
-      cancelled = true
-    }
-  }, [loading, inProgress, botd])
+      cancelled = true;
+    };
+  }, [loading, inProgress, botd]);
 
   const circleBase =
-    'relative -mt-8 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full ring-4 ring-background shadow-[0_6px_18px_rgba(0,0,0,0.28)] no-callout no-tap-highlight touch-manipulation tap-target motion-safe:active:scale-[0.9] motion-safe:transition-transform duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+    'relative -mt-8 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full ring-4 ring-background shadow-[0_6px_18px_rgba(0,0,0,0.28)] no-callout no-tap-highlight touch-manipulation tap-target motion-safe:active:scale-[0.9] motion-safe:transition-transform duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
   if (loading) {
     return (
-      <span
-        className="absolute inset-y-0 left-1/2 -ml-7 flex w-14 justify-center"
-        aria-hidden
-      >
+      <span className="absolute inset-y-0 left-1/2 -ml-7 flex w-14 justify-center" aria-hidden>
         <span className={circleBase + ' animate-pulse bg-muted'} />
       </span>
-    )
+    );
   }
 
   // ─── Book of the day (nothing in progress / finished) ───────────────────
@@ -96,9 +90,9 @@ export function BottomNavContinue() {
             <BookOpenIcon />
           </Link>
         </span>
-      )
+      );
     }
-    const cover = botd.coverImageUrl || botd.coverImage || null
+    const cover = botd.coverImageUrl || botd.coverImage || null;
     return (
       <span className="absolute inset-y-0 left-1/2 -ml-7 flex w-14 flex-col items-center justify-start">
         <Link
@@ -111,7 +105,7 @@ export function BottomNavContinue() {
           }}
         >
           {cover ? (
-            // eslint-disable-next-line @next/next/no-img-element — decorative 56px cover thumbnail inside the nav dock
+            // eslint-disable-next-line @next/next/no-img-element -- decorative 56px cover thumbnail inside the nav dock
             <img
               src={cover}
               alt=""
@@ -129,12 +123,12 @@ export function BottomNavContinue() {
         </Link>
         <DockLabel>کتاب روز</DockLabel>
       </span>
-    )
+    );
   }
 
   // ─── Book in progress ────────────────────────────────────────────────────
-  const R = 27
-  const { circumference: C, strokeOffset: dashOffset } = calculateRingDashOffset(book.percent, R)
+  const R = 27;
+  const { circumference: C, strokeOffset: dashOffset } = calculateRingDashOffset(book.percent, R);
 
   return (
     <span className="absolute inset-y-0 left-1/2 -ml-7 flex w-14 flex-col items-center justify-start">
@@ -148,7 +142,7 @@ export function BottomNavContinue() {
         }}
       >
         {book.coverImage ? (
-          // eslint-disable-next-line @next/next/no-img-element — decorative 56px cover thumbnail inside the nav dock
+          // eslint-disable-next-line @next/next/no-img-element -- decorative 56px cover thumbnail inside the nav dock
           <img
             src={book.coverImage}
             alt=""
@@ -162,10 +156,7 @@ export function BottomNavContinue() {
             style={{ borderColor: book.coverAccent }}
           />
         )}
-        <span
-          aria-hidden
-          className="absolute inset-0 flex items-center justify-center bg-black/30"
-        >
+        <span aria-hidden className="absolute inset-0 flex items-center justify-center bg-black/30">
           <Play
             aria-hidden
             className="h-5 w-5 fill-white/95 text-white drop-shadow"
@@ -179,14 +170,7 @@ export function BottomNavContinue() {
           className="pointer-events-none absolute inset-0 h-full w-full -rotate-90"
           viewBox="0 0 56 56"
         >
-          <circle
-            cx="28"
-            cy="28"
-            r={R}
-            fill="none"
-            stroke="rgba(0,0,0,0.35)"
-            strokeWidth="3.5"
-          />
+          <circle cx="28" cy="28" r={R} fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth="3.5" />
           <circle
             cx="28"
             cy="28"
@@ -209,7 +193,7 @@ export function BottomNavContinue() {
       </a>
       <DockLabel>ادامه کتاب</DockLabel>
     </span>
-  )
+  );
 }
 
 function DockLabel({ children }: { children: React.ReactNode }) {
@@ -217,7 +201,7 @@ function DockLabel({ children }: { children: React.ReactNode }) {
     <span className="pointer-events-none mt-2.5 text-[8px] font-bold leading-none text-foreground/80">
       {children}
     </span>
-  )
+  );
 }
 
 function BookOpenIcon() {
@@ -235,5 +219,5 @@ function BookOpenIcon() {
       <path d="M12 7v14" />
       <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" />
     </svg>
-  )
+  );
 }

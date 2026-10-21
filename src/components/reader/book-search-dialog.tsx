@@ -1,78 +1,53 @@
-'use client'
+'use client';
 
-import {
-  useState,
-  useEffect,
-  useMemo,
-  useRef,
-  useCallback,
-  type ReactNode,
-} from 'react'
-import {
-  Search,
-  X,
-  BookOpen,
-  Sparkles,
-  History,
-  CornerDownLeft,
-  Languages,
-  List,
-  Layers,
-  ArrowLeft,
-  ChevronLeft,
-  Trash2,
-} from 'lucide-react'
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { Search, X, Sparkles, History, List, ChevronLeft, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
   Drawer,
   DrawerContent,
   DrawerTitle,
   DrawerDescription,
   DrawerHandle,
-} from '@/components/ui/drawer'
-import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
+} from '@/components/ui/drawer';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import {
   THEME_STYLES,
   toPersianDigits,
   type ReaderBook,
   type ReaderTheme,
-} from '@/lib/reader/types'
+} from '@/lib/reader/types';
 
 export interface BookSearchDialogProps {
-  book: ReaderBook
-  theme: ReaderTheme
-  isMobile: boolean
-  open: boolean
-  onClose: () => void
-  onJumpToPage: (pageIndex: number) => void
-  initialQuery?: string
+  book: ReaderBook;
+  theme: ReaderTheme;
+  isMobile: boolean;
+  open: boolean;
+  onClose: () => void;
+  onJumpToPage: (pageIndex: number) => void;
+  initialQuery?: string;
 }
 
 interface SearchSegment {
-  text: string
-  match: boolean
+  text: string;
+  match: boolean;
 }
 
 export interface BookSearchHit {
-  pageIndex: number
-  pageNumber: number
-  chapterTitle?: string
-  chapterTitleFa?: string
-  matchType: 'english' | 'farsi' | 'both'
-  englishSnippet: string
-  farsiSnippet: string
-  englishSegments: SearchSegment[]
-  farsiSegments: SearchSegment[]
-  isHeading: boolean
+  pageIndex: number;
+  pageNumber: number;
+  chapterTitle?: string;
+  chapterTitleFa?: string;
+  matchType: 'english' | 'farsi' | 'both';
+  englishSnippet: string;
+  farsiSnippet: string;
+  englishSegments: SearchSegment[];
+  farsiSegments: SearchSegment[];
+  isHeading: boolean;
 }
 
-type SearchFilter = 'all' | 'english' | 'farsi'
+type SearchFilter = 'all' | 'english' | 'farsi';
 
 /**
  * Normalizes Persian characters for search parity (Arabic yeh/kaf -> Persian).
@@ -85,7 +60,7 @@ export function normalizeForSearch(text: string): string {
     .replace(/[يی]/g, 'ی')
     .replace(/[كک]/g, 'ک')
     .replace(/[ۀه]/g, 'ه')
-    .replace(/[آا]/g, 'ا')
+    .replace(/[آا]/g, 'ا');
 }
 
 /**
@@ -100,59 +75,58 @@ export function extractSnippetAndSegments(
     return {
       snippet: originalText.slice(0, maxLength),
       segments: [{ text: originalText.slice(0, maxLength), match: false }],
-    }
+    };
   }
 
-  const normText = normalizeForSearch(originalText)
-  const normQuery = normalizeForSearch(rawQuery)
-  const matchIndex = normText.indexOf(normQuery)
+  const normText = normalizeForSearch(originalText);
+  const normQuery = normalizeForSearch(rawQuery);
+  const matchIndex = normText.indexOf(normQuery);
 
   if (matchIndex === -1) {
-    const truncated = originalText.length > maxLength
-      ? `${originalText.slice(0, maxLength)}…`
-      : originalText
+    const truncated =
+      originalText.length > maxLength ? `${originalText.slice(0, maxLength)}…` : originalText;
     return {
       snippet: truncated,
       segments: [{ text: truncated, match: false }],
-    }
+    };
   }
 
   // Calculate snippet window
-  const queryLen = rawQuery.length
-  const halfWindow = Math.floor((maxLength - queryLen) / 2)
-  let start = Math.max(0, matchIndex - halfWindow)
-  let end = Math.min(originalText.length, matchIndex + queryLen + halfWindow)
+  const queryLen = rawQuery.length;
+  const halfWindow = Math.floor((maxLength - queryLen) / 2);
+  let start = Math.max(0, matchIndex - halfWindow);
+  let end = Math.min(originalText.length, matchIndex + queryLen + halfWindow);
 
   // Adjust to nearest whitespace boundary if possible
   if (start > 0) {
-    const spaceBefore = originalText.indexOf(' ', start)
+    const spaceBefore = originalText.indexOf(' ', start);
     if (spaceBefore !== -1 && spaceBefore < matchIndex) {
-      start = spaceBefore + 1
+      start = spaceBefore + 1;
     }
   }
   if (end < originalText.length) {
-    const spaceAfter = originalText.lastIndexOf(' ', end)
+    const spaceAfter = originalText.lastIndexOf(' ', end);
     if (spaceAfter !== -1 && spaceAfter > matchIndex + queryLen) {
-      end = spaceAfter
+      end = spaceAfter;
     }
   }
 
-  const prefix = start > 0 ? '…' : ''
-  const suffix = end < originalText.length ? '…' : ''
+  const prefix = start > 0 ? '…' : '';
+  const suffix = end < originalText.length ? '…' : '';
 
-  const beforeText = prefix + originalText.slice(start, matchIndex)
-  const matchedText = originalText.slice(matchIndex, matchIndex + queryLen)
-  const afterText = originalText.slice(matchIndex + queryLen, end) + suffix
+  const beforeText = prefix + originalText.slice(start, matchIndex);
+  const matchedText = originalText.slice(matchIndex, matchIndex + queryLen);
+  const afterText = originalText.slice(matchIndex + queryLen, end) + suffix;
 
-  const segments: SearchSegment[] = []
-  if (beforeText) segments.push({ text: beforeText, match: false })
-  segments.push({ text: matchedText, match: true })
-  if (afterText) segments.push({ text: afterText, match: false })
+  const segments: SearchSegment[] = [];
+  if (beforeText) segments.push({ text: beforeText, match: false });
+  segments.push({ text: matchedText, match: true });
+  if (afterText) segments.push({ text: afterText, match: false });
 
   return {
     snippet: beforeText + matchedText + afterText,
     segments,
-  }
+  };
 }
 
 export function BookSearchDialog({
@@ -164,73 +138,71 @@ export function BookSearchDialog({
   onJumpToPage,
   initialQuery = '',
 }: BookSearchDialogProps) {
-  const s = THEME_STYLES[theme]
-  const [query, setQuery] = useState(initialQuery)
-  const [filter, setFilter] = useState<SearchFilter>('all')
-  const [selectedIndex, setSelectedIndex] = useState(0)
-  const [recentSearches, setRecentSearches] = useState<string[]>([])
+  const s = THEME_STYLES[theme];
+  const [query, setQuery] = useState(initialQuery);
+  const [filter, setFilter] = useState<SearchFilter>('all');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
-  const inputRef = useRef<HTMLInputElement>(null)
-  const resultsContainerRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null);
+  const resultsContainerRef = useRef<HTMLDivElement>(null);
 
   // Persistent search history key per book
-  const storageKey = `ky_book_search_${book.slug}`
+  const storageKey = `ky_book_search_${book.slug}`;
 
   // Load recent searches on mount / open
   useEffect(() => {
     if (open) {
       try {
-        const raw = localStorage.getItem(storageKey)
+        const raw = localStorage.getItem(storageKey);
         if (raw) {
-          const parsed = JSON.parse(raw)
-          if (Array.isArray(parsed)) setRecentSearches(parsed.slice(0, 6))
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) setRecentSearches(parsed.slice(0, 6));
         }
       } catch {
         /* ignore */
       }
       // Focus input with slight delay to accommodate transition
-      setTimeout(() => inputRef.current?.focus(), 80)
+      setTimeout(() => inputRef.current?.focus(), 80);
     }
-  }, [open, storageKey])
+  }, [open, storageKey]);
 
   // Save to recent searches
   const saveRecentSearch = useCallback(
     (term: string) => {
-      const clean = term.trim()
-      if (!clean || clean.length < 2) return
+      const clean = term.trim();
+      if (!clean || clean.length < 2) return;
       try {
-        const next = [clean, ...recentSearches.filter((q) => q !== clean)].slice(0, 6)
-        setRecentSearches(next)
-        localStorage.setItem(storageKey, JSON.stringify(next))
+        const next = [clean, ...recentSearches.filter((q) => q !== clean)].slice(0, 6);
+        setRecentSearches(next);
+        localStorage.setItem(storageKey, JSON.stringify(next));
       } catch {
         /* ignore */
       }
     },
     [recentSearches, storageKey],
-  )
+  );
 
   const clearRecentSearches = useCallback(() => {
     try {
-      localStorage.removeItem(storageKey)
-      setRecentSearches([])
+      localStorage.removeItem(storageKey);
+      setRecentSearches([]);
     } catch {
       /* ignore */
     }
-  }, [storageKey])
+  }, [storageKey]);
 
   // Pre-index pages with chapter metadata
   const indexedPages = useMemo(() => {
-    const chapters = book.chapters || []
+    const chapters = book.chapters || [];
     return book.pages.map((p, pageIndex) => {
-      const pageNum = p.pageNumber || pageIndex + 1
+      const pageNum = p.pageNumber || pageIndex + 1;
       // Find chapter containing this page
-      const ch = [...chapters]
-        .reverse()
-        .find((c) => (c.startPage ?? 1) <= pageNum)
+      const ch = [...chapters].reverse().find((c) => (c.startPage ?? 1) <= pageNum);
 
-      const fullEnglish = p.items.map((i) => i.english).join('\n')
-      const fullFarsi = p.items.map((i) => i.farsi || '').join('\n')
-      const isHeading = p.items.some((i) => i.type === 'heading')
+      const fullEnglish = p.items.map((i) => i.english).join('\n');
+      const fullFarsi = p.items.map((i) => i.farsi || '').join('\n');
+      const isHeading = p.items.some((i) => i.type === 'heading');
 
       return {
         pageIndex,
@@ -240,35 +212,35 @@ export function BookSearchDialog({
         english: fullEnglish,
         farsi: fullFarsi,
         isHeading,
-      }
-    })
-  }, [book])
+      };
+    });
+  }, [book]);
 
   // Execute instant client-side search across this book's text
   const searchResults = useMemo<BookSearchHit[]>(() => {
-    const trimmed = query.trim()
-    if (!trimmed || trimmed.length < 2) return []
+    const trimmed = query.trim();
+    if (!trimmed || trimmed.length < 2) return [];
 
-    const normQ = normalizeForSearch(trimmed)
-    const hits: BookSearchHit[] = []
+    const normQ = normalizeForSearch(trimmed);
+    const hits: BookSearchHit[] = [];
 
     for (const item of indexedPages) {
-      const normEn = normalizeForSearch(item.english)
-      const normFa = normalizeForSearch(item.farsi)
+      const normEn = normalizeForSearch(item.english);
+      const normFa = normalizeForSearch(item.farsi);
 
-      const matchEn = normEn.includes(normQ)
-      const matchFa = normFa.includes(normQ)
+      const matchEn = normEn.includes(normQ);
+      const matchFa = normFa.includes(normQ);
 
-      if (!matchEn && !matchFa) continue
+      if (!matchEn && !matchFa) continue;
 
-      if (filter === 'english' && !matchEn) continue
-      if (filter === 'farsi' && !matchFa) continue
+      if (filter === 'english' && !matchEn) continue;
+      if (filter === 'farsi' && !matchFa) continue;
 
       const matchType: 'english' | 'farsi' | 'both' =
-        matchEn && matchFa ? 'both' : matchEn ? 'english' : 'farsi'
+        matchEn && matchFa ? 'both' : matchEn ? 'english' : 'farsi';
 
-      const enData = extractSnippetAndSegments(item.english, trimmed)
-      const faData = extractSnippetAndSegments(item.farsi, trimmed)
+      const enData = extractSnippetAndSegments(item.english, trimmed);
+      const faData = extractSnippetAndSegments(item.farsi, trimmed);
 
       hits.push({
         pageIndex: item.pageIndex,
@@ -281,70 +253,68 @@ export function BookSearchDialog({
         englishSegments: enData.segments,
         farsiSegments: faData.segments,
         isHeading: item.isHeading,
-      })
+      });
     }
 
     // Rank: headings first, then sequential by page
     return hits.sort((a, b) => {
-      if (a.isHeading && !b.isHeading) return -1
-      if (!a.isHeading && b.isHeading) return 1
-      return a.pageIndex - b.pageIndex
-    })
-  }, [query, filter, indexedPages])
+      if (a.isHeading && !b.isHeading) return -1;
+      if (!a.isHeading && b.isHeading) return 1;
+      return a.pageIndex - b.pageIndex;
+    });
+  }, [query, filter, indexedPages]);
 
   // Reset selected index on results change
   useEffect(() => {
-    setSelectedIndex(0)
-  }, [searchResults])
+    setSelectedIndex(0);
+  }, [searchResults]);
 
   // Handle jump
   const handleSelectHit = useCallback(
     (hit: BookSearchHit) => {
-      saveRecentSearch(query)
-      onJumpToPage(hit.pageIndex)
-      onClose()
+      saveRecentSearch(query);
+      onJumpToPage(hit.pageIndex);
+      onClose();
     },
     [onJumpToPage, onClose, query, saveRecentSearch],
-  )
+  );
 
   // Keyboard navigation inside search results
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
-      e.preventDefault()
+      e.preventDefault();
       setSelectedIndex((prev) =>
         searchResults.length > 0 ? (prev + 1) % searchResults.length : 0,
-      )
+      );
     } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
+      e.preventDefault();
       setSelectedIndex((prev) =>
-        searchResults.length > 0
-          ? (prev - 1 + searchResults.length) % searchResults.length
-          : 0,
-      )
+        searchResults.length > 0 ? (prev - 1 + searchResults.length) % searchResults.length : 0,
+      );
     } else if (e.key === 'Enter') {
-      e.preventDefault()
+      e.preventDefault();
       if (searchResults[selectedIndex]) {
-        handleSelectHit(searchResults[selectedIndex])
+        handleSelectHit(searchResults[selectedIndex]);
       }
     } else if (e.key === 'Escape') {
-      onClose()
+      onClose();
     }
-  }
+  };
 
   // Suggested keywords based on chapters / book metadata
   const suggestedChips = useMemo(() => {
-    const list: string[] = []
+    const list: string[] = [];
     if (book.chapters && book.chapters.length > 0) {
       for (const ch of book.chapters.slice(0, 4)) {
-        if (ch.titleFa) list.push(ch.titleFa)
-        else if (ch.title) list.push(ch.title)
+        if (ch.titleFa) list.push(ch.titleFa);
+        else if (ch.title) list.push(ch.title);
       }
     }
     // Extract title words
-    const titleWords = book.title.split(/\s+/).filter((w) => w.length > 3)
-    list.push(...titleWords.slice(0, 2))
-    return Array.from(new Set(list)).slice(0, 6)
-  }, [book])
+    const titleWords = book.title.split(/\s+/).filter((w) => w.length > 3);
+    list.push(...titleWords.slice(0, 2));
+    return Array.from(new Set(list)).slice(0, 6);
+  }, [book]);
 
   // Render Highlighted Segment
   const renderSegments = (segments: SearchSegment[]) => {
@@ -359,8 +329,8 @@ export function BookSearchDialog({
       ) : (
         <span key={idx}>{seg.text}</span>
       ),
-    )
-  }
+    );
+  };
 
   // Inner Content for both Dialog (Desktop) and Drawer (Mobile)
   const searchContent = (
@@ -393,8 +363,8 @@ export function BookSearchDialog({
           <button
             type="button"
             onClick={() => {
-              setQuery('')
-              inputRef.current?.focus()
+              setQuery('');
+              inputRef.current?.focus();
             }}
             className="p-1 rounded-full opacity-60 hover:opacity-100 transition-opacity me-2"
             aria-label="پاک کردن متن جستجو"
@@ -454,9 +424,7 @@ export function BookSearchDialog({
                 {toPersianDigits(searchResults.length)} نتیجه یافت شد
               </span>
             ) : (
-              <span className="text-amber-600 dark:text-amber-400">
-                موردی یافت نشد
-              </span>
+              <span className="text-amber-600 dark:text-amber-400">موردی یافت نشد</span>
             )}
           </div>
         )}
@@ -493,8 +461,8 @@ export function BookSearchDialog({
                       key={term}
                       type="button"
                       onClick={() => {
-                        setQuery(term)
-                        inputRef.current?.focus()
+                        setQuery(term);
+                        inputRef.current?.focus();
                       }}
                       className="inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"
                       style={{
@@ -523,8 +491,8 @@ export function BookSearchDialog({
                       key={chip}
                       type="button"
                       onClick={() => {
-                        setQuery(chip)
-                        inputRef.current?.focus()
+                        setQuery(chip);
+                        inputRef.current?.focus();
                       }}
                       className="rounded-xl border px-3 py-1.5 text-xs font-medium transition-all hover:border-gold-500 hover:scale-105"
                       style={{
@@ -552,8 +520,8 @@ export function BookSearchDialog({
                       key={ch.id || idx}
                       type="button"
                       onClick={() => {
-                        onJumpToPage(Math.max(0, (ch.startPage ?? 1) - 1))
-                        onClose()
+                        onJumpToPage(Math.max(0, (ch.startPage ?? 1) - 1));
+                        onClose();
                       }}
                       className="flex items-center justify-between rounded-xl border p-2.5 text-xs text-start transition-all hover:border-gold-500 hover:shadow-sm"
                       style={{
@@ -571,10 +539,7 @@ export function BookSearchDialog({
                           </p>
                         )}
                       </div>
-                      <Badge
-                        variant="secondary"
-                        className="text-[10px] shrink-0 font-mono"
-                      >
+                      <Badge variant="secondary" className="text-[10px] shrink-0 font-mono">
                         ص {toPersianDigits(ch.startPage ?? idx + 1)}
                       </Badge>
                     </button>
@@ -589,7 +554,7 @@ export function BookSearchDialog({
         {query.trim().length >= 2 && searchResults.length > 0 && (
           <div className="space-y-2">
             {searchResults.map((hit, index) => {
-              const isSelected = index === selectedIndex
+              const isSelected = index === selectedIndex;
               return (
                 <div
                   key={`${hit.pageIndex}-${index}`}
@@ -598,7 +563,7 @@ export function BookSearchDialog({
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSelectHit(hit)
+                    if (e.key === 'Enter') handleSelectHit(hit);
                   }}
                   className={cn(
                     'group relative rounded-2xl border p-3 sm:p-4 text-start cursor-pointer transition-all duration-200 outline-none',
@@ -632,15 +597,24 @@ export function BookSearchDialog({
 
                     <div className="flex items-center gap-1.5">
                       {hit.matchType === 'both' ? (
-                        <Badge variant="outline" className="text-[10px] bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30"
+                        >
                           انگلیسی و فارسی
                         </Badge>
                       ) : hit.matchType === 'english' ? (
-                        <Badge variant="outline" className="text-[10px] bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30"
+                        >
                           متن انگلیسی
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                        >
                           ترجمه فارسی
                         </Badge>
                       )}
@@ -651,10 +625,7 @@ export function BookSearchDialog({
                   {/* Snippets View */}
                   <div className="space-y-1.5 text-xs sm:text-sm">
                     {/* English excerpt */}
-                    <p
-                      className="font-serif leading-relaxed text-foreground/90"
-                      dir="ltr"
-                    >
+                    <p className="font-serif leading-relaxed text-foreground/90" dir="ltr">
                       {renderSegments(hit.englishSegments)}
                     </p>
 
@@ -668,7 +639,7 @@ export function BookSearchDialog({
                     </p>
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         )}
@@ -687,7 +658,8 @@ export function BookSearchDialog({
                 عبارت «{query}» در متن این کتاب یافت نشد
               </h3>
               <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-                املای کلمه را بررسی کنید یا عبارت خلاصه‌تری را به زبان انگلیسی یا فارسی جستجو فرمایید.
+                املای کلمه را بررسی کنید یا عبارت خلاصه‌تری را به زبان انگلیسی یا فارسی جستجو
+                فرمایید.
               </p>
             </div>
           </div>
@@ -718,12 +690,17 @@ export function BookSearchDialog({
         </div>
       </div>
     </div>
-  )
+  );
 
   // Mobile: Render as Vaul Bottom Drawer for natural thumb gesture UX
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={(o) => { if (!o) onClose() }}>
+      <Drawer
+        open={open}
+        onOpenChange={(o) => {
+          if (!o) onClose();
+        }}
+      >
         <DrawerContent
           className="gap-0 rounded-t-3xl border-t pb-safe overflow-hidden"
           style={{
@@ -740,12 +717,17 @@ export function BookSearchDialog({
           {searchContent}
         </DrawerContent>
       </Drawer>
-    )
+    );
   }
 
   // Desktop: Render as Spotlight Command Dialog
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <DialogContent
         className="gap-0 p-0 sm:max-w-2xl rounded-3xl overflow-hidden border-2 shadow-2xl backdrop-blur-xl"
         showCloseButton={false}
@@ -762,5 +744,5 @@ export function BookSearchDialog({
         {searchContent}
       </DialogContent>
     </Dialog>
-  )
+  );
 }

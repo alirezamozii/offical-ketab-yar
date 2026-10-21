@@ -1,25 +1,22 @@
-'use client'
+'use client';
 
-import { cn } from '@/lib/utils'
-import type { BilingualItem, ReadingPreferences } from '@/lib/reader/types'
-import { useTTSContext } from '@/hooks/tts-provider'
-import {
-  alignBilingualSentences,
-  type MatchedSentencePair,
-} from '@/lib/reader/sentence-aligner'
-import { Fragment, memo, useMemo } from 'react'
+import { cn } from '@/lib/utils';
+import type { BilingualItem, ReadingPreferences } from '@/lib/reader/types';
+import { useTTSContext } from '@/hooks/tts-provider';
+import { alignBilingualSentences, type MatchedSentencePair } from '@/lib/reader/sentence-aligner';
+import { Fragment, memo, useMemo } from 'react';
 
 interface ParagraphBlockProps {
-  item: BilingualItem
-  prefs: ReadingPreferences
-  accent: string
-  onMouseUp?: (e: React.MouseEvent) => void
-  onTouchEnd?: (e: React.TouchEvent) => void
+  item: BilingualItem;
+  prefs: ReadingPreferences;
+  accent: string;
+  onMouseUp?: (e: React.MouseEvent) => void;
+  onTouchEnd?: (e: React.TouchEvent) => void;
 }
 
 interface ParagraphGroup {
-  pIdx: number
-  pairs: MatchedSentencePair[]
+  pIdx: number;
+  pairs: MatchedSentencePair[];
 }
 
 /**
@@ -40,15 +37,15 @@ export const ParagraphBlock = memo(function ParagraphBlock({
   onMouseUp,
   onTouchEnd,
 }: ParagraphBlockProps) {
-  const primaryLang = prefs.language
-  const secondaryLang = primaryLang === 'english' ? 'farsi' : 'english'
-  const primary = (primaryLang === 'english' ? item.english : item.farsi) || ''
-  const secondary = (secondaryLang === 'english' ? item.english : item.farsi) || ''
-  const isHeading = item.type === 'heading'
-  const primaryDir = primaryLang === 'english' ? 'ltr' : 'rtl'
-  const secondaryDir = secondaryLang === 'english' ? 'ltr' : 'rtl'
+  const primaryLang = prefs.language;
+  const secondaryLang = primaryLang === 'english' ? 'farsi' : 'english';
+  const primary = (primaryLang === 'english' ? item.english : item.farsi) || '';
+  const secondary = (secondaryLang === 'english' ? item.english : item.farsi) || '';
+  const isHeading = item.type === 'heading';
+  const primaryDir = primaryLang === 'english' ? 'ltr' : 'rtl';
+  const secondaryDir = secondaryLang === 'english' ? 'ltr' : 'rtl';
 
-  const tts = useTTSContext()
+  const tts = useTTSContext();
 
   // Check if TTS is currently reading this paragraph
   const isSpeakingThis = Boolean(
@@ -57,64 +54,57 @@ export const ParagraphBlock = memo(function ParagraphBlock({
       (tts.currentText.includes(primary) ||
         primary.includes(tts.currentText) ||
         tts.currentText.trim() === primary.trim()),
-  )
+  );
 
   const sentencePairs = useMemo<MatchedSentencePair[]>(() => {
     if (isHeading) {
-      return [{ id: 'heading-0', primary, secondary, paragraphIndex: 0 }]
+      return [{ id: 'heading-0', primary, secondary, paragraphIndex: 0 }];
     }
-    if (!primary.trim() && !secondary.trim()) return []
-    const aligned = alignBilingualSentences(primary, secondary, primaryLang)
-    return aligned.length > 0 ? aligned : [{ id: 'pair-0', primary, secondary }]
-  }, [primary, secondary, isHeading, primaryLang])
+    if (!primary.trim() && !secondary.trim()) return [];
+    const aligned = alignBilingualSentences(primary, secondary, primaryLang);
+    return aligned.length > 0 ? aligned : [{ id: 'pair-0', primary, secondary }];
+  }, [primary, secondary, isHeading, primaryLang]);
 
   // Group aligned sentence pairs back into visual paragraphs so the layout
   // stays identical to the old paragraph-based rendering.
   const paragraphGroups = useMemo<ParagraphGroup[]>(() => {
-    const groups: ParagraphGroup[] = []
+    const groups: ParagraphGroup[] = [];
     for (const pair of sentencePairs) {
-      const pIdx = pair.paragraphIndex ?? 0
-      const last = groups[groups.length - 1]
+      const pIdx = pair.paragraphIndex ?? 0;
+      const last = groups[groups.length - 1];
       if (last && last.pIdx === pIdx) {
-        last.pairs.push(pair)
+        last.pairs.push(pair);
       } else {
-        groups.push({ pIdx, pairs: [pair] })
+        groups.push({ pIdx, pairs: [pair] });
       }
     }
-    return groups
-  }, [sentencePairs])
+    return groups;
+  }, [sentencePairs]);
 
   // Cumulative primary-word offset per pair, so TTS word indices stay in sync
   const wordOffsets = useMemo(() => {
-    const map = new Map<string, number>()
-    let running = 0
+    const map = new Map<string, number>();
+    let running = 0;
     for (const pair of sentencePairs) {
-      map.set(
-        pair.id,
-        running,
-      )
-      running += pair.primary.split(/\s+/).filter(Boolean).length
+      map.set(pair.id, running);
+      running += pair.primary.split(/\s+/).filter(Boolean).length;
     }
-    return map
-  }, [sentencePairs])
+    return map;
+  }, [sentencePairs]);
 
   // Render a matched sentence as a hoverable span, with word-by-word active
   // highlighting when TTS is speaking this block.
-  const renderSentence = (
-    text: string,
-    pairId: string,
-    startWordOffset: number,
-  ) => {
-    let content: React.ReactNode = text
+  const renderSentence = (text: string, pairId: string, startWordOffset: number) => {
+    let content: React.ReactNode = text;
     if (isSpeakingThis && tts.activeWordIndex >= 0) {
-      let wordIdx = startWordOffset - 1
-      const tokens = text.split(/(\s+)/)
+      let wordIdx = startWordOffset - 1;
+      const tokens = text.split(/(\s+)/);
       content = tokens.map((token, idx) => {
         if (/^\s+$/.test(token)) {
-          return token
+          return token;
         }
-        wordIdx++
-        const isActive = wordIdx === tts.activeWordIndex
+        wordIdx++;
+        const isActive = wordIdx === tts.activeWordIndex;
         return (
           <span
             key={idx}
@@ -134,35 +124,32 @@ export const ParagraphBlock = memo(function ParagraphBlock({
           >
             {token}
           </span>
-        )
-      })
+        );
+      });
     }
 
     return (
       <span data-pair-id={pairId} className="rounded">
         {content}
       </span>
-    )
-  }
+    );
+  };
 
-  const renderPairSequence = (
-    pairs: MatchedSentencePair[],
-    side: 'primary' | 'secondary',
-  ) => {
-    let hasRendered = false
-    return pairs.map((pair, i) => {
-      const text = side === 'primary' ? pair.primary : pair.secondary
-      if (!text) return null
-      const separator = hasRendered ? ' ' : null
-      hasRendered = true
+  const renderPairSequence = (pairs: MatchedSentencePair[], side: 'primary' | 'secondary') => {
+    let hasRendered = false;
+    return pairs.map((pair) => {
+      const text = side === 'primary' ? pair.primary : pair.secondary;
+      if (!text) return null;
+      const separator = hasRendered ? ' ' : null;
+      hasRendered = true;
       return (
         <Fragment key={pair.id}>
           {separator}
           {renderSentence(text, pair.id, wordOffsets.get(pair.id) ?? 0)}
         </Fragment>
-      )
-    })
-  }
+      );
+    });
+  };
 
   return (
     <div
@@ -254,12 +241,9 @@ export const ParagraphBlock = memo(function ParagraphBlock({
         // sentence lights up its counterpart in the other language.
         <div className="space-y-6">
           {paragraphGroups.map((group) => {
-            const hasSecondary = group.pairs.some((p) => p.secondary)
+            const hasSecondary = group.pairs.some((p) => p.secondary);
             return (
-              <div
-                key={group.pIdx}
-                className="bilingual-para-block transition-all duration-150"
-              >
+              <div key={group.pIdx} className="bilingual-para-block transition-all duration-150">
                 {/* Primary Paragraph */}
                 <p
                   className="mb-0 text-inherit transition-colors"
@@ -292,10 +276,10 @@ export const ParagraphBlock = memo(function ParagraphBlock({
                   </div>
                 )}
               </div>
-            )
+            );
           })}
         </div>
       )}
     </div>
-  )
-})
+  );
+});

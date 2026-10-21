@@ -392,7 +392,7 @@ export function ReaderBottomBar() {
                         {toPersianDigits(remainingMinutes)} دقیقه باقی‌مانده
                       </span>
                     )}
-                    <span className="tabular-nums font-bold">
+                    <span suppressHydrationWarning className="tabular-nums font-bold">
                       {toPersianDigits(displayPercent)}٪ مطالعه شده
                     </span>
                   </div>

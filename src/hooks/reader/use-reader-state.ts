@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 /**
  * useReaderState — thin orchestrator that composes the reader sub-hooks.
@@ -28,19 +28,19 @@
  * `professional-reader.tsx` keep working without changes.
  */
 
-import { useReadingPreferences } from '@/hooks/reader/use-reading-preferences'
-import { useAutoScroll } from '@/hooks/reader/use-auto-scroll'
-import { useReaderChat } from '@/hooks/reader/use-reader-chat'
-import { useReaderDictionary } from '@/hooks/reader/use-reader-dictionary'
-import { useReaderEventBus } from '@/hooks/reader/use-reader-events'
-import { useReaderHighlights } from '@/hooks/reader/use-reader-highlights'
-import { useReaderNotifications } from '@/hooks/reader/use-reader-notifications'
-import { useReaderPanels } from '@/hooks/reader/use-reader-panels'
-import { useReaderScroll } from '@/hooks/reader/use-reader-scroll'
-import { useReaderSelection } from '@/hooks/reader/use-reader-selection'
-import { useReaderShortcuts } from '@/hooks/reader/use-reader-shortcuts'
-import { useReaderXp } from '@/hooks/reader/use-reader-xp'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useReadingPreferences } from '@/hooks/reader/use-reading-preferences';
+import { useAutoScroll } from '@/hooks/reader/use-auto-scroll';
+import { useReaderChat } from '@/hooks/reader/use-reader-chat';
+import { useReaderDictionary } from '@/hooks/reader/use-reader-dictionary';
+import { useReaderEventBus } from '@/hooks/reader/use-reader-events';
+import { useReaderHighlights } from '@/hooks/reader/use-reader-highlights';
+import { useReaderNotifications } from '@/hooks/reader/use-reader-notifications';
+import { useReaderPanels } from '@/hooks/reader/use-reader-panels';
+import { useReaderScroll } from '@/hooks/reader/use-reader-scroll';
+import { useReaderSelection } from '@/hooks/reader/use-reader-selection';
+import { useReaderShortcuts } from '@/hooks/reader/use-reader-shortcuts';
+import { useReaderXp } from '@/hooks/reader/use-reader-xp';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   COLUMN_WIDTH_PX,
   MARGIN_STYLES,
@@ -48,31 +48,31 @@ import {
   THEME_STYLES,
   type ReaderBook,
   type ReaderTheme,
-} from '@/lib/reader/types'
+} from '@/lib/reader/types';
 
-const THEME_CYCLE: ReaderTheme[] = ['light', 'sepia', 'dark', 'high-contrast']
+const THEME_CYCLE: ReaderTheme[] = ['light', 'sepia', 'dark', 'high-contrast'];
 
-const FONT_SIZE_MIN = 14
-const FONT_SIZE_MAX = 32
-const FONT_SIZE_STEP = 1
+const FONT_SIZE_MIN = 14;
+const FONT_SIZE_MAX = 32;
+const FONT_SIZE_STEP = 1;
 
 export function useReaderState(book: ReaderBook) {
-  const { prefs, update } = useReadingPreferences()
+  const { prefs, update } = useReadingPreferences();
 
-  const totalPages = book.pages.length
-  const themeStyle = THEME_STYLES[prefs.theme]
-  const currentLanguage = prefs.language
+  const totalPages = book.pages.length;
+  const themeStyle = THEME_STYLES[prefs.theme];
+  const currentLanguage = prefs.language;
 
   // ---- Event bus (decouples toasts from business logic) ----
-  const { lastEntry, emit } = useReaderEventBus()
-  useReaderNotifications(lastEntry)
+  const { lastEntry, emit } = useReaderEventBus();
+  useReaderNotifications(lastEntry);
 
   // ---- Chat + dictionary panels (owned here so selection can open them) ----
-  const chat = useReaderChat()
-  const dictionary = useReaderDictionary()
+  const chat = useReaderChat();
+  const dictionary = useReaderDictionary();
 
   // ---- Scroll + reading-position model ----
-  const scroll = useReaderScroll({ book, totalPages })
+  const scroll = useReaderScroll({ book, totalPages });
 
   // ---- Text selection + share + vocab POST ----
   const selection = useReaderSelection({
@@ -81,7 +81,7 @@ export function useReaderState(book: ReaderBook) {
     currentLanguage,
     onShowDictionary: (word) => dictionary.openWithWord(word),
     emit,
-  })
+  });
 
   // ---- Highlights + bookmarks ----
   const highlights = useReaderHighlights({
@@ -95,26 +95,27 @@ export function useReaderState(book: ReaderBook) {
     selectedText: selection.selectedText,
     selectedRange: selection.selectedRange,
     emit,
-  })
+  });
 
   // ---- Panels (focus mode, settings, highlights list, chapters, search) ----
   const panels = useReaderPanels({
     closeChat: chat.closeChat,
     closeDictionary: dictionary.closeDictionary,
     closeTextMenu: selection.closeTextMenu,
-  })
+  });
 
   // Auto-open search if URL has ?search=1 or ?q=...
-  const [searchInitialQuery, setSearchInitialQuery] = useState('')
+  const [searchInitialQuery, setSearchInitialQuery] = useState('');
+  const { setShowSearch } = panels;
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    const params = new URLSearchParams(window.location.search)
-    const q = params.get('q')
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('q');
     if (params.get('search') === '1' || q) {
-      if (q) setSearchInitialQuery(q)
-      panels.setShowSearch(true)
+      if (q) setSearchInitialQuery(q);
+      setShowSearch(true);
     }
-  }, [panels.setShowSearch])
+  }, [setShowSearch]);
 
   // ---- XP / streak / session timer ----
   const xp = useReaderXp({
@@ -125,86 +126,76 @@ export function useReaderState(book: ReaderBook) {
     restoredRef: scroll.restoredRef,
     lastAwardedParagraphRef: scroll.lastAwardedParagraphRef,
     completionAwardedRef: scroll.completionAwardedRef,
-  })
+  });
 
   // ---- Theme cycling (Shift+T shortcut + toolbar theme toggle) ----
   const cycleTheme = useCallback(() => {
-    const idx = THEME_CYCLE.indexOf(prefs.theme)
-    const next = THEME_CYCLE[(idx + 1) % THEME_CYCLE.length]
-    update('theme', next)
-  }, [prefs.theme, update])
+    const idx = THEME_CYCLE.indexOf(prefs.theme);
+    const next = THEME_CYCLE[(idx + 1) % THEME_CYCLE.length];
+    update('theme', next);
+  }, [prefs.theme, update]);
 
   // ---- Font size quick adjust (toolbar A-/A+ and +/- shortcut) ----
   const increaseFontSize = useCallback(() => {
-    update(
-      'fontSize',
-      Math.min(FONT_SIZE_MAX, prefs.fontSize + FONT_SIZE_STEP),
-    )
-  }, [prefs.fontSize, update])
+    update('fontSize', Math.min(FONT_SIZE_MAX, prefs.fontSize + FONT_SIZE_STEP));
+  }, [prefs.fontSize, update]);
   const decreaseFontSize = useCallback(() => {
-    update(
-      'fontSize',
-      Math.max(FONT_SIZE_MIN, prefs.fontSize - FONT_SIZE_STEP),
-    )
-  }, [prefs.fontSize, update])
+    update('fontSize', Math.max(FONT_SIZE_MIN, prefs.fontSize - FONT_SIZE_STEP));
+  }, [prefs.fontSize, update]);
 
   // ---- Keyboard shortcuts ----
   const { showHelp, setShowHelp } = useReaderShortcuts({
     nextParagraph: () =>
-      scroll.scrollToParagraph(
-        Math.min(scroll.currentParagraph + 1, totalPages - 1),
-      ),
-    prevParagraph: () =>
-      scroll.scrollToParagraph(Math.max(scroll.currentParagraph - 1, 0)),
+      scroll.scrollToParagraph(Math.min(scroll.currentParagraph + 1, totalPages - 1)),
+    prevParagraph: () => scroll.scrollToParagraph(Math.max(scroll.currentParagraph - 1, 0)),
     pageDown: scroll.pageDown,
     pageUp: scroll.pageUp,
     jumpToStart: () => scroll.scrollToParagraph(0),
     jumpToEnd: () => scroll.scrollToParagraph(totalPages - 1),
     toggleFocusMode: panels.toggleFocusMode,
     toggleSearch: () => {
-      panels.setShowSearch((v) => !v)
-      panels.setShowSettings(false)
-      panels.setShowHighlights(false)
-      panels.setShowChapters(false)
+      panels.setShowSearch((v) => !v);
+      panels.setShowSettings(false);
+      panels.setShowHighlights(false);
+      panels.setShowChapters(false);
     },
     toggleSettings: () => {
-      panels.setShowSettings((v) => !v)
-      panels.setShowHighlights(false)
-      panels.setShowChapters(false)
-      panels.setShowSearch(false)
+      panels.setShowSettings((v) => !v);
+      panels.setShowHighlights(false);
+      panels.setShowChapters(false);
+      panels.setShowSearch(false);
     },
     toggleHighlights: () => {
-      panels.setShowHighlights((v) => !v)
-      panels.setShowSettings(false)
-      panels.setShowChapters(false)
-      panels.setShowSearch(false)
+      panels.setShowHighlights((v) => !v);
+      panels.setShowSettings(false);
+      panels.setShowChapters(false);
+      panels.setShowSearch(false);
     },
     toggleChapters: () => {
-      panels.setShowChapters((v) => !v)
-      panels.setShowSettings(false)
-      panels.setShowHighlights(false)
-      panels.setShowSearch(false)
+      panels.setShowChapters((v) => !v);
+      panels.setShowSettings(false);
+      panels.setShowHighlights(false);
+      panels.setShowSearch(false);
     },
     toggleSubtitles: () => update('showSubtitles', !prefs.showSubtitles),
-    toggleLanguage: () =>
-      update('language', currentLanguage === 'english' ? 'farsi' : 'english'),
+    toggleLanguage: () => update('language', currentLanguage === 'english' ? 'farsi' : 'english'),
     toggleDictionary: () => dictionary.setShowDictionary((v) => !v),
     toggleChat: () => chat.setShowChat((v) => !v),
     cycleTheme,
     increaseFontSize,
     decreaseFontSize,
     closeAll: panels.closeAllPanels,
-  })
+  });
 
   // ---- Auto-scroll (continuous, smooth) ----
   const onAutoScrollTick = useCallback(() => {
-    const el = scroll.scrollRef.current
-    if (!el) return false
-    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 6
-    if (atBottom) return false
-    el.scrollBy({ top: el.clientHeight * 0.85, behavior: 'smooth' })
-    return true
-  }, [scroll.scrollRef])
+    const el = scroll.scrollRef.current;
+    if (!el) return false;
+    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 6;
+    if (atBottom) return false;
+    el.scrollBy({ top: el.clientHeight * 0.85, behavior: 'smooth' });
+    return true;
+  }, [scroll.scrollRef]);
 
   const {
     active: autoScrollActive,
@@ -214,35 +205,35 @@ export function useReaderState(book: ReaderBook) {
   } = useAutoScroll({
     intervalSeconds: prefs.autoScrollInterval,
     onTick: onAutoScrollTick,
-  })
+  });
 
   // Stop auto-scroll if we've already reached the bottom
   useEffect(() => {
-    if (autoScrollActive && scroll.scrollPercent >= 99.5) stopAutoScroll()
-  }, [autoScrollActive, scroll.scrollPercent, stopAutoScroll])
+    if (autoScrollActive && scroll.scrollPercent >= 99.5) stopAutoScroll();
+  }, [autoScrollActive, scroll.scrollPercent, stopAutoScroll]);
 
   // ── Reading progress milestones (25% / 50% / 75%) ────────────────────
-  const milestoneFired = useRef<Set<number>>(new Set())
+  const milestoneFired = useRef<Set<number>>(new Set());
   useEffect(() => {
-    const pct = scroll.scrollPercent
-    const milestones = [25, 50, 75]
+    const pct = scroll.scrollPercent;
+    const milestones = [25, 50, 75];
     for (const m of milestones) {
       if (pct >= m && !milestoneFired.current.has(m)) {
-        milestoneFired.current.add(m)
+        milestoneFired.current.add(m);
         window.dispatchEvent(
           new CustomEvent('ky:reading-milestone', {
             detail: { milestone: m, bookSlug: book.slug, bookTitle: book.title },
           }),
-        )
+        );
       }
     }
-  }, [scroll.scrollPercent, book.slug, book.title])
+  }, [scroll.scrollPercent, book.slug, book.title]);
 
   // ---- Derived layout values ----
-  const columnMaxWidth = COLUMN_WIDTH_PX[prefs.columnWidth]
-  const marginStyle = MARGIN_STYLES[prefs.margin]
-  const fontFamilyCss = READER_FONT_FAMILIES[prefs.fontFamily]
-  const chromeVisible = panels.chromeVisible
+  const columnMaxWidth = COLUMN_WIDTH_PX[prefs.columnWidth];
+  const marginStyle = MARGIN_STYLES[prefs.margin];
+  const fontFamilyCss = READER_FONT_FAMILIES[prefs.fontFamily];
+  const chromeVisible = panels.chromeVisible;
 
   return {
     // book + prefs
@@ -334,5 +325,5 @@ export function useReaderState(book: ReaderBook) {
     // help overlay
     showHelp,
     setShowHelp,
-  }
+  };
 }

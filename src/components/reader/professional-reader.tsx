@@ -1,57 +1,57 @@
-'use client'
+'use client';
 
-import { BookCompletionCelebration } from '@/components/reader/book-completion-celebration'
-import { ReaderBottomBar } from '@/components/reader/reader-bottom-bar'
-import { ReaderContent } from '@/components/reader/reader-content'
-import { ReaderOverlays } from '@/components/reader/reader-overlays'
-import { ReaderProvider } from '@/components/reader/reader-context'
-import { ReaderToolbar } from '@/components/reader/reader-toolbar'
-import { useReaderState } from '@/hooks/reader/use-reader-state'
-import { TTSProvider } from '@/hooks/tts-provider'
-import { isBookFullyCached, prefetchBook } from '@/lib/book-prefetcher'
-import { EMPTY_READER_COPY, toPersianDigits, type ReaderBook } from '@/lib/reader/types'
-import { ChevronRight, Sparkles } from 'lucide-react'
-import { useEffect } from 'react'
+import { BookCompletionCelebration } from '@/components/reader/book-completion-celebration';
+import { ReaderBottomBar } from '@/components/reader/reader-bottom-bar';
+import { ReaderContent } from '@/components/reader/reader-content';
+import { ReaderOverlays } from '@/components/reader/reader-overlays';
+import { ReaderProvider } from '@/components/reader/reader-context';
+import { ReaderToolbar } from '@/components/reader/reader-toolbar';
+import { useReaderState } from '@/hooks/reader/use-reader-state';
+import { TTSProvider } from '@/hooks/tts-provider';
+import { isBookFullyCached, prefetchBook } from '@/lib/book-prefetcher';
+import { EMPTY_READER_COPY, toPersianDigits, type ReaderBook } from '@/lib/reader/types';
+import { ChevronRight, Sparkles } from 'lucide-react';
+import { useEffect } from 'react';
 
 interface ReaderProps {
-  book: ReaderBook
+  book: ReaderBook;
 }
 
 export function ProfessionalReader({ book }: ReaderProps) {
-  const state = useReaderState(book)
+  const state = useReaderState(book);
 
   // Keep offline prefetching out of the critical rendering window and avoid
   // spending bandwidth on constrained connections.
   useEffect(() => {
     const connection = (
       navigator as Navigator & {
-        connection?: { saveData?: boolean; effectiveType?: string }
+        connection?: { saveData?: boolean; effectiveType?: string };
       }
-    ).connection
+    ).connection;
     if (
       !navigator.onLine ||
       connection?.saveData ||
       ['slow-2g', '2g'].includes(connection?.effectiveType ?? '')
     ) {
-      return
+      return;
     }
 
-    let timer: ReturnType<typeof setTimeout> | undefined
+    let timer: ReturnType<typeof setTimeout> | undefined;
     if (book.slug && book.pageCount && !isBookFullyCached(book.slug)) {
       timer = setTimeout(() => {
         void prefetchBook(book.slug, book.title, book.pageCount as number).catch(() => {
           // Background downloads can retry when the reader is opened again.
-        })
-      }, 8000)
+        });
+      }, 8000);
     }
 
     return () => {
-      if (timer) clearTimeout(timer)
-    }
-  }, [book.slug, book.title, book.pageCount])
+      if (timer) clearTimeout(timer);
+    };
+  }, [book.slug, book.title, book.pageCount]);
 
   if (!book.pages.length) {
-    const { themeStyle } = state
+    const { themeStyle } = state;
     return (
       <div
         className="fixed inset-0 z-[9999] flex h-screen w-screen items-center justify-center overflow-hidden p-6"
@@ -94,7 +94,7 @@ export function ProfessionalReader({ book }: ReaderProps) {
           </a>
         </div>
       </div>
-    )
+    );
   }
 
   const {
@@ -105,7 +105,7 @@ export function ProfessionalReader({ book }: ReaderProps) {
     showFocusHint,
     sessionMinutes,
     isLastPage,
-  } = state
+  } = state;
 
   return (
     <ReaderProvider value={state}>
@@ -118,11 +118,9 @@ export function ProfessionalReader({ book }: ReaderProps) {
           className="fixed inset-0 z-[9999] isolate flex h-screen w-screen flex-col overflow-hidden"
           style={{ background: themeStyle.bg, color: themeStyle.text }}
         >
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-0 z-50 h-1"
-          >
+          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 z-50 h-1">
             <div
+              suppressHydrationWarning
               className="h-full origin-right will-change-transform"
               style={{
                 transform: `scaleX(${Math.max(0.001, scrollPercent / 100)})`,
@@ -182,5 +180,5 @@ export function ProfessionalReader({ book }: ReaderProps) {
         </div>
       </TTSProvider>
     </ReaderProvider>
-  )
+  );
 }
