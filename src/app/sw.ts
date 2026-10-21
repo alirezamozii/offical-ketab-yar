@@ -33,23 +33,23 @@ import {
   Serwist,
   StaleWhileRevalidate,
   type PrecacheEntry,
-} from 'serwist'
+} from 'serwist';
 
 const isDev =
   typeof self !== 'undefined' &&
   (self.location.hostname === 'localhost' ||
     self.location.hostname === '127.0.0.1' ||
     self.location.hostname.endsWith('.space-z.ai') ||
-    self.location.hostname.endsWith('.preview.z.ai'))
+    self.location.hostname.endsWith('.preview.z.ai'));
 
 // The precache manifest is injected by @serwist/next at build time (the
 // placeholder below is replaced with the actual asset list). It's not a
 // real global at type-check time, so we declare it locally.
-declare const __BUILD_REVISION__: string
+declare const __BUILD_REVISION__: string;
 
 declare const self: ServiceWorkerGlobalScope & {
-  __SW_MANIFEST?: (PrecacheEntry | string)[]
-}
+  __SW_MANIFEST?: (PrecacheEntry | string)[];
+};
 
 // ---------------------------------------------------------------------------
 // Precache — build-injected assets + the hard-coded "must-work-offline" app
@@ -64,7 +64,7 @@ const HARDCODED_PRECACHE: PrecacheEntry[] = [
   { url: '/manifest.json', revision: __BUILD_REVISION__ },
   { url: '/icons/icon-192.png', revision: __BUILD_REVISION__ },
   { url: '/icons/icon-512.png', revision: __BUILD_REVISION__ },
-]
+];
 
 // ---------------------------------------------------------------------------
 // Runtime caching — see file header for the strategy matrix.
@@ -72,32 +72,33 @@ const HARDCODED_PRECACHE: PrecacheEntry[] = [
 const STATIC_ASSETS_MATCHER = ({ url, request }: { url: URL; request: Request }) => {
   // Next.js fingerprinted build assets — immutable URLs, safe to cache
   // essentially forever (with a 60-entry cap to bound disk usage).
-  if (url.origin !== self.location.origin) return false
-  if (url.pathname.startsWith('/_next/static/')) return true
+  if (url.origin !== self.location.origin) return false;
+  if (url.pathname.startsWith('/_next/static/')) return true;
   // PWA icons, favicons, apple-touch-icon — versioned by `revision` in
   // the precache; runtime cache is just a fast path.
-  if (url.pathname.startsWith('/icons/')) return true
+  if (url.pathname.startsWith('/icons/')) return true;
   // next/font self-hosted fonts (woff2) are served from /_next/static/media
   // and would already match above; the destination check catches any
   // edge-case fonts loaded from elsewhere.
-  if (request.destination === 'font') return true
-  if (request.destination === 'image') return true
-  return false
-}
+  if (request.destination === 'font') return true;
+  if (request.destination === 'image') return true;
+  return false;
+};
 
 const BOOK_CONTENT_MATCHER = ({ url }: { url: URL }) =>
   // `/api/books/<slug>/pages?from=...&to=...` — chunked reader content.
   // Caching this is what makes a previously-opened book readable offline.
-  /^\/api\/books\/[^/]+\/pages/.test(url.pathname)
+  /^\/api\/books\/[^/]+\/pages/.test(url.pathname);
 
-const DICTIONARY_MATCHER = ({ url }: { url: URL }) =>
-  url.pathname === '/api/dictionary'
+const DICTIONARY_MATCHER = ({ url }: { url: URL }) => url.pathname === '/api/dictionary';
 
-const OG_IMAGE_MATCHER = ({ url }: { url: URL }) =>
-  url.pathname.startsWith('/api/og/')
+const TTS_AUDIO_MATCHER = ({ url, request }: { url: URL; request: Request }) =>
+  url.origin === self.location.origin && url.pathname === '/api/tts' && request.method === 'GET';
+
+const OG_IMAGE_MATCHER = ({ url }: { url: URL }) => url.pathname.startsWith('/api/og/');
 
 const READER_PAGE_MATCHER = ({ url }: { url: URL }) =>
-  url.origin === self.location.origin && url.pathname.startsWith('/books/read/')
+  url.origin === self.location.origin && url.pathname.startsWith('/books/read/');
 
 /**
  * RSC flight-payload requests (App Router client navigation and <Link>
@@ -108,7 +109,7 @@ const READER_PAGE_MATCHER = ({ url }: { url: URL }) =>
 const RSC_MATCHER = ({ url, request }: { url: URL; request: Request }) =>
   url.origin === self.location.origin &&
   request.method === 'GET' &&
-  request.headers.get('RSC') === '1'
+  request.headers.get('RSC') === '1';
 
 /**
  * Catch-all for read-only public/user GET APIs. Never matches /api/auth/*
@@ -118,7 +119,7 @@ const RSC_MATCHER = ({ url, request }: { url: URL; request: Request }) =>
 const READ_API_MATCHER = ({ url }: { url: URL }) =>
   url.origin === self.location.origin &&
   url.pathname.startsWith('/api/') &&
-  !url.pathname.startsWith('/api/auth/')
+  !url.pathname.startsWith('/api/auth/');
 
 /**
  * Dictionary POST cache-key plugin.
@@ -131,45 +132,41 @@ const READ_API_MATCHER = ({ url }: { url: URL }) =>
  * key is affected.
  */
 const dictionaryCacheKeyPlugin = {
-  cacheKeyWillBeUsed: async ({
-    request,
-  }: {
-    request: Request
-  }): Promise<string | Request> => {
-    if (request.method !== 'POST') return request
+  cacheKeyWillBeUsed: async ({ request }: { request: Request }): Promise<string | Request> => {
+    if (request.method !== 'POST') return request;
     try {
-      const cloned = request.clone()
-      const body = (await cloned.json().catch(() => null)) as
-        | { word?: unknown; context?: unknown }
-        | null
-      const word =
-        body && typeof body.word === 'string' && body.word.length > 0
-          ? body.word
-          : ''
-      return `/api/dictionary?w=${encodeURIComponent(word)}&context=${encodeURIComponent(typeof body?.context === 'string' ? body.context : '')}`
+      const cloned = request.clone();
+      const body = (await cloned.json().catch(() => null)) as {
+        word?: unknown;
+        context?: unknown;
+      } | null;
+      const word = body && typeof body.word === 'string' && body.word.length > 0 ? body.word : '';
+      return `/api/dictionary?w=${encodeURIComponent(word)}&context=${encodeURIComponent(typeof body?.context === 'string' ? body.context : '')}`;
     } catch {
-      return request
+      return request;
     }
   },
-}
+};
 
 // Retire the background-sync queue (mutations are never replayed) and delete
 // caches from retired strategies: pre-stable-name caches and the per-build
 // `bookzi-reader-<revision>` caches, which stranded every offline book after
 // each deploy.
 self.addEventListener('activate', (event) => {
-  event.waitUntil((async () => {
-    const queue = new BackgroundSyncQueueStore('bookzi-sync-queue')
-    for (const entry of await queue.getAll()) await queue.deleteEntry(entry.id)
-    const legacyExact = ['bookzi-pages', 'bookzi-fresh-api', 'ketab-pages']
-    const names = await caches.keys()
-    await Promise.all(
-      names
-        .filter((name) => legacyExact.includes(name) || /^bookzi-reader-/.test(name))
-        .map((name) => caches.delete(name)),
-    )
-  })())
-})
+  event.waitUntil(
+    (async () => {
+      const queue = new BackgroundSyncQueueStore('bookzi-sync-queue');
+      for (const entry of await queue.getAll()) await queue.deleteEntry(entry.id);
+      const legacyExact = ['bookzi-pages', 'bookzi-fresh-api', 'ketab-pages'];
+      const names = await caches.keys();
+      await Promise.all(
+        names
+          .filter((name) => legacyExact.includes(name) || /^bookzi-reader-/.test(name))
+          .map((name) => caches.delete(name)),
+      );
+    })(),
+  );
+});
 
 const serwist = new Serwist({
   precacheEntries: [...(self.__SW_MANIFEST || []), ...HARDCODED_PRECACHE],
@@ -229,6 +226,20 @@ const serwist = new Serwist({
           dictionaryCacheKeyPlugin,
           new ExpirationPlugin({
             maxEntries: 500,
+            maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+          }),
+        ],
+      }),
+    },
+    // ─── CacheFirst: offline TTS audio clips & word pronunciations ─────
+    {
+      matcher: TTS_AUDIO_MATCHER,
+      method: 'GET',
+      handler: new CacheFirst({
+        cacheName: 'bookzi-tts-audio',
+        plugins: [
+          new ExpirationPlugin({
+            maxEntries: 300,
             maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
           }),
         ],
@@ -320,11 +331,10 @@ const serwist = new Serwist({
     entries: [
       {
         url: '/',
-        matcher: ({ request }: { request: Request }) =>
-          request.mode === 'navigate',
+        matcher: ({ request }: { request: Request }) => request.mode === 'navigate',
       },
     ],
   },
-})
+});
 
-serwist.addEventListeners()
+serwist.addEventListeners();

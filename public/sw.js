@@ -29,7 +29,7 @@
       getSuffix: () => y.suffix,
     },
     D;
-  function Z() {
+  function ee() {
     if (D === void 0) {
       let e = new Response('');
       if ('body' in e)
@@ -55,25 +55,25 @@
         (this.name = t), (this.details = s);
       }
     };
-  var ee = (e) =>
+  var te = (e) =>
     new URL(String(e), location.href).href.replace(new RegExp(`^${location.origin}`), '');
   function S(e) {
     return new Promise((t) => setTimeout(t, e));
   }
   var V = new Set();
-  function X(e, t) {
+  function Z(e, t) {
     let s = new URL(e);
     for (let r of t) s.searchParams.delete(r);
     return s.href;
   }
-  async function te(e, t, s, r) {
-    let a = X(t.url, s);
+  async function se(e, t, s, r) {
+    let a = Z(t.url, s);
     if (t.url === a) return e.match(t, r);
     let n = { ...r, ignoreSearch: !0 },
       o = await e.keys(t, n);
-    for (let c of o) if (a === X(c.url, s)) return e.match(c, r);
+    for (let c of o) if (a === Z(c.url, s)) return e.match(c, r);
   }
-  var se = class {
+  var re = class {
       constructor() {
         i(this, 'promise');
         i(this, 'resolve');
@@ -83,7 +83,7 @@
         });
       }
     },
-    re = async () => {
+    ae = async () => {
       for (let e of V) await e();
     },
     Ke = '-precache-',
@@ -93,12 +93,12 @@
       );
       return await Promise.all(s.map((r) => self.caches.delete(r))), s;
     },
-    ae = (e) => {
+    ne = (e) => {
       self.addEventListener('activate', (t) => {
         t.waitUntil(He(E.getPrecacheName(e)).then((s) => {}));
       });
     },
-    ne = () => {
+    oe = () => {
       self.addEventListener('activate', () => self.clients.claim());
     },
     F = (e, t) => {
@@ -106,15 +106,15 @@
       return e.waitUntil(s), s;
     };
   var W = (e, t) => t.some((s) => e instanceof s),
-    oe,
-    ie;
+    ie,
+    ce;
   function Ge() {
-    return oe || (oe = [IDBDatabase, IDBObjectStore, IDBIndex, IDBCursor, IDBTransaction]);
+    return ie || (ie = [IDBDatabase, IDBObjectStore, IDBIndex, IDBCursor, IDBTransaction]);
   }
   function je() {
     return (
-      ie ||
-      (ie = [
+      ce ||
+      (ce = [
         IDBCursor.prototype.advance,
         IDBCursor.prototype.continue,
         IDBCursor.prototype.continuePrimaryKey,
@@ -123,7 +123,7 @@
   }
   var K = new WeakMap(),
     B = new WeakMap(),
-    O = new WeakMap();
+    A = new WeakMap();
   function Qe(e) {
     let t = new Promise((s, r) => {
       let a = () => {
@@ -137,7 +137,7 @@
         };
       e.addEventListener('success', n), e.addEventListener('error', o);
     });
-    return O.set(t, e), t;
+    return A.set(t, e), t;
   }
   function ze(e) {
     if (K.has(e)) return;
@@ -175,7 +175,7 @@
       return e instanceof IDBTransaction && (t === 'done' || t === 'store') ? !0 : t in e;
     },
   };
-  function he(e) {
+  function de(e) {
     H = e(H);
   }
   function Je(e) {
@@ -196,10 +196,10 @@
     if (e instanceof IDBRequest) return Qe(e);
     if (B.has(e)) return B.get(e);
     let t = Ye(e);
-    return t !== e && (B.set(e, t), O.set(t, e)), t;
+    return t !== e && (B.set(e, t), A.set(t, e)), t;
   }
-  var G = (e) => O.get(e);
-  function A(e, t, { blocked: s, upgrade: r, blocking: a, terminated: n } = {}) {
+  var G = (e) => A.get(e);
+  function O(e, t, { blocked: s, upgrade: r, blocking: a, terminated: n } = {}) {
     let o = indexedDB.open(e, t),
       c = b(o);
     return (
@@ -217,14 +217,14 @@
       c
     );
   }
-  function de(e, { blocked: t } = {}) {
+  function pe(e, { blocked: t } = {}) {
     let s = indexedDB.deleteDatabase(e);
     return t && s.addEventListener('blocked', (r) => t(r.oldVersion, r)), b(s).then(() => {});
   }
   var Xe = ['get', 'getKey', 'getAll', 'getAllKeys', 'count'],
     Ze = ['put', 'add', 'delete', 'clear'],
     M = new Map();
-  function ce(e, t) {
+  function le(e, t) {
     if (!(e instanceof IDBDatabase && !(t in e) && typeof t == 'string')) return;
     if (M.get(t)) return M.get(t);
     let s = t.replace(/FromIndex$/, ''),
@@ -238,24 +238,24 @@
     };
     return M.set(t, n), n;
   }
-  he((e) => ({
+  de((e) => ({
     ...e,
-    get: (t, s, r) => ce(t, s) || e.get(t, s, r),
-    has: (t, s) => !!ce(t, s) || e.has(t, s),
+    get: (t, s, r) => le(t, s) || e.get(t, s, r),
+    has: (t, s) => !!le(t, s) || e.has(t, s),
   }));
   var et = ['continue', 'continuePrimaryKey', 'advance'],
-    le = {},
+    ue = {},
     j = new WeakMap(),
-    pe = new WeakMap(),
+    ge = new WeakMap(),
     tt = {
       get(e, t) {
         if (!et.includes(t)) return e[t];
-        let s = le[t];
+        let s = ue[t];
         return (
           s ||
-            (s = le[t] =
+            (s = ue[t] =
               function (...r) {
-                j.set(this, pe.get(this)[t](...r));
+                j.set(this, ge.get(this)[t](...r));
               }),
           s
         );
@@ -266,38 +266,38 @@
     if ((t instanceof IDBCursor || (t = await t.openCursor(...e)), !t)) return;
     t = t;
     let s = new Proxy(t, tt);
-    for (pe.set(s, t), O.set(s, G(t)); t; )
+    for (ge.set(s, t), A.set(s, G(t)); t; )
       yield s, (t = await (j.get(s) || t.continue())), j.delete(s);
   }
-  function ue(e, t) {
+  function he(e, t) {
     return (
       (t === Symbol.asyncIterator && W(e, [IDBIndex, IDBObjectStore, IDBCursor])) ||
       (t === 'iterate' && W(e, [IDBIndex, IDBObjectStore]))
     );
   }
-  he((e) => ({
+  de((e) => ({
     ...e,
     get(t, s, r) {
-      return ue(t, s) ? st : e.get(t, s, r);
+      return he(t, s) ? st : e.get(t, s, r);
     },
     has(t, s) {
-      return ue(t, s) || e.has(t, s);
+      return he(t, s) || e.has(t, s);
     },
   }));
-  var we = async (e, t) => {
+  var ye = async (e, t) => {
       let s = null;
       if ((e.url && (s = new URL(e.url).origin), s !== self.location.origin))
         throw new h('cross-origin-copy-response', { origin: s });
       let r = e.clone(),
         a = { headers: new Headers(r.headers), status: r.status, statusText: r.statusText },
         n = t ? t(a) : a,
-        o = Z() ? r.body : await r.blob();
+        o = ee() ? r.body : await r.blob();
       return new Response(o, n);
     },
-    ye = () => {
+    Ee = () => {
       self.__WB_DISABLE_DEV_LOGS = !0;
     },
-    ge = 3,
+    fe = 3,
     rt = 'serwist-background-sync',
     N = 'requests',
     T = 'queueName',
@@ -332,10 +332,10 @@
         return (await (await this.getDb()).transaction(N).store.index(T).openCursor(e, t))?.value;
       }
       async getDb() {
-        return this._db || (this._db = await A(rt, ge, { upgrade: this._upgradeDb })), this._db;
+        return this._db || (this._db = await O(rt, fe, { upgrade: this._upgradeDb })), this._db;
       }
       _upgradeDb(e, t) {
-        t > 0 && t < ge && e.objectStoreNames.contains(N) && e.deleteObjectStore(N),
+        t > 0 && t < fe && e.objectStoreNames.contains(N) && e.deleteObjectStore(N),
           e
             .createObjectStore(N, { autoIncrement: !0, keyPath: 'id' })
             .createIndex(T, T, { unique: !1 });
@@ -415,14 +415,14 @@
         return new z(this.toObject());
       }
     },
-    fe = 'serwist-background-sync',
+    me = 'serwist-background-sync',
     ot = 1440 * 7,
     Q = new Set(),
-    me = (e) => {
+    we = (e) => {
       let t = { request: new J(e.requestData).toRequest(), timestamp: e.timestamp };
       return e.metadata && (t.metadata = e.metadata), t;
     },
-    Ee = class {
+    Ne = class {
       constructor(e, { forceSyncFallback: t, onSync: s, maxRetentionTime: r } = {}) {
         i(this, '_name');
         i(this, '_onSync');
@@ -461,7 +461,7 @@
           s = [];
         for (let r of e) {
           let a = this._maxRetentionTime * 60 * 1e3;
-          t - r.timestamp > a ? await this._queueStore.deleteEntry(r.id) : s.push(me(r));
+          t - r.timestamp > a ? await this._queueStore.deleteEntry(r.id) : s.push(we(r));
         }
         return s;
       }
@@ -493,7 +493,7 @@
         }
         if (s) {
           let r = this._maxRetentionTime * 60 * 1e3;
-          return t - s.timestamp > r ? this._removeRequest(e) : me(s);
+          return t - s.timestamp > r ? this._removeRequest(e) : we(s);
         }
       }
       async replayRequests() {
@@ -510,13 +510,13 @@
       async registerSync() {
         if ('sync' in self.registration && !this._forceSyncFallback)
           try {
-            await self.registration.sync.register(`${fe}:${this._name}`);
+            await self.registration.sync.register(`${me}:${this._name}`);
           } catch {}
       }
       _addSyncListener() {
         'sync' in self.registration && !this._forceSyncFallback
           ? self.addEventListener('sync', (e) => {
-              if (e.tag === `${fe}:${this._name}`) {
+              if (e.tag === `${me}:${this._name}`) {
                 let t = async () => {
                   this._syncInProgress = !0;
                   let s;
@@ -541,10 +541,10 @@
         return Q;
       }
     },
-    Ne = class {
+    _e = class {
       constructor(e, t) {
         i(this, '_queue');
-        this._queue = new Ee(e, t);
+        this._queue = new Ne(e, t);
       }
       async fetchDidFail({ request: e }) {
         await this._queue.pushRequest({ request: e });
@@ -556,7 +556,7 @@
   function k(e) {
     return typeof e == 'string' ? new Request(e) : e;
   }
-  var _e = class {
+  var Re = class {
       constructor(e, t) {
         i(this, 'event');
         i(this, 'request');
@@ -572,7 +572,7 @@
           (this.request = t.request),
           t.url && ((this.url = t.url), (this.params = t.params)),
           (this._strategy = e),
-          (this._handlerDeferred = new se()),
+          (this._handlerDeferred = new re()),
           (this._extendLifetimePromises = []),
           (this._plugins = [...e.plugins]),
           (this._pluginStateMap = new Map());
@@ -639,17 +639,17 @@
         let s = k(e);
         await S(0);
         let r = await this.getCacheKey(s, 'write');
-        if (!t) throw new h('cache-put-with-no-response', { url: ee(r.url) });
+        if (!t) throw new h('cache-put-with-no-response', { url: te(r.url) });
         let a = await this._ensureResponseSafeToCache(t);
         if (!a) return !1;
         let { cacheName: n, matchOptions: o } = this._strategy,
           c = await self.caches.open(n),
           l = this.hasCallback('cacheDidUpdate'),
-          u = l ? await te(c, r.clone(), ['__WB_REVISION__'], o) : null;
+          u = l ? await se(c, r.clone(), ['__WB_REVISION__'], o) : null;
         try {
           await c.put(r, l ? a.clone() : a);
         } catch (d) {
-          if (d instanceof Error) throw (d.name === 'QuotaExceededError' && (await re()), d);
+          if (d instanceof Error) throw (d.name === 'QuotaExceededError' && (await ae()), d);
         }
         for (let d of this.iterateCallbacks('cacheDidUpdate'))
           await d({
@@ -743,7 +743,7 @@
         e instanceof FetchEvent && (e = { event: e, request: e.request });
         let t = e.event,
           s = typeof e.request == 'string' ? new Request(e.request) : e.request,
-          r = new _e(
+          r = new Re(
             this,
             e.url
               ? { event: t, request: s, url: e.url, params: e.params }
@@ -837,7 +837,7 @@
         return t && clearTimeout(t), (n || !o) && (o = await a.cacheMatch(s)), o;
       }
     },
-    Re = class extends x {
+    be = class extends x {
       constructor(t = {}) {
         super(t);
         i(this, '_networkTimeoutSeconds');
@@ -876,7 +876,7 @@
       }
     },
     g,
-    be =
+    ve =
       ((g = class extends x {
         constructor(s = {}) {
           s.cacheName = E.getPrecacheName(s.cacheName);
@@ -940,11 +940,11 @@
       }),
       i(g, 'copyRedirectedCacheableResponsesPlugin', {
         async cacheWillUpdate({ response: s }) {
-          return s.redirected ? await we(s) : s;
+          return s.redirected ? await ye(s) : s;
         },
       }),
       g),
-    ve = class extends p {
+    xe = class extends p {
       constructor(t, { allowlist: s = [/./], denylist: r = [] } = {}) {
         super((a) => this._match(a), t);
         i(this, '_allowlist');
@@ -958,9 +958,9 @@
         return !!this._allowlist.some((a) => a.test(r));
       }
     },
-    xe = () => !!self.registration?.navigationPreload,
-    De = (e) => {
-      xe() &&
+    De = () => !!self.registration?.navigationPreload,
+    Se = (e) => {
+      De() &&
         self.addEventListener('activate', (t) => {
           t.waitUntil(
             self.registration.navigationPreload.enable().then(() => {
@@ -973,7 +973,7 @@
     for (let s of [...e.searchParams.keys()]) t.some((r) => r.test(s)) && e.searchParams.delete(s);
     return e;
   };
-  function* Se(
+  function* Te(
     e,
     {
       directoryIndex: t = 'index.html',
@@ -998,7 +998,7 @@
       for (let l of c) yield l.href;
     }
   }
-  var Te = class extends p {
+  var qe = class extends p {
       constructor(e, t, s) {
         let r = ({ url: a }) => {
           let n = e.exec(a.href);
@@ -1007,11 +1007,11 @@
         super(r, t, s);
       }
     },
-    qe = (e) => {
+    Ce = (e) => {
       E.updateDetails(e);
     },
     ct = '__WB_REVISION__',
-    Ce = (e) => {
+    Ae = (e) => {
       if (!e) throw new h('add-to-cache-list-unexpected-type', { entry: e });
       if (typeof e == 'string') {
         let n = new URL(e, location.href);
@@ -1043,13 +1043,13 @@
         });
       }
     },
-    Ae = (e, t, s) => {
+    ke = (e, t, s) => {
       if (typeof e == 'string') {
         let r = new URL(e, location.href),
           a = ({ url: n }) => n.href === r.href;
         return new p(a, t, s);
       }
-      if (e instanceof RegExp) return new Te(e, t, s);
+      if (e instanceof RegExp) return new qe(e, t, s);
       if (typeof e == 'function') return new p(e, t, s);
       if (e instanceof p) return e;
       throw new h('unsupported-route-type', {
@@ -1058,7 +1058,7 @@
         paramName: 'capture',
       });
     };
-  var ke = async (e, t, s) => {
+  var Ue = async (e, t, s) => {
     let r = t.map((o, c) => ({ index: c, item: o })),
       a = async (o) => {
         let c = [];
@@ -1075,10 +1075,10 @@
       .sort((o, c) => (o.index < c.index ? -1 : 1))
       .map((o) => o.result);
   };
-  var Rs = typeof navigator < 'u' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  var bs = typeof navigator < 'u' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
   var lt = 'serwist-expiration',
     P = 'cache-entries',
-    Ue = (e) => {
+    Pe = (e) => {
       let t = new URL(e, location.href);
       return (t.hash = ''), t.href;
     },
@@ -1089,7 +1089,7 @@
         this._cacheName = e;
       }
       _getId(e) {
-        return `${this._cacheName}|${Ue(e)}`;
+        return `${this._cacheName}|${Pe(e)}`;
       }
       _upgradeDb(e) {
         let t = e.createObjectStore(P, { keyPath: 'id' });
@@ -1097,10 +1097,10 @@
           t.createIndex('timestamp', 'timestamp', { unique: !1 });
       }
       _upgradeDbAndDeleteOldDbs(e) {
-        this._upgradeDb(e), this._cacheName && de(this._cacheName);
+        this._upgradeDb(e), this._cacheName && pe(this._cacheName);
       }
       async setTimestamp(e, t) {
-        e = Ue(e);
+        e = Pe(e);
         let s = { id: this._getId(e), cacheName: this._cacheName, url: e, timestamp: t },
           r = (await this.getDb()).transaction(P, 'readwrite', { durability: 'relaxed' });
         await r.store.put(s), await r.done;
@@ -1126,7 +1126,7 @@
       async getDb() {
         return (
           this._db ||
-            (this._db = await A(lt, 1, { upgrade: this._upgradeDbAndDeleteOldDbs.bind(this) })),
+            (this._db = await O(lt, 1, { upgrade: this._upgradeDbAndDeleteOldDbs.bind(this) })),
           this._db
         );
       }
@@ -1176,7 +1176,7 @@
     dt = (e) => {
       V.add(e);
     },
-    m = class {
+    f = class {
       constructor(e = {}) {
         i(this, '_config');
         i(this, '_cacheExpirations');
@@ -1262,7 +1262,7 @@
       },
     wt = (e) => {
       let t = ({ url: r }) => r.hostname === 'www.google-analytics.com' && ft.test(r.pathname),
-        s = new Re({ plugins: [e] });
+        s = new be({ plugins: [e] });
       return [new p(t, s, 'GET'), new p(t, s, 'POST')];
     },
     yt = (e) => {
@@ -1279,9 +1279,9 @@
       let t = ({ url: s }) => s.hostname === 'www.googletagmanager.com' && s.pathname === '/gtm.js';
       return new p(t, new _({ cacheName: e }), 'GET');
     },
-    Pe = ({ serwist: e, cacheName: t, ...s }) => {
+    Ie = ({ serwist: e, cacheName: t, ...s }) => {
       let r = E.getGoogleAnalyticsName(t),
-        a = new Ne(pt, { maxRetentionTime: gt, onSync: mt(s) }),
+        a = new _e(pt, { maxRetentionTime: gt, onSync: mt(s) }),
         n = [Nt(r), yt(r), Et(r), ...wt(a)];
       for (let o of n) e.registerRoute(o);
     },
@@ -1302,7 +1302,7 @@
           }
       }
     };
-  var Ie = class extends x {
+  var X = class extends x {
     async _handle(e, t) {
       let s = [],
         r = await t.cacheMatch(e),
@@ -1341,7 +1341,7 @@
       constructor(e, t) {
         let s = ({ request: r }) => {
           let a = e.getUrlsToPrecacheKeys();
-          for (let n of Se(r.url, t)) {
+          for (let n of Te(r.url, t)) {
             let o = a.get(n);
             if (o) return { cacheKey: o, integrity: e.getIntegrityForPrecacheKey(o) };
           }
@@ -1374,7 +1374,7 @@
         concurrency: v = 10,
         navigateFallback: I,
         navigateFallbackAllowlist: R,
-        navigateFallbackDenylist: f,
+        navigateFallbackDenylist: m,
       } = t ?? {};
       return {
         precacheStrategyOptions: {
@@ -1395,7 +1395,7 @@
           concurrency: v,
           navigateFallback: I,
           navigateFallbackAllowlist: R,
-          navigateFallbackDenylist: f,
+          navigateFallbackDenylist: m,
         },
       };
     },
@@ -1430,7 +1430,7 @@
         } = vt(this, t);
         if (
           ((this._concurrentPrecaching = R.concurrency),
-          (this._precacheStrategy = new be(v)),
+          (this._precacheStrategy = new ve(v)),
           (this._routes = new Map()),
           (this._defaultHandlerMap = new Map()),
           (this._requestRules = w),
@@ -1439,39 +1439,39 @@
           (this.handleFetch = this.handleFetch.bind(this)),
           (this.handleCache = this.handleCache.bind(this)),
           r && r.length > 0 && self.importScripts(...r),
-          a && De(),
-          n !== void 0 && qe({ prefix: n }),
+          a && Se(),
+          n !== void 0 && Ce({ prefix: n }),
           s
             ? self.skipWaiting()
-            : self.addEventListener('message', (f) => {
-                f.data && f.data.type === 'SKIP_WAITING' && self.skipWaiting();
+            : self.addEventListener('message', (m) => {
+                m.data && m.data.type === 'SKIP_WAITING' && self.skipWaiting();
               }),
-          o && ne(),
+          o && oe(),
           e && e.length > 0 && this.addToPrecacheList(e),
-          R.cleanupOutdatedCaches && ae(v.cacheName),
+          R.cleanupOutdatedCaches && ne(v.cacheName),
           this.registerRoute(new Rt(this, I)),
           R.navigateFallback &&
             this.registerRoute(
-              new ve(this.createHandlerBoundToUrl(R.navigateFallback), {
+              new xe(this.createHandlerBoundToUrl(R.navigateFallback), {
                 allowlist: R.navigateFallbackAllowlist,
                 denylist: R.navigateFallbackDenylist,
               }),
             ),
           l !== void 0 &&
-            (typeof l == 'boolean' ? l && Pe({ serwist: this }) : Pe({ ...l, serwist: this })),
+            (typeof l == 'boolean' ? l && Ie({ serwist: this }) : Ie({ ...l, serwist: this })),
           c !== void 0)
         ) {
           if (d !== void 0) {
-            let f = new _t({ fallbackUrls: d.entries, serwist: this });
+            let m = new _t({ fallbackUrls: d.entries, serwist: this });
             c.forEach(($) => {
               $.handler instanceof x &&
                 !$.handler.plugins.some((Le) => 'handlerDidError' in Le) &&
-                $.handler.plugins.push(f);
+                $.handler.plugins.push(m);
             });
           }
-          for (let f of c) this.registerCapture(f.matcher, f.handler, f.method);
+          for (let m of c) this.registerCapture(m.matcher, m.handler, m.method);
         }
-        u && ye();
+        u && Ee();
       }
       get precacheStrategy() {
         return this._precacheStrategy;
@@ -1491,7 +1491,7 @@
           typeof s == 'string'
             ? t.push(s)
             : s && !s.integrity && s.revision === void 0 && t.push(s.url);
-          let { cacheKey: r, url: a } = Ce(s),
+          let { cacheKey: r, url: a } = Ae(s),
             n = typeof s != 'string' && s.revision ? 'reload' : 'default';
           if (this._urlsToCacheKeys.has(a) && this._urlsToCacheKeys.get(a) !== r)
             throw new h('add-to-cache-list-conflicting-entries', {
@@ -1520,7 +1520,7 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
           F(e, async () => {
             let t = new Oe();
             this.precacheStrategy.plugins.push(t),
-              await ke(
+              await Ue(
                 this._concurrentPrecaching,
                 Array.from(this._urlsToCacheKeys.entries()),
                 async ([a, n]) => {
@@ -1587,7 +1587,7 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
         this._catchHandler = q(e);
       }
       registerCapture(e, t, s) {
-        let r = Ae(e, t, s);
+        let r = ke(e, t, s);
         return this.registerRoute(r), r;
       }
       registerRoute(e) {
@@ -1692,10 +1692,10 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
         self.location.hostname.endsWith('.space-z.ai') ||
         self.location.hostname.endsWith('.preview.z.ai')),
     Dt = [
-      { url: '/', revision: 'cf65348119f6512a' },
-      { url: '/manifest.json', revision: 'cf65348119f6512a' },
-      { url: '/icons/icon-192.png', revision: 'cf65348119f6512a' },
-      { url: '/icons/icon-512.png', revision: 'cf65348119f6512a' },
+      { url: '/', revision: 'e07b45cb8db8c212' },
+      { url: '/manifest.json', revision: 'e07b45cb8db8c212' },
+      { url: '/icons/icon-192.png', revision: 'e07b45cb8db8c212' },
+      { url: '/icons/icon-512.png', revision: 'e07b45cb8db8c212' },
     ],
     St = ({ url: e, request: t }) =>
       e.origin !== self.location.origin
@@ -1708,15 +1708,17 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
           ),
     Tt = ({ url: e }) => /^\/api\/books\/[^/]+\/pages/.test(e.pathname),
     qt = ({ url: e }) => e.pathname === '/api/dictionary',
-    Ct = ({ url: e }) => e.pathname.startsWith('/api/og/'),
+    Ct = ({ url: e, request: t }) =>
+      e.origin === self.location.origin && e.pathname === '/api/tts' && t.method === 'GET',
+    At = ({ url: e }) => e.pathname.startsWith('/api/og/'),
     Ot = ({ url: e }) => e.origin === self.location.origin && e.pathname.startsWith('/books/read/'),
-    At = ({ url: e, request: t }) =>
+    kt = ({ url: e, request: t }) =>
       e.origin === self.location.origin && t.method === 'GET' && t.headers.get('RSC') === '1',
-    kt = ({ url: e }) =>
+    Ut = ({ url: e }) =>
       e.origin === self.location.origin &&
       e.pathname.startsWith('/api/') &&
       !e.pathname.startsWith('/api/auth/'),
-    Ut = {
+    Pt = {
       cacheKeyWillBeUsed: async ({ request: e }) => {
         if (e.method !== 'POST') return e;
         try {
@@ -1744,7 +1746,7 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
       })(),
     );
   });
-  var Pt = new $e({
+  var It = new $e({
     precacheEntries: [...(self.__SW_MANIFEST || []), ...Dt],
     skipWaiting: !0,
     clientsClaim: !0,
@@ -1757,11 +1759,11 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
           ? new _({
               cacheName: 'bookzi-static',
               networkTimeoutSeconds: 3,
-              plugins: [new m({ maxEntries: 80, maxAgeSeconds: 3600 * 24 * 30 })],
+              plugins: [new f({ maxEntries: 80, maxAgeSeconds: 3600 * 24 * 30 })],
             })
-          : new Ie({
+          : new X({
               cacheName: 'bookzi-static',
-              plugins: [new m({ maxEntries: 80, maxAgeSeconds: 3600 * 24 * 30 })],
+              plugins: [new f({ maxEntries: 80, maxAgeSeconds: 3600 * 24 * 30 })],
             }),
       },
       {
@@ -1769,7 +1771,7 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
         method: 'GET',
         handler: new C({
           cacheName: 'bookzi-book-content',
-          plugins: [new m({ maxEntries: 200, maxAgeSeconds: 3600 * 24 * 90 })],
+          plugins: [new f({ maxEntries: 200, maxAgeSeconds: 3600 * 24 * 90 })],
         }),
       },
       {
@@ -1777,15 +1779,23 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
         method: 'POST',
         handler: new C({
           cacheName: 'bookzi-dictionary',
-          plugins: [Ut, new m({ maxEntries: 500, maxAgeSeconds: 3600 * 24 * 30 })],
+          plugins: [Pt, new f({ maxEntries: 500, maxAgeSeconds: 3600 * 24 * 30 })],
         }),
       },
       {
         matcher: Ct,
         method: 'GET',
+        handler: new X({
+          cacheName: 'bookzi-tts-audio',
+          plugins: [new f({ maxEntries: 300, maxAgeSeconds: 3600 * 24 * 30 })],
+        }),
+      },
+      {
+        matcher: At,
+        method: 'GET',
         handler: new C({
           cacheName: 'bookzi-og',
-          plugins: [new m({ maxEntries: 50, maxAgeSeconds: 3600 * 24 * 7 })],
+          plugins: [new f({ maxEntries: 50, maxAgeSeconds: 3600 * 24 * 7 })],
         }),
       },
       {
@@ -1794,24 +1804,24 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
         handler: new _({
           cacheName: 'bookzi-nav',
           networkTimeoutSeconds: 3,
-          plugins: [new m({ maxEntries: 100, maxAgeSeconds: 3600 * 24 * 30 })],
-        }),
-      },
-      {
-        matcher: At,
-        method: 'GET',
-        handler: new _({
-          cacheName: 'bookzi-rsc',
-          networkTimeoutSeconds: 3,
-          plugins: [new m({ maxEntries: 120, maxAgeSeconds: 3600 * 24 * 14 })],
+          plugins: [new f({ maxEntries: 100, maxAgeSeconds: 3600 * 24 * 30 })],
         }),
       },
       {
         matcher: kt,
         method: 'GET',
+        handler: new _({
+          cacheName: 'bookzi-rsc',
+          networkTimeoutSeconds: 3,
+          plugins: [new f({ maxEntries: 120, maxAgeSeconds: 3600 * 24 * 14 })],
+        }),
+      },
+      {
+        matcher: Ut,
+        method: 'GET',
         handler: new C({
           cacheName: 'bookzi-api',
-          plugins: [new m({ maxEntries: 300, maxAgeSeconds: 3600 * 24 * 7 })],
+          plugins: [new f({ maxEntries: 300, maxAgeSeconds: 3600 * 24 * 7 })],
         }),
       },
       {
@@ -1819,11 +1829,11 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`;
         handler: new _({
           cacheName: 'bookzi-nav',
           networkTimeoutSeconds: 3,
-          plugins: [new m({ maxEntries: 100, maxAgeSeconds: 3600 * 24 * 30 })],
+          plugins: [new f({ maxEntries: 100, maxAgeSeconds: 3600 * 24 * 30 })],
         }),
       },
     ],
     fallbacks: { entries: [{ url: '/', matcher: ({ request: e }) => e.mode === 'navigate' }] },
   });
-  Pt.addEventListeners();
+  It.addEventListeners();
 })();
