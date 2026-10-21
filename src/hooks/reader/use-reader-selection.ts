@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 /**
  * use-reader-selection — owns the text-selection menu state + handlers.
@@ -31,17 +31,17 @@
  * `onAiChat` callback. The hook only owns its own state.
  */
 
-import type { ReaderEmit } from '@/hooks/reader/use-reader-events'
-import type { ReaderBook, ReaderLanguage } from '@/lib/reader/types'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import type { ReaderEmit } from '@/hooks/reader/use-reader-events';
+import type { ReaderBook, ReaderLanguage } from '@/lib/reader/types';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface UseReaderSelectionOptions {
-  book: ReaderBook
-  currentParagraph: number
-  currentLanguage: ReaderLanguage
+  book: ReaderBook;
+  currentParagraph: number;
+  currentLanguage: ReaderLanguage;
   /** Open the dictionary popup with a cleaned word. */
-  onShowDictionary: (word: string) => void
-  emit: ReaderEmit
+  onShowDictionary: (word: string) => void;
+  emit: ReaderEmit;
 }
 
 export function useReaderSelection({
@@ -51,129 +51,129 @@ export function useReaderSelection({
   onShowDictionary,
   emit,
 }: UseReaderSelectionOptions) {
-  const [selectedText, setSelectedText] = useState('')
-  const [showTextMenu, setShowTextMenu] = useState(false)
-  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 })
-  const [selectedRange, setSelectedRange] = useState<Range | null>(null)
+  const [selectedText, setSelectedText] = useState('');
+  const [showTextMenu, setShowTextMenu] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+  const [selectedRange, setSelectedRange] = useState<Range | null>(null);
 
   // AbortController for the in-flight /api/vocabulary POST. Aborted on
   // unmount and when a new request supersedes it.
-  const vocabAbortRef = useRef<AbortController | null>(null)
+  const vocabAbortRef = useRef<AbortController | null>(null);
   useEffect(() => {
     return () => {
-      vocabAbortRef.current?.abort()
+      vocabAbortRef.current?.abort();
+    };
+  }, []);
+
+  /**
+   * Automatically snaps a Range to whole word boundaries.
+   * If a word is partially selected, it expands start and end to include the complete word.
+   */
+  function snapRangeToWordBoundaries(range: Range): Range {
+    const cloned = range.cloneRange();
+
+    const isWordChar = (ch: string) => {
+      if (!ch) return false;
+      return !/[\s.,!?;:)"'«»،؛؟\-/\\`~@#$%^&*()_+={}[\]|<>]/u.test(ch);
+    };
+
+    // Snap start backward to the beginning of the word
+    if (cloned.startContainer.nodeType === Node.TEXT_NODE) {
+      const text = cloned.startContainer.textContent || '';
+      let start = cloned.startOffset;
+      while (start > 0 && isWordChar(text[start - 1])) {
+        start--;
+      }
+      cloned.setStart(cloned.startContainer, start);
     }
-  }, [])
 
-/**
- * Automatically snaps a Range to whole word boundaries.
- * If a word is partially selected, it expands start and end to include the complete word.
- */
-function snapRangeToWordBoundaries(range: Range): Range {
-  const cloned = range.cloneRange()
-
-  const isWordChar = (ch: string) => {
-    if (!ch) return false
-    return !/[\s.,!?;:)"'«»،؛؟\-\/\\`~@#$%^&*()_+={}\[\]|<>]/u.test(ch)
-  }
-
-  // Snap start backward to the beginning of the word
-  if (cloned.startContainer.nodeType === Node.TEXT_NODE) {
-    const text = cloned.startContainer.textContent || ''
-    let start = cloned.startOffset
-    while (start > 0 && isWordChar(text[start - 1])) {
-      start--
+    // Snap end forward to the end of the word
+    if (cloned.endContainer.nodeType === Node.TEXT_NODE) {
+      const text = cloned.endContainer.textContent || '';
+      let end = cloned.endOffset;
+      while (end < text.length && isWordChar(text[end])) {
+        end++;
+      }
+      cloned.setEnd(cloned.endContainer, end);
     }
-    cloned.setStart(cloned.startContainer, start)
-  }
 
-  // Snap end forward to the end of the word
-  if (cloned.endContainer.nodeType === Node.TEXT_NODE) {
-    const text = cloned.endContainer.textContent || ''
-    let end = cloned.endOffset
-    while (end < text.length && isWordChar(text[end])) {
-      end++
-    }
-    cloned.setEnd(cloned.endContainer, end)
+    return cloned;
   }
-
-  return cloned
-}
 
   // ---- Text selection ----
   const handleTextSelection = useCallback(() => {
-    const sel = window.getSelection()
+    const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) {
-      setShowTextMenu(false)
-      setSelectedRange(null)
-      return
+      setShowTextMenu(false);
+      setSelectedRange(null);
+      return;
     }
 
-    const rawRange = sel.getRangeAt(0)
+    const rawRange = sel.getRangeAt(0);
     if (rawRange.collapsed) {
-      setShowTextMenu(false)
-      setSelectedRange(null)
-      return
+      setShowTextMenu(false);
+      setSelectedRange(null);
+      return;
     }
 
-    const initialText = sel.toString().trim()
+    const initialText = sel.toString().trim();
     if (!initialText) {
-      setShowTextMenu(false)
-      setSelectedRange(null)
-      return
+      setShowTextMenu(false);
+      setSelectedRange(null);
+      return;
     }
 
     // Automatically expand selection to whole words (no partial word selections)
-    const range = snapRangeToWordBoundaries(rawRange)
+    const range = snapRangeToWordBoundaries(rawRange);
 
     try {
-      sel.removeAllRanges()
-      sel.addRange(range)
+      sel.removeAllRanges();
+      sel.addRange(range);
     } catch {}
 
-    const text = range.toString().trim()
+    const text = range.toString().trim();
     if (text && text.length > 0) {
-      setSelectedText(text)
-      setSelectedRange(range.cloneRange())
-      const rect = range.getBoundingClientRect()
-      const MENU_H = 56
-      const MENU_HALF = 180
-      const vw = window.innerWidth
-      const vh = window.innerHeight
+      setSelectedText(text);
+      setSelectedRange(range.cloneRange());
+      const rect = range.getBoundingClientRect();
+      const MENU_H = 56;
+      const MENU_HALF = 180;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
       // Clamp X so the menu (≈360px wide) never overflows horizontally.
-      let x = rect.left + rect.width / 2
-      x = Math.max(MENU_HALF + 8, Math.min(vw - MENU_HALF - 8, x))
+      let x = rect.left + rect.width / 2;
+      x = Math.max(MENU_HALF + 8, Math.min(vw - MENU_HALF - 8, x));
       // Prefer above the selection; fall back to below if hidden by toolbar.
-      let y = rect.top - MENU_H - 8
-      if (y < 72) y = rect.bottom + 8
+      let y = rect.top - MENU_H - 8;
+      if (y < 72) y = rect.bottom + 8;
       // If still off the bottom (tiny viewport), pin above with a small gap.
-      if (y + MENU_H > vh - 8) y = Math.max(72, rect.top - MENU_H - 8)
-      setMenuPosition({ x, y })
-      setShowTextMenu(true)
+      if (y + MENU_H > vh - 8) y = Math.max(72, rect.top - MENU_H - 8);
+      setMenuPosition({ x, y });
+      setShowTextMenu(true);
     } else {
-      setShowTextMenu(false)
-      setSelectedRange(null)
+      setShowTextMenu(false);
+      setSelectedRange(null);
     }
-  }, [])
+  }, []);
 
   // ---- Dictionary ----
   const handleShowDictionary = useCallback(() => {
-    const raw = selectedText.trim()
-    const clean = raw.replace(/^['"“«(]+|[.,!?;:)'"»]+$/g, '')
+    const raw = selectedText.trim();
+    const clean = raw.replace(/^['"“«(]+|[.,!?;:)'"»]+$/g, '');
     if (clean) {
-      onShowDictionary(clean)
-      setShowTextMenu(false)
+      onShowDictionary(clean);
+      setShowTextMenu(false);
     }
-  }, [selectedText, onShowDictionary])
+  }, [selectedText, onShowDictionary]);
 
   // ---- Add to vocabulary (with AbortController) ----
   const handleAddToVocab = useCallback(() => {
-    const word = selectedText.trim()
-    if (!word) return
+    const word = selectedText.trim();
+    if (!word) return;
     // Abort any in-flight request before starting a new one.
-    vocabAbortRef.current?.abort()
-    const ctrl = new AbortController()
-    vocabAbortRef.current = ctrl
+    vocabAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    vocabAbortRef.current = ctrl;
     fetch('/api/vocabulary', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -181,56 +181,53 @@ function snapRangeToWordBoundaries(range: Range): Range {
       signal: ctrl.signal,
     })
       .then((res) => {
-        if (!res.ok) throw new Error('vocab request failed')
-        emit({ type: 'vocab-added' })
+        if (!res.ok) throw new Error('vocab request failed');
+        emit({ type: 'vocab-added', word });
       })
       .catch((err) => {
         // AbortError is expected on unmount / supersession — don't toast.
-        if (err instanceof DOMException && err.name === 'AbortError') return
-        emit({ type: 'vocab-error' })
-      })
-    setShowTextMenu(false)
-  }, [selectedText, book.slug, emit])
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        emit({ type: 'vocab-error' });
+      });
+    setShowTextMenu(false);
+  }, [selectedText, book.slug, emit]);
 
   const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(selectedText)
-    emit({ type: 'copied' })
-    setShowTextMenu(false)
-  }, [selectedText, emit])
+    navigator.clipboard.writeText(selectedText);
+    emit({ type: 'copied' });
+    setShowTextMenu(false);
+  }, [selectedText, emit]);
 
   const currentParagraphPlainText = useCallback(() => {
-    const page = book.pages[currentParagraph]
-    if (!page) return ''
+    const page = book.pages[currentParagraph];
+    if (!page) return '';
     return page.items
       .map((i) => (currentLanguage === 'english' ? i.english : i.farsi))
-      .join('\n\n')
-  }, [book.pages, currentParagraph, currentLanguage])
+      .join('\n\n');
+  }, [book.pages, currentParagraph, currentLanguage]);
 
   // ---- Share current page / quote ----
   const handleShare = useCallback(async () => {
-    const url =
-      typeof window !== 'undefined' ? window.location.href : ''
-    const snippet = currentParagraphPlainText().slice(0, 280)
-    const shareText = `«${snippet}»\n— ${book.title}${
-      book.author ? ` · ${book.author}` : ''
-    }`
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    const snippet = currentParagraphPlainText().slice(0, 280);
+    const shareText = `«${snippet}»\n— ${book.title}${book.author ? ` · ${book.author}` : ''}`;
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
-        await navigator.share({ title: book.title, text: shareText, url })
-        return
+        await navigator.share({ title: book.title, text: shareText, url });
+        return;
       } catch {
         // user dismissed — fall through to clipboard
       }
     }
     try {
-      await navigator.clipboard.writeText(`${shareText}\n${url}`)
-      emit({ type: 'share-success' })
+      await navigator.clipboard.writeText(`${shareText}\n${url}`);
+      emit({ type: 'share-success' });
     } catch {
-      emit({ type: 'share-error' })
+      emit({ type: 'share-error' });
     }
-  }, [book.title, book.author, currentParagraphPlainText, emit])
+  }, [book.title, book.author, currentParagraphPlainText, emit]);
 
-  const closeTextMenu = useCallback(() => setShowTextMenu(false), [])
+  const closeTextMenu = useCallback(() => setShowTextMenu(false), []);
 
   return {
     selectedText,
@@ -245,5 +242,5 @@ function snapRangeToWordBoundaries(range: Range): Range {
     handleCopy,
     handleShare,
     currentParagraphPlainText,
-  }
+  };
 }

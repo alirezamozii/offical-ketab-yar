@@ -1,37 +1,31 @@
-'use client'
+'use client';
 
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
-import { motion } from 'framer-motion'
-import { BookOpen, BookmarkPlus, Copy, MessageSquare, Share2, X } from 'lucide-react'
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
+import { BookOpen, BookmarkPlus, Copy, MessageSquare, Share2, Volume2, X } from 'lucide-react';
 import {
   HIGHLIGHT_LABELS,
   HIGHLIGHT_SWATCHES,
   type Highlight,
   type ReaderTheme,
-} from '@/lib/reader/types'
+} from '@/lib/reader/types';
 
 interface TextSelectionMenuProps {
-  position: { x: number; y: number }
-  theme: ReaderTheme
-  selectedText: string
-  onHighlight: (color: Highlight['color']) => void
-  onShowDictionary?: () => void
-  onAddToVocabulary?: () => void
-  onCopy?: () => void
-  onShare?: () => void
-  onAIChat: () => void
-  onClose: () => void
+  position: { x: number; y: number };
+  theme: ReaderTheme;
+  selectedText: string;
+  onHighlight: (color: Highlight['color']) => void;
+  onShowDictionary?: () => void;
+  onAddToVocabulary?: () => void;
+  onCopy?: () => void;
+  onShare?: () => void;
+  onSpeak?: () => void;
+  onAIChat: () => void;
+  onClose: () => void;
 }
 
-const SWATCH_COLORS: Highlight['color'][] = [
-  'yellow',
-  'orange',
-  'gold',
-  'green',
-  'pink',
-  'blue',
-]
+const SWATCH_COLORS: Highlight['color'][] = ['yellow', 'orange', 'gold', 'green', 'pink', 'blue'];
 
 // fallow-ignore-next-line complexity
 export function TextSelectionMenu({
@@ -42,26 +36,19 @@ export function TextSelectionMenu({
   onAddToVocabulary,
   onCopy,
   onShare,
+  onSpeak,
   onAIChat,
   onClose,
 }: TextSelectionMenuProps) {
-  const dark = theme === 'dark' || theme === 'high-contrast'
+  const dark = theme === 'dark' || theme === 'high-contrast';
 
   // Clamp horizontal position so the menu never overflows the viewport.
-  // The menu is responsive (~340px desktop, ~280px mobile), so we use a
-  // conservative half-width and let CSS transform handle the rest.
-  // On very small screens (<360px) the menu is allowed to use the full
-  // width minus 16px margins.
-  const vw = typeof window !== 'undefined' ? window.innerWidth : 9999
-  const MENU_HALF = vw < 400 ? 150 : 180
-  const safeX = Math.max(
-    MENU_HALF + 8,
-    Math.min(vw - MENU_HALF - 8, position.x),
-  )
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 9999;
+  const MENU_HALF = vw < 400 ? 150 : 180;
+  const safeX = Math.max(MENU_HALF + 8, Math.min(vw - MENU_HALF - 8, position.x));
   // Clamp vertical position so the menu (≈56px tall) doesn't push off-screen
-  // below the viewport. If the selection is in the bottom 80px, flip above.
-  const vh = typeof window !== 'undefined' ? window.innerHeight : 9999
-  const safeY = position.y + 60 > vh ? Math.max(8, position.y - 60) : position.y
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 9999;
+  const safeY = position.y + 60 > vh ? Math.max(8, position.y - 60) : position.y;
 
   return (
     <motion.div
@@ -84,13 +71,9 @@ export function TextSelectionMenu({
       }}
     >
       {SWATCH_COLORS.map((color) => {
-        const sw = HIGHLIGHT_SWATCHES[color]
+        const sw = HIGHLIGHT_SWATCHES[color];
         return (
-          <motion.div
-            key={color}
-            whileHover={{ scale: 1.15 }}
-            whileTap={{ scale: 0.9 }}
-          >
+          <motion.div key={color} whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}>
             <Button
               size="sm"
               variant="ghost"
@@ -104,41 +87,34 @@ export function TextSelectionMenu({
               />
             </Button>
           </motion.div>
-        )
+        );
       })}
 
       <div className={cn('mx-1 my-1 w-px', dark ? 'bg-gold-700' : 'bg-gold-300')} />
 
+      {onSpeak && (
+        <IconButton theme={theme} onClick={onSpeak} label="پخش صدای متن انتخاب‌شده">
+          <Volume2 className={cn('h-5 w-5', dark ? 'text-amber-400' : 'text-amber-600')} />
+        </IconButton>
+      )}
       {onShowDictionary && (
         <IconButton theme={theme} onClick={onShowDictionary} label="دیکشنری">
-          <BookOpen
-            className={cn('h-5 w-5', dark ? 'text-gold-400' : 'text-gold-600')}
-          />
+          <BookOpen className={cn('h-5 w-5', dark ? 'text-gold-400' : 'text-gold-600')} />
         </IconButton>
       )}
       {onAddToVocabulary && (
-        <IconButton
-          theme={theme}
-          onClick={onAddToVocabulary}
-          label="افزودن به واژگان"
-        >
-          <BookmarkPlus
-            className={cn('h-5 w-5', dark ? 'text-gold-400' : 'text-gold-600')}
-          />
+        <IconButton theme={theme} onClick={onAddToVocabulary} label="افزودن به واژگان">
+          <BookmarkPlus className={cn('h-5 w-5', dark ? 'text-gold-400' : 'text-gold-600')} />
         </IconButton>
       )}
       {onCopy && (
         <IconButton theme={theme} onClick={onCopy} label="کپی">
-          <Copy
-            className={cn('h-5 w-5', dark ? 'text-emerald-400' : 'text-emerald-600')}
-          />
+          <Copy className={cn('h-5 w-5', dark ? 'text-emerald-400' : 'text-emerald-600')} />
         </IconButton>
       )}
       {onShare && (
         <IconButton theme={theme} onClick={onShare} label="اشتراک‌گذاری">
-          <Share2
-            className={cn('h-5 w-5', dark ? 'text-gold-400' : 'text-gold-600')}
-          />
+          <Share2 className={cn('h-5 w-5', dark ? 'text-gold-400' : 'text-gold-600')} />
         </IconButton>
       )}
 
@@ -157,7 +133,7 @@ export function TextSelectionMenu({
         <X className={cn('h-5 w-5', dark ? 'text-gold-400' : 'text-gold-600')} />
       </IconButton>
     </motion.div>
-  )
+  );
 }
 
 function IconButton({
@@ -165,10 +141,10 @@ function IconButton({
   onClick,
   label,
 }: {
-  children: React.ReactNode
-  onClick: (e: React.MouseEvent) => void
-  label: string
-  theme: ReaderTheme
+  children: React.ReactNode;
+  onClick: (e: React.MouseEvent) => void;
+  label: string;
+  theme: ReaderTheme;
 }) {
   return (
     <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
@@ -176,8 +152,8 @@ function IconButton({
         size="sm"
         variant="ghost"
         onClick={(e) => {
-          e.stopPropagation()
-          onClick(e)
+          e.stopPropagation();
+          onClick(e);
         }}
         className="relative p-1.5 sm:p-2"
         title={label}
@@ -186,5 +162,5 @@ function IconButton({
         {children}
       </Button>
     </motion.div>
-  )
+  );
 }

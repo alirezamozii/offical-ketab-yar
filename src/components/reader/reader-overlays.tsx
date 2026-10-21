@@ -1,17 +1,38 @@
-'use client'
+'use client';
 
-import { ErrorBoundary } from '@/components/error-boundary'
-import { useReader } from '@/components/reader/reader-context'
-import { lazy, Suspense, useEffect } from 'react'
+import { ErrorBoundary } from '@/components/error-boundary';
+import { useReader } from '@/components/reader/reader-context';
+import { useTTSContext } from '@/hooks/tts-provider';
+import { lazy, Suspense, useEffect } from 'react';
 
-const TextSelectionMenu = lazy(() => import('@/components/reader/text-selection-menu').then((m) => ({ default: m.TextSelectionMenu })))
-const WordPopupDictionary = lazy(() => import('@/components/reader/word-popup-dictionary').then((m) => ({ default: m.WordPopupDictionary })))
-const SettingsPanel = lazy(() => import('@/components/reader/settings-panel').then((m) => ({ default: m.SettingsPanel })))
-const ChaptersPanel = lazy(() => import('@/components/reader/chapters-panel').then((m) => ({ default: m.ChaptersPanel })))
-const HighlightsPanel = lazy(() => import('@/components/reader/highlights-panel').then((m) => ({ default: m.HighlightsPanel })))
-const AIChatPanel = lazy(() => import('@/components/reader/ai-chat-panel').then((m) => ({ default: m.AIChatPanel })))
-const ShortcutsHelpOverlay = lazy(() => import('@/components/reader/shortcuts-help-overlay').then((m) => ({ default: m.ShortcutsHelpOverlay })))
-const BookSearchDialog = lazy(() => import('@/components/reader/book-search-dialog').then((m) => ({ default: m.BookSearchDialog })))
+const TextSelectionMenu = lazy(() =>
+  import('@/components/reader/text-selection-menu').then((m) => ({ default: m.TextSelectionMenu })),
+);
+const WordPopupDictionary = lazy(() =>
+  import('@/components/reader/word-popup-dictionary').then((m) => ({
+    default: m.WordPopupDictionary,
+  })),
+);
+const SettingsPanel = lazy(() =>
+  import('@/components/reader/settings-panel').then((m) => ({ default: m.SettingsPanel })),
+);
+const ChaptersPanel = lazy(() =>
+  import('@/components/reader/chapters-panel').then((m) => ({ default: m.ChaptersPanel })),
+);
+const HighlightsPanel = lazy(() =>
+  import('@/components/reader/highlights-panel').then((m) => ({ default: m.HighlightsPanel })),
+);
+const AIChatPanel = lazy(() =>
+  import('@/components/reader/ai-chat-panel').then((m) => ({ default: m.AIChatPanel })),
+);
+const ShortcutsHelpOverlay = lazy(() =>
+  import('@/components/reader/shortcuts-help-overlay').then((m) => ({
+    default: m.ShortcutsHelpOverlay,
+  })),
+);
+const BookSearchDialog = lazy(() =>
+  import('@/components/reader/book-search-dialog').then((m) => ({ default: m.BookSearchDialog })),
+);
 
 /**
  * Renders all the AnimatePresence-gated overlays:
@@ -33,6 +54,7 @@ const BookSearchDialog = lazy(() => import('@/components/reader/book-search-dial
  * Escape-to-close, click-outside-to-close, and scroll lock for free.
  */
 export function ReaderOverlays() {
+  const tts = useTTSContext();
   const {
     book,
     prefs,
@@ -84,17 +106,24 @@ export function ReaderOverlays() {
     setShowSearch,
     searchInitialQuery,
     paragraphRefs,
-  } = useReader()
+  } = useReader();
 
   useEffect(() => {
     if (!chromeVisible) {
-      setShowSettings(false)
-      setShowChapters(false)
-      setShowHighlights(false)
-      setShowChat(false)
-      setShowSearch(false)
+      setShowSettings(false);
+      setShowChapters(false);
+      setShowHighlights(false);
+      setShowChat(false);
+      setShowSearch(false);
     }
-  }, [chromeVisible, setShowSettings, setShowChapters, setShowHighlights, setShowChat, setShowSearch])
+  }, [
+    chromeVisible,
+    setShowSettings,
+    setShowChapters,
+    setShowHighlights,
+    setShowChat,
+    setShowSearch,
+  ]);
 
   return (
     <>
@@ -109,9 +138,15 @@ export function ReaderOverlays() {
             onShowDictionary={handleShowDictionary}
             onAddToVocabulary={handleAddToVocab}
             onCopy={handleCopy}
+            onSpeak={() => {
+              if (!selectedText) return;
+              const isFa = /[\u0600-\u06FF]/.test(selectedText);
+              void tts.speak(selectedText, isFa ? 'fa' : 'en');
+              setShowTextMenu(false);
+            }}
             onAIChat={() => {
-              setShowChat(true)
-              setShowTextMenu(false)
+              setShowChat(true);
+              setShowTextMenu(false);
             }}
             onClose={() => setShowTextMenu(false)}
           />
@@ -121,108 +156,115 @@ export function ReaderOverlays() {
       {/* ---- Word popup dictionary (centered modal — Radix Dialog) ---- */}
       {showDictionary && (
         <ErrorBoundary>
-          <Suspense fallback={null}><WordPopupDictionary
-            open={showDictionary}
-            word={dictionaryWord}
-            context={currentParagraphPlainText().slice(0, 200)}
-            theme={prefs.theme}
-            bookSlug={book.slug}
-            onClose={() => setShowDictionary(false)}
-          /></Suspense>
+          <Suspense fallback={null}>
+            <WordPopupDictionary
+              open={showDictionary}
+              word={dictionaryWord}
+              context={currentParagraphPlainText().slice(0, 200)}
+              theme={prefs.theme}
+              bookSlug={book.slug}
+              onClose={() => setShowDictionary(false)}
+            />
+          </Suspense>
         </ErrorBoundary>
       )}
 
       {showSettings && (
         <ErrorBoundary>
-          <Suspense fallback={null}><SettingsPanel
-            prefs={prefs}
-            onChange={update}
-            theme={prefs.theme}
-            open={showSettings}
-            onClose={() => setShowSettings(false)}
-          /></Suspense>
+          <Suspense fallback={null}>
+            <SettingsPanel
+              prefs={prefs}
+              onChange={update}
+              theme={prefs.theme}
+              open={showSettings}
+              onClose={() => setShowSettings(false)}
+            />
+          </Suspense>
         </ErrorBoundary>
       )}
 
       {showChapters && (
         <ErrorBoundary>
-          <Suspense fallback={null}><ChaptersPanel
-            book={book}
-            currentPage={currentParagraph}
-            bookmarks={bookmarks}
-            theme={prefs.theme}
-            open={showChapters}
-            onClose={() => setShowChapters(false)}
-            onJumpToPage={(p) => {
-              scrollToParagraph(p)
-              setShowChapters(false)
-            }}
-            onToggleBookmark={toggleBookmark}
-          /></Suspense>
+          <Suspense fallback={null}>
+            <ChaptersPanel
+              book={book}
+              currentPage={currentParagraph}
+              bookmarks={bookmarks}
+              theme={prefs.theme}
+              open={showChapters}
+              onClose={() => setShowChapters(false)}
+              onJumpToPage={(p) => {
+                scrollToParagraph(p);
+                setShowChapters(false);
+              }}
+              onToggleBookmark={toggleBookmark}
+            />
+          </Suspense>
         </ErrorBoundary>
       )}
 
       {showHighlights && (
         <ErrorBoundary>
-          <Suspense fallback={null}><HighlightsPanel
-            highlights={highlights}
-            currentPage={currentParagraph}
-            theme={prefs.theme}
-            bookTitle={book.title}
-            bookAuthor={book.author}
-            bookSlug={book.slug}
-            pageNumbers={book.pages.map((p) => p.pageNumber)}
-            editingHighlightId={editingHighlightId}
-            onEditNote={setEditingHighlightId}
-            onSaveNote={setHighlightNote}
-            open={showHighlights}
-            onClose={() => setShowHighlights(false)}
-            onDelete={removeHighlight}
-            onClearAll={clearAllHighlights}
-            onCopy={(t) => {
-              navigator.clipboard.writeText(t)
-              void import('sonner').then(({ toast }) => toast.success('کپی شد'))
-            }}
-            onJumpToPage={(p, hlId) => {
-              scrollToParagraph(p)
-              setShowHighlights(false)
-              // Exact jump: after the paragraph scrolls into view, center the
-              // highlight's own DOM span (the paragraph can be very tall).
-              if (hlId) {
-                setTimeout(() => {
-                  document
-                    .querySelector(`[data-hl-id="${hlId}"], [data-hl-pair-for="${hlId}"]`)
-                    ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                }, 450)
-              }
-            }}
-          /></Suspense>
+          <Suspense fallback={null}>
+            <HighlightsPanel
+              highlights={highlights}
+              currentPage={currentParagraph}
+              theme={prefs.theme}
+              bookTitle={book.title}
+              bookAuthor={book.author}
+              bookSlug={book.slug}
+              pageNumbers={book.pages.map((p) => p.pageNumber)}
+              editingHighlightId={editingHighlightId}
+              onEditNote={setEditingHighlightId}
+              onSaveNote={setHighlightNote}
+              open={showHighlights}
+              onClose={() => setShowHighlights(false)}
+              onDelete={removeHighlight}
+              onClearAll={clearAllHighlights}
+              onCopy={(t) => {
+                navigator.clipboard.writeText(t);
+                void import('sonner').then(({ toast }) => toast.success('کپی شد'));
+              }}
+              onJumpToPage={(p, hlId) => {
+                scrollToParagraph(p);
+                setShowHighlights(false);
+                // Exact jump: after the paragraph scrolls into view, center the
+                // highlight's own DOM span (the paragraph can be very tall).
+                if (hlId) {
+                  setTimeout(() => {
+                    document
+                      .querySelector(`[data-hl-id="${hlId}"], [data-hl-pair-for="${hlId}"]`)
+                      ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 450);
+                }
+              }}
+            />
+          </Suspense>
         </ErrorBoundary>
       )}
 
       {showChat && (
         <ErrorBoundary>
-          <Suspense fallback={null}><AIChatPanel
-            bookTitle={book.title}
-            bookAuthor={book.author}
-            bookSlug={book.slug}
-            bookContext={currentParagraphPlainText()}
-            selectedText={selectedText}
-            theme={prefs.theme}
-            isMobile={isMobile}
-            open={showChat}
-            onClose={() => setShowChat(false)}
-          /></Suspense>
+          <Suspense fallback={null}>
+            <AIChatPanel
+              bookTitle={book.title}
+              bookAuthor={book.author}
+              bookSlug={book.slug}
+              bookContext={currentParagraphPlainText()}
+              selectedText={selectedText}
+              theme={prefs.theme}
+              isMobile={isMobile}
+              open={showChat}
+              onClose={() => setShowChat(false)}
+            />
+          </Suspense>
         </ErrorBoundary>
       )}
 
       {/* ---- Shortcuts help overlay (? key) ---- */}
       <Suspense fallback={null}>
         {showHelp && (
-          <ShortcutsHelpOverlay
-            theme={prefs.theme}
-            onClose={() => setShowHelp(false)}
-          />
+          <ShortcutsHelpOverlay theme={prefs.theme} onClose={() => setShowHelp(false)} />
         )}
       </Suspense>
       {/* ---- In-book search dialog / mobile drawer ---- */}
@@ -237,21 +279,21 @@ export function ReaderOverlays() {
               initialQuery={searchInitialQuery}
               onClose={() => setShowSearch(false)}
               onJumpToPage={(p) => {
-                scrollToParagraph(p)
-                setShowSearch(false)
+                scrollToParagraph(p);
+                setShowSearch(false);
                 setTimeout(() => {
-                  const el = paragraphRefs.current[p]
+                  const el = paragraphRefs.current[p];
                   if (el) {
-                    el.classList.remove('reader-search-hit-flash')
-                    void el.offsetWidth
-                    el.classList.add('reader-search-hit-flash')
+                    el.classList.remove('reader-search-hit-flash');
+                    void el.offsetWidth;
+                    el.classList.add('reader-search-hit-flash');
                   }
-                }, 300)
+                }, 300);
               }}
             />
           </Suspense>
         </ErrorBoundary>
       )}
     </>
-  )
+  );
 }

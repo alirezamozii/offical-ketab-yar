@@ -1,40 +1,58 @@
-import ZAI from 'z-ai-web-dev-sdk'
+import ZAI from 'z-ai-web-dev-sdk';
 
-let cached: ZAI | null = null
+let cached: ZAI | null = null;
 
 async function getClient(): Promise<ZAI> {
-  if (cached) return cached
-  cached = await ZAI.create()
-  return cached
+  if (cached) return cached;
+  cached = await ZAI.create();
+  return cached;
 }
 
-export type ChatRole = 'system' | 'user' | 'assistant'
-export type ChatMessage = { role: ChatRole; content: string }
+export type ChatRole = 'system' | 'user' | 'assistant';
+export type ChatMessage = { role: ChatRole; content: string };
 
 /** CEFR difficulty level for a word. */
-export type DifficultyLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'
+export type DifficultyLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 
 /** How common the word is in everyday English. */
-export type FrequencyBand = 'common' | 'uncommon' | 'rare'
+export type FrequencyBand = 'common' | 'uncommon' | 'rare';
+
+/** One Persian meaning of a word with the English words that map back to it. */
+export interface PersianMeaning {
+  persian: string;
+  backTranslations: string[];
+}
+
+/** Persian meanings of a word grouped by part of speech (from Google dict). */
+export interface PersianMeaningGroup {
+  partOfSpeech: string;
+  translations: PersianMeaning[];
+}
 
 export interface DictionaryResult {
-  word: string
-  phonetic: string
-  partOfSpeech: string
-  definition: string
-  translation: string
-  example: string
-  synonyms: string[]
-  antonyms: string[]
-  difficultyLevel: DifficultyLevel
-  frequencyBand: FrequencyBand
-  relatedWords: string[]
-  etymology: string
+  word: string;
+  phonetic: string;
+  partOfSpeech: string;
+  definition: string;
+  translation: string;
+  example: string;
+  synonyms: string[];
+  antonyms: string[];
+  difficultyLevel: DifficultyLevel;
+  frequencyBand: FrequencyBand;
+  relatedWords: string[];
+  etymology: string;
+  /** Multi-meaning Persian translations grouped by POS — see /api/dictionary. */
+  persianMeaningsByPos?: PersianMeaningGroup[];
+  /** English definitions (Free Dictionary API + Wiktionary merged). */
+  meanings?: Array<{ pos: string; definitionEn: string; example?: string }>;
+  /** Direct MP3 pronunciation (Free Dictionary API) or the internal TTS route. */
+  audioUrl?: string | null;
 }
 
 export interface TranslateResult {
-  translation: string
-  notes: string
+  translation: string;
+  notes: string;
 }
 
 /**
@@ -112,25 +130,25 @@ Rules:
 - Preserve the register (formal/casual) of the original.
 - Notes are optional but helpful for a learner; keep them short.
 - No preambles, no markdown.`,
-} as const
+} as const;
 
 /**
  * Defensive JSON extractor: strips markdown fences, finds the first `{` and
  * the matching last `}`, and parses only that slice. Returns `null` on failure.
  */
 function extractJSON(text: string): unknown | null {
-  if (!text) return null
-  let t = text.trim()
+  if (!text) return null;
+  let t = text.trim();
   // Strip ```json ... ``` or ``` ... ``` fences.
-  t = t.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '')
-  const first = t.indexOf('{')
-  const last = t.lastIndexOf('}')
-  if (first === -1 || last === -1 || last <= first) return null
-  const slice = t.slice(first, last + 1)
+  t = t.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+  const first = t.indexOf('{');
+  const last = t.lastIndexOf('}');
+  if (first === -1 || last === -1 || last <= first) return null;
+  const slice = t.slice(first, last + 1);
   try {
-    return JSON.parse(slice)
+    return JSON.parse(slice);
   } catch {
-    return null
+    return null;
   }
 }
 
@@ -143,7 +161,7 @@ export async function aiChat(
   opts: { temperature?: number } = {},
 ): Promise<string> {
   try {
-    const client = await getClient()
+    const client = await getClient();
     // The z-ai SDK's CreateChatCompletionBody accepts arbitrary additional
     // keys (its index signature is `[key: string]: any`), so `temperature`
     // is accepted at runtime. We cast through the inferred param type so the
@@ -152,15 +170,15 @@ export async function aiChat(
       messages,
       temperature: opts.temperature ?? 0.6,
       stream: false,
-    } as Parameters<typeof client.chat.completions.create>[0])
+    } as Parameters<typeof client.chat.completions.create>[0]);
     const text =
       res?.choices?.[0]?.message?.content ??
       res?.choices?.[0]?.delta?.content ??
-      (typeof res === 'string' ? res : '')
-    return typeof text === 'string' ? text.trim() : ''
+      (typeof res === 'string' ? res : '');
+    return typeof text === 'string' ? text.trim() : '';
   } catch (err) {
-    console.error('[ai] chat failed:', err)
-    return ''
+    console.error('[ai] chat failed:', err);
+    return '';
   }
 }
 
@@ -172,11 +190,8 @@ export async function aiChat(
  * Returns `null` only if the upstream call fails entirely or JSON cannot be
  * parsed — never throws.
  */
-export async function aiDictionary(
-  word: string,
-  context = '',
-): Promise<DictionaryResult | null> {
-  const user = `Word: "${word}"\nContext sentence: "${context || 'n/a'}"\nReturn the JSON now.`
+export async function aiDictionary(word: string, context = ''): Promise<DictionaryResult | null> {
+  const user = `Word: "${word}"\nContext sentence: "${context || 'n/a'}"\nReturn the JSON now.`;
   try {
     const text = await aiChat(
       [
@@ -184,11 +199,11 @@ export async function aiDictionary(
         { role: 'user', content: user },
       ],
       { temperature: 0.2 },
-    )
-    if (!text) return null
-    const raw = extractJSON(text)
-    if (!raw || typeof raw !== 'object') return null
-    const j = raw as Record<string, unknown>
+    );
+    if (!text) return null;
+    const raw = extractJSON(text);
+    if (!raw || typeof raw !== 'object') return null;
+    const j = raw as Record<string, unknown>;
     return {
       word: String(j.word || word),
       phonetic: String(j.phonetic || ''),
@@ -202,10 +217,10 @@ export async function aiDictionary(
       frequencyBand: toFrequencyBand(j.frequencyBand),
       relatedWords: toStringArray(j.relatedWords),
       etymology: String(j.etymology || ''),
-    }
+    };
   } catch (err) {
-    console.error('[ai] dictionary failed:', err)
-    return null
+    console.error('[ai] dictionary failed:', err);
+    return null;
   }
 }
 
@@ -213,12 +228,9 @@ export async function aiDictionary(
  * Summarize an English passage into 2–3 Persian sentences.
  * Returns a fallback string on failure — never throws.
  */
-export async function aiSummarize(
-  text: string,
-  _bookTitle?: string,
-): Promise<string> {
-  const clean = String(text || '').trim()
-  if (!clean) return ''
+export async function aiSummarize(text: string, _bookTitle?: string): Promise<string> {
+  const clean = String(text || '').trim();
+  if (!clean) return '';
   try {
     const out = await aiChat(
       [
@@ -226,11 +238,11 @@ export async function aiSummarize(
         { role: 'user', content: clean.slice(0, 4000) },
       ],
       { temperature: 0.4 },
-    )
-    return out || ''
+    );
+    return out || '';
   } catch (err) {
-    console.error('[ai] summarize failed:', err)
-    return ''
+    console.error('[ai] summarize failed:', err);
+    return '';
   }
 }
 
@@ -239,8 +251,8 @@ export async function aiSummarize(
  * Returns a safe fallback object on failure — never throws.
  */
 export async function aiTranslate(text: string): Promise<TranslateResult> {
-  const clean = String(text || '').trim()
-  if (!clean) return { translation: '', notes: '' }
+  const clean = String(text || '').trim();
+  if (!clean) return { translation: '', notes: '' };
   try {
     const out = await aiChat(
       [
@@ -248,21 +260,21 @@ export async function aiTranslate(text: string): Promise<TranslateResult> {
         { role: 'user', content: clean.slice(0, 2000) },
       ],
       { temperature: 0.3 },
-    )
-    if (!out) return { translation: '', notes: '' }
-    const raw = extractJSON(out)
+    );
+    if (!out) return { translation: '', notes: '' };
+    const raw = extractJSON(out);
     if (!raw || typeof raw !== 'object') {
       // Model returned plain text instead of JSON — treat the whole thing as translation.
-      return { translation: out, notes: '' }
+      return { translation: out, notes: '' };
     }
-    const j = raw as Record<string, unknown>
+    const j = raw as Record<string, unknown>;
     return {
       translation: String(j.translation || ''),
       notes: String(j.notes || ''),
-    }
+    };
   } catch (err) {
-    console.error('[ai] translate failed:', err)
-    return { translation: '', notes: '' }
+    console.error('[ai] translate failed:', err);
+    return { translation: '', notes: '' };
   }
 }
 
@@ -273,7 +285,7 @@ function toStringArray(v: unknown): string[] {
     return v
       .map((x) => String(x).trim())
       .filter((x) => x.length > 0)
-      .slice(0, 8)
+      .slice(0, 8);
   }
   if (typeof v === 'string' && v.trim()) {
     // Tolerate comma-separated strings.
@@ -281,23 +293,25 @@ function toStringArray(v: unknown): string[] {
       .split(/[,،]/)
       .map((x) => x.trim())
       .filter((x) => x.length > 0)
-      .slice(0, 8)
+      .slice(0, 8);
   }
-  return []
+  return [];
 }
 
-const VALID_LEVELS: DifficultyLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
+const VALID_LEVELS: DifficultyLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
 function toDifficultyLevel(v: unknown): DifficultyLevel {
-  const u = String(v || '').toUpperCase().trim()
-  return (VALID_LEVELS as string[]).includes(u) ? (u as DifficultyLevel) : 'B1'
+  const u = String(v || '')
+    .toUpperCase()
+    .trim();
+  return (VALID_LEVELS as string[]).includes(u) ? (u as DifficultyLevel) : 'B1';
 }
 
-const VALID_BANDS: FrequencyBand[] = ['common', 'uncommon', 'rare']
+const VALID_BANDS: FrequencyBand[] = ['common', 'uncommon', 'rare'];
 
 function toFrequencyBand(v: unknown): FrequencyBand {
-  const u = String(v || '').toLowerCase().trim()
-  return (VALID_BANDS as string[]).includes(u)
-    ? (u as FrequencyBand)
-    : 'uncommon'
+  const u = String(v || '')
+    .toLowerCase()
+    .trim();
+  return (VALID_BANDS as string[]).includes(u) ? (u as FrequencyBand) : 'uncommon';
 }

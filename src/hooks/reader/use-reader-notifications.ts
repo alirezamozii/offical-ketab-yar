@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 /**
  * use-reader-notifications — the single place in the reader tree where
@@ -15,38 +15,42 @@
  * via the `emit` callback; they never touch sonner directly.
  */
 
-import type { ReaderBusEntry } from '@/hooks/reader/use-reader-events'
-import { useEffect } from 'react'
-import { toast } from 'sonner'
+import type { ReaderBusEntry } from '@/hooks/reader/use-reader-events';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 
 export function useReaderNotifications(entry: ReaderBusEntry | null) {
   useEffect(() => {
-    if (!entry) return
+    if (!entry) return;
     switch (entry.event.type) {
       case 'highlight-added':
-        toast.success('هایلایت ذخیره شد')
-        break
-      case 'vocab-added':
-        toast.success('به واژگان اضافه شد')
-        break
+        toast.success('هایلایت ذخیره شد');
+        break;
+      case 'vocab-added': {
+        const word = entry.event.type === 'vocab-added' ? entry.event.word : undefined;
+        toast.success(
+          word ? `«${word}» به لیست واژه‌های تو اضافه شد ✓` : 'به لیست واژه‌های تو اضافه شد ✓',
+        );
+        break;
+      }
       case 'vocab-error':
-        toast.error('خطا در افزودن')
-        break
+        toast.error('خطا در افزودن به واژگان — دوباره تلاش کن');
+        break;
       case 'copied':
-        toast.success('کپی شد')
-        break
+        toast.success('کپی شد');
+        break;
       case 'bookmark-added':
-        toast.success('نشان‌گذاری شد')
-        break
+        toast.success('نشان‌گذاری شد');
+        break;
       case 'bookmark-removed':
-        toast.success('نشان حذف شد')
-        break
+        toast.success('نشان حذف شد');
+        break;
       case 'share-success':
-        toast.success('لینک و متن کپی شد')
-        break
+        toast.success('لینک و متن کپی شد');
+        break;
       case 'share-error':
-        toast.error('اشتراک‌گذاری ناموفق بود')
-        break
+        toast.error('اشتراک‌گذاری ناموفق بود');
+        break;
     }
-  }, [entry])
+  }, [entry]);
 }

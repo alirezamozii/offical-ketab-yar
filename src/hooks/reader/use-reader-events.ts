@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 /**
  * Decoupled event bus for the reader sub-hooks.
@@ -20,24 +20,24 @@
  * shape still trigger the subscriber's `useEffect` dependency.
  */
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react';
 
 export type ReaderEvent =
   | { type: 'highlight-added' }
-  | { type: 'vocab-added' }
+  | { type: 'vocab-added'; word?: string }
   | { type: 'vocab-error' }
   | { type: 'copied' }
   | { type: 'bookmark-added' }
   | { type: 'bookmark-removed' }
   | { type: 'share-success' }
-  | { type: 'share-error' }
+  | { type: 'share-error' };
 
-export type ReaderEmit = (event: ReaderEvent) => void
+export type ReaderEmit = (event: ReaderEvent) => void;
 
 export interface ReaderBusEntry {
-  event: ReaderEvent
+  event: ReaderEvent;
   /** Strictly-increasing nonce so identical consecutive events still register. */
-  nonce: number
+  nonce: number;
 }
 
 /**
@@ -46,16 +46,16 @@ export interface ReaderBusEntry {
  * hooks without busting their `useCallback` memoization.
  */
 export function useReaderEventBus(): {
-  lastEntry: ReaderBusEntry | null
-  emit: ReaderEmit
+  lastEntry: ReaderBusEntry | null;
+  emit: ReaderEmit;
 } {
-  const counterRef = useRef(0)
-  const [lastEntry, setLastEntry] = useState<ReaderBusEntry | null>(null)
+  const counterRef = useRef(0);
+  const [lastEntry, setLastEntry] = useState<ReaderBusEntry | null>(null);
 
   const emit = useCallback((event: ReaderEvent) => {
-    counterRef.current += 1
-    setLastEntry({ event, nonce: counterRef.current })
-  }, [])
+    counterRef.current += 1;
+    setLastEntry({ event, nonce: counterRef.current });
+  }, []);
 
-  return { lastEntry, emit }
+  return { lastEntry, emit };
 }
