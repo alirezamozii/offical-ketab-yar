@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.4/schema.json",
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
@@ -9,9 +9,7 @@
   "linter": {
     "enabled": false
   },
-  "organizeImports": {
-    "enabled": true
-  },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "javascript": {
     "formatter": {
       "quoteStyle": "single",
@@ -20,14 +18,18 @@
     }
   },
   "files": {
-    "ignore": [
-      "node_modules/**",
-      ".next/**",
-      "dist/**",
-      "coverage/**",
-      "prisma/migrations/**",
-      "*.lock",
-      "bun.lock"
+    "includes": [
+      "**",
+      "!**/node_modules/**",
+      "!**/.next/**",
+      "!**/dist/**",
+      "!**/coverage/**",
+      "!**/prisma/migrations/**",
+      "!**/*.lock",
+      "!**/bun.lock",
+      "!**/*.css",
+      "!src/lib/dictionary/en-fa.json",
+      "!prisma/books-export.json"
     ]
   }
 }
