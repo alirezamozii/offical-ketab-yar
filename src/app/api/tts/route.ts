@@ -155,7 +155,7 @@ async function generateWithPythonEdgeTTS(
   text: string,
   voice: string,
   speed: number,
-  timeoutMs = 4000,
+  timeoutMs = 9000,
 ): Promise<{ buffer: Buffer; wordBoundaries?: WordBoundaryItem[] } | null> {
   return new Promise((resolve) => {
     let finished = false;

@@ -20,6 +20,72 @@ interface ParagraphGroup {
 }
 
 /**
+ * Calculates the exact 0-based word index inside `primary` that corresponds to
+ * the TTS engine's `activeWordIndex` (which is 0-based relative to `ttsText`).
+ * Returns -1 if this paragraph is not currently speaking.
+ */
+function getActiveWordInParagraph(
+  primary: string,
+  ttsText: string | null | undefined,
+  activeWordIndex: number,
+): number {
+  if (activeWordIndex < 0 || !ttsText || !primary) return -1;
+  const pClean = primary.trim();
+  const tClean = ttsText.trim();
+  if (!pClean || !tClean) return -1;
+
+  // Case 1: Exact match
+  if (pClean === tClean) {
+    const pWordsCount = pClean.split(/\s+/).filter(Boolean).length;
+    return activeWordIndex < pWordsCount ? activeWordIndex : -1;
+  }
+
+  // Case 2: Selected text inside this paragraph (e.g. user selected a sentence or phrase)
+  if (pClean.includes(tClean)) {
+    const charIdx = pClean.indexOf(tClean);
+    const wordsBefore = pClean.slice(0, charIdx).trim().split(/\s+/).filter(Boolean).length;
+    const ttsWordsCount = tClean.split(/\s+/).filter(Boolean).length;
+    if (activeWordIndex < ttsWordsCount) {
+      return wordsBefore + activeWordIndex;
+    }
+    return -1;
+  }
+
+  // Case 3: Normalized whitespace match for selection inside paragraph
+  const normP = pClean.replace(/\s+/g, ' ');
+  const normT = tClean.replace(/\s+/g, ' ');
+  if (normP.includes(normT)) {
+    const charIdx = normP.indexOf(normT);
+    const wordsBefore = normP.slice(0, charIdx).trim().split(/\s+/).filter(Boolean).length;
+    const ttsWordsCount = normT.split(/\s+/).filter(Boolean).length;
+    if (activeWordIndex < ttsWordsCount) {
+      return wordsBefore + activeWordIndex;
+    }
+    return -1;
+  }
+
+  // Case 4: Multi-paragraph or full-page TTS playback (ttsText contains this paragraph)
+  if (normT.includes(normP) || tClean.includes(pClean)) {
+    const fullText = normT.includes(normP) ? normT : tClean;
+    const targetP = normT.includes(normP) ? normP : pClean;
+    const charIdx = fullText.indexOf(targetP);
+    const textBefore = fullText.slice(0, charIdx);
+    const wordsBefore = textBefore.trim()
+      ? textBefore.trim().split(/\s+/).filter(Boolean).length
+      : 0;
+    const pWordsCount = targetP.split(/\s+/).filter(Boolean).length;
+
+    const relativeWord = activeWordIndex - wordsBefore;
+    if (relativeWord >= 0 && relativeWord < pWordsCount) {
+      return relativeWord;
+    }
+    return -1;
+  }
+
+  return -1;
+}
+
+/**
  * Renders a single bilingual paragraph (heading or body text) with smart
  * sentence-by-sentence matching ("مچ شدن جملات در هر نقطه").
  *
@@ -48,41 +114,10 @@ export const ParagraphBlock = memo(function ParagraphBlock({
   const tts = useTTSContext();
 
   // Match TTS reading position accurately within this paragraph
-  const spokenWordOffsetInParagraph = useMemo(() => {
+  const targetWordInParagraph = useMemo(() => {
     if (!tts.isPlaying && !tts.isPaused) return -1;
-    const ttsClean = tts.currentText?.trim();
-    const primaryClean = primary?.trim();
-    if (!ttsClean || !primaryClean) return -1;
-
-    // 1. Direct substring in primary text (e.g. selected sentence)
-    if (primary.includes(ttsClean)) {
-      const charIndex = primary.indexOf(ttsClean);
-      return primary.slice(0, charIndex).split(/\s+/).filter(Boolean).length;
-    }
-
-    // 2. Direct exact or multi-paragraph inclusion
-    if (ttsClean.includes(primary)) {
-      const charIndex = ttsClean.indexOf(primary);
-      const prefixWords = ttsClean.slice(0, charIndex).split(/\s+/).filter(Boolean).length;
-      return -prefixWords;
-    }
-
-    // 3. Normalized whitespace comparison
-    const normPrimary = primary.replace(/\s+/g, ' ');
-    const normTTS = ttsClean.replace(/\s+/g, ' ');
-    const matchIdx = normPrimary.indexOf(normTTS);
-    if (matchIdx !== -1) {
-      return normPrimary.slice(0, matchIdx).split(/\s+/).filter(Boolean).length;
-    }
-
-    return -1;
-  }, [tts.isPlaying, tts.isPaused, tts.currentText, primary]);
-
-  const isSpeakingThis = spokenWordOffsetInParagraph !== -1;
-  const targetWordInParagraph =
-    isSpeakingThis && tts.activeWordIndex >= 0
-      ? spokenWordOffsetInParagraph + tts.activeWordIndex
-      : -1;
+    return getActiveWordInParagraph(primary, tts.currentText, tts.activeWordIndex);
+  }, [tts.isPlaying, tts.isPaused, tts.currentText, tts.activeWordIndex, primary]);
 
   const sentencePairs = useMemo<MatchedSentencePair[]>(() => {
     if (isHeading) {
