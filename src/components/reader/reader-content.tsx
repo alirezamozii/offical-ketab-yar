@@ -42,7 +42,6 @@ export function ReaderContent() {
     setShowControls,
     marginStyle,
     columnMaxWidth,
-    snapClass,
     fontFamilyCss,
   } = useReader()
 
@@ -101,10 +100,7 @@ export function ReaderContent() {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className={
-          snapClass +
-          ' h-full w-full overflow-y-auto scroll-smooth scroll-brand px-3 pb-40 pt-20 sm:px-4'
-        }
+        className="h-full w-full overflow-y-auto scroll-smooth scroll-brand px-3 pb-40 pt-20 sm:px-4"
         style={{
           WebkitOverflowScrolling: 'touch',
           fontFamily: fontFamilyCss,
@@ -132,8 +128,6 @@ export function ReaderContent() {
               className="group relative scroll-mt-24 transition-opacity duration-300 cull-paragraph"
               style={{
                 paddingBottom: marginStyle.paragraphGap,
-                scrollSnapAlign:
-                  prefs.readingRhythm === 'snap' ? 'start' : undefined,
               }}
             >
 

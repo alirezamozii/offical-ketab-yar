@@ -21,6 +21,8 @@ export interface ReaderShortcutHandlers {
   jumpToEnd: () => void
   /** Toggle immersive focus mode. */
   toggleFocusMode: () => void
+  /** Toggle the in-book search dialog. */
+  toggleSearch: () => void
   /** Toggle the settings panel. */
   toggleSettings: () => void
   /** Toggle the highlights panel. */
@@ -31,6 +33,8 @@ export interface ReaderShortcutHandlers {
   toggleSubtitles: () => void
   /** Toggle primary language EN ↔ FA. */
   toggleLanguage: () => void
+  /** Toggle the dictionary popup. */
+  toggleDictionary?: () => void
   /** Toggle the AI chat panel. */
   toggleChat: () => void
   /** Cycle through the available themes (light → sepia → dark → high-contrast). */
@@ -78,11 +82,25 @@ export function useReaderKeyboardShortcuts(handlers: ReaderShortcutHandlers) {
   useEffect(() => {
     // fallow-ignore-next-line complexity
     const onKey = (e: KeyboardEvent) => {
-      // Never intercept the browser's own shortcuts (Ctrl/Cmd/Alt/Option).
+      // In-book search: Ctrl+F / Cmd+F should trigger reader search instead of raw browser find
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'F')) {
+        e.preventDefault()
+        handlersRef.current.toggleSearch()
+        return
+      }
+
+      // Never intercept other browser shortcuts (Ctrl/Cmd/Alt/Option).
       if (e.ctrlKey || e.metaKey || e.altKey) return
 
       // Don't hijack typing in inputs / textareas / contenteditable.
       if (isEditableTarget(e.target)) return
+
+      // Slash `/` opens in-book search immediately (command palette style)
+      if (e.key === '/') {
+        e.preventDefault()
+        handlersRef.current.toggleSearch()
+        return
+      }
 
       // `?` requires Shift on most layouts — accept `?` directly.
       if (e.key === '?') {
@@ -171,6 +189,11 @@ export function useReaderKeyboardShortcuts(handlers: ReaderShortcutHandlers) {
         case 'L':
           e.preventDefault()
           h.toggleLanguage()
+          break
+        case 'd':
+        case 'D':
+          e.preventDefault()
+          h.toggleDictionary?.()
           break
         case 'a':
         case 'A':

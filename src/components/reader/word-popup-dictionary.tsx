@@ -21,8 +21,10 @@ import { motion } from 'framer-motion'
 import {
   ArrowLeftRight,
   BookmarkPlus,
+  BookOpen,
   Loader2,
   Network,
+  Search,
   Sparkles,
   Volume2,
   X,
@@ -216,12 +218,12 @@ export function WordPopupDictionary({
     return (
       <Drawer open={open} onOpenChange={(o) => { if (!o) onClose() }}>
         <DrawerContent
-          className="z-[150] rounded-t-3xl border-t-2 max-h-[88vh] p-0 overflow-hidden shadow-2xl"
+          className="rounded-t-3xl border-t-2 max-h-[88vh] p-0 overflow-hidden shadow-2xl"
           style={{ background: s.bg, color: s.text, borderColor: s.border }}
         >
           <DrawerHandle className="opacity-40" style={{ background: s.accent }} />
-          <DrawerTitle className="sr-only">دیکشنری — {state.word}</DrawerTitle>
-          <DrawerDescription className="sr-only">ترجمه فارسی و تعاریف {state.word}</DrawerDescription>
+          <DrawerTitle className="sr-only">دیکشنری {state.word ? `— ${state.word}` : ''}</DrawerTitle>
+          <DrawerDescription className="sr-only">ترجمه فارسی و تعاریف واژگان</DrawerDescription>
           <DictionaryBodyContent
             {...state}
             onClose={onClose}
@@ -237,14 +239,14 @@ export function WordPopupDictionary({
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
       <DialogContent
         showCloseButton={false}
-        className="gap-0 overflow-hidden rounded-2xl border-2 p-0 shadow-2xl sm:max-w-md z-[150]"
+        className="gap-0 overflow-hidden rounded-2xl border-2 p-0 shadow-2xl sm:max-w-md"
         style={{ background: s.bg, color: s.text, borderColor: s.border }}
       >
         <DialogTitle className="sr-only">
-          دیکشنری — {state.word}
+          دیکشنری {state.word ? `— ${state.word}` : ''}
         </DialogTitle>
         <DialogDescription className="sr-only">
-          ترجمه فارسی، تعریف انگلیسی، مترادف، متضاد، تلفظ صوتی و مثال کلمهٔ {state.word}.
+          ترجمه فارسی، تعریف انگلیسی، مترادف، متضاد، تلفظ صوتی و مثال کلمهٔ {state.word || 'مورد نظر'}.
         </DialogDescription>
         <DictionaryBodyContent
           {...state}
@@ -284,6 +286,11 @@ function DictionaryBodyContent({
 }) {
   const dark = theme === 'dark' || theme === 'high-contrast'
   const s = THEME_STYLES[theme] || THEME_STYLES.light
+  const [localQuery, setLocalQuery] = useState(word)
+
+  useEffect(() => {
+    setLocalQuery(word)
+  }, [word])
 
   const displayTranslation = result?.translation || result?.persian
   const displayPos = result?.partOfSpeech || result?.pos
@@ -298,14 +305,15 @@ function DictionaryBodyContent({
     >
       {/* Header */}
       <div
-        className="flex items-center justify-between border-b px-5 py-4"
+        className="flex items-center justify-between border-b px-5 py-3.5"
         style={{ borderColor: s.border }}
       >
         <div className="flex items-center gap-3">
           <button
             onClick={speak}
+            disabled={!word}
             className={cn(
-              'flex h-11 w-11 items-center justify-center rounded-full transition-transform hover:scale-110 active:scale-95',
+              'flex h-10 w-10 items-center justify-center rounded-full transition-transform hover:scale-110 active:scale-95 disabled:opacity-30 disabled:pointer-events-none',
               isPlayingAudio && 'ring-2 ring-gold-400 ring-offset-2',
             )}
             style={{ background: s.accent + '22', color: s.accent }}
@@ -319,8 +327,8 @@ function DictionaryBodyContent({
             )}
           </button>
           <div>
-            <h3 className="text-xl font-bold tracking-tight" dir="ltr" lang="en">
-              {word}
+            <h3 className="text-lg font-bold tracking-tight" dir="ltr" lang="en">
+              {word || 'واژه‌نامه و دیکشنری'}
             </h3>
             {(result?.phonetic || displayPos) && (
               <p className="text-xs opacity-75" dir="ltr" lang="en">
@@ -342,11 +350,63 @@ function DictionaryBodyContent({
         </Button>
       </div>
 
+      {/* Quick Search Bar */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (localQuery.trim()) {
+            navigateToWord(localQuery.trim())
+          }
+        }}
+        className="flex items-center gap-2 border-b px-5 py-2.5"
+        style={{ borderColor: s.border }}
+      >
+        <div className="relative flex-1">
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 opacity-50" />
+          <input
+            type="text"
+            value={localQuery}
+            onChange={(e) => setLocalQuery(e.target.value)}
+            placeholder="جست‌وجوی واژه انگلیسی یا فارسی..."
+            className="w-full rounded-xl border bg-transparent py-1.5 pe-8 ps-8 text-xs transition-colors focus:outline-hidden focus:ring-1"
+            style={{ borderColor: s.border }}
+            dir="auto"
+          />
+          {localQuery && (
+            <button
+              type="button"
+              onClick={() => setLocalQuery('')}
+              className="absolute end-2.5 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100"
+              aria-label="پاک کردن"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+        <Button
+          type="submit"
+          size="sm"
+          variant="outline"
+          className="h-7 text-xs px-2.5 rounded-lg shrink-0"
+          disabled={!localQuery.trim() || Boolean(word && localQuery.trim().toLowerCase() === word.toLowerCase())}
+        >
+          جست‌وجو
+        </Button>
+      </form>
+
       {/* Body */}
       <div className={cn(
         "scroll-brand space-y-4 overflow-y-auto px-5 py-4",
         isMobile ? "max-h-[62vh] pb-8" : "max-h-[62vh]"
       )}>
+        {!word && !loading && (
+          <div className="flex flex-col items-center justify-center gap-2 py-12 text-center opacity-70">
+            <BookOpen className="h-10 w-10 opacity-40" />
+            <p className="text-sm font-medium">واژه مورد نظر خود را در کادر بالا جست‌وجو کنید</p>
+            <p className="text-xs opacity-70">ترجمه دو زبانه، مترادف‌ها، متضادها و تلفظ صوتی هوشمند</p>
+          </div>
+        )}
+
         {loading && (
           <div className="flex flex-col items-center justify-center gap-3 py-10">
             <Loader2

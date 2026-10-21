@@ -18,14 +18,12 @@ export function useReaderDictionary() {
   const [showDictionary, setShowDictionary] = useState(false)
   const [dictionaryWord, setDictionaryWord] = useState('')
 
-  const openWithWord = useCallback((word: string) => {
-    const clean = word
+  const openWithWord = useCallback((word?: string) => {
+    const clean = (word || '')
       .trim()
       .replace(/[.,/#!$%^&*;:{}=\-_`~()""'']/g, '')
-    if (clean) {
-      setDictionaryWord(clean)
-      setShowDictionary(true)
-    }
+    setDictionaryWord(clean)
+    setShowDictionary(true)
   }, [])
 
   const closeDictionary = useCallback(() => {

@@ -1,11 +1,16 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { BookOpen, CheckCircle2, ChevronLeft, RotateCcw } from 'lucide-react'
+import { BookOpen, CheckCircle2, ChevronLeft, RotateCcw, Search } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { getLocalProgress, clearLocalProgress } from '@/hooks/reader/use-local-progress'
 import { toPersianDigits } from '@/lib/typography'
+import {
+  calculateRingDashOffset,
+  formatReadingPercent,
+  getReadingState,
+} from '@/lib/reader/progress'
 import { cn } from '@/lib/utils'
 
 type ReadingState = 'fresh' | 'in-progress' | 'completed'
@@ -22,8 +27,9 @@ interface BookDetailActionsProps {
 }
 
 function deriveState(percent: number): ReadingState {
-  if (percent >= 100) return 'completed'
-  if (percent > 0) return 'in-progress'
+  const s = getReadingState(percent)
+  if (s === 'completed') return 'completed'
+  if (s === 'in-progress') return 'in-progress'
   return 'fresh'
 }
 
@@ -67,7 +73,7 @@ export function BookDetailActions({
       state === 'completed'
         ? 'خواندن دوباره'
         : state === 'in-progress'
-          ? `ادامه · ${toPersianDigits(percent)}٪`
+          ? `ادامه · ${formatReadingPercent(percent)}`
           : 'شروع مطالعه'
     return (
       <Button
@@ -92,8 +98,7 @@ export function BookDetailActions({
   if (state === 'in-progress' || state === 'completed') {
     const isCompleted = state === 'completed'
     const radius = 26
-    const circumference = 2 * Math.PI * radius
-    const strokeOffset = circumference - (percent / 100) * circumference
+    const { circumference, strokeOffset } = calculateRingDashOffset(percent, radius)
 
     return (
       <div className={cn('relative overflow-hidden rounded-2xl border border-gold-500/30 bg-gradient-to-br from-gold-500/10 via-card to-card p-4 sm:p-5 shadow-sm', className)}>
@@ -188,6 +193,12 @@ export function BookDetailActions({
                 )}
               </Link>
             </Button>
+            <Button asChild size="sm" variant="outline" className="gap-1.5 h-9 text-xs">
+              <Link href={`${href}?search=1`} title="جستجو در متن این کتاب">
+                <Search className="h-3.5 w-3.5" />
+                <span className="hidden md:inline">جستجو</span>
+              </Link>
+            </Button>
             <Button
               size="sm"
               variant="ghost"
@@ -213,6 +224,12 @@ export function BookDetailActions({
           <BookOpen className="h-5 w-5" />
           شروع مطالعه
           <ChevronLeft className="h-4 w-4" />
+        </Link>
+      </Button>
+      <Button asChild size="xl" variant="outline" className="gap-2 sm:px-4">
+        <Link href={`${href}?search=1`} title="جستجو در متن این کتاب">
+          <Search className="h-5 w-5" />
+          <span className="hidden sm:inline">جستجو در متن</span>
         </Link>
       </Button>
     </div>

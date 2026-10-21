@@ -7,7 +7,7 @@ import {
   alignBilingualSentences,
   type MatchedSentencePair,
 } from '@/lib/reader/sentence-aligner'
-import { Fragment, memo, useMemo, useState } from 'react'
+import { Fragment, memo, useMemo } from 'react'
 
 interface ParagraphBlockProps {
   item: BilingualItem
@@ -49,7 +49,6 @@ export const ParagraphBlock = memo(function ParagraphBlock({
   const secondaryDir = secondaryLang === 'english' ? 'ltr' : 'rtl'
 
   const tts = useTTSContext()
-  const [hoveredId, setHoveredId] = useState<string | null>(null)
 
   // Check if TTS is currently reading this paragraph
   const isSpeakingThis = Boolean(
@@ -106,8 +105,6 @@ export const ParagraphBlock = memo(function ParagraphBlock({
     pairId: string,
     startWordOffset: number,
   ) => {
-    const isHovered = hoveredId === pairId
-
     let content: React.ReactNode = text
     if (isSpeakingThis && tts.activeWordIndex >= 0) {
       let wordIdx = startWordOffset - 1
@@ -142,20 +139,7 @@ export const ParagraphBlock = memo(function ParagraphBlock({
     }
 
     return (
-      <span
-        data-pair-id={pairId}
-        onMouseEnter={() => setHoveredId(pairId)}
-        onMouseLeave={() => setHoveredId((h) => (h === pairId ? null : h))}
-        className="rounded transition-colors duration-150"
-        style={
-          isHovered
-            ? {
-                background: `${accent}26`,
-                boxShadow: `0 0 0 2px ${accent}1f`,
-              }
-            : undefined
-        }
-      >
+      <span data-pair-id={pairId} className="rounded">
         {content}
       </span>
     )
@@ -223,6 +207,47 @@ export const ParagraphBlock = memo(function ParagraphBlock({
               {renderSentence(secondary, 'heading-0', 0)}
             </div>
           )}
+        </div>
+      ) : prefs.showSubtitles ? (
+        // Interleaved mode: each sentence's translation sits directly under
+        // it, so the matched FA/EN pair is visually bound together.
+        <div className="space-y-6">
+          {paragraphGroups.map((group) => (
+            <div key={group.pIdx} className="bilingual-para-block">
+              {group.pairs.map((pair) => (
+                <div key={pair.id} className="mb-4 last:mb-0">
+                  {pair.primary && (
+                    <p
+                      className="mb-1 text-inherit"
+                      dir={primaryDir}
+                      style={{
+                        textAlign: primaryDir === 'rtl' ? 'right' : 'justify',
+                        lineHeight: prefs.lineHeight,
+                      }}
+                    >
+                      {renderSentence(pair.primary, pair.id, wordOffsets.get(pair.id) ?? 0)}
+                    </p>
+                  )}
+                  {pair.secondary && (
+                    <div
+                      className="text-[0.86em]"
+                      dir={secondaryDir}
+                      style={{
+                        borderInlineStart: `3px solid ${accent}`,
+                        paddingInlineStart: '0.75rem',
+                        lineHeight: prefs.lineHeight,
+                        color: 'inherit',
+                        opacity: 0.78,
+                        textAlign: secondaryDir === 'rtl' ? 'right' : 'start',
+                      }}
+                    >
+                      {renderSentence(pair.secondary, pair.id, wordOffsets.get(pair.id) ?? 0)}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ))}
         </div>
       ) : (
         // Render each paragraph as matched sentence spans; hovering any

@@ -22,6 +22,10 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { getLocalProgress } from '@/hooks/reader/use-local-progress'
 import { toPersianDigits } from '@/lib/typography'
+import {
+  calculateRingDashOffset,
+  formatReadingPercent,
+} from '@/lib/reader/progress'
 import { Button } from '@/components/ui/button'
 
 interface ReadingProgressCardProps {
@@ -51,8 +55,7 @@ export function ReadingProgressCard({
 
   const isCompleted = percent >= 100
   const radius = 26
-  const circumference = 2 * Math.PI * radius
-  const strokeOffset = circumference - (percent / 100) * circumference
+  const { circumference, strokeOffset } = calculateRingDashOffset(percent, radius)
 
   return (
     <section
@@ -129,8 +132,8 @@ export function ReadingProgressCard({
               {isCompleted
                 ? 'تبریک! می‌توانید دوباره بخوانید یا کتاب دیگری انتخاب کنید.'
                 : totalPages > 0
-                  ? `صفحه ${toPersianDigits(currentPage)} از ${toPersianDigits(totalPages)}`
-                  : `${toPersianDigits(percent)}٪ پیشرفت`}
+                  ? `صفحه ${toPersianDigits(currentPage + 1)} از ${toPersianDigits(totalPages)}`
+                  : `${formatReadingPercent(percent)} پیشرفت`}
             </p>
           </div>
 

@@ -79,6 +79,9 @@ export type ReaderPanelsSlice = Pick<
   | 'setShowHighlights'
   | 'showChapters'
   | 'setShowChapters'
+  | 'showSearch'
+  | 'setShowSearch'
+  | 'searchInitialQuery'
   | 'isFocusMode'
   | 'setIsFocusMode'
   | 'showFocusHint'
@@ -138,7 +141,6 @@ export type ReaderCoreSlice = Pick<
   | 'sessionMinutes'
   | 'columnMaxWidth'
   | 'marginStyle'
-  | 'snapClass'
   | 'fontFamilyCss'
   | 'cycleTheme'
   | 'increaseFontSize'
@@ -251,6 +253,9 @@ export function ReaderProvider({
       setShowHighlights: value.setShowHighlights,
       showChapters: value.showChapters,
       setShowChapters: value.setShowChapters,
+      showSearch: value.showSearch,
+      setShowSearch: value.setShowSearch,
+      searchInitialQuery: value.searchInitialQuery,
       isFocusMode: value.isFocusMode,
       setIsFocusMode: value.setIsFocusMode,
       showFocusHint: value.showFocusHint,
@@ -266,6 +271,9 @@ export function ReaderProvider({
       value.setShowHighlights,
       value.showChapters,
       value.setShowChapters,
+      value.showSearch,
+      value.setShowSearch,
+      value.searchInitialQuery,
       value.isFocusMode,
       value.setIsFocusMode,
       value.showFocusHint,
@@ -334,7 +342,6 @@ export function ReaderProvider({
       sessionMinutes: value.sessionMinutes,
       columnMaxWidth: value.columnMaxWidth,
       marginStyle: value.marginStyle,
-      snapClass: value.snapClass,
       fontFamilyCss: value.fontFamilyCss,
       cycleTheme: value.cycleTheme,
       increaseFontSize: value.increaseFontSize,
@@ -356,7 +363,6 @@ export function ReaderProvider({
       value.sessionMinutes,
       value.columnMaxWidth,
       value.marginStyle,
-      value.snapClass,
       value.fontFamilyCss,
       value.cycleTheme,
       value.increaseFontSize,

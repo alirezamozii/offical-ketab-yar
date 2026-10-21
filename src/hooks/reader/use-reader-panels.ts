@@ -12,8 +12,8 @@
  * re-render.
  *
  * Owns: `showControls`, `showSettings`, `showHighlights`, `showChapters`,
- * `isFocusMode`, `showFocusHint`, plus the derived `chromeVisible` flag
- * and the `closeAllPanels` / `toggleFocusMode` helpers.
+ * `showSearch`, `isFocusMode`, `showFocusHint`, plus the derived `chromeVisible`
+ * flag and the `closeAllPanels` / `toggleFocusMode` helpers.
  *
  * Does NOT own `showChat` (lives in `use-reader-chat.ts`) or
  * `showDictionary` (lives in `use-reader-dictionary.ts`); the
@@ -40,6 +40,7 @@ export function useReaderPanels({
   const [showSettings, setShowSettings] = useState(false)
   const [showHighlights, setShowHighlights] = useState(false)
   const [showChapters, setShowChapters] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
   const [isFocusMode, setIsFocusMode] = useState(false)
   const [showFocusHint, setShowFocusHint] = useState(true)
 
@@ -47,6 +48,7 @@ export function useReaderPanels({
     setShowSettings(false)
     setShowHighlights(false)
     setShowChapters(false)
+    setShowSearch(false)
     setIsFocusMode(false)
     // Close panels owned by sibling hooks too — Esc should dismiss everything.
     closeTextMenu()
@@ -90,6 +92,8 @@ export function useReaderPanels({
     setShowHighlights,
     showChapters,
     setShowChapters,
+    showSearch,
+    setShowSearch,
     isFocusMode,
     setIsFocusMode,
     showFocusHint,

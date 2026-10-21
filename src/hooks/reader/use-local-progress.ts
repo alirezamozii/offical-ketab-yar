@@ -11,6 +11,8 @@ export type ProgressEntry = {
   /** Raw scroll % through the whole book (0–100). Optional — only the reader
    * writes this, so older entries from other call-sites won't have it. */
   scrollPercent?: number
+  /** Pixel scrollTop offset inside the reader scroll container. */
+  scrollTop?: number
   /** epoch ms of the most recent read activity (paragraph change OR scroll).
    * Used to sort "recently read" books. */
   lastReadAt?: number

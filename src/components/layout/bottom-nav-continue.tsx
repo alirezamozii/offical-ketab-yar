@@ -3,6 +3,10 @@
 import Link from 'next/link'
 import { Play } from 'lucide-react'
 import { useLastReadBook } from '@/hooks/reader/use-last-read-book'
+import {
+  calculateRingDashOffset,
+  formatReadingPercent,
+} from '@/lib/reader/progress'
 import { useEffect, useState } from 'react'
 
 /**
@@ -130,14 +134,13 @@ export function BottomNavContinue() {
 
   // ─── Book in progress ────────────────────────────────────────────────────
   const R = 27
-  const C = 2 * Math.PI * R
-  const pct = Math.min(100, Math.max(0, book.percent))
+  const { circumference: C, strokeOffset: dashOffset } = calculateRingDashOffset(book.percent, R)
 
   return (
     <span className="absolute inset-y-0 left-1/2 -ml-7 flex w-14 flex-col items-center justify-start">
       <a
         href={`/books/read/${book.slug}`}
-        aria-label={`ادامه مطالعه ${book.title} — ${book.percent}٪ پیش رفته است`}
+        aria-label={`ادامه مطالعه ${book.title} — ${formatReadingPercent(book.percent)} پیش رفته است`}
         title={`ادامه ${book.title}`}
         className={circleBase}
         style={{
@@ -193,7 +196,7 @@ export function BottomNavContinue() {
             strokeWidth="3.5"
             strokeLinecap="round"
             strokeDasharray={C}
-            strokeDashoffset={C * (1 - pct / 100)}
+            strokeDashoffset={dashOffset}
             style={{ transition: 'stroke-dashoffset 600ms ease-out' }}
           />
           <defs>

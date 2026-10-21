@@ -237,6 +237,37 @@ export function useReaderHighlights({
     return Array.from(pairIds)
   }, [scrollRef, selectedRange, currentParagraph])
 
+  /**
+   * Collects the counterpart (other-language) text of the given sentence
+   * pairs so the highlights panel can show both languages side by side.
+   */
+  const captureMirrorText = useCallback(
+    (pairIds: string[]): string | undefined => {
+      if (pairIds.length === 0) return undefined
+      const root = scrollRef.current
+      if (!root) return undefined
+      const paraEl = root.querySelector(
+        `[data-paragraph-index="${currentParagraph}"]`,
+      )
+      if (!paraEl) return undefined
+      // The selection's script decides which side is the mirror.
+      const isFaSelection = /[\u0600-\u06FF]/.test(selectedText)
+      const mirrorIsFa = !isFaSelection
+      const parts: string[] = []
+      for (const pid of pairIds) {
+        paraEl
+          .querySelectorAll(`span[data-pair-id="${pid}"]`)
+          .forEach((span) => {
+            const txt = (span.textContent || '').trim()
+            const fa = /[\u0600-\u06FF]/.test(txt)
+            if (txt && fa === mirrorIsFa) parts.push(txt)
+          })
+      }
+      return parts.length > 0 ? parts.join(' ') : undefined
+    },
+    [scrollRef, currentParagraph, selectedText],
+  )
+
   const addHighlight = useCallback(
     (color: Highlight['color']) => {
       if (!selectedText) return
@@ -244,6 +275,7 @@ export function useReaderHighlights({
       if (!trimmedText) return
 
       const pairIds = capturePairIds()
+      const mirrorText = captureMirrorText(pairIds)
       const id = `hl_${Date.now()}`
       setHighlights((prev) => {
         // Prevent stacking duplicate/overlapping highlights on the same page:
@@ -263,6 +295,7 @@ export function useReaderHighlights({
             text: trimmedText,
             color,
             pairIds: pairIds.length > 0 ? pairIds : updated[existingIdx].pairIds,
+            mirrorText: mirrorText ?? updated[existingIdx].mirrorText,
             timestamp: Date.now(),
           }
           return updated
@@ -276,6 +309,7 @@ export function useReaderHighlights({
             page: currentParagraph,
             color,
             pairIds: pairIds.length > 0 ? pairIds : undefined,
+            mirrorText,
             timestamp: Date.now(),
           },
         ]
@@ -286,7 +320,7 @@ export function useReaderHighlights({
 
       emit({ type: 'highlight-added' })
     },
-    [selectedText, currentParagraph, emit, capturePairIds],
+    [selectedText, currentParagraph, emit, capturePairIds, captureMirrorText],
   )
 
   const removeHighlight = useCallback((id: string) => {

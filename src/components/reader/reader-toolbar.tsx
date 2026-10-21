@@ -3,16 +3,16 @@
 import { Button } from '@/components/ui/button'
 
 import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHandle,
-  DrawerTitle,
-} from '@/components/ui/drawer'
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { useReader } from '@/components/reader/reader-context'
 import { formatSessionTime } from '@/hooks/reader/use-reading-session-timer'
 import { toPersianDigits, type ReaderTheme } from '@/lib/reader/types'
 import {
+  BookOpen,
   ChevronRight,
   Clock,
   Coffee,
@@ -21,6 +21,7 @@ import {
   Highlighter,
   Languages,
   List as ListIcon,
+  Search,
   MessageSquare,
   Minus,
   Moon,
@@ -58,8 +59,11 @@ export function ReaderToolbar() {
     currentLanguage,
     pageHlCount,
     setShowChapters,
+    showSearch,
+    setShowSearch,
     setShowSettings,
     setShowHighlights,
+    setShowDictionary,
     setShowChat,
     toggleFocusMode,
     chromeVisible,
@@ -146,6 +150,23 @@ export function ReaderToolbar() {
                 <ListIcon className="h-4 w-4" />
                 <span className="hidden xl:inline text-xs font-medium">فصل‌ها</span>
               </ReaderIconButton>
+
+              {/* ---- In-book Search: Quick lookup across English & Persian ---- */}
+              <ReaderIconButton
+                onClick={() => {
+                  setShowSearch((v) => !v)
+                  setShowChapters(false)
+                  setShowSettings(false)
+                  setShowHighlights(false)
+                }}
+                label="جستجو در متن کتاب (کلید / یا Ctrl+F)"
+                accent={themeStyle.accent}
+                ariaKeyshortcuts="/"
+                className="inline-flex"
+              >
+                <Search className="h-4 w-4" />
+                <span className="hidden xl:inline text-xs font-medium">جستجو</span>
+              </ReaderIconButton>
             </div>
 
             {/* ---- Actions & Tools Area (Categorized Clusters) ---- */}
@@ -209,6 +230,21 @@ export function ReaderToolbar() {
                       {toPersianDigits(pageHlCount)}
                     </span>
                   )}
+                </ReaderIconButton>
+
+                <ReaderIconButton
+                  onClick={() => {
+                    setShowDictionary((v) => !v)
+                    setShowSettings(false)
+                    setShowHighlights(false)
+                    setShowChapters(false)
+                  }}
+                  label="دیکشنری و واژه‌نامه (کلید D)"
+                  accent={themeStyle.accent}
+                  ariaKeyshortcuts="D"
+                  className="h-9 w-9 p-0 justify-center"
+                >
+                  <BookOpen className="h-4 w-4" />
                 </ReaderIconButton>
 
                 <ReaderIconButton
@@ -327,70 +363,80 @@ export function ReaderToolbar() {
           </div>
         </header>
 
-    {/* ---- Mobile overflow Drawer — Categorized for optimal touch UX ---- */}
-    <Drawer open={moreOpen} onOpenChange={setMoreOpen}>
-      <DrawerContent
-        className="gap-0 rounded-t-3xl border-t pb-safe max-h-[85vh] overflow-y-auto"
-        style={{ background: themeStyle.bg, color: themeStyle.text, borderColor: themeStyle.border }}
+    {/* ---- Mobile overflow Sheet — Categorized for optimal touch UX ---- */}
+    <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+      <SheetContent
+        side="bottom"
+        showCloseButton={false}
+        className="gap-0 rounded-t-3xl border-t p-0 pb-safe shadow-2xl overflow-hidden"
+        style={{
+          background: themeStyle.bg,
+          color: themeStyle.text,
+          borderColor: themeStyle.border,
+        }}
       >
-        <DrawerHandle className="opacity-40" style={{ background: themeStyle.accent }} />
-        <DrawerTitle className="sr-only">ابزارهای مطالعه</DrawerTitle>
-        <DrawerDescription className="sr-only">
-          دسترسی به فصل‌ها، نشان‌ها، هوش مصنوعی، تنظیمات قلم، تم و امکانات دیگر.
-        </DrawerDescription>
+        <SheetTitle className="sr-only">ابزارهای مطالعه</SheetTitle>
+        <SheetDescription className="sr-only">
+          دسترسی به فصل‌ها، نشان‌ها، دیکشنری، جستجو، هوش مصنوعی، تنظیمات قلم، تم و امکانات دیگر.
+        </SheetDescription>
+
+        {/* Top Handle / Pill indicator */}
+        <div className="flex justify-center pt-2.5 pb-1">
+          <div
+            className="h-1.5 w-12 rounded-full opacity-35"
+            style={{ background: themeStyle.accent }}
+          />
+        </div>
 
         {/* Header */}
         <div
-          className="flex shrink-0 items-center justify-between border-b px-5 py-3.5"
+          className="flex shrink-0 items-center justify-between border-b px-5 py-2.5"
           style={{ borderColor: themeStyle.border }}
         >
-          <h2 className="text-base font-bold">ابزارهای مطالعه</h2>
+          <h2 className="text-sm font-bold">ابزارهای مطالعه و تنظیمات</h2>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setMoreOpen(false)}
             aria-label="بستن"
-            className="h-8 w-8 rounded-full"
+            className="h-7 w-7 rounded-full"
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
 
-        <div className="space-y-4 p-4">
-          {/* Card 1: Appearance & Typography */}
+        <div className="space-y-3 p-4">
+          {/* Section 1: Appearance & Typography */}
           <div
-            className="space-y-3 rounded-2xl border p-3.5"
+            className="space-y-2.5 rounded-2xl border p-3"
             style={{ borderColor: themeStyle.border, background: themeStyle.bg }}
           >
-            <span className="text-[11px] font-bold opacity-75">
-              ظاهر و اندازه متن
-            </span>
-
             {/* Font Size Stepper */}
-            <div
-              className="flex items-center justify-between gap-3 rounded-xl border px-3 py-2"
-              style={{ borderColor: themeStyle.border }}
-            >
+            <div className="flex items-center justify-between">
               <span className="text-xs font-semibold">اندازه قلم متن</span>
-              <div className="flex items-center gap-2" dir="ltr">
+              <div
+                className="flex items-center gap-1.5 rounded-xl border px-1.5 py-1"
+                style={{ borderColor: themeStyle.border }}
+                dir="ltr"
+              >
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={decreaseFontSize}
-                  className="h-8 w-8 rounded-lg p-0 font-bold"
+                  className="h-7 w-7 rounded-lg p-0 font-bold"
                   aria-label="کاهش اندازه قلم"
                   title="کاهش اندازه قلم"
                 >
                   <Minus className="h-3.5 w-3.5" />
                 </Button>
-                <span className="min-w-[40px] text-center text-xs font-bold tabular-nums">
+                <span className="min-w-[36px] text-center text-xs font-bold tabular-nums">
                   {toPersianDigits(prefs.fontSize)}
                 </span>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={increaseFontSize}
-                  className="h-8 w-8 rounded-lg p-0 font-bold"
+                  className="h-7 w-7 rounded-lg p-0 font-bold"
                   aria-label="افزایش اندازه قلم"
                   title="افزایش اندازه قلم"
                 >
@@ -400,52 +446,44 @@ export function ReaderToolbar() {
             </div>
 
             {/* Theme Selector */}
-            <div>
-              <span className="mb-2 block text-[10px] font-semibold opacity-60">
-                پوسته مطالعه
-              </span>
-              <div className="grid grid-cols-4 gap-1.5">
-                {[
-                  { id: 'light', label: 'روز', icon: Sun, bg: '#ffffff', text: '#1a1a1a', border: '#e5e5e5' },
-                  { id: 'sepia', label: 'سپیا', icon: Coffee, bg: '#f4ecd8', text: '#5b4636', border: '#d9ccb0' },
-                  { id: 'dark', label: 'شب', icon: Moon, bg: '#1c1c1e', text: '#f2f2f7', border: '#38383a' },
-                  { id: 'high-contrast', label: 'کنتراست', icon: Contrast, bg: '#000000', text: '#ffff00', border: '#555555' },
-                ].map((t) => {
-                  const isActive = prefs.theme === t.id
-                  const Icon = t.icon
-                  return (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => update('theme', t.id as ReaderTheme)}
-                      className={cn(
-                        'flex flex-col items-center justify-center gap-1 rounded-xl border-2 py-2 px-1 transition-transform active:scale-95',
-                        isActive ? 'ring-2 ring-gold-500 font-bold shadow-xs' : 'opacity-80 hover:opacity-100',
-                      )}
-                      style={{
-                        background: t.bg,
-                        color: t.text,
-                        borderColor: isActive ? themeStyle.accent : t.border,
-                      }}
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span className="text-[11px]">{t.label}</span>
-                    </button>
-                  )
-                })}
-              </div>
+            <div className="grid grid-cols-4 gap-1.5">
+              {[
+                { id: 'light', label: 'روز', icon: Sun, bg: '#ffffff', text: '#1a1a1a', border: '#e5e5e5' },
+                { id: 'sepia', label: 'سپیا', icon: Coffee, bg: '#f4ecd8', text: '#5b4636', border: '#d9ccb0' },
+                { id: 'dark', label: 'شب', icon: Moon, bg: '#1c1c1e', text: '#f2f2f7', border: '#38383a' },
+                { id: 'high-contrast', label: 'کنتراست', icon: Contrast, bg: '#000000', text: '#ffff00', border: '#555555' },
+              ].map((t) => {
+                const isActive = prefs.theme === t.id
+                const Icon = t.icon
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => update('theme', t.id as ReaderTheme)}
+                    className={cn(
+                      'flex items-center justify-center gap-1.5 rounded-xl border py-2 px-1 text-xs transition-transform active:scale-95',
+                      isActive ? 'ring-2 ring-gold-500 font-bold shadow-xs' : 'opacity-80 hover:opacity-100',
+                    )}
+                    style={{
+                      background: t.bg,
+                      color: t.text,
+                      borderColor: isActive ? themeStyle.accent : t.border,
+                    }}
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0" />
+                    <span>{t.label}</span>
+                  </button>
+                )
+              })}
             </div>
           </div>
 
-          {/* Card 2: Quick Study Tools (4-column balanced grid) */}
+          {/* Section 2: Quick Study Tools (3-column balanced grid) */}
           <div
-            className="space-y-2 rounded-2xl border p-3.5"
+            className="rounded-2xl border p-2"
             style={{ borderColor: themeStyle.border }}
           >
-            <span className="text-[11px] font-bold opacity-75">
-              ابزارهای مطالعه
-            </span>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 gap-1">
               <MoreToolButton
                 icon={<ListIcon className="h-5 w-5" />}
                 label="فصل‌ها"
@@ -455,6 +493,8 @@ export function ReaderToolbar() {
                     setShowChapters(true)
                     setShowSettings(false)
                     setShowHighlights(false)
+                    setShowDictionary(false)
+                    setShowSearch(false)
                   }, 120)
                 }}
                 accent={themeStyle.accent}
@@ -469,6 +509,38 @@ export function ReaderToolbar() {
                     setShowHighlights(true)
                     setShowSettings(false)
                     setShowChapters(false)
+                    setShowDictionary(false)
+                    setShowSearch(false)
+                  }, 120)
+                }}
+                accent={themeStyle.accent}
+              />
+              <MoreToolButton
+                icon={<BookOpen className="h-5 w-5" />}
+                label="دیکشنری"
+                onClick={() => {
+                  setMoreOpen(false)
+                  setTimeout(() => {
+                    setShowDictionary(true)
+                    setShowSettings(false)
+                    setShowHighlights(false)
+                    setShowChapters(false)
+                    setShowSearch(false)
+                  }, 120)
+                }}
+                accent={themeStyle.accent}
+              />
+              <MoreToolButton
+                icon={<Search className="h-5 w-5" />}
+                label="جستجو"
+                onClick={() => {
+                  setMoreOpen(false)
+                  setTimeout(() => {
+                    setShowSearch(true)
+                    setShowChapters(false)
+                    setShowSettings(false)
+                    setShowHighlights(false)
+                    setShowDictionary(false)
                   }, 120)
                 }}
                 accent={themeStyle.accent}
@@ -494,8 +566,8 @@ export function ReaderToolbar() {
             </div>
           </div>
 
-          {/* Card 3: Settings & Share (2-column balanced row) */}
-          <div className="grid grid-cols-2 gap-2 pt-1">
+          {/* Section 3: Settings & Share (2-column balanced row) */}
+          <div className="grid grid-cols-2 gap-2 pt-0.5">
             <button
               type="button"
               onClick={() => {
@@ -504,6 +576,8 @@ export function ReaderToolbar() {
                   setShowSettings(true)
                   setShowHighlights(false)
                   setShowChapters(false)
+                  setShowDictionary(false)
+                  setShowSearch(false)
                 }, 120)
               }}
               className="flex items-center justify-center gap-2 rounded-xl border py-2.5 px-3 transition-colors hover:bg-black/5 dark:hover:bg-white/5 active:scale-98"
@@ -527,8 +601,8 @@ export function ReaderToolbar() {
             </button>
           </div>
         </div>
-      </DrawerContent>
-    </Drawer>
+      </SheetContent>
+    </Sheet>
     </>
   )
 }
@@ -555,19 +629,19 @@ function MoreToolButton({
     <button
       type="button"
       onClick={onClick}
-      className="relative flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-xl border border-transparent p-2 text-center text-[11px] font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/5 tap-target"
+      className="relative flex flex-col items-center justify-center gap-1 rounded-xl border border-transparent py-2 px-1 text-center transition-colors hover:bg-black/5 dark:hover:bg-white/5 active:scale-95"
       aria-label={label}
     >
       <span
-        className="flex h-10 w-10 items-center justify-center rounded-full"
+        className="flex h-10 w-10 items-center justify-center rounded-full transition-transform"
         style={accent ? { background: accent + '1a', color: accent } : undefined}
       >
         {icon}
       </span>
-      <span className="leading-tight">{label}</span>
+      <span className="text-xs font-medium leading-tight">{label}</span>
       {badge && (
         <span
-          className="absolute end-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
+          className="absolute end-2 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white shadow-xs"
           style={accent ? { background: accent } : undefined}
         >
           {badge}

@@ -33,6 +33,7 @@ import {
   mergeLocalProgress,
 } from '@/hooks/reader/use-local-progress'
 import { getStorageKey } from '@/lib/storage-keys'
+import { calculateReadingPercent } from '@/lib/reader/progress'
 import {
   estimateReadingMinutes,
   type ReaderBook,
@@ -86,8 +87,31 @@ export function useReaderScroll({
   totalPages,
 }: UseReaderScrollOptions): UseReaderScrollReturn {
   const [isMobile, setIsMobile] = useState(false)
-  const [currentParagraph, setCurrentParagraph] = useState(0)
-  const [scrollPercent, setScrollPercent] = useState(0)
+  const [currentParagraph, setCurrentParagraph] = useState(() => {
+    if (!book.slug) return 0
+    try {
+      const entry = getLocalProgress()[book.slug]
+      if (
+        entry &&
+        typeof entry.currentPage === 'number' &&
+        entry.currentPage >= 0 &&
+        entry.currentPage < totalPages
+      ) {
+        return entry.currentPage
+      }
+    } catch {}
+    return 0
+  })
+  const [scrollPercent, setScrollPercent] = useState(() => {
+    if (!book.slug) return 0
+    try {
+      const entry = getLocalProgress()[book.slug]
+      if (typeof entry?.scrollPercent === 'number') {
+        return entry.scrollPercent
+      }
+    } catch {}
+    return 0
+  })
   const [showPositionChip, setShowPositionChip] = useState(false)
 
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -108,19 +132,23 @@ export function useReaderScroll({
       const el = scrollRef.current
       const node = paragraphRefs.current[idx]
       if (!el || !node) return
-      const targetTop = node.offsetTop
-      el.scrollTo({ top: Math.max(0, targetTop - 90), behavior })
+      const nodeRect = node.getBoundingClientRect()
+      const elRect = el.getBoundingClientRect()
+      const targetTop = el.scrollTop + (nodeRect.top - elRect.top) - 80
+      el.scrollTo({ top: Math.max(0, targetTop), behavior })
     },
     [],
   )
 
   // ---- Load saved state + restore scroll ----
-  // Reads the saved `currentPage` from the consolidated `ky_progress` map
-  // (replacing the old `ky_rs_{slug}` schema). Sets the XP resume marker so
-  // the paragraph the user was already on doesn't get re-counted.
+  // Reads the saved `currentPage` + `scrollPercent` + `scrollTop` from `ky_progress`.
+  // Guarantees layout & fonts are settled before marking restored, preventing
+  // premature overwrite with 0.
   useEffect(() => {
     if (!book.slug) return
     let savedPage = 0
+    let savedScrollPercent = 0
+    let savedScrollTop: number | undefined
     try {
       const entry = getLocalProgress()[book.slug]
       if (
@@ -132,16 +160,82 @@ export function useReaderScroll({
         savedPage = entry.currentPage
         lastAwardedParagraphRef.current = entry.currentPage
       }
+      if (entry && typeof entry.scrollPercent === 'number') {
+        savedScrollPercent = entry.scrollPercent
+      }
+      if (entry && typeof entry.scrollTop === 'number') {
+        savedScrollTop = entry.scrollTop
+      }
       const cRaw = localStorage.getItem(getStorageKey('bookComplete', book.slug))
       if (cRaw === '1') completionAwardedRef.current = true
     } catch {}
-    // restore scroll after layout settles
-    const id = window.setTimeout(() => {
+
+    if (savedPage === 0 && savedScrollPercent <= 0.5) {
       restoredRef.current = true
-      scrollToParagraph(savedPage, 'auto')
-    }, 90)
-    return () => window.clearTimeout(id)
-  }, [book.slug, totalPages, scrollToParagraph])
+      return
+    }
+
+    let cancelled = false
+    let attempts = 0
+    const maxAttempts = 25
+
+    const performRestore = () => {
+      if (cancelled) return
+      const el = scrollRef.current
+      const node = paragraphRefs.current[savedPage]
+
+      // Wait until container has layout and node is mounted
+      if (!el || (!node && savedPage > 0)) {
+        if (attempts++ < maxAttempts) {
+          window.requestAnimationFrame(performRestore)
+        } else {
+          restoredRef.current = true
+        }
+        return
+      }
+
+      if (savedPage >= totalPages - 1 && savedScrollPercent >= 99) {
+        el.scrollTo({ top: el.scrollHeight - el.clientHeight, behavior: 'auto' })
+      } else if (node) {
+        const nodeRect = node.getBoundingClientRect()
+        const elRect = el.getBoundingClientRect()
+        const targetTop = el.scrollTop + (nodeRect.top - elRect.top) - 80
+        el.scrollTo({ top: Math.max(0, targetTop), behavior: 'auto' })
+      } else if (typeof savedScrollTop === 'number' && savedScrollTop > 0) {
+        el.scrollTo({ top: savedScrollTop, behavior: 'auto' })
+      }
+
+      // Re-verify after web fonts load and text reflows
+      if (typeof document !== 'undefined' && 'fonts' in document && document.fonts?.ready) {
+        document.fonts.ready
+          .then(() => {
+            if (cancelled) return
+            const freshEl = scrollRef.current
+            const freshNode = paragraphRefs.current[savedPage]
+            if (freshEl && freshNode) {
+              const freshNodeRect = freshNode.getBoundingClientRect()
+              const freshElRect = freshEl.getBoundingClientRect()
+              const freshTarget =
+                freshEl.scrollTop + (freshNodeRect.top - freshElRect.top) - 80
+              freshEl.scrollTo({ top: Math.max(0, freshTarget), behavior: 'auto' })
+            }
+          })
+          .catch(() => {})
+      }
+
+      window.requestAnimationFrame(() => {
+        if (!cancelled) {
+          restoredRef.current = true
+        }
+      })
+    }
+
+    const timer = window.setTimeout(performRestore, 20)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [book.slug, totalPages])
 
   // ---- IntersectionObserver: track current paragraph ----
   useEffect(() => {
@@ -149,20 +243,35 @@ export function useReaderScroll({
     if (!root) return
     const observer = new IntersectionObserver(
       (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            const idx = Number(
-              entry.target.getAttribute('data-paragraph-index') || '0',
-            )
-            setCurrentParagraph(idx)
+        if (!restoredRef.current) return
+        const visible = entries.filter((e) => e.isIntersecting)
+        if (visible.length === 0) return
+
+        const rootTop = root.getBoundingClientRect().top
+        const readingLine = rootTop + 120
+
+        let closestIdx = -1
+        let minDistance = Infinity
+
+        for (const entry of visible) {
+          const idx = Number(
+            entry.target.getAttribute('data-paragraph-index') || '0',
+          )
+          const dist = Math.abs(entry.boundingClientRect.top - readingLine)
+          if (dist < minDistance) {
+            minDistance = dist
+            closestIdx = idx
           }
+        }
+
+        if (closestIdx >= 0) {
+          setCurrentParagraph(closestIdx)
         }
       },
       {
         root,
-        // thin band at ~30% from the top of the viewport (below the toolbar)
-        rootMargin: '-30% 0px -69% 0px',
-        threshold: 0,
+        rootMargin: '-80px 0px -50% 0px',
+        threshold: [0, 0.2, 0.5],
       },
     )
     paragraphRefs.current.forEach((n) => {
@@ -172,9 +281,6 @@ export function useReaderScroll({
   }, [book.pages.length])
 
   // ---- Scroll handler: progress percent + bottom-edge override ----
-  // rAF-throttled. Also schedules a debounced highlight re-restoration
-  // (via the ref owned by `use-reader-highlights.ts`) so wrapping spans
-  // survive re-renders / future virtualization.
   const handleScroll = useCallback(() => {
     if (rafRef.current != null) return
     rafRef.current = window.requestAnimationFrame(() => {
@@ -187,15 +293,15 @@ export function useReaderScroll({
           ? Math.min(100, Math.max(0, (el.scrollTop / max) * 100))
           : 0
       setScrollPercent(pct)
-      // Force the last paragraph to be "current" when we reach the bottom,
-      // so the completion XP + progress hit 100%.
+
+      // Force the last paragraph to be "current" when we reach the bottom
       if (el.scrollTop + el.clientHeight >= el.scrollHeight - 6) {
         setCurrentParagraph((prev) =>
           prev === totalPages - 1 ? prev : totalPages - 1,
         )
       }
-      // Debounced highlight re-restoration — protects against re-renders that
-      // wipe the wrapping spans and against future paragraph virtualization.
+
+      // Debounced highlight re-restoration
       if (hlRestoreTimerRef.current) clearTimeout(hlRestoreTimerRef.current)
       hlRestoreTimerRef.current = setTimeout(() => {
         restoreHighlightsRef.current()
@@ -203,25 +309,76 @@ export function useReaderScroll({
     })
   }, [totalPages, restoreHighlightsRef])
 
-  // ---- Save scroll position (debounced) ----
-  // Merges into the shared `ky_progress` map; the paragraph-change effect
-  // in use-reader-xp.ts also writes to the same entry.
+  // ---- Latest state ref for reliable saves ----
+  const latestStateRef = useRef({
+    currentParagraph,
+    scrollPercent,
+    totalPages,
+    slug: book.slug,
+  })
+
+  useEffect(() => {
+    latestStateRef.current = {
+      currentParagraph,
+      scrollPercent,
+      totalPages,
+      slug: book.slug,
+    }
+  }, [currentParagraph, scrollPercent, totalPages, book.slug])
+
+  // ---- Flush save synchronously to localStorage ----
+  const flushSave = useCallback(() => {
+    if (!book.slug || !restoredRef.current) return
+    const cur = latestStateRef.current
+    if (!cur || !cur.slug) return
+    const el = scrollRef.current
+    const isAtBottom = el
+      ? el.scrollTop + el.clientHeight >= el.scrollHeight - 6
+      : false
+    const percent = calculateReadingPercent({
+      currentPage: cur.currentParagraph,
+      totalPages: cur.totalPages,
+      scrollPercent: cur.scrollPercent,
+      isCompleted:
+        isAtBottom ||
+        (cur.currentParagraph >= cur.totalPages - 1 && cur.scrollPercent >= 99),
+    })
+
+    mergeLocalProgress(cur.slug, {
+      currentPage: cur.currentParagraph,
+      totalPages: cur.totalPages,
+      percent,
+      scrollPercent: cur.scrollPercent,
+      scrollTop: el?.scrollTop,
+      ts: Date.now(),
+      lastReadAt: Date.now(),
+    })
+  }, [book.slug])
+
+  // ---- Debounced save during active reading ----
   useEffect(() => {
     if (!book.slug || !restoredRef.current) return
-    const id = window.setTimeout(() => {
-      mergeLocalProgress(book.slug, {
-        currentPage: currentParagraph,
-        totalPages,
-        percent: Math.round(
-          ((currentParagraph + 1) / Math.max(totalPages, 1)) * 100,
-        ),
-        scrollPercent,
-        ts: Date.now(),
-        lastReadAt: Date.now(),
-      })
-    }, 400)
+    const id = window.setTimeout(flushSave, 300)
     return () => window.clearTimeout(id)
-  }, [currentParagraph, scrollPercent, book.slug, totalPages])
+  }, [currentParagraph, scrollPercent, book.slug, flushSave])
+
+  // ---- Guarantee save on page hide / unload / tab close / unmount ----
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') flushSave()
+    }
+    const handleBeforeUnload = () => {
+      flushSave()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      flushSave()
+    }
+  }, [flushSave])
 
   // ---- Mobile detection ----
   useEffect(() => {
@@ -252,10 +409,15 @@ export function useReaderScroll({
   }, [])
 
   // ---- Derived presentation values ----
-  const displayPercent = Math.round(scrollPercent)
+  const isLastPage = currentParagraph >= totalPages - 1
+  const displayPercent = calculateReadingPercent({
+    currentPage: currentParagraph,
+    totalPages,
+    scrollPercent,
+    isCompleted: isLastPage && scrollPercent >= 99,
+  })
   const remainingParagraphs = Math.max(0, totalPages - currentParagraph - 1)
   const remainingMinutes = estimateReadingMinutes(remainingParagraphs)
-  const isLastPage = currentParagraph >= totalPages - 1
 
   return {
     scrollRef,

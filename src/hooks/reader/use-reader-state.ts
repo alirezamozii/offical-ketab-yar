@@ -17,7 +17,7 @@
  *   • use-reader-xp            — session timer + streak tick (visibility
  *                                guarded) + paragraph-change XP/progress
  *   • use-reader-highlights    — highlight + bookmark CRUD + DOM spans
- *   • use-reader-panels        — panel visibility + focus mode
+ *   • use-reader-panels        — panel visibility + focus mode + search
  *   • use-reader-events        — decoupled event bus (replaces inline
  *                                `toast.*` calls in business logic)
  *   • use-reader-notifications — the one place sonner is called
@@ -26,13 +26,6 @@
  * god-hook, so `reader-toolbar.tsx`, `reader-content.tsx`,
  * `reader-bottom-bar.tsx`, `reader-overlays.tsx`, and
  * `professional-reader.tsx` keep working without changes.
- *
- * Hook ordering is deliberate (React requires hooks be called in the
- * same order every render, but the *value* dependencies between hooks
- * also need to be respected): scroll first (owns the shared scrollRef +
- * restoreHighlightsRef), then selection (consumes scroll.currentParagraph),
- * then highlights (consumes scroll.scrollRef + scroll.restoreHighlightsRef +
- * selection.selectedText/Range), then panels/xp/shortcuts.
  */
 
 import { useReadingPreferences } from '@/hooks/reader/use-reading-preferences'
@@ -47,7 +40,7 @@ import { useReaderScroll } from '@/hooks/reader/use-reader-scroll'
 import { useReaderSelection } from '@/hooks/reader/use-reader-selection'
 import { useReaderShortcuts } from '@/hooks/reader/use-reader-shortcuts'
 import { useReaderXp } from '@/hooks/reader/use-reader-xp'
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   COLUMN_WIDTH_PX,
   MARGIN_STYLES,
@@ -78,12 +71,10 @@ export function useReaderState(book: ReaderBook) {
   const chat = useReaderChat()
   const dictionary = useReaderDictionary()
 
-  // ---- Scroll + reading-position model (owns scrollRef, paragraphRefs,
-  //      restoreHighlightsRef, restoredRef, lastAwardedParagraphRef,
-  //      completionAwardedRef) ----
+  // ---- Scroll + reading-position model ----
   const scroll = useReaderScroll({ book, totalPages })
 
-  // ---- Text selection + share + vocab POST (consumes scroll.currentParagraph) ----
+  // ---- Text selection + share + vocab POST ----
   const selection = useReaderSelection({
     book,
     currentParagraph: scroll.currentParagraph,
@@ -92,8 +83,7 @@ export function useReaderState(book: ReaderBook) {
     emit,
   })
 
-  // ---- Highlights + bookmarks (consumes scroll.scrollRef,
-  //      scroll.restoreHighlightsRef, selection.selectedText/Range) ----
+  // ---- Highlights + bookmarks ----
   const highlights = useReaderHighlights({
     book,
     totalPages,
@@ -107,12 +97,24 @@ export function useReaderState(book: ReaderBook) {
     emit,
   })
 
-  // ---- Panels (focus mode, settings, highlights list, chapters) ----
+  // ---- Panels (focus mode, settings, highlights list, chapters, search) ----
   const panels = useReaderPanels({
     closeChat: chat.closeChat,
     closeDictionary: dictionary.closeDictionary,
     closeTextMenu: selection.closeTextMenu,
   })
+
+  // Auto-open search if URL has ?search=1 or ?q=...
+  const [searchInitialQuery, setSearchInitialQuery] = useState('')
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const q = params.get('q')
+    if (params.get('search') === '1' || q) {
+      if (q) setSearchInitialQuery(q)
+      panels.setShowSearch(true)
+    }
+  }, [panels.setShowSearch])
 
   // ---- XP / streak / session timer ----
   const xp = useReaderXp({
@@ -159,24 +161,34 @@ export function useReaderState(book: ReaderBook) {
     jumpToStart: () => scroll.scrollToParagraph(0),
     jumpToEnd: () => scroll.scrollToParagraph(totalPages - 1),
     toggleFocusMode: panels.toggleFocusMode,
+    toggleSearch: () => {
+      panels.setShowSearch((v) => !v)
+      panels.setShowSettings(false)
+      panels.setShowHighlights(false)
+      panels.setShowChapters(false)
+    },
     toggleSettings: () => {
       panels.setShowSettings((v) => !v)
       panels.setShowHighlights(false)
       panels.setShowChapters(false)
+      panels.setShowSearch(false)
     },
     toggleHighlights: () => {
       panels.setShowHighlights((v) => !v)
       panels.setShowSettings(false)
       panels.setShowChapters(false)
+      panels.setShowSearch(false)
     },
     toggleChapters: () => {
       panels.setShowChapters((v) => !v)
       panels.setShowSettings(false)
       panels.setShowHighlights(false)
+      panels.setShowSearch(false)
     },
     toggleSubtitles: () => update('showSubtitles', !prefs.showSubtitles),
     toggleLanguage: () =>
       update('language', currentLanguage === 'english' ? 'farsi' : 'english'),
+    toggleDictionary: () => dictionary.setShowDictionary((v) => !v),
     toggleChat: () => chat.setShowChat((v) => !v),
     cycleTheme,
     increaseFontSize,
@@ -210,11 +222,6 @@ export function useReaderState(book: ReaderBook) {
   }, [autoScrollActive, scroll.scrollPercent, stopAutoScroll])
 
   // ── Reading progress milestones (25% / 50% / 75%) ────────────────────
-  // Dispatches a `ky:reading-milestone` CustomEvent when the user crosses
-  // a quartile threshold for the first time in this session. The
-  // MilestoneToast component (rendered in the layout) shows a small
-  // encouraging toast. Each milestone fires only once per book per session
-  // (tracked via a ref Set).
   const milestoneFired = useRef<Set<number>>(new Set())
   useEffect(() => {
     const pct = scroll.scrollPercent
@@ -234,7 +241,6 @@ export function useReaderState(book: ReaderBook) {
   // ---- Derived layout values ----
   const columnMaxWidth = COLUMN_WIDTH_PX[prefs.columnWidth]
   const marginStyle = MARGIN_STYLES[prefs.margin]
-  const snapClass = prefs.readingRhythm === 'snap' ? 'snap-y snap-proximity' : ''
   const fontFamilyCss = READER_FONT_FAMILIES[prefs.fontFamily]
   const chromeVisible = panels.chromeVisible
 
@@ -254,6 +260,9 @@ export function useReaderState(book: ReaderBook) {
     setShowControls: panels.setShowControls,
     showSettings: panels.showSettings,
     setShowSettings: panels.setShowSettings,
+    showSearch: panels.showSearch,
+    setShowSearch: panels.setShowSearch,
+    searchInitialQuery,
     showChat: chat.showChat,
     setShowChat: chat.setShowChat,
     showHighlights: panels.showHighlights,
@@ -276,7 +285,6 @@ export function useReaderState(book: ReaderBook) {
     // derived layout
     columnMaxWidth,
     marginStyle,
-    snapClass,
     fontFamilyCss,
     chromeVisible,
     // refs

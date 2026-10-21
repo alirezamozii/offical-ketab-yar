@@ -58,7 +58,7 @@ interface HighlightsPanelProps {
   onDelete: (id: string) => void
   onClearAll: () => void
   onCopy: (text: string) => void
-  onJumpToPage: (page: number) => void
+  onJumpToPage: (page: number, highlightId?: string) => void
   /** Real printed page number per paragraph index (DB pageNumber). */
   pageNumbers?: number[]
 }
@@ -115,6 +115,7 @@ export function HighlightsPanel({
       if (!q) return true
       return (
         h.text.toLowerCase().includes(q) ||
+        (h.mirrorText ?? '').toLowerCase().includes(q) ||
         (h.note ?? '').toLowerCase().includes(q)
       )
     })
@@ -133,8 +134,8 @@ export function HighlightsPanel({
       const lines = highlights.map(
         (h) =>
           `• [${HIGHLIGHT_LABELS[h.color]}] صفحه ${realPageOf(h.page)}\n  ${h.text}${
-            h.note ? `\n  یادداشت: ${h.note}` : ''
-          }`,
+            h.mirrorText ? `\n  ${h.mirrorText}` : ''
+          }${h.note ? `\n  یادداشت: ${h.note}` : ''}`,
       )
       blob = new Blob([lines.join('\n\n')], { type: 'text/plain' })
       filename = 'highlights.txt'
@@ -361,11 +362,23 @@ export function HighlightsPanel({
                   </div>
                 </div>
                 <button
-                  onClick={() => onJumpToPage(h.page)}
-                  className="line-clamp-3 text-end text-sm leading-relaxed transition-opacity hover:opacity-80"
-                  dir="auto"
+                  onClick={() => onJumpToPage(h.page, h.id)}
+                  className="block w-full text-end"
+                  aria-label="پرش به این هایلایت در متن"
                 >
-                  {h.text}
+                  <span className="line-clamp-3 block text-sm leading-relaxed transition-opacity hover:opacity-80" dir="auto">
+                    {h.text}
+                  </span>
+                  {/* Counterpart sentence(s) in the other language */}
+                  {h.mirrorText && (
+                    <span
+                      className="mt-1.5 line-clamp-2 block rounded-md px-2 py-1 text-xs leading-relaxed transition-opacity hover:opacity-80"
+                      dir="auto"
+                      style={{ background: HIGHLIGHT_COLORS[h.color] + '55' }}
+                    >
+                      {h.mirrorText}
+                    </span>
+                  )}
                 </button>
 
                 {/* ---- Existing note (read view) ---- */}
@@ -483,16 +496,24 @@ export function HighlightsPanel({
           onOpenChange={setStudioOpen}
           quote={
             selectedHighlight
-              ? {
-                  id: selectedHighlight.id,
-                  text: selectedHighlight.text,
-                  textFa: selectedHighlight.note,
-                  bookSlug: bookSlug,
-                  bookTitle: bookTitle,
-                  bookAuthor: bookAuthor,
-                  pageNumber: realPageOf(selectedHighlight.page),
-                  highlightColor: selectedHighlight.color,
-                }
+              ? (() => {
+                  const hl = selectedHighlight
+                  // Normalize so `text` always carries English and `textFa`
+                  // the Persian counterpart, whichever the user selected.
+                  const selIsFa = /[\u0600-\u06FF]/.test(hl.text)
+                  const en = selIsFa ? (hl.mirrorText ?? hl.note ?? hl.text) : hl.text
+                  const fa = selIsFa ? hl.text : (hl.mirrorText ?? hl.note)
+                  return {
+                    id: hl.id,
+                    text: en,
+                    textFa: fa,
+                    bookSlug: bookSlug,
+                    bookTitle: bookTitle,
+                    bookAuthor: bookAuthor,
+                    pageNumber: realPageOf(hl.page),
+                    highlightColor: hl.color,
+                  }
+                })()
               : null
           }
         />

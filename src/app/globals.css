@@ -1400,3 +1400,31 @@ body:has([data-fullscreen-route]) .site-shell-main {
    animations, skipped blur/glitch-painted children inside animated cards, and
    caused layout jumps from the guessed contain-intrinsic-size. */
 
+
+
+@keyframes searchHitFlash {
+  0% {
+    box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.6);
+    background-color: rgba(245, 158, 11, 0.25);
+    border-radius: 1rem;
+  }
+  30% {
+    box-shadow: 0 0 0 8px rgba(217, 119, 6, 0.35);
+    background-color: rgba(245, 158, 11, 0.2);
+    border-radius: 1rem;
+  }
+  70% {
+    box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.15);
+    background-color: rgba(245, 158, 11, 0.1);
+    border-radius: 1rem;
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(217, 119, 6, 0);
+    background-color: transparent;
+    border-radius: 1rem;
+  }
+}
+
+.reader-search-hit-flash {
+  animation: searchHitFlash 2.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}

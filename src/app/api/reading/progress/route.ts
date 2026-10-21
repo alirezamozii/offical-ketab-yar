@@ -40,6 +40,7 @@ const ProgressSchema = z.object({
     .max(200, 'bookSlug بیش از حد طولانی است.'),
   currentPage: z.number().int().min(0).max(1_000_000).default(0),
   totalPages: z.number().int().min(1).max(1_000_000).default(1),
+  percent: z.number().min(0).max(100).optional(),
   prevPage: z.number().int().min(0).max(1_000_000).default(0),
   minutesDelta: z.number().int().min(0).max(24 * 60).default(0), // ≤ 1 day in minutes
 })
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
     const parsed = await parseBody(req, ProgressSchema)
     if (!parsed.ok) return parsed.response
 
-    const { bookSlug, currentPage, totalPages, minutesDelta } = parsed.data
+    const { bookSlug, currentPage, totalPages, percent: clientPercent, minutesDelta } = parsed.data
     const now = new Date()
     const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const ownerWhere = owner.userId ? { userId: owner.userId } : { guestId: owner.guestId! }
@@ -64,7 +65,11 @@ export async function POST(req: NextRequest) {
         select: { currentPage: true },
       })
       const page = Math.min(currentPage, totalPages)
-      const percent = Math.round((page / totalPages) * 100)
+      const percent = typeof clientPercent === 'number'
+        ? Math.min(100, Math.max(0, Math.round(clientPercent)))
+        : totalPages <= 1
+          ? (page > 0 ? 100 : 0)
+          : Math.min(100, Math.max(0, Math.round((page / Math.max(totalPages - 1, 1)) * 100)))
       const saved = await tx.readingProgress.upsert({
         where: progressWhere,
         update: { currentPage: page, percent, lastReadAt: now },

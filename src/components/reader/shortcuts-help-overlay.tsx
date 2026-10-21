@@ -45,9 +45,12 @@ const SHORTCUTS: { group: string; rows: ShortcutRow[] }[] = [
   {
     group: 'پنل‌ها',
     rows: [
+      { keys: ['/'], action: 'جستجو در متن کتاب' },
+      { keys: ['Ctrl', 'F'], action: 'جستجو در متن کتاب' },
       { keys: ['S'], action: 'تنظیمات' },
       { keys: ['C'], action: 'صفحه‌ها' },
       { keys: ['H'], action: 'نشان‌ها / هایلایت‌ها' },
+      { keys: ['D'], action: 'واژه‌نامه / دیکشنری' },
       { keys: ['A'], action: 'گفتگو با هوش مصنوعی' },
       { keys: ['?'], action: 'این پنجره' },
     ],

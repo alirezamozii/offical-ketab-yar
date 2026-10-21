@@ -9,6 +9,10 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import type { BookListItem } from '@/lib/data'
 import { getLocalProgress } from '@/hooks/reader/use-local-progress'
+import {
+  calculateProgressBarWidth,
+  formatReadingPercent,
+} from '@/lib/reader/progress'
 
 export function ContinueReading() {
   const [books, setBooks] = useState<BookListItem[]>([])
@@ -101,17 +105,17 @@ export function ContinueReading() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
                   <span>
-                    صفحه {featuredProgress.currentPage.toLocaleString('fa-IR')} از{' '}
+                    صفحه {(featuredProgress.currentPage + 1).toLocaleString('fa-IR')} از{' '}
                     {featuredProgress.totalPages.toLocaleString('fa-IR')}
                   </span>
                   <span className="font-bold text-gold-700 dark:text-gold-400">
-                    {featuredProgress.percent.toLocaleString('fa-IR')}٪
+                    {formatReadingPercent(featuredProgress.percent)}
                   </span>
                 </div>
                 <div className="relative h-2 w-full overflow-hidden rounded-full bg-muted">
                   <div
                     className="relative h-full rounded-full bg-gradient-to-l from-gold-500 to-gold-700 transition-[width] duration-700 ease-out-expo"
-                    style={{ width: `${featuredProgress.percent}%` }}
+                    style={{ width: calculateProgressBarWidth(featuredProgress.percent) }}
                   >
                     <span
                       aria-hidden="true"
@@ -127,7 +131,7 @@ export function ContinueReading() {
                   </div>
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  {featuredProgress.percent.toLocaleString('fa-IR')}٪ پیش رفته‌اید — ادامه بده
+                  {formatReadingPercent(featuredProgress.percent)} پیش رفته‌اید — ادامه بده
                 </p>
               </div>
             )}

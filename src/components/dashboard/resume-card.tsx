@@ -9,6 +9,10 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import type { BookListItem } from '@/lib/data'
 import { getLocalProgress, type ProgressEntry } from '@/hooks/reader/use-local-progress'
+import {
+  calculateRingDashOffset,
+  formatReadingPercent,
+} from '@/lib/reader/progress'
 import { usePersianLocale } from '@/hooks/use-persian-locale'
 
 export function ResumeCard() {
@@ -49,8 +53,7 @@ export function ResumeCard() {
 
   const remainingPages = Math.max(0, progress.totalPages - progress.currentPage)
   const remainingMinutes = Math.max(1, Math.round(remainingPages * 1.5))
-  const circ = 2 * Math.PI * 28 // ~176 — matches the r=28 circle
-  const dashOffset = circ * (1 - progress.percent / 100)
+  const { circumference: circ, strokeOffset: dashOffset } = calculateRingDashOffset(progress.percent, 28)
 
   return (
     <motion.div
@@ -198,7 +201,7 @@ export function ResumeCard() {
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
               <span className="text-sm font-extrabold text-gold-600 dark:text-gold-400">
-                {toPersianDigits(progress.percent)}٪
+                {formatReadingPercent(progress.percent)}
               </span>
             </div>
           </div>

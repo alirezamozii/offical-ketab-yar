@@ -12,9 +12,6 @@ export type ColumnWidth = 'narrow' | 'normal' | 'wide'
 /** Density of the breathing room around the text. */
 export type MarginDensity = 'compact' | 'normal' | 'comfortable'
 
-/** Whether the scroll column should snap to paragraphs. */
-export type ReadingRhythm = 'free' | 'snap'
-
 /** Reading layout: continuous scroll vs. paginated (page-flip). */
 export type ReadingLayout = 'continuous' | 'paginated'
 
@@ -77,6 +74,8 @@ export interface Highlight {
    * the other language ("هایلایت دوزبانه").
    */
   pairIds?: string[]
+  /** Counterpart text in the other language (joined mirror sentences). */
+  mirrorText?: string
   /** Optional user note attached to the highlight. */
   note?: string
   timestamp: number
@@ -105,8 +104,6 @@ export interface ReadingPreferences {
   columnWidth: ColumnWidth
   /** Density of the breathing room around the text. */
   margin: MarginDensity
-  /** Whether the scroll column should snap to paragraphs. */
-  readingRhythm: ReadingRhythm
   /** Continuous vs. paginated layout. */
   layout: ReadingLayout
   /** Font family for the reading column. */
@@ -127,7 +124,6 @@ export const DEFAULT_PREFERENCES: ReadingPreferences = {
   autoScrollInterval: 15,
   columnWidth: 'normal',
   margin: 'normal',
-  readingRhythm: 'snap',
   layout: 'continuous',
   fontFamily: 'vazirmatn',
   showParagraphNumbers: false,
@@ -241,12 +237,6 @@ export const MARGIN_STYLES: Record<
   compact: { paddingX: '1rem', paragraphGap: '1.25rem' },
   normal: { paddingX: '1.5rem', paragraphGap: '1.75rem' },
   comfortable: { paddingX: '2.5rem', paragraphGap: '2.5rem' },
-}
-
-/** Tailwind class fragments for `readingRhythm`. */
-export const READING_RHYTHM_CLASS: Record<ReadingRhythm, string> = {
-  free: '',
-  snap: '',
 }
 
 /**

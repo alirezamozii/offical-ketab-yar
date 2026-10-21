@@ -1,10 +1,11 @@
+import dns from 'node:dns'
+dns.setDefaultResultOrder('ipv4first')
+
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { EdgeTTS } from 'node-edge-tts'
-import { promises as fs } from 'node:fs'
-import path from 'node:path'
-import os from 'node:os'
-import { randomUUID } from 'node:crypto'
+import WebSocket from 'ws'
+import crypto from 'node:crypto'
+import https from 'node:https'
 import ZAI from 'z-ai-web-dev-sdk'
 import { aiRateLimit } from '@/lib/rate-limit'
 import { parseBody } from '@/lib/api-validate'
@@ -12,33 +13,102 @@ import { parseBody } from '@/lib/api-validate'
 /**
  * POST /api/tts
  *
- * Generates speech audio from text using Edge TTS (free Azure neural
- * voices) as the primary engine, with z-ai-web-dev-sdk as fallback.
+ * Generates speech audio from text using Microsoft Edge Neural Voices
+ * (via direct WebSocket protocol with Sec-MS-GEC token v2) as primary engine,
+ * with z-ai-web-dev-sdk as fallback.
  *
  * Body:
  *   { text: string, lang?: 'en' | 'fa', speed?: number (0.5–2.0), voice?: string }
  *
  * Response (success):
  *   • 200 with `Content-Type: audio/mpeg` and MP3 bytes in the body.
+ *   • Optional `X-TTS-Word-Boundaries` header with base64-encoded WordBoundary JSON.
  *
  * Response (degraded):
  *   • 200 with `{ error: 'سرویس صدا در دسترس نیست' }` JSON when both
  *     engines fail. The client uses this signal to surface a graceful
- *     "audio unavailable" toast.
+ *     "audio unavailable" toast or fallback.
  *
- * Edge TTS voices (free, neural, high-quality):
- *   • en-US-AvaMultilingualNeural  — English female (default for en)
- *   • en-US-AndrewMultilingualNeural — English male
- *   • fa-IR-FaridNeural            — Persian male (default for fa)
- *   • fa-IR-DilaraNeural           — Persian female
- *
- * Owner: Phase 4 R-TTS.2
+ * Edge TTS voices:
+ *   • en-US-AvaMultilingualNeural    — English female (natural)
+ *   • en-US-AndrewMultilingualNeural — English male (natural)
+ *   • fa-IR-DilaraNeural             — Persian female (natural)
+ *   • fa-IR-FaridNeural              — Persian male (natural)
  */
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const MAX_INPUT_CHARS = 500
+
+// ── Security tokens & Edge TTS constants ──────────────────────────────────
+const TRUSTED_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4'
+const CHROMIUM_FULL_VERSION = '143.0.3650.75'
+const CHROMIUM_MAJOR_VERSION = CHROMIUM_FULL_VERSION.split('.')[0]
+const WIN_EPOCH = BigInt('11644473600')
+const TICKS_PER_SEC = BigInt('10000000')
+const WINDOW_TICKS = BigInt('3000000000')
+
+// Clock skew cache against Microsoft servers (to prevent 429/403 errors due to local clock drift)
+let cachedSkewMs = 0
+let lastSkewSync = 0
+
+function fetchServerDate(): Promise<number | null> {
+  return new Promise((resolve) => {
+    const req = https.request(
+      'https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1',
+      { method: 'HEAD', family: 4, timeout: 5000 },
+      (res) => {
+        const dateStr = res.headers.date
+        if (dateStr) {
+          const serverDate = new Date(dateStr).getTime()
+          resolve(isNaN(serverDate) ? null : serverDate)
+        } else {
+          resolve(null)
+        }
+      },
+    )
+    req.on('timeout', () => {
+      req.destroy()
+      resolve(null)
+    })
+    req.on('error', () => {
+      resolve(null)
+    })
+    req.end()
+  })
+}
+
+async function getClockSkew(force = false): Promise<number> {
+  const now = Date.now()
+  if (!force && lastSkewSync > 0 && now - lastSkewSync < 10 * 60 * 1000) {
+    return cachedSkewMs
+  }
+  try {
+    const serverDate = await fetchServerDate()
+    if (serverDate) {
+      cachedSkewMs = serverDate - Date.now()
+      lastSkewSync = Date.now()
+    }
+  } catch (e) {
+    console.warn('[EdgeTTS] Clock skew check failed, using fallback:', e)
+  }
+  return cachedSkewMs
+}
+
+async function getWindowsTicksToken(forceSkewRefresh = false): Promise<{ token: string; adjustedNow: number }> {
+  const skew = await getClockSkew(forceSkewRefresh)
+  const adjustedNow = Date.now() + skew
+  const sec = Math.floor(adjustedNow / 1000)
+  const ticks = (BigInt(sec) + WIN_EPOCH) * TICKS_PER_SEC
+  const rounded = ticks - (ticks % WINDOW_TICKS)
+  const token = crypto
+    .createHash('sha256')
+    .update(rounded.toString() + TRUSTED_TOKEN, 'ascii')
+    .digest('hex')
+    .toUpperCase()
+  return { token, adjustedNow }
+}
 
 // ── Request body schema ────────────────────────────────────────────────────
 const BodySchema = z.object({
@@ -66,65 +136,154 @@ const VOICE_MAP: Record<string, string> = {
   'fa-IR-FaridNeural': 'fa-IR-FaridNeural',
 }
 
-/** Convert speed (0.5–2.0) to Edge TTS rate format (+0%, -50%, etc.) */
-function speedToRate(speed: number): string {
-  const pct = Math.round((speed - 1) * 100)
-  return pct >= 0 ? `+${pct}%` : `${pct}%`
-}
-
 interface WordBoundaryItem {
   part: string
   start: number
   end: number
 }
 
-// ── Edge TTS engine (primary) ──────────────────────────────────────────────
+// ── Direct Edge TTS engine (primary) ──────────────────────────────────────
 async function generateWithEdgeTTS(
   text: string,
   voice: string,
   speed: number,
+  retriesLeft = 2,
 ): Promise<{ buffer: Buffer; wordBoundaries?: WordBoundaryItem[] } | null> {
-  const tmpDir = os.tmpdir()
-  const id = randomUUID()
-  const tmpFile = path.join(tmpDir, `tts-${id}.mp3`)
-  const subFile = path.join(tmpDir, `tts-${id}.mp3.json`)
-
   try {
-    const tts = new EdgeTTS({
-      voice,
-      rate: speedToRate(speed),
-      volume: '+0%',
-      timeout: 15_000,
-      saveSubtitles: true,
+    const { token, adjustedNow } = await getWindowsTicksToken(retriesLeft < 2)
+    const reqId = crypto.randomUUID().replace(/-/g, '')
+    const url = `wss://api.msedgeservices.com/tts/cognitiveservices/websocket/v1?Ocp-Apim-Subscription-Key=${TRUSTED_TOKEN}&Sec-MS-GEC=${token}&Sec-MS-GEC-Version=1-${CHROMIUM_FULL_VERSION}`
+
+    return await new Promise((resolve, reject) => {
+      const ws = new WebSocket(url, {
+        family: 4,
+        origin: 'chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold',
+        headers: {
+          'Pragma': 'no-cache',
+          'Cache-Control': 'no-cache',
+          'User-Agent': `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${CHROMIUM_MAJOR_VERSION}.0.0.0 Safari/537.36 Edg/${CHROMIUM_MAJOR_VERSION}.0.0.0`,
+          'Accept-Encoding': 'gzip, deflate, br, zstd',
+          'Accept-Language': 'en-US,en;q=0.9',
+        },
+      })
+
+      const audioChunks: Buffer[] = []
+      const wordBoundaries: WordBoundaryItem[] = []
+
+      const timeout = setTimeout(() => {
+        ws.terminate()
+        reject(new Error('Edge TTS WebSocket timeout after 15s'))
+      }, 15000)
+
+      ws.on('open', () => {
+        // 1. Send speech.config
+        const configMsg =
+          'Content-Type:application/json; charset=utf-8\r\nPath:speech.config\r\n\r\n' +
+          JSON.stringify({
+            context: {
+              synthesis: {
+                audio: {
+                  metadataoptions: {
+                    sentenceBoundaryEnabled: 'false',
+                    wordBoundaryEnabled: 'true',
+                  },
+                  outputFormat: 'audio-24khz-48kbitrate-mono-mp3',
+                },
+              },
+            },
+          })
+        ws.send(configMsg)
+
+        // 2. Format prosody rate & escape XML for SSML
+        const ratePct = Math.round((speed - 1) * 100)
+        const rateStr = ratePct >= 0 ? `+${ratePct}%` : `${ratePct}%`
+        const escapedText = text.replace(/[<>&"']/g, (c) => {
+          switch (c) {
+            case '<':
+              return '&lt;'
+            case '>':
+              return '&gt;'
+            case '&':
+              return '&amp;'
+            case '"':
+              return '&quot;'
+            case "'":
+              return '&apos;'
+            default:
+              return c
+          }
+        })
+        const xmlLang = voice.startsWith('fa') ? 'fa-IR' : 'en-US'
+        const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${xmlLang}"><voice name="${voice}"><prosody rate="${rateStr}">${escapedText}</prosody></voice></speak>`
+        const date = new Date(adjustedNow).toUTCString()
+        const ssmlMsg = `X-RequestId:${reqId}\r\nContent-Type:application/ssml+xml\r\nX-Timestamp:${date}Z\r\nPath:ssml\r\n\r\n${ssml}`
+        ws.send(ssmlMsg)
+      })
+
+      ws.on('message', (data: Buffer, isBinary: boolean) => {
+        if (isBinary) {
+          const headerLen = data.readUInt16BE(0)
+          const header = data.subarray(2, 2 + headerLen).toString('utf-8')
+          if (header.includes('Path:audio')) {
+            audioChunks.push(data.subarray(2 + headerLen))
+          }
+        } else {
+          const textMsg = data.toString('utf-8')
+          if (textMsg.includes('Path:audio.metadata')) {
+            try {
+              const body = textMsg.split('\r\n\r\n')[1]
+              const parsed = JSON.parse(body)
+              if (parsed.Metadata) {
+                for (const item of parsed.Metadata) {
+                  if (item.Type === 'WordBoundary') {
+                    wordBoundaries.push({
+                      part: item.Data.text.Text,
+                      start: Math.round(item.Data.Offset / 10000), // convert 100ns to ms
+                      end: Math.round((item.Data.Offset + item.Data.Duration) / 10000),
+                    })
+                  }
+                }
+              }
+            } catch {}
+          }
+          if (textMsg.includes('Path:turn.end')) {
+            clearTimeout(timeout)
+            ws.close()
+            const finalBuffer = Buffer.concat(audioChunks)
+            if (finalBuffer.length === 0) {
+              reject(new Error('Edge TTS returned 0 audio bytes'))
+              return
+            }
+            resolve({
+              buffer: finalBuffer,
+              wordBoundaries: wordBoundaries.length > 0 ? wordBoundaries : undefined,
+            })
+          }
+        }
+      })
+
+      ws.on('unexpected-response', (_req, res) => {
+        clearTimeout(timeout)
+        lastSkewSync = 0 // Invalidate skew cache
+        reject(new Error(`WebSocket handshake failed with status ${res.statusCode}`))
+      })
+
+      ws.on('error', (err) => {
+        clearTimeout(timeout)
+        reject(err)
+      })
     })
-
-    await tts.ttsPromise(text, tmpFile)
-    const buffer = await fs.readFile(tmpFile)
-
-    let wordBoundaries: WordBoundaryItem[] | undefined
-    try {
-      const subContent = await fs.readFile(subFile, 'utf-8')
-      const parsed = JSON.parse(subContent)
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        wordBoundaries = parsed
-      }
-    } catch {
-      // Subtitle file might not be generated if edge-tts had no word boundaries
+  } catch (err: unknown) {
+    const errMessage = err instanceof Error ? err.message : String(err)
+    console.error('[tts] Edge TTS attempt failed:', errMessage)
+    if (retriesLeft > 0) {
+      const is429 = errMessage.includes('429')
+      const delay = is429 ? 800 : 300
+      console.log(`[tts] Retrying Edge TTS in ${delay}ms (${retriesLeft} retries left)...`)
+      await new Promise((r) => setTimeout(r, delay))
+      return generateWithEdgeTTS(text, voice, speed, retriesLeft - 1)
     }
-
-    if (!buffer || buffer.length === 0) return null
-    return { buffer, wordBoundaries }
-  } catch (err) {
-    console.error('[tts] edge-tts failed:', err)
     return null
-  } finally {
-    // Clean up temp files
-    try {
-      await fs.unlink(tmpFile)
-    } catch {}
-    try {
-      await fs.unlink(subFile)
-    } catch {}
   }
 }
 

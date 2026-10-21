@@ -11,6 +11,7 @@ const ChaptersPanel = lazy(() => import('@/components/reader/chapters-panel').th
 const HighlightsPanel = lazy(() => import('@/components/reader/highlights-panel').then((m) => ({ default: m.HighlightsPanel })))
 const AIChatPanel = lazy(() => import('@/components/reader/ai-chat-panel').then((m) => ({ default: m.AIChatPanel })))
 const ShortcutsHelpOverlay = lazy(() => import('@/components/reader/shortcuts-help-overlay').then((m) => ({ default: m.ShortcutsHelpOverlay })))
+const BookSearchDialog = lazy(() => import('@/components/reader/book-search-dialog').then((m) => ({ default: m.BookSearchDialog })))
 
 /**
  * Renders all the AnimatePresence-gated overlays:
@@ -78,6 +79,11 @@ export function ReaderOverlays() {
     // help
     showHelp,
     setShowHelp,
+    // search
+    showSearch,
+    setShowSearch,
+    searchInitialQuery,
+    paragraphRefs,
   } = useReader()
 
   useEffect(() => {
@@ -86,8 +92,9 @@ export function ReaderOverlays() {
       setShowChapters(false)
       setShowHighlights(false)
       setShowChat(false)
+      setShowSearch(false)
     }
-  }, [chromeVisible, setShowSettings, setShowChapters, setShowHighlights, setShowChat])
+  }, [chromeVisible, setShowSettings, setShowChapters, setShowHighlights, setShowChat, setShowSearch])
 
   return (
     <>
@@ -176,9 +183,18 @@ export function ReaderOverlays() {
               navigator.clipboard.writeText(t)
               void import('sonner').then(({ toast }) => toast.success('کپی شد'))
             }}
-            onJumpToPage={(p) => {
+            onJumpToPage={(p, hlId) => {
               scrollToParagraph(p)
               setShowHighlights(false)
+              // Exact jump: after the paragraph scrolls into view, center the
+              // highlight's own DOM span (the paragraph can be very tall).
+              if (hlId) {
+                setTimeout(() => {
+                  document
+                    .querySelector(`[data-hl-id="${hlId}"], [data-hl-pair-for="${hlId}"]`)
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                }, 450)
+              }
             }}
           /></Suspense>
         </ErrorBoundary>
@@ -209,6 +225,33 @@ export function ReaderOverlays() {
           />
         )}
       </Suspense>
+      {/* ---- In-book search dialog / mobile drawer ---- */}
+      {showSearch && (
+        <ErrorBoundary>
+          <Suspense fallback={null}>
+            <BookSearchDialog
+              book={book}
+              theme={prefs.theme}
+              isMobile={isMobile}
+              open={showSearch}
+              initialQuery={searchInitialQuery}
+              onClose={() => setShowSearch(false)}
+              onJumpToPage={(p) => {
+                scrollToParagraph(p)
+                setShowSearch(false)
+                setTimeout(() => {
+                  const el = paragraphRefs.current[p]
+                  if (el) {
+                    el.classList.remove('reader-search-hit-flash')
+                    void el.offsetWidth
+                    el.classList.add('reader-search-hit-flash')
+                  }
+                }, 300)
+              }}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      )}
     </>
   )
 }

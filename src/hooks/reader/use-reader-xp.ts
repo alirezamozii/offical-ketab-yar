@@ -33,6 +33,7 @@ import { getStorageKey } from '@/lib/storage-keys'
 import {
   mergeLocalProgress,
 } from '@/hooks/reader/use-local-progress'
+import { calculateReadingPercent } from '@/lib/reader/progress'
 import { addBookToCollection, removeBookFromCollection } from '@/lib/collections'
 import type { ReaderBook } from '@/lib/reader/types'
 import { recordReadingDay } from '@/lib/goals'
@@ -89,9 +90,13 @@ export function useReaderXp({
   // ~400ms).
   useEffect(() => {
     if (!book.slug || !restoredRef.current) return
-    const percent = Math.round(
-      ((currentParagraph + 1) / Math.max(totalPages, 1)) * 100,
-    )
+    const isCompleted = currentParagraph >= totalPages - 1 && scrollPercent >= 99
+    const percent = calculateReadingPercent({
+      currentPage: currentParagraph,
+      totalPages,
+      scrollPercent,
+      isCompleted,
+    })
     mergeLocalProgress(book.slug, {
       currentPage: currentParagraph,
       totalPages,
@@ -151,8 +156,9 @@ export function useReaderXp({
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           bookSlug: book.slug,
-          currentPage: currentParagraph + 1,
+          currentPage: currentParagraph,
           totalPages,
+          percent,
         }),
         signal: progressCtrl.signal,
       })

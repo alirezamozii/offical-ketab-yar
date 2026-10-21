@@ -3,6 +3,7 @@
 import { BookCover } from '@/components/books/book-cover'
 import { FavoriteButton } from '@/components/books/favorite-button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { calculateProgressBarWidth } from '@/lib/reader/progress'
 
 import { BookOpen, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
@@ -128,7 +129,7 @@ export const BookCard = memo(function BookCard({ book, progress, href, cached }:
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 h-1 bg-black/40">
               <div
                 className="h-full bg-gradient-to-r from-gold-400 to-gold-500 transition-[width] duration-500 ease-out-expo"
-                style={{ width: `${Math.min(progress, 100)}%` }}
+                style={{ width: calculateProgressBarWidth(progress) }}
               />
             </div>
           )}
