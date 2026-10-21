@@ -464,7 +464,8 @@ async function synthesizeAudio(
   if (cached) return cached;
 
   // 1. Python Edge TTS (highest quality, v2 Sec-MS-GEC support)
-  const pyResult = await generateWithPythonEdgeTTS(text, voice, speed, isShort ? 2500 : 5000);
+  const pyTimeout = isShort ? 4500 : 9000;
+  const pyResult = await generateWithPythonEdgeTTS(text, voice, speed, pyTimeout);
   if (pyResult && pyResult.buffer.length > 0) {
     const entry: CachedAudioEntry = {
       buffer: pyResult.buffer,
@@ -537,9 +538,7 @@ export async function POST(req: NextRequest) {
 
   const voiceKey = voiceOverride || lang;
   const edgeVoice = VOICE_MAP[voiceKey] || voiceOverride || VOICE_MAP[lang];
-  const isShort = text.length <= 80;
-
-  const result = await synthesizeAudio(text, lang, edgeVoice, speed, isShort);
+  const result = await synthesizeAudio(text, lang, edgeVoice, speed, false);
   if (result) {
     const headers: Record<string, string> = {
       'Content-Type': result.contentType,
