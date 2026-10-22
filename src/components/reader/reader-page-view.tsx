@@ -46,8 +46,10 @@ export function getActiveWordInParagraph(
     const charIdx = pClean.indexOf(tClean);
     const wordsBefore = pClean.slice(0, charIdx).trim().split(/\s+/).filter(Boolean).length;
     const ttsWordsCount = tClean.split(/\s+/).filter(Boolean).length;
-    if (activeWordIndex < ttsWordsCount) {
-      return wordsBefore + activeWordIndex;
+    const pWordsCount = pClean.split(/\s+/).filter(Boolean).length;
+    const wordIdx = wordsBefore + activeWordIndex;
+    if (activeWordIndex < ttsWordsCount + 3 && wordIdx < pWordsCount) {
+      return wordIdx;
     }
     return -1;
   }
@@ -59,8 +61,10 @@ export function getActiveWordInParagraph(
     const charIdx = normP.indexOf(normT);
     const wordsBefore = normP.slice(0, charIdx).trim().split(/\s+/).filter(Boolean).length;
     const ttsWordsCount = normT.split(/\s+/).filter(Boolean).length;
-    if (activeWordIndex < ttsWordsCount) {
-      return wordsBefore + activeWordIndex;
+    const pWordsCount = normP.split(/\s+/).filter(Boolean).length;
+    const wordIdx = wordsBefore + activeWordIndex;
+    if (activeWordIndex < ttsWordsCount + 3 && wordIdx < pWordsCount) {
+      return wordIdx;
     }
     return -1;
   }
@@ -174,53 +178,13 @@ export const ParagraphBlock = memo(function ParagraphBlock({
     }
 
     // 2. Sentence pair scoping: If playback was triggered on a specific sentence pair,
-    // lock word matching strictly to that pair!
+    // verify this paragraph contains that pair before highlighting
     if (tts.activeContext?.pairId) {
-      const targetPair = sentencePairs.find((p) => p.id === tts.activeContext?.pairId);
-      if (targetPair) {
-        const pairOffset = wordOffsets.get(targetPair.id) ?? 0;
-        const sentenceText = isSpeakingPrimary ? targetPair.primary : targetPair.secondary;
-        const cleanSentence = sentenceText.trim();
-        const cleanTTS = tts.currentText.trim();
-
-        if (cleanSentence.includes(cleanTTS)) {
-          const charIdx = cleanSentence.indexOf(cleanTTS);
-          const wordsBeforeInSentence =
-            charIdx > 0
-              ? cleanSentence.slice(0, charIdx).trim().split(/\s+/).filter(Boolean).length
-              : 0;
-          const ttsWordsCount = cleanTTS.split(/\s+/).filter(Boolean).length;
-          if (tts.activeWordIndex < ttsWordsCount) {
-            return pairOffset + wordsBeforeInSentence + tts.activeWordIndex;
-          }
-          return -1;
-        }
-
-        const normSentence = cleanSentence.replace(/\s+/g, ' ');
-        const normTTS = cleanTTS.replace(/\s+/g, ' ');
-        if (normSentence.includes(normTTS)) {
-          const charIdx = normSentence.indexOf(normTTS);
-          const wordsBeforeInSentence =
-            charIdx > 0
-              ? normSentence.slice(0, charIdx).trim().split(/\s+/).filter(Boolean).length
-              : 0;
-          const ttsWordsCount = normTTS.split(/\s+/).filter(Boolean).length;
-          if (tts.activeWordIndex < ttsWordsCount) {
-            return pairOffset + wordsBeforeInSentence + tts.activeWordIndex;
-          }
-          return -1;
-        }
-
-        // Exact sentence match
-        const ttsWordsCount = cleanTTS.split(/\s+/).filter(Boolean).length;
-        if (tts.activeWordIndex < ttsWordsCount) {
-          return pairOffset + tts.activeWordIndex;
-        }
-        return -1;
-      }
+      const hasPair = sentencePairs.some((p) => p.id === tts.activeContext?.pairId);
+      if (!hasPair) return -1;
     }
 
-    // 3. Fallback to paragraph-level matching
+    // 3. Robust full paragraph text matching (handles 1 word, phrases, and multi-sentence selections)
     const activeText = isSpeakingPrimary ? primary : secondary;
     return getActiveWordInParagraph(activeText, tts.currentText, tts.activeWordIndex);
   }, [
@@ -234,7 +198,6 @@ export const ParagraphBlock = memo(function ParagraphBlock({
     primary,
     secondary,
     sentencePairs,
-    wordOffsets,
   ]);
 
   // Render a matched sentence as a hoverable span, with word-by-word active
@@ -245,38 +208,54 @@ export const ParagraphBlock = memo(function ParagraphBlock({
     startWordOffset: number,
     isSpeakingSide: boolean = true,
   ) => {
-    let content: React.ReactNode = text;
-    if (isSpeakingSide && targetWordInParagraph >= 0) {
-      let wordIdx = startWordOffset - 1;
-      const tokens = text.split(/(\s+)/);
-      content = tokens.map((token, idx) => {
-        if (/^\s+$/.test(token)) {
-          return token;
-        }
-        wordIdx++;
-        const isActive = wordIdx === targetWordInParagraph;
-        return (
-          <span
-            key={idx}
-            className={cn(
-              'inline-block transition-colors duration-100 rounded px-0.5',
-              isActive && 'font-bold shadow-sm',
-            )}
-            style={
-              isActive
-                ? {
-                    background: accent + '33',
-                    color: accent,
-                    boxShadow: `0 0 0 2px ${accent}44`,
-                  }
-                : undefined
-            }
-          >
-            {token}
-          </span>
-        );
-      });
+    if (!isSpeakingSide || targetWordInParagraph < 0) {
+      return (
+        <span data-pair-id={pairId} className="rounded">
+          {text}
+        </span>
+      );
     }
+
+    const sentenceWordCount = text.split(/\s+/).filter(Boolean).length;
+    const sentenceStart = startWordOffset;
+    const sentenceEnd = startWordOffset + sentenceWordCount - 1;
+
+    // Fast path: if the active word is not in this sentence, render plain text with zero span overhead
+    if (targetWordInParagraph < sentenceStart || targetWordInParagraph > sentenceEnd) {
+      return (
+        <span data-pair-id={pairId} className="rounded">
+          {text}
+        </span>
+      );
+    }
+
+    let wordIdx = startWordOffset - 1;
+    const tokens = text.split(/(\s+)/);
+    const content = tokens.map((token, idx) => {
+      if (/^\s+$/.test(token)) {
+        return token;
+      }
+      wordIdx++;
+      const isActive = wordIdx === targetWordInParagraph;
+
+      if (!isActive) {
+        return token;
+      }
+
+      return (
+        <span
+          key={idx}
+          className="rounded px-1 font-semibold transition-all duration-75 inline"
+          style={{
+            background: accent + '33',
+            color: accent,
+            boxShadow: `0 0 0 2px ${accent}44`,
+          }}
+        >
+          {token}
+        </span>
+      );
+    });
 
     return (
       <span data-pair-id={pairId} className="rounded">

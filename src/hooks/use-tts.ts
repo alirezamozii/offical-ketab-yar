@@ -60,8 +60,8 @@ export interface UseTTSReturn {
   stop: () => void;
   pause: () => void;
   resume: () => void;
-  seek: (timeSec: number) => void;
-  seekPercent: (ratio: number) => void;
+  seek: (timeSec: number, autoPlay?: boolean) => void;
+  seekPercent: (ratio: number, autoPlay?: boolean) => void;
   isPlaying: boolean;
   isPaused: boolean;
   isLoading: boolean;
@@ -186,6 +186,10 @@ export function useTTS(): UseTTSReturn {
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [durationSec, setDurationSec] = useState(0);
+  const durationSecRef = useRef(0);
+  useEffect(() => {
+    durationSecRef.current = durationSec;
+  }, [durationSec]);
   const [elapsedSec, setElapsedSec] = useState(0);
   const [currentText, setCurrentText] = useState('');
   const [activeContext, setActiveContext] = useState<TTSPlaybackContext | null>(null);
@@ -320,35 +324,67 @@ export function useTTS(): UseTTSReturn {
   }, [cancelTick]);
 
   // ---- Seek audio to specific second position ----
-  const seek = useCallback((timeSec: number) => {
-    const el = audioRef.current;
-    if (!el || !Number.isFinite(el.duration) || el.duration <= 0) return;
-    const clamped = Math.max(0, Math.min(el.duration, timeSec));
-    try {
-      el.currentTime = clamped;
-      setElapsedSec(clamped);
-      setProgress(clamped / el.duration);
+  const seek = useCallback(
+    (timeSec: number, autoPlay: boolean = true) => {
+      const el = audioRef.current;
+      if (!el) return;
+      const duration =
+        Number.isFinite(el.duration) && el.duration > 0 ? el.duration : durationSecRef.current || 0;
+      if (duration <= 0) return;
 
-      // Immediately sync active word to new time
-      const currentMs = clamped * 1000;
-      const bounds = boundariesRef.current;
-      if (bounds && bounds.length > 0) {
-        const found = bounds.findIndex((w) => currentMs >= w.start && currentMs <= w.end);
-        activeWordIndexRef.current = found;
-        setActiveWordIndex(found);
+      const clamped = Math.max(0, Math.min(duration, timeSec));
+      try {
+        if (typeof (el as unknown as { fastSeek?: (n: number) => void }).fastSeek === 'function') {
+          try {
+            (el as unknown as { fastSeek: (n: number) => void }).fastSeek(clamped);
+          } catch {
+            el.currentTime = clamped;
+          }
+        } else {
+          el.currentTime = clamped;
+        }
+        setElapsedSec(clamped);
+        setProgress(clamped / duration);
+
+        // Immediately sync active word to new time
+        const currentMs = clamped * 1000;
+        const bounds = boundariesRef.current;
+        if (bounds && bounds.length > 0) {
+          const found = bounds.findIndex((w) => currentMs >= w.start && currentMs <= w.end);
+          activeWordIndexRef.current = found;
+          setActiveWordIndex(found);
+        }
+
+        // If autoPlay is enabled and audio element has valid src, resume playing from new position
+        if (autoPlay && el.src) {
+          el.play()
+            .then(() => {
+              setIsPlaying(true);
+              setIsPaused(false);
+              startTick();
+            })
+            .catch((err) => {
+              console.warn('[tts] play on seek error:', err);
+            });
+        }
+      } catch (e) {
+        console.error('[tts] seek error:', e);
       }
-    } catch (e) {
-      console.error('[tts] seek error:', e);
-    }
-  }, []);
+    },
+    [startTick],
+  );
 
   // ---- Seek audio by progress ratio (0 to 1) ----
   const seekPercent = useCallback(
-    (ratio: number) => {
+    (ratio: number, autoPlay: boolean = true) => {
       const el = audioRef.current;
-      if (!el || !Number.isFinite(el.duration) || el.duration <= 0) return;
+      const duration =
+        el && Number.isFinite(el.duration) && el.duration > 0
+          ? el.duration
+          : durationSecRef.current || 0;
+      if (duration <= 0) return;
       const clampedRatio = Math.max(0, Math.min(1, ratio));
-      seek(clampedRatio * el.duration);
+      seek(clampedRatio * duration, autoPlay);
     },
     [seek],
   );
@@ -811,26 +847,15 @@ export function useTTS(): UseTTSReturn {
         return;
       }
       setIsPlaying(false);
-      setIsPaused(false);
+      setIsPaused(true);
       setProgress(1);
-      // Reset elapsed so the UI shows the final position briefly.
-      const d = Number.isFinite(el.duration) ? el.duration : 0;
+      // Reset elapsed so the UI shows the final position
+      const d = Number.isFinite(el.duration) ? el.duration : durationSecRef.current || 0;
       setElapsedSec(d);
-      // Clear the "current text" so floating UIs auto-hide.
-      // Keep currentKeyRef set so re-speaking the same text re-fetches cleanly.
-      setCurrentText('');
-      setTotalChunks(0);
-      setChunkIndex(0);
       boundariesRef.current = [];
       activeWordIndexRef.current = -1;
       setWordBoundaries([]);
       setActiveWordIndex(-1);
-      totalChunksRef.current = 0;
-      chunkIndexRef.current = 0;
-      if (objectUrlRef.current) {
-        URL.revokeObjectURL(objectUrlRef.current);
-        objectUrlRef.current = null;
-      }
     };
     const onError = () => {
       cancelTick();

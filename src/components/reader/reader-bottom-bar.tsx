@@ -134,7 +134,7 @@ export function ReaderBottomBar() {
                       document.documentElement.dir === 'rtl' || document.body.dir === 'rtl';
                     const clickX = e.clientX - rect.left;
                     const ratio = isRtl ? 1 - clickX / rect.width : clickX / rect.width;
-                    tts.seekPercent(Math.max(0, Math.min(1, ratio)));
+                    tts.seekPercent(Math.max(0, Math.min(1, ratio)), true);
                   }}
                   role="slider"
                   aria-label="جابه‌جایی در زمان پخش صدا"
@@ -223,7 +223,7 @@ export function ReaderBottomBar() {
                       }}
                       onClick={() => (tts.isPlaying ? tts.pause() : tts.resume())}
                       aria-label={tts.isPlaying ? 'توقف موقت پخش' : 'ادامه پخش'}
-                      disabled={tts.isLoading || (!tts.isPlaying && !tts.isPaused)}
+                      disabled={tts.isLoading}
                     >
                       {tts.isLoading ? (
                         <span
