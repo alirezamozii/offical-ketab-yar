@@ -91,13 +91,13 @@ export function ReaderAudioControls({ text, lang, className }: ReaderAudioContro
     <Button
       type="button"
       variant="ghost"
-      size="sm"
+      size="icon"
       onMouseDown={(e) => e.preventDefault()}
       onClick={handleClick}
       title={label}
       aria-label={label}
       aria-pressed={tts.isPlaying}
-      className={cn('relative gap-1 px-2', className)}
+      className={cn('relative size-11 shrink-0', className)}
       style={isBusy && themeStyle.accent ? { background: themeStyle.accent + '22' } : undefined}
     >
       {tts.isLoading ? (
@@ -113,9 +113,6 @@ export function ReaderAudioControls({ text, lang, className }: ReaderAudioContro
       ) : (
         <Volume2 aria-hidden="true" className="h-4 w-4" />
       )}
-      <span className="hidden text-xs font-medium sm:inline">
-        {tts.isPlaying ? 'توقف' : isSelected ? 'شنیدن انتخاب' : 'شنیدن صفحه'}
-      </span>
     </Button>
   );
 }
