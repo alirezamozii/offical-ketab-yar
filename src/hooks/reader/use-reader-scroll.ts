@@ -68,6 +68,8 @@ interface UseReaderScrollReturn {
   remainingParagraphs: number;
   remainingMinutes: number;
   isLastPage: boolean;
+  /** Whether the component has completed client hydration. */
+  mounted: boolean;
   /** Set to true once the saved scroll position has been restored (avoids XP-on-resume). */
   restoredRef: MutableRefObject<boolean>;
   /** Highest paragraph index we've already awarded XP for. */
@@ -80,11 +82,16 @@ export function useReaderScroll({
   book,
   totalPages,
 }: UseReaderScrollOptions): UseReaderScrollReturn {
+  const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   // Client progress is hydrated in useEffect to guarantee 100% matched SSR hydration
   const [currentParagraph, setCurrentParagraph] = useState(0);
   const [scrollPercent, setScrollPercent] = useState(0);
   const [showPositionChip, setShowPositionChip] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const paragraphRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -370,12 +377,13 @@ export function useReaderScroll({
 
   // ---- Derived presentation values ----
   const isLastPage = currentParagraph >= totalPages - 1;
-  const displayPercent = calculateReadingPercent({
+  const rawDisplayPercent = calculateReadingPercent({
     currentPage: currentParagraph,
     totalPages,
     scrollPercent,
     isCompleted: isLastPage && scrollPercent >= 99,
   });
+  const displayPercent = mounted ? rawDisplayPercent : 0;
   const remainingParagraphs = Math.max(0, totalPages - currentParagraph - 1);
   const remainingMinutes = estimateReadingMinutes(remainingParagraphs);
 
@@ -396,6 +404,7 @@ export function useReaderScroll({
     remainingParagraphs,
     remainingMinutes,
     isLastPage,
+    mounted,
     restoredRef,
     lastAwardedParagraphRef,
     completionAwardedRef,

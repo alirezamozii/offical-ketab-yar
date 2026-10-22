@@ -273,6 +273,7 @@ export function useReaderState(book: ReaderBook) {
     remainingParagraphs: scroll.remainingParagraphs,
     remainingMinutes: scroll.remainingMinutes,
     isLastPage: scroll.isLastPage,
+    mounted: scroll.mounted,
     // derived layout
     columnMaxWidth,
     marginStyle,

@@ -61,6 +61,34 @@ export function useReaderSelection({
   const [showTextMenu, setShowTextMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [selectedRange, setSelectedRange] = useState<Range | null>(null);
+  const isSnappingRef = useRef(false);
+
+  // Clear selection state in real-time when the user deselects / collapses the selection
+  useEffect(() => {
+    const onSelectionChange = () => {
+      if (isSnappingRef.current) return;
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
+        setShowTextMenu(false);
+        setSelectedRange(null);
+        setSelectedText('');
+        setSelectedLocation(null);
+        return;
+      }
+      const text = sel.toString().trim();
+      if (!text) {
+        setShowTextMenu(false);
+        setSelectedRange(null);
+        setSelectedText('');
+        setSelectedLocation(null);
+      }
+    };
+
+    document.addEventListener('selectionchange', onSelectionChange);
+    return () => {
+      document.removeEventListener('selectionchange', onSelectionChange);
+    };
+  }, []);
 
   // AbortController for the in-flight /api/vocabulary POST. Aborted on
   // unmount and when a new request supersedes it.
@@ -139,9 +167,15 @@ export function useReaderSelection({
     const range = snapRangeToWordBoundaries(rawRange);
 
     try {
+      isSnappingRef.current = true;
       sel.removeAllRanges();
       sel.addRange(range);
-    } catch {}
+    } catch {
+    } finally {
+      setTimeout(() => {
+        isSnappingRef.current = false;
+      }, 50);
+    }
 
     const text = range.toString().trim();
     if (text && text.length > 0) {

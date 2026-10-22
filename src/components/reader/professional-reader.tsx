@@ -123,7 +123,7 @@ export function ProfessionalReader({ book }: ReaderProps) {
               suppressHydrationWarning
               className="h-full origin-right will-change-transform"
               style={{
-                transform: `scaleX(${Math.max(0.001, scrollPercent / 100)})`,
+                transform: `scaleX(${Math.max(0.001, (state.mounted ? scrollPercent : 0) / 100)})`,
                 background: themeStyle.accent,
                 transition: 'transform 60ms linear',
               }}

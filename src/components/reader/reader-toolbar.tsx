@@ -117,7 +117,7 @@ export function ReaderToolbar() {
                   color: themeStyle.accent,
                 }}
               >
-                {toPersianDigits(displayPercent)}٪
+                {`${toPersianDigits(displayPercent)}٪`}
               </span>
               <span
                 className="hidden items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold lg:inline-flex"

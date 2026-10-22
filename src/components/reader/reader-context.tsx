@@ -61,6 +61,7 @@ export type ReaderScrollSlice = Pick<
   | 'remainingParagraphs'
   | 'remainingMinutes'
   | 'isLastPage'
+  | 'mounted'
   | 'showPositionChip'
   | 'isMobile'
   | 'scrollToParagraph'
@@ -184,6 +185,7 @@ export function ReaderProvider({ value, children }: { value: ReaderState; childr
       remainingParagraphs: value.remainingParagraphs,
       remainingMinutes: value.remainingMinutes,
       isLastPage: value.isLastPage,
+      mounted: value.mounted,
       showPositionChip: value.showPositionChip,
       isMobile: value.isMobile,
       scrollToParagraph: value.scrollToParagraph,
@@ -200,6 +202,7 @@ export function ReaderProvider({ value, children }: { value: ReaderState; childr
       value.remainingParagraphs,
       value.remainingMinutes,
       value.isLastPage,
+      value.mounted,
       value.showPositionChip,
       value.isMobile,
       value.scrollToParagraph,

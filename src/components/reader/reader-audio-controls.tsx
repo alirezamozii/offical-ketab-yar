@@ -23,7 +23,6 @@ import { Button } from '@/components/ui/button';
 import { AudioWaveBars } from '@/components/reader/audio-wave-bars';
 import { useReader } from '@/components/reader/reader-context';
 import { useTTSContext } from '@/hooks/tts-provider';
-import { getVisibleReadingText } from '@/lib/reader/scroll-text';
 import { Loader2, Square, Volume2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -38,15 +37,8 @@ interface ReaderAudioControlsProps {
 
 export function ReaderAudioControls({ text, lang, className }: ReaderAudioControlsProps) {
   const tts = useTTSContext();
-  const {
-    currentLanguage,
-    currentParagraph,
-    themeStyle,
-    selectedText,
-    selectedLocation,
-    scrollRef,
-    book,
-  } = useReader();
+  const { currentLanguage, currentParagraph, themeStyle, selectedText, selectedLocation, book } =
+    useReader();
 
   const handleClick = () => {
     if (tts.isPlaying || tts.isPaused) {
@@ -68,13 +60,13 @@ export function ReaderAudioControls({ text, lang, className }: ReaderAudioContro
       langToSpeak = isFa ? 'fa' : 'en';
       contextToPass = selectedLocation ?? { pageIndex: currentParagraph };
     } else {
-      // 2. Otherwise read from the exact paragraph/position currently visible in viewport
-      textToSpeak = getVisibleReadingText(
-        scrollRef.current,
-        book,
-        currentParagraph,
-        currentLanguage,
-      );
+      // 2. When no text is selected, read the current page from the beginning
+      const page = book.pages[currentParagraph];
+      textToSpeak =
+        page?.items
+          ?.map((it) => (currentLanguage === 'farsi' ? it.farsi : it.english))
+          .filter(Boolean)
+          .join('\n\n') || '';
       contextToPass = { pageIndex: currentParagraph };
     }
 
@@ -93,7 +85,7 @@ export function ReaderAudioControls({ text, lang, className }: ReaderAudioContro
         ? 'ادامه پخش'
         : isSelected
           ? 'شنیدن متن انتخاب‌شده'
-          : 'گوش دادن از موقعیت فعلی';
+          : 'شنیدن این صفحه از ابتدا';
 
   return (
     <Button
@@ -122,7 +114,7 @@ export function ReaderAudioControls({ text, lang, className }: ReaderAudioContro
         <Volume2 aria-hidden="true" className="h-4 w-4" />
       )}
       <span className="hidden text-xs font-medium sm:inline">
-        {tts.isPlaying ? 'توقف' : isSelected ? 'شنیدن انتخاب' : 'گوش دادن'}
+        {tts.isPlaying ? 'توقف' : isSelected ? 'شنیدن انتخاب' : 'شنیدن صفحه'}
       </span>
     </Button>
   );

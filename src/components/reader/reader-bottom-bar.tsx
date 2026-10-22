@@ -393,7 +393,7 @@ export function ReaderBottomBar() {
                       </span>
                     )}
                     <span suppressHydrationWarning className="tabular-nums font-bold">
-                      {toPersianDigits(displayPercent)}٪ مطالعه شده
+                      {`${toPersianDigits(displayPercent)}٪ مطالعه شده`}
                     </span>
                   </div>
                 </div>
