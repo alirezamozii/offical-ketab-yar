@@ -81,7 +81,7 @@ RUN bun run db:generate
 RUN bun run build
 
 # ── Stage 3: runner ──────────────────────────────────────────────────────────
-FROM node:22-alpine AS runner
+FROM node:26-alpine AS runner
 
 # openssl  → Prisma's query engine links against libcrypto/libssl.
 # dumb-init → tiny PID-1 init that reaps zombies and forwards signals.
