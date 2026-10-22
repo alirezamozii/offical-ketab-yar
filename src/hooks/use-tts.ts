@@ -38,6 +38,12 @@ import { toast } from 'sonner';
 
 export type TTSLang = 'en' | 'fa';
 
+export interface TTSPlaybackContext {
+  pageIndex?: number;
+  pairId?: string;
+  startWordIndex?: number;
+}
+
 export interface WordBoundary {
   part: string;
   start: number; // in ms
@@ -45,7 +51,12 @@ export interface WordBoundary {
 }
 
 export interface UseTTSReturn {
-  speak: (text: string, lang?: TTSLang, speedOverride?: number) => Promise<void>;
+  speak: (
+    text: string,
+    lang?: TTSLang,
+    speedOverride?: number,
+    context?: TTSPlaybackContext,
+  ) => Promise<void>;
   stop: () => void;
   pause: () => void;
   resume: () => void;
@@ -59,6 +70,8 @@ export interface UseTTSReturn {
   durationSec: number;
   elapsedSec: number;
   currentText: string;
+  /** Contextual location (e.g. page index or sentence pair ID) for reading sync. */
+  activeContext: TTSPlaybackContext | null;
   /** 1-based index of the chunk currently playing (for multi-chunk playback). */
   chunkIndex: number;
   /** Total chunks in the current playback queue (1 for short texts). */
@@ -175,6 +188,8 @@ export function useTTS(): UseTTSReturn {
   const [durationSec, setDurationSec] = useState(0);
   const [elapsedSec, setElapsedSec] = useState(0);
   const [currentText, setCurrentText] = useState('');
+  const [activeContext, setActiveContext] = useState<TTSPlaybackContext | null>(null);
+  const activeContextRef = useRef<TTSPlaybackContext | null>(null);
   const [wordBoundaries, setWordBoundaries] = useState<WordBoundary[]>([]);
   const [activeWordIndex, setActiveWordIndex] = useState<number>(-1);
   const audioSpeed = useReaderSettingsStore((state) => state.audioSpeed);
@@ -259,6 +274,8 @@ export function useTTS(): UseTTSReturn {
     setElapsedSec(0);
     setDurationSec(0);
     setCurrentText('');
+    setActiveContext(null);
+    activeContextRef.current = null;
   }, [cancelTick]);
 
   // ---- Tick loop: drives progress + elapsed time state and exact word boundary highlight ----
@@ -639,9 +656,17 @@ export function useTTS(): UseTTSReturn {
 
   // ---- Core: speak arbitrary text (auto-chunks if too long) ----
   const speak = useCallback(
-    async (text: string, lang: TTSLang = 'en', speedOverride?: number) => {
+    async (
+      text: string,
+      lang: TTSLang = 'en',
+      speedOverride?: number,
+      context?: TTSPlaybackContext,
+    ) => {
       const clean = String(text || '').trim();
       if (!clean) return;
+
+      setActiveContext(context ?? null);
+      activeContextRef.current = context ?? null;
 
       const chunks = splitIntoChunks(clean, MAX_CHUNK_CHARS);
       if (chunks.length === 0) return;
@@ -861,6 +886,7 @@ export function useTTS(): UseTTSReturn {
       durationSec,
       elapsedSec,
       currentText,
+      activeContext,
       chunkIndex,
       totalChunks,
       wordBoundaries,
@@ -881,6 +907,7 @@ export function useTTS(): UseTTSReturn {
       durationSec,
       elapsedSec,
       currentText,
+      activeContext,
       chunkIndex,
       totalChunks,
       wordBoundaries,

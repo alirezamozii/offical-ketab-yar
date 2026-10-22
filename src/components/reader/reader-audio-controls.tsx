@@ -38,8 +38,15 @@ interface ReaderAudioControlsProps {
 
 export function ReaderAudioControls({ text, lang, className }: ReaderAudioControlsProps) {
   const tts = useTTSContext();
-  const { currentLanguage, currentParagraph, themeStyle, selectedText, scrollRef, book } =
-    useReader();
+  const {
+    currentLanguage,
+    currentParagraph,
+    themeStyle,
+    selectedText,
+    selectedLocation,
+    scrollRef,
+    book,
+  } = useReader();
 
   const handleClick = () => {
     if (tts.isPlaying || tts.isPaused) {
@@ -49,14 +56,17 @@ export function ReaderAudioControls({ text, lang, className }: ReaderAudioContro
 
     let textToSpeak = '';
     let langToSpeak: 'en' | 'fa' = lang ?? (currentLanguage === 'farsi' ? 'fa' : 'en');
+    let contextToPass: { pageIndex?: number; pairId?: string } | undefined = undefined;
 
     // 1. If user selected a specific text, prioritize speaking that text
     if (text) {
       textToSpeak = text;
+      contextToPass = selectedLocation ?? { pageIndex: currentParagraph };
     } else if (selectedText && selectedText.trim().length > 0) {
       textToSpeak = selectedText.trim();
       const isFa = /[\u0600-\u06FF]/.test(textToSpeak);
       langToSpeak = isFa ? 'fa' : 'en';
+      contextToPass = selectedLocation ?? { pageIndex: currentParagraph };
     } else {
       // 2. Otherwise read from the exact paragraph/position currently visible in viewport
       textToSpeak = getVisibleReadingText(
@@ -65,10 +75,11 @@ export function ReaderAudioControls({ text, lang, className }: ReaderAudioContro
         currentParagraph,
         currentLanguage,
       );
+      contextToPass = { pageIndex: currentParagraph };
     }
 
     if (!textToSpeak) return;
-    void tts.speak(textToSpeak, langToSpeak);
+    void tts.speak(textToSpeak, langToSpeak, undefined, contextToPass);
   };
 
   const isBusy = tts.isLoading || tts.isPlaying || tts.isPaused;

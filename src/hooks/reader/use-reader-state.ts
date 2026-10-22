@@ -297,6 +297,8 @@ export function useReaderState(book: ReaderBook) {
     removeBookmark: highlights.removeBookmark,
     // text selection
     selectedText: selection.selectedText,
+    selectedLocation: selection.selectedLocation,
+    clearSelection: selection.clearSelection,
     showTextMenu: selection.showTextMenu,
     setShowTextMenu: selection.setShowTextMenu,
     menuPosition: selection.menuPosition,

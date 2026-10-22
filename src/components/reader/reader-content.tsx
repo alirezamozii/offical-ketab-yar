@@ -207,6 +207,7 @@ export function ReaderContent() {
                     item={item}
                     prefs={prefs}
                     accent={themeStyle.accent}
+                    pageIndex={i}
                     onMouseUp={(e) => {
                       e.stopPropagation();
                       setTimeout(handleTextSelection, 20);

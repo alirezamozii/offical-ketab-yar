@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 /**
  * Reader context — split into multiple slice contexts so consumers can
@@ -39,11 +39,11 @@
  * `audio-player-bar.tsx` keep working without changes.
  */
 
-import { createContext, useContext, useMemo, type ReactNode } from 'react'
-import type { useReaderState } from '@/hooks/reader/use-reader-state'
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import type { useReaderState } from '@/hooks/reader/use-reader-state';
 
 /** The full bag of state + handlers produced by `useReaderState`. */
-export type ReaderState = ReturnType<typeof useReaderState>
+export type ReaderState = ReturnType<typeof useReaderState>;
 
 // ---------------------------------------------------------------------------
 // Slice types — pick the fields each slice owns. Picking (rather than
@@ -67,7 +67,7 @@ export type ReaderScrollSlice = Pick<
   | 'handleScroll'
   | 'pageDown'
   | 'pageUp'
->
+>;
 
 export type ReaderPanelsSlice = Pick<
   ReaderState,
@@ -87,11 +87,13 @@ export type ReaderPanelsSlice = Pick<
   | 'showFocusHint'
   | 'toggleFocusMode'
   | 'chromeVisible'
->
+>;
 
 export type ReaderSelectionSlice = Pick<
   ReaderState,
   | 'selectedText'
+  | 'selectedLocation'
+  | 'clearSelection'
   | 'showTextMenu'
   | 'setShowTextMenu'
   | 'menuPosition'
@@ -101,7 +103,7 @@ export type ReaderSelectionSlice = Pick<
   | 'handleCopy'
   | 'handleShare'
   | 'currentParagraphPlainText'
->
+>;
 
 export type ReaderHighlightsSlice = Pick<
   ReaderState,
@@ -117,17 +119,14 @@ export type ReaderHighlightsSlice = Pick<
   | 'isParagraphBookmarked'
   | 'toggleBookmark'
   | 'removeBookmark'
->
+>;
 
-export type ReaderChatSlice = Pick<
-  ReaderState,
-  'showChat' | 'setShowChat'
->
+export type ReaderChatSlice = Pick<ReaderState, 'showChat' | 'setShowChat'>;
 
 export type ReaderDictionarySlice = Pick<
   ReaderState,
   'showDictionary' | 'setShowDictionary' | 'dictionaryWord'
->
+>;
 
 export type ReaderCoreSlice = Pick<
   ReaderState,
@@ -150,19 +149,19 @@ export type ReaderCoreSlice = Pick<
   | 'toggleAutoScroll'
   | 'showHelp'
   | 'setShowHelp'
->
+>;
 
 // ---------------------------------------------------------------------------
 // Contexts
 // ---------------------------------------------------------------------------
 
-const ReaderScrollContext = createContext<ReaderScrollSlice | null>(null)
-const ReaderPanelsContext = createContext<ReaderPanelsSlice | null>(null)
-const ReaderSelectionContext = createContext<ReaderSelectionSlice | null>(null)
-const ReaderHighlightsContext = createContext<ReaderHighlightsSlice | null>(null)
-const ReaderChatContext = createContext<ReaderChatSlice | null>(null)
-const ReaderDictionaryContext = createContext<ReaderDictionarySlice | null>(null)
-const ReaderCoreContext = createContext<ReaderCoreSlice | null>(null)
+const ReaderScrollContext = createContext<ReaderScrollSlice | null>(null);
+const ReaderPanelsContext = createContext<ReaderPanelsSlice | null>(null);
+const ReaderSelectionContext = createContext<ReaderSelectionSlice | null>(null);
+const ReaderHighlightsContext = createContext<ReaderHighlightsSlice | null>(null);
+const ReaderChatContext = createContext<ReaderChatSlice | null>(null);
+const ReaderDictionaryContext = createContext<ReaderDictionarySlice | null>(null);
+const ReaderCoreContext = createContext<ReaderCoreSlice | null>(null);
 
 // ---------------------------------------------------------------------------
 // Provider — splits the bag into memoized slice values, then nests the
@@ -173,13 +172,7 @@ const ReaderCoreContext = createContext<ReaderCoreSlice | null>(null)
 // idiomatic to put the noisiest slice outermost.)
 // ---------------------------------------------------------------------------
 
-export function ReaderProvider({
-  value,
-  children,
-}: {
-  value: ReaderState
-  children: ReactNode
-}) {
+export function ReaderProvider({ value, children }: { value: ReaderState; children: ReactNode }) {
   // Noisiest first (changes on every scroll tick).
   const scrollSlice = useMemo<ReaderScrollSlice>(
     () => ({
@@ -214,11 +207,13 @@ export function ReaderProvider({
       value.pageDown,
       value.pageUp,
     ],
-  )
+  );
 
   const selectionSlice = useMemo<ReaderSelectionSlice>(
     () => ({
       selectedText: value.selectedText,
+      selectedLocation: value.selectedLocation,
+      clearSelection: value.clearSelection,
       showTextMenu: value.showTextMenu,
       setShowTextMenu: value.setShowTextMenu,
       menuPosition: value.menuPosition,
@@ -231,6 +226,8 @@ export function ReaderProvider({
     }),
     [
       value.selectedText,
+      value.selectedLocation,
+      value.clearSelection,
       value.showTextMenu,
       value.setShowTextMenu,
       value.menuPosition,
@@ -241,7 +238,7 @@ export function ReaderProvider({
       value.handleShare,
       value.currentParagraphPlainText,
     ],
-  )
+  );
 
   const panelsSlice = useMemo<ReaderPanelsSlice>(
     () => ({
@@ -280,7 +277,7 @@ export function ReaderProvider({
       value.toggleFocusMode,
       value.chromeVisible,
     ],
-  )
+  );
 
   const highlightsSlice = useMemo<ReaderHighlightsSlice>(
     () => ({
@@ -311,7 +308,7 @@ export function ReaderProvider({
       value.toggleBookmark,
       value.removeBookmark,
     ],
-  )
+  );
 
   const chatSlice = useMemo<ReaderChatSlice>(
     () => ({
@@ -319,7 +316,7 @@ export function ReaderProvider({
       setShowChat: value.setShowChat,
     }),
     [value.showChat, value.setShowChat],
-  )
+  );
 
   const dictionarySlice = useMemo<ReaderDictionarySlice>(
     () => ({
@@ -328,7 +325,7 @@ export function ReaderProvider({
       dictionaryWord: value.dictionaryWord,
     }),
     [value.showDictionary, value.setShowDictionary, value.dictionaryWord],
-  )
+  );
 
   const coreSlice = useMemo<ReaderCoreSlice>(
     () => ({
@@ -373,7 +370,7 @@ export function ReaderProvider({
       value.showHelp,
       value.setShowHelp,
     ],
-  )
+  );
 
   return (
     <ReaderCoreContext.Provider value={coreSlice}>
@@ -391,7 +388,7 @@ export function ReaderProvider({
         </ReaderSelectionContext.Provider>
       </ReaderScrollContext.Provider>
     </ReaderCoreContext.Provider>
-  )
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -402,59 +399,59 @@ export function ReaderProvider({
 // ---------------------------------------------------------------------------
 
 export function useReaderScrollSlice(): ReaderScrollSlice {
-  const ctx = useContext(ReaderScrollContext)
+  const ctx = useContext(ReaderScrollContext);
   if (!ctx) {
-    throw new Error('useReaderScrollSlice must be used within a ReaderProvider')
+    throw new Error('useReaderScrollSlice must be used within a ReaderProvider');
   }
-  return ctx
+  return ctx;
 }
 
 export function useReaderPanelsSlice(): ReaderPanelsSlice {
-  const ctx = useContext(ReaderPanelsContext)
+  const ctx = useContext(ReaderPanelsContext);
   if (!ctx) {
-    throw new Error('useReaderPanelsSlice must be used within a ReaderProvider')
+    throw new Error('useReaderPanelsSlice must be used within a ReaderProvider');
   }
-  return ctx
+  return ctx;
 }
 
 export function useReaderSelectionSlice(): ReaderSelectionSlice {
-  const ctx = useContext(ReaderSelectionContext)
+  const ctx = useContext(ReaderSelectionContext);
   if (!ctx) {
-    throw new Error('useReaderSelectionSlice must be used within a ReaderProvider')
+    throw new Error('useReaderSelectionSlice must be used within a ReaderProvider');
   }
-  return ctx
+  return ctx;
 }
 
 export function useReaderHighlightsSlice(): ReaderHighlightsSlice {
-  const ctx = useContext(ReaderHighlightsContext)
+  const ctx = useContext(ReaderHighlightsContext);
   if (!ctx) {
-    throw new Error('useReaderHighlightsSlice must be used within a ReaderProvider')
+    throw new Error('useReaderHighlightsSlice must be used within a ReaderProvider');
   }
-  return ctx
+  return ctx;
 }
 
 export function useReaderChatSlice(): ReaderChatSlice {
-  const ctx = useContext(ReaderChatContext)
+  const ctx = useContext(ReaderChatContext);
   if (!ctx) {
-    throw new Error('useReaderChatSlice must be used within a ReaderProvider')
+    throw new Error('useReaderChatSlice must be used within a ReaderProvider');
   }
-  return ctx
+  return ctx;
 }
 
 export function useReaderDictionarySlice(): ReaderDictionarySlice {
-  const ctx = useContext(ReaderDictionaryContext)
+  const ctx = useContext(ReaderDictionaryContext);
   if (!ctx) {
-    throw new Error('useReaderDictionarySlice must be used within a ReaderProvider')
+    throw new Error('useReaderDictionarySlice must be used within a ReaderProvider');
   }
-  return ctx
+  return ctx;
 }
 
 export function useReaderCoreSlice(): ReaderCoreSlice {
-  const ctx = useContext(ReaderCoreContext)
+  const ctx = useContext(ReaderCoreContext);
   if (!ctx) {
-    throw new Error('useReaderCoreSlice must be used within a ReaderProvider')
+    throw new Error('useReaderCoreSlice must be used within a ReaderProvider');
   }
-  return ctx
+  return ctx;
 }
 
 // ---------------------------------------------------------------------------
@@ -469,23 +466,15 @@ export function useReaderCoreSlice(): ReaderCoreSlice {
 // ---------------------------------------------------------------------------
 
 export function useReader(): ReaderState {
-  const core = useContext(ReaderCoreContext)
-  const scroll = useContext(ReaderScrollContext)
-  const selection = useContext(ReaderSelectionContext)
-  const panels = useContext(ReaderPanelsContext)
-  const highlights = useContext(ReaderHighlightsContext)
-  const chat = useContext(ReaderChatContext)
-  const dictionary = useContext(ReaderDictionaryContext)
-  if (
-    !core ||
-    !scroll ||
-    !selection ||
-    !panels ||
-    !highlights ||
-    !chat ||
-    !dictionary
-  ) {
-    throw new Error('useReader must be used within a ReaderProvider')
+  const core = useContext(ReaderCoreContext);
+  const scroll = useContext(ReaderScrollContext);
+  const selection = useContext(ReaderSelectionContext);
+  const panels = useContext(ReaderPanelsContext);
+  const highlights = useContext(ReaderHighlightsContext);
+  const chat = useContext(ReaderChatContext);
+  const dictionary = useContext(ReaderDictionaryContext);
+  if (!core || !scroll || !selection || !panels || !highlights || !chat || !dictionary) {
+    throw new Error('useReader must be used within a ReaderProvider');
   }
   return {
     ...core,
@@ -495,5 +484,5 @@ export function useReader(): ReaderState {
     ...highlights,
     ...chat,
     ...dictionary,
-  } as ReaderState
+  } as ReaderState;
 }

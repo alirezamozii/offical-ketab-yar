@@ -10,6 +10,7 @@ interface ParagraphBlockProps {
   item: BilingualItem;
   prefs: ReadingPreferences;
   accent: string;
+  pageIndex?: number;
   onMouseUp?: (e: React.MouseEvent) => void;
   onTouchEnd?: (e: React.TouchEvent) => void;
 }
@@ -68,18 +69,20 @@ export function getActiveWordInParagraph(
   if (normT.includes(normP) || tClean.includes(pClean)) {
     const fullText = normT.includes(normP) ? normT : tClean;
     const targetP = normT.includes(normP) ? normP : pClean;
-    const charIdx = fullText.indexOf(targetP);
-    const textBefore = fullText.slice(0, charIdx);
-    const wordsBefore = textBefore.trim()
-      ? textBefore.trim().split(/\s+/).filter(Boolean).length
-      : 0;
     const pWordsCount = targetP.split(/\s+/).filter(Boolean).length;
+    if (pWordsCount >= 3) {
+      const charIdx = fullText.indexOf(targetP);
+      const textBefore = fullText.slice(0, charIdx);
+      const wordsBefore = textBefore.trim()
+        ? textBefore.trim().split(/\s+/).filter(Boolean).length
+        : 0;
 
-    const relativeWord = activeWordIndex - wordsBefore;
-    if (relativeWord >= 0 && relativeWord < pWordsCount) {
-      return relativeWord;
+      const relativeWord = activeWordIndex - wordsBefore;
+      if (relativeWord >= 0 && relativeWord < pWordsCount) {
+        return relativeWord;
+      }
+      return -1;
     }
-    return -1;
   }
 
   return -1;
@@ -100,6 +103,7 @@ export const ParagraphBlock = memo(function ParagraphBlock({
   item,
   prefs,
   accent,
+  pageIndex,
   onMouseUp,
   onTouchEnd,
 }: ParagraphBlockProps) {
@@ -113,11 +117,11 @@ export const ParagraphBlock = memo(function ParagraphBlock({
 
   const tts = useTTSContext();
 
-  // Match TTS reading position accurately within this paragraph
-  const targetWordInParagraph = useMemo(() => {
-    if (!tts.isPlaying && !tts.isPaused) return -1;
-    return getActiveWordInParagraph(primary, tts.currentText, tts.activeWordIndex);
-  }, [tts.isPlaying, tts.isPaused, tts.currentText, tts.activeWordIndex, primary]);
+  const isAudioFa = useMemo(() => {
+    return /[\u0600-\u06FF]/.test(tts.currentText || '');
+  }, [tts.currentText]);
+
+  const isSpeakingPrimary = primaryLang === 'english' ? !isAudioFa : isAudioFa;
 
   const sentencePairs = useMemo<MatchedSentencePair[]>(() => {
     if (isHeading) {
@@ -155,11 +159,94 @@ export const ParagraphBlock = memo(function ParagraphBlock({
     return map;
   }, [sentencePairs]);
 
+  // Match TTS reading position accurately within this paragraph
+  const targetWordInParagraph = useMemo(() => {
+    if (!tts.isPlaying && !tts.isPaused) return -1;
+    if (!tts.currentText) return -1;
+
+    // 1. Page scoping: If playback was started on a specific page, NEVER highlight other pages!
+    if (
+      tts.activeContext?.pageIndex !== undefined &&
+      pageIndex !== undefined &&
+      tts.activeContext.pageIndex !== pageIndex
+    ) {
+      return -1;
+    }
+
+    // 2. Sentence pair scoping: If playback was triggered on a specific sentence pair,
+    // lock word matching strictly to that pair!
+    if (tts.activeContext?.pairId) {
+      const targetPair = sentencePairs.find((p) => p.id === tts.activeContext?.pairId);
+      if (targetPair) {
+        const pairOffset = wordOffsets.get(targetPair.id) ?? 0;
+        const sentenceText = isSpeakingPrimary ? targetPair.primary : targetPair.secondary;
+        const cleanSentence = sentenceText.trim();
+        const cleanTTS = tts.currentText.trim();
+
+        if (cleanSentence.includes(cleanTTS)) {
+          const charIdx = cleanSentence.indexOf(cleanTTS);
+          const wordsBeforeInSentence =
+            charIdx > 0
+              ? cleanSentence.slice(0, charIdx).trim().split(/\s+/).filter(Boolean).length
+              : 0;
+          const ttsWordsCount = cleanTTS.split(/\s+/).filter(Boolean).length;
+          if (tts.activeWordIndex < ttsWordsCount) {
+            return pairOffset + wordsBeforeInSentence + tts.activeWordIndex;
+          }
+          return -1;
+        }
+
+        const normSentence = cleanSentence.replace(/\s+/g, ' ');
+        const normTTS = cleanTTS.replace(/\s+/g, ' ');
+        if (normSentence.includes(normTTS)) {
+          const charIdx = normSentence.indexOf(normTTS);
+          const wordsBeforeInSentence =
+            charIdx > 0
+              ? normSentence.slice(0, charIdx).trim().split(/\s+/).filter(Boolean).length
+              : 0;
+          const ttsWordsCount = normTTS.split(/\s+/).filter(Boolean).length;
+          if (tts.activeWordIndex < ttsWordsCount) {
+            return pairOffset + wordsBeforeInSentence + tts.activeWordIndex;
+          }
+          return -1;
+        }
+
+        // Exact sentence match
+        const ttsWordsCount = cleanTTS.split(/\s+/).filter(Boolean).length;
+        if (tts.activeWordIndex < ttsWordsCount) {
+          return pairOffset + tts.activeWordIndex;
+        }
+        return -1;
+      }
+    }
+
+    // 3. Fallback to paragraph-level matching
+    const activeText = isSpeakingPrimary ? primary : secondary;
+    return getActiveWordInParagraph(activeText, tts.currentText, tts.activeWordIndex);
+  }, [
+    tts.isPlaying,
+    tts.isPaused,
+    tts.currentText,
+    tts.activeWordIndex,
+    tts.activeContext,
+    pageIndex,
+    isSpeakingPrimary,
+    primary,
+    secondary,
+    sentencePairs,
+    wordOffsets,
+  ]);
+
   // Render a matched sentence as a hoverable span, with word-by-word active
   // highlighting when TTS is speaking this block.
-  const renderSentence = (text: string, pairId: string, startWordOffset: number) => {
+  const renderSentence = (
+    text: string,
+    pairId: string,
+    startWordOffset: number,
+    isSpeakingSide: boolean = true,
+  ) => {
     let content: React.ReactNode = text;
-    if (targetWordInParagraph >= 0) {
+    if (isSpeakingSide && targetWordInParagraph >= 0) {
       let wordIdx = startWordOffset - 1;
       const tokens = text.split(/(\s+)/);
       content = tokens.map((token, idx) => {
@@ -200,6 +287,7 @@ export const ParagraphBlock = memo(function ParagraphBlock({
 
   const renderPairSequence = (pairs: MatchedSentencePair[], side: 'primary' | 'secondary') => {
     let hasRendered = false;
+    const isSpeakingSide = side === 'primary' ? isSpeakingPrimary : !isSpeakingPrimary;
     return pairs.map((pair) => {
       const text = side === 'primary' ? pair.primary : pair.secondary;
       if (!text) return null;
@@ -208,7 +296,7 @@ export const ParagraphBlock = memo(function ParagraphBlock({
       return (
         <Fragment key={pair.id}>
           {separator}
-          {renderSentence(text, pair.id, wordOffsets.get(pair.id) ?? 0)}
+          {renderSentence(text, pair.id, wordOffsets.get(pair.id) ?? 0, isSpeakingSide)}
         </Fragment>
       );
     });
@@ -238,7 +326,7 @@ export const ParagraphBlock = memo(function ParagraphBlock({
             }}
             dir={primaryDir}
           >
-            {renderSentence(primary, 'heading-0', 0)}
+            {renderSentence(primary, 'heading-0', 0, isSpeakingPrimary)}
           </h2>
           {prefs.showSubtitles && secondary && (
             <div
@@ -254,7 +342,7 @@ export const ParagraphBlock = memo(function ParagraphBlock({
                 color: 'inherit',
               }}
             >
-              {renderSentence(secondary, 'heading-0', 0)}
+              {renderSentence(secondary, 'heading-0', 0, !isSpeakingPrimary)}
             </div>
           )}
         </div>
@@ -275,7 +363,12 @@ export const ParagraphBlock = memo(function ParagraphBlock({
                         lineHeight: prefs.lineHeight,
                       }}
                     >
-                      {renderSentence(pair.primary, pair.id, wordOffsets.get(pair.id) ?? 0)}
+                      {renderSentence(
+                        pair.primary,
+                        pair.id,
+                        wordOffsets.get(pair.id) ?? 0,
+                        isSpeakingPrimary,
+                      )}
                     </p>
                   )}
                   {pair.secondary && (
@@ -291,7 +384,12 @@ export const ParagraphBlock = memo(function ParagraphBlock({
                         textAlign: secondaryDir === 'rtl' ? 'right' : 'start',
                       }}
                     >
-                      {renderSentence(pair.secondary, pair.id, wordOffsets.get(pair.id) ?? 0)}
+                      {renderSentence(
+                        pair.secondary,
+                        pair.id,
+                        wordOffsets.get(pair.id) ?? 0,
+                        !isSpeakingPrimary,
+                      )}
                     </div>
                   )}
                 </div>

@@ -44,6 +44,11 @@ interface UseReaderSelectionOptions {
   emit: ReaderEmit;
 }
 
+export interface SelectedLocation {
+  pageIndex?: number;
+  pairId?: string;
+}
+
 export function useReaderSelection({
   book,
   currentParagraph,
@@ -52,6 +57,7 @@ export function useReaderSelection({
   emit,
 }: UseReaderSelectionOptions) {
   const [selectedText, setSelectedText] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState<SelectedLocation | null>(null);
   const [showTextMenu, setShowTextMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [selectedRange, setSelectedRange] = useState<Range | null>(null);
@@ -106,6 +112,8 @@ export function useReaderSelection({
     if (!sel || sel.rangeCount === 0) {
       setShowTextMenu(false);
       setSelectedRange(null);
+      setSelectedText('');
+      setSelectedLocation(null);
       return;
     }
 
@@ -113,6 +121,8 @@ export function useReaderSelection({
     if (rawRange.collapsed) {
       setShowTextMenu(false);
       setSelectedRange(null);
+      setSelectedText('');
+      setSelectedLocation(null);
       return;
     }
 
@@ -120,6 +130,8 @@ export function useReaderSelection({
     if (!initialText) {
       setShowTextMenu(false);
       setSelectedRange(null);
+      setSelectedText('');
+      setSelectedLocation(null);
       return;
     }
 
@@ -135,6 +147,32 @@ export function useReaderSelection({
     if (text && text.length > 0) {
       setSelectedText(text);
       setSelectedRange(range.cloneRange());
+
+      // Extract precise page index and sentence pair ID from DOM nodes
+      let pageIndex: number | undefined;
+      let pairId: string | undefined;
+
+      const container = range.startContainer;
+      const startEl =
+        container.nodeType === Node.ELEMENT_NODE
+          ? (container as HTMLElement)
+          : container.parentElement;
+
+      const pageEl = startEl?.closest('[data-paragraph-index]');
+      if (pageEl) {
+        const pIdx = Number(pageEl.getAttribute('data-paragraph-index'));
+        if (!isNaN(pIdx)) pageIndex = pIdx;
+      }
+
+      const pairEl = startEl?.closest('[data-pair-id]');
+      if (pairEl) {
+        pairId = pairEl.getAttribute('data-pair-id') || undefined;
+      }
+
+      setSelectedLocation(
+        pageIndex !== undefined || pairId !== undefined ? { pageIndex, pairId } : null,
+      );
+
       const rect = range.getBoundingClientRect();
       const MENU_H = 56;
       const MENU_HALF = 180;
@@ -153,6 +191,8 @@ export function useReaderSelection({
     } else {
       setShowTextMenu(false);
       setSelectedRange(null);
+      setSelectedText('');
+      setSelectedLocation(null);
     }
   }, []);
 
@@ -229,12 +269,24 @@ export function useReaderSelection({
 
   const closeTextMenu = useCallback(() => setShowTextMenu(false), []);
 
+  const clearSelection = useCallback(() => {
+    setSelectedText('');
+    setSelectedRange(null);
+    setSelectedLocation(null);
+    setShowTextMenu(false);
+    try {
+      window.getSelection()?.removeAllRanges();
+    } catch {}
+  }, []);
+
   return {
     selectedText,
     selectedRange,
+    selectedLocation,
     showTextMenu,
     setShowTextMenu,
     closeTextMenu,
+    clearSelection,
     menuPosition,
     handleTextSelection,
     handleShowDictionary,

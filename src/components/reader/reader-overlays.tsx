@@ -65,6 +65,7 @@ export function ReaderOverlays() {
     setShowTextMenu,
     menuPosition,
     selectedText,
+    selectedLocation,
     addHighlight,
     handleShowDictionary,
     handleAddToVocab,
@@ -141,7 +142,12 @@ export function ReaderOverlays() {
             onSpeak={() => {
               if (!selectedText) return;
               const isFa = /[\u0600-\u06FF]/.test(selectedText);
-              void tts.speak(selectedText, isFa ? 'fa' : 'en');
+              void tts.speak(
+                selectedText,
+                isFa ? 'fa' : 'en',
+                undefined,
+                selectedLocation ?? undefined,
+              );
               setShowTextMenu(false);
             }}
             onAIChat={() => {

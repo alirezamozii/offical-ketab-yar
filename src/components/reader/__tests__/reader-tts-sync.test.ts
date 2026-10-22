@@ -63,6 +63,13 @@ describe('getActiveWordInParagraph', () => {
     expect(getActiveWordInParagraph(paragraph, selection, 0)).toBe(1);
     expect(getActiveWordInParagraph(paragraph, selection, 1)).toBe(2);
   });
+
+  it('does not trigger Case 4 for trivial short paragraphs or headings', () => {
+    const heading = 'Chapter 1';
+    const longSpokenText = 'In Chapter 1 of the story, we see Lennie and George walking together.';
+    // Heading is only 2 words (< 3 words), so it should not match as active paragraph
+    expect(getActiveWordInParagraph(heading, longSpokenText, 0)).toBe(-1);
+  });
 });
 
 describe('getVisibleReadingText', () => {
