@@ -2,12 +2,6 @@
 
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { AudioWaveBars } from '@/components/reader/audio-wave-bars';
 import { ReaderAudioControls } from '@/components/reader/reader-audio-controls';
 import { chapterSegments, currentChapterIndex } from '@/components/reader/chapter-utils';
@@ -19,9 +13,7 @@ import { cn } from '@/lib/utils';
 import {
   ArrowLeft,
   ArrowRight,
-  Check,
   CheckCircle2,
-  ChevronDown,
   Clock,
   Pause,
   Play,
@@ -278,87 +270,26 @@ export function ReaderBottomBar() {
                 {/* Single Clean Meta Info Header */}
                 <div className="flex items-center justify-between text-xs">
                   {activeChapter ? (
-                    /* Current chapter dropdown — EN + FA titles, jump on click */
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          type="button"
-                          className="group flex min-w-0 items-center gap-1 rounded-lg px-1.5 py-1 -ms-1.5 text-start transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-                          aria-label="انتخاب فصل"
-                          title="انتخاب فصل"
-                        >
-                          <span className="flex min-w-0 flex-col leading-tight">
-                            <span
-                              className="truncate text-xs font-bold"
-                              dir="ltr"
-                              lang="en"
-                              style={{ color: themeStyle.accent }}
-                            >
-                              {activeChapter.title}
-                            </span>
-                            {activeChapter.titleFa && (
-                              <span
-                                className="truncate text-[10px] font-medium opacity-75"
-                                dir="rtl"
-                                lang="fa"
-                              >
-                                {activeChapter.titleFa}
-                              </span>
-                            )}
-                          </span>
-                          <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60 transition-transform group-data-[state=open]:rotate-180" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="start"
-                        sideOffset={8}
-                        className="max-h-[60dvh] overflow-y-auto rounded-xl"
-                        style={{
-                          background: themeStyle.bg,
-                          color: themeStyle.text,
-                          borderColor: themeStyle.border,
-                        }}
+                    /* Current chapter display — EN + FA titles, simple clean text (no dropdown) */
+                    <div className="flex min-w-0 flex-col leading-tight select-none">
+                      <span
+                        className="truncate text-xs font-bold"
+                        dir="ltr"
+                        lang="en"
+                        style={{ color: themeStyle.accent }}
                       >
-                        <div
-                          className="px-3 pb-1.5 pt-2 text-[10px] font-bold opacity-60"
+                        {activeChapter.title}
+                      </span>
+                      {activeChapter.titleFa && (
+                        <span
+                          className="truncate text-[10px] font-medium opacity-75"
                           dir="rtl"
+                          lang="fa"
                         >
-                          فصل‌های کتاب
-                        </div>
-                        {chapters.map((ch, i) => (
-                          <DropdownMenuItem
-                            key={ch.id}
-                            onClick={() => scrollToParagraph(ch.pageIndex)}
-                            className="gap-2 rounded-lg px-3 py-2"
-                          >
-                            <Check
-                              className={cn(
-                                'h-3.5 w-3.5 shrink-0',
-                                i === chapterIdx ? 'opacity-100' : 'opacity-0',
-                              )}
-                              style={{ color: themeStyle.accent }}
-                            />
-                            <span className="flex min-w-0 flex-col leading-tight">
-                              <span className="truncate text-xs font-bold" dir="ltr" lang="en">
-                                {ch.title}
-                              </span>
-                              {ch.titleFa && (
-                                <span
-                                  className="truncate text-[10px] font-medium opacity-70"
-                                  dir="rtl"
-                                  lang="fa"
-                                >
-                                  {ch.titleFa}
-                                </span>
-                              )}
-                            </span>
-                            <span className="ms-auto shrink-0 text-[10px] font-bold opacity-60 tabular-nums">
-                              ص{toPersianDigits(ch.startPage)}
-                            </span>
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          {activeChapter.titleFa}
+                        </span>
+                      )}
+                    </div>
                   ) : (
                     <span
                       className="tabular-nums font-bold"
