@@ -7,19 +7,20 @@ import WebSocket from 'ws';
 import crypto from 'node:crypto';
 import https from 'node:https';
 import { spawn } from 'node:child_process';
-import ZAI from 'z-ai-web-dev-sdk';
 import { aiRateLimit } from '@/lib/rate-limit';
 import { parseBody } from '@/lib/api-validate';
 
 /**
  * /api/tts
  *
- * Ultra-Fast, Anti-Fragile Multi-Tier Speech Synthesis:
+ * Dedicated, Ultra-Resilient Edge TTS Speech Synthesis:
  *   Tier 0: Hot in-memory LRU cache (< 1ms instant response)
  *   Tier 1: Python edge-tts 7.3.1 (full Sec-MS-GEC v2 protocol, natural Ava/Andrew & Dilara/Farid)
- *   Tier 2: Direct Edge TTS WebSocket client (Node.js fallback with clock-skew correction)
- *   Tier 3: Google Translate TTS (ultra-fast < 1.2s for English dictionary words)
- *   Tier 4: Z-AI TTS fallback
+ *   Tier 2: Direct Edge TTS WebSocket client (Node.js with clock-skew correction)
+ *
+ * Strict policy: ONLY the user-selected Edge TTS voices are generated.
+ * No robotic or foreign fallback voices (no Google TTS, no Z-AI, no Web Speech).
+ * Automatically retries Edge TTS with backoff until synthesis succeeds.
  *
  * Edge TTS voices:
  *   • en-US-AvaMultilingualNeural    — English female (natural)
@@ -389,69 +390,7 @@ async function generateWithEdgeTTS(
   }
 }
 
-// ── Tier 3: Google Translate TTS (ultra-fast < 1.2s for English dictionary words) ──
-async function generateWithGoogleTTS(text: string, lang: 'en' | 'fa'): Promise<Buffer | null> {
-  if (lang !== 'en') return null;
-  try {
-    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text.slice(0, 200))}&tl=en&client=tw-ob`;
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      },
-      signal: AbortSignal.timeout(2200),
-    });
-    if (!res.ok) return null;
-    const arrayBuf = await res.arrayBuffer();
-    const buf = Buffer.from(arrayBuf);
-    if (buf.length < 500) return null;
-    return buf;
-  } catch {
-    return null;
-  }
-}
-
-// ── Tier 4: Z-AI TTS engine (fallback) ─────────────────────────────────────
-let cachedZai: ZAI | null = null;
-async function getZai(): Promise<ZAI> {
-  if (cachedZai) return cachedZai;
-  cachedZai = await ZAI.create();
-  return cachedZai;
-}
-
-async function generateWithZai(
-  text: string,
-  lang: 'en' | 'fa',
-  speed: number,
-): Promise<Buffer | null> {
-  try {
-    const zaiPromise = (async () => {
-      const zai = await getZai();
-      const voice = lang === 'fa' ? 'tongtong' : 'jam';
-
-      const response = await zai.audio.tts.create({
-        input: text,
-        voice,
-        speed,
-        response_format: 'wav',
-        stream: false,
-      });
-
-      const arrayBuffer = await response.arrayBuffer();
-      const buffer = Buffer.from(new Uint8Array(arrayBuffer));
-      if (!buffer || buffer.length === 0) return null;
-      return buffer;
-    })();
-
-    const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3500));
-    return await Promise.race([zaiPromise, timeoutPromise]);
-  } catch (err) {
-    console.error('[tts] z-ai fallback failed:', err);
-    return null;
-  }
-}
-
-// ── Synthesize Master Pipeline ─────────────────────────────────────────────
+// ── Synthesize Master Pipeline (Strict Edge TTS Only with Persistent Retry) ──
 async function synthesizeAudio(
   text: string,
   lang: 'en' | 'fa',
@@ -468,65 +407,47 @@ async function synthesizeAudio(
   const cached = serverAudioCache.get(cacheKey);
   if (cached) return cached;
 
-  // 1. Python Edge TTS (highest quality, v2 Sec-MS-GEC support)
-  const pyTimeout = isShort ? 6500 : 9000;
-  const pyResult = await generateWithPythonEdgeTTS(text, voice, speed, pyTimeout);
-  if (pyResult && pyResult.buffer.length > 0) {
-    const entry: CachedAudioEntry = {
-      buffer: pyResult.buffer,
-      contentType: 'audio/mpeg',
-      wordBoundaries: pyResult.wordBoundaries,
-      engine: 'edge-python',
-      createdAt: Date.now(),
-    };
-    if (serverAudioCache.size >= MAX_SERVER_CACHE) {
-      const oldestKey = serverAudioCache.keys().next().value;
-      if (oldestKey) serverAudioCache.delete(oldestKey);
-    }
-    serverAudioCache.set(cacheKey, entry);
-    return entry;
-  }
-
-  // 2. Direct Edge TTS WebSocket client
-  const edgeResult = await generateWithEdgeTTS(text, voice, speed, 0);
-  if (edgeResult && edgeResult.buffer.length > 0) {
-    const entry: CachedAudioEntry = {
-      buffer: edgeResult.buffer,
-      contentType: 'audio/mpeg',
-      wordBoundaries: edgeResult.wordBoundaries,
-      engine: 'edge-ws',
-      createdAt: Date.now(),
-    };
-    serverAudioCache.set(cacheKey, entry);
-    return entry;
-  }
-
-  // 3. Ultra-fast Google TTS (especially for English dictionary words and single phrases)
-  if (lang === 'en') {
-    const googleBuf = await generateWithGoogleTTS(text, lang);
-    if (googleBuf && googleBuf.length > 0) {
+  // Strict Edge TTS retry loop: NEVER fallback to robotic voices (no Google TTS, no Z-AI).
+  // Keeps retrying with the chosen Edge neural voice across both Python and WebSocket engines.
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    // 1. Python edge-tts 7.3.1 (high-fidelity neural engine with word boundaries)
+    const pyTimeout = isShort ? 6500 : 9000;
+    const pyResult = await generateWithPythonEdgeTTS(text, voice, speed, pyTimeout);
+    if (pyResult && pyResult.buffer.length > 0) {
       const entry: CachedAudioEntry = {
-        buffer: googleBuf,
+        buffer: pyResult.buffer,
         contentType: 'audio/mpeg',
-        engine: 'google-tts',
+        wordBoundaries: pyResult.wordBoundaries,
+        engine: 'edge-python',
+        createdAt: Date.now(),
+      };
+      if (serverAudioCache.size >= MAX_SERVER_CACHE) {
+        const oldestKey = serverAudioCache.keys().next().value;
+        if (oldestKey) serverAudioCache.delete(oldestKey);
+      }
+      serverAudioCache.set(cacheKey, entry);
+      return entry;
+    }
+
+    // 2. Direct Edge TTS WebSocket client (same selected voice, with clock-skew sync)
+    const edgeResult = await generateWithEdgeTTS(text, voice, speed, attempt > 1 ? 1 : 0);
+    if (edgeResult && edgeResult.buffer.length > 0) {
+      const entry: CachedAudioEntry = {
+        buffer: edgeResult.buffer,
+        contentType: 'audio/mpeg',
+        wordBoundaries: edgeResult.wordBoundaries,
+        engine: 'edge-ws',
         createdAt: Date.now(),
       };
       serverAudioCache.set(cacheKey, entry);
       return entry;
     }
-  }
 
-  // 4. Fallback to z-ai SDK
-  const zaiBuffer = await generateWithZai(text, lang, speed);
-  if (zaiBuffer && zaiBuffer.length > 0) {
-    const entry: CachedAudioEntry = {
-      buffer: zaiBuffer,
-      contentType: 'audio/wav',
-      engine: 'zai-fallback',
-      createdAt: Date.now(),
-    };
-    serverAudioCache.set(cacheKey, entry);
-    return entry;
+    // Wait briefly before retrying
+    if (attempt < maxAttempts) {
+      await new Promise((r) => setTimeout(r, 250 * attempt));
+    }
   }
 
   return null;

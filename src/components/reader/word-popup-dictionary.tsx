@@ -231,22 +231,6 @@ export function useWordPopupState(
     let finished = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
 
-    const fallbackSpeak = () => {
-      if (finished) return;
-      finished = true;
-      if (timer) clearTimeout(timer);
-      try {
-        window.speechSynthesis?.cancel();
-        const u = new SpeechSynthesisUtterance(clean);
-        u.lang = 'en-US';
-        u.onend = () => setIsPlayingAudio(false);
-        u.onerror = () => setIsPlayingAudio(false);
-        window.speechSynthesis?.speak(u);
-      } catch {
-        setIsPlayingAudio(false);
-      }
-    };
-
     const targetAudioUrl = result?.audioUrl || `/api/tts?text=${encodeURIComponent(clean)}&lang=en`;
     try {
       const audio = new Audio(targetAudioUrl);
@@ -254,12 +238,13 @@ export function useWordPopupState(
       // 4s watchdog: Never let word pronunciation hang indefinitely
       timer = setTimeout(() => {
         if (!finished) {
+          finished = true;
           try {
             audio.pause();
             audio.removeAttribute('src');
             audio.load();
           } catch {}
-          fallbackSpeak();
+          setIsPlayingAudio(false);
         }
       }, 4000);
 
@@ -272,10 +257,18 @@ export function useWordPopupState(
         if (timer) clearTimeout(timer);
         setIsPlayingAudio(false);
       };
-      audio.onerror = () => fallbackSpeak();
-      audio.play().catch(() => fallbackSpeak());
+      audio.onerror = () => {
+        finished = true;
+        if (timer) clearTimeout(timer);
+        setIsPlayingAudio(false);
+      };
+      audio.play().catch(() => {
+        finished = true;
+        if (timer) clearTimeout(timer);
+        setIsPlayingAudio(false);
+      });
     } catch {
-      fallbackSpeak();
+      setIsPlayingAudio(false);
     }
   }, [word, result?.audioUrl]);
 

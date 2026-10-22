@@ -144,16 +144,6 @@ function splitIntoChunks(text: string, maxChars = MAX_CHUNK_CHARS): string[] {
   return chunks.filter(Boolean);
 }
 
-function getWordIndexFromCharIndex(text: string, charIndex: number): number {
-  const words = text.split(/\s+/);
-  let charsCount = 0;
-  for (let i = 0; i < words.length; i++) {
-    charsCount += words[i].length + 1;
-    if (charsCount > charIndex) return i;
-  }
-  return -1;
-}
-
 export function useTTS(): UseTTSReturn {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const objectUrlRef = useRef<string | null>(null);
@@ -166,8 +156,6 @@ export function useTTS(): UseTTSReturn {
   const queueSpeedRef = useRef<number | undefined>(undefined);
   const totalChunksRef = useRef<number>(0);
   const chunkIndexRef = useRef<number>(0);
-  const isFallbackActiveRef = useRef<boolean>(false);
-  const fallbackUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const playNextChunkRef = useRef<(() => void) | null>(null);
   const boundariesRef = useRef<WordBoundary[]>([]);
   const activeWordIndexRef = useRef<number>(-1);
@@ -233,13 +221,6 @@ export function useTTS(): UseTTSReturn {
   // ---- Stop playback immediately + revoke any object URL ----
   const stop = useCallback(() => {
     cancelTick();
-    if (isFallbackActiveRef.current) {
-      if (typeof window !== 'undefined' && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
-      isFallbackActiveRef.current = false;
-      fallbackUtteranceRef.current = null;
-    }
     // Abort any in-flight /api/tts fetch so its `.then` doesn't fire on a
     // stopped / unmounted instance.
     fetchAbortRef.current?.abort();
@@ -480,7 +461,7 @@ export function useTTS(): UseTTSReturn {
     [prefetchSingleChunk],
   );
 
-  // ---- Fetch a single chunk's audio (cache-aware) and load it into the element ----
+  // ---- Fetch a single chunk's audio (cache-aware) with automatic retry ----
   const loadChunk = useCallback(
     async (text: string, lang: TTSLang, speedOverride?: number): Promise<boolean> => {
       const el = getAudio();
@@ -503,67 +484,88 @@ export function useTTS(): UseTTSReturn {
       let boundaries: WordBoundary[] = cached?.wordBoundaries || [];
 
       if (!blob) {
-        // Abort any previously in-flight fetch
-        fetchAbortRef.current?.abort();
-        const ctrl = new AbortController();
-        fetchAbortRef.current = ctrl;
-        let res: Response;
-        try {
-          res = await fetch('/api/tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              text,
-              lang,
-              voice: selectedVoice,
-              speed: effectiveSpeed,
-            }),
-            signal: ctrl.signal,
-          });
-        } catch (err) {
-          // AbortError is expected on supersession / unmount — don't toast.
-          if (err instanceof DOMException && err.name === 'AbortError') {
-            return false;
-          }
-          throw err;
-        }
-        const ct = res.headers.get('content-type') || '';
-        if (!res.ok || ct.includes('application/json')) {
-          const j = await res.json().catch(() => ({}));
-          const msg = (j && typeof j.error === 'string' && j.error) || 'سرویس صدا در دسترس نیست';
-          setError(msg);
-          toast.error(msg);
-          return false;
-        }
+        // Persistent retry loop: Try up to 3 times to fetch the authentic Edge TTS audio.
+        // Never falls back to robotic OS speech.
+        const MAX_RETRIES = 3;
+        let lastErrorMsg = 'سرویس صدا در دسترس نیست';
+        let success = false;
 
-        // Extract WordBoundaries from header if present
-        const wbHeader = res.headers.get('x-tts-word-boundaries');
-        if (wbHeader) {
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+          fetchAbortRef.current?.abort();
+          const ctrl = new AbortController();
+          fetchAbortRef.current = ctrl;
+
           try {
-            const decoded =
-              typeof window !== 'undefined'
-                ? atob(wbHeader)
-                : Buffer.from(wbHeader, 'base64').toString('utf-8');
-            const parsedBounds = JSON.parse(decoded);
-            if (Array.isArray(parsedBounds)) {
-              boundaries = parsedBounds;
+            const res = await fetch('/api/tts', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                text,
+                lang,
+                voice: selectedVoice,
+                speed: effectiveSpeed,
+              }),
+              signal: ctrl.signal,
+            });
+
+            if (ctrl.signal.aborted) return false;
+
+            const ct = res.headers.get('content-type') || '';
+            if (!res.ok || ct.includes('application/json')) {
+              const j = await res.json().catch(() => ({}));
+              if (j && typeof j.error === 'string') {
+                lastErrorMsg = j.error;
+              }
+              if (attempt < MAX_RETRIES) {
+                await new Promise((r) => setTimeout(r, 350 * attempt));
+                continue;
+              }
+              break;
             }
-          } catch (e) {
-            console.warn('[tts] failed to parse word boundaries header:', e);
+
+            // Extract WordBoundaries from header if present
+            const wbHeader = res.headers.get('x-tts-word-boundaries');
+            if (wbHeader) {
+              try {
+                const decoded =
+                  typeof window !== 'undefined'
+                    ? atob(wbHeader)
+                    : Buffer.from(wbHeader, 'base64').toString('utf-8');
+                const parsedBounds = JSON.parse(decoded);
+                if (Array.isArray(parsedBounds)) {
+                  boundaries = parsedBounds;
+                }
+              } catch (e) {
+                console.warn('[tts] failed to parse word boundaries header:', e);
+              }
+            }
+
+            blob = await res.blob();
+            if (blob && blob.size > 0) {
+              cacheRef.current.set(key, { blob, wordBoundaries: boundaries });
+              if (cacheRef.current.size > MAX_CACHE_ENTRIES) {
+                const firstKey = cacheRef.current.keys().next().value;
+                if (firstKey) cacheRef.current.delete(firstKey);
+              }
+              success = true;
+              break;
+            }
+          } catch (err) {
+            if (err instanceof DOMException && err.name === 'AbortError') {
+              return false;
+            }
+            console.warn(`[tts] loadChunk attempt ${attempt} failed:`, err);
+          }
+
+          if (attempt < MAX_RETRIES) {
+            await new Promise((r) => setTimeout(r, 350 * attempt));
           }
         }
 
-        blob = await res.blob();
-        if (!blob || blob.size === 0) {
-          const msg = 'سرویس صدا در دسترس نیست';
-          setError(msg);
-          toast.error(msg);
+        if (!success || !blob) {
+          setError(lastErrorMsg);
+          toast.error(lastErrorMsg);
           return false;
-        }
-        cacheRef.current.set(key, { blob, wordBoundaries: boundaries });
-        if (cacheRef.current.size > MAX_CACHE_ENTRIES) {
-          const firstKey = cacheRef.current.keys().next().value;
-          if (firstKey) cacheRef.current.delete(firstKey);
         }
       }
 
@@ -585,52 +587,6 @@ export function useTTS(): UseTTSReturn {
     [getAudio],
   );
 
-  // ---- Web Speech API Fallback Player ----
-  const playFallback = useCallback(
-    (text: string) => {
-      if (typeof window === 'undefined' || !window.speechSynthesis) {
-        stop();
-        return;
-      }
-      window.speechSynthesis.cancel();
-      const { audioSpeed } = useReaderSettingsStore.getState();
-      const utterance = new SpeechSynthesisUtterance(text);
-
-      const lang = queueLangRef.current;
-      utterance.lang = lang === 'fa' ? 'fa-IR' : 'en-US';
-      utterance.rate = queueSpeedRef.current ?? audioSpeed;
-
-      // Select suitable voice
-      const voices = window.speechSynthesis.getVoices();
-      const voice = voices.find((v) => v.lang.startsWith(lang));
-      if (voice) utterance.voice = voice;
-
-      utterance.onboundary = (e) => {
-        if (e.name === 'word') {
-          const wordIdx = getWordIndexFromCharIndex(text, e.charIndex);
-          activeWordIndexRef.current = wordIdx;
-          setActiveWordIndex(wordIdx);
-        }
-      };
-
-      utterance.onend = () => {
-        // Advance chunk queue
-        playNextChunkRef.current?.();
-      };
-      utterance.onerror = (e) => {
-        if (e.error !== 'interrupted') {
-          console.error('[tts] fallback error:', e);
-          stop();
-        }
-      };
-      fallbackUtteranceRef.current = utterance;
-      setIsPlaying(true);
-      setIsPaused(false);
-      window.speechSynthesis.speak(utterance);
-    },
-    [stop],
-  );
-
   // ---- Advance to the next queued chunk (if any) ----
   const playNextChunk = useCallback(async (): Promise<void> => {
     const next = queueRef.current.shift();
@@ -648,26 +604,17 @@ export function useTTS(): UseTTSReturn {
       setActiveWordIndex(-1);
       totalChunksRef.current = 0;
       chunkIndexRef.current = 0;
-      isFallbackActiveRef.current = false;
       return;
     }
     chunkIndexRef.current += 1;
     setChunkIndex(chunkIndexRef.current);
     setCurrentText(next);
 
-    // If fallback is already active, play via Web Speech
-    if (isFallbackActiveRef.current) {
-      playFallback(next);
-      return;
-    }
-
     setIsLoading(true);
     const ok = await loadChunk(next, queueLangRef.current);
     if (!ok) {
-      // API failed! Fallback to Web Speech API
-      isFallbackActiveRef.current = true;
       setIsLoading(false);
-      playFallback(next);
+      setIsPlaying(false);
       return;
     }
     setIsLoading(false);
@@ -679,11 +626,10 @@ export function useTTS(): UseTTSReturn {
       setIsPlaying(true);
       setIsPaused(false);
     } catch (playErr) {
-      console.error('[tts] play failed, trying fallback:', playErr);
-      isFallbackActiveRef.current = true;
-      playFallback(next);
+      console.error('[tts] play failed:', playErr);
+      setIsPlaying(false);
     }
-  }, [loadChunk, playFallback, startTick]);
+  }, [loadChunk, startTick]);
 
   // Keep playNextChunkRef updated
   useEffect(() => {
@@ -764,10 +710,8 @@ export function useTTS(): UseTTSReturn {
 
       const ok = await loadChunk(chunks[0], lang, effectiveSpeed);
       if (!ok) {
-        // API failed! Fallback to Web Speech API
-        isFallbackActiveRef.current = true;
         setIsLoading(false);
-        playFallback(chunks[0]);
+        setIsPlaying(false);
         return;
       }
       setIsLoading(false);
@@ -780,23 +724,14 @@ export function useTTS(): UseTTSReturn {
         setIsPlaying(true);
         setIsPaused(false);
       } catch (playErr) {
-        console.error('[tts] play failed, trying fallback:', playErr);
-        isFallbackActiveRef.current = true;
-        playFallback(chunks[0]);
+        console.error('[tts] play failed:', playErr);
+        setIsPlaying(false);
       }
     },
-    [getAudio, loadChunk, playFallback, startTick, startBackgroundPrefetch],
+    [getAudio, loadChunk, startTick, startBackgroundPrefetch],
   );
 
   const pause = useCallback(() => {
-    if (isFallbackActiveRef.current) {
-      if (typeof window !== 'undefined' && window.speechSynthesis) {
-        window.speechSynthesis.pause();
-        setIsPlaying(false);
-        setIsPaused(true);
-      }
-      return;
-    }
     const el = audioRef.current;
     if (el && !el.paused) {
       el.pause();
@@ -807,14 +742,6 @@ export function useTTS(): UseTTSReturn {
   }, [cancelTick]);
 
   const resume = useCallback(() => {
-    if (isFallbackActiveRef.current) {
-      if (typeof window !== 'undefined' && window.speechSynthesis) {
-        window.speechSynthesis.resume();
-        setIsPlaying(true);
-        setIsPaused(false);
-      }
-      return;
-    }
     const el = audioRef.current;
     if (el && el.paused && el.src) {
       el.play()
