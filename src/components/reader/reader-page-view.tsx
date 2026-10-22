@@ -21,6 +21,23 @@ interface ParagraphGroup {
 }
 
 /**
+ * Counts words that contain at least one alphanumeric character (Unicode letter or number).
+ * TTS engines (like Edge TTS) only emit WordBoundary events for actual spoken words,
+ * skipping standalone punctuation like "-", "—", "...", etc.
+ */
+export function countSpokenWords(text: string | null | undefined): number {
+  if (!text) return 0;
+  return text.split(/\s+/).filter((tok) => /[\p{L}\p{N}]/u.test(tok)).length;
+}
+
+/**
+ * Checks if a token contains spoken alphanumeric characters.
+ */
+export function isSpokenWord(token: string): boolean {
+  return /[\p{L}\p{N}]/u.test(token);
+}
+
+/**
  * Calculates the exact 0-based word index inside `primary` that corresponds to
  * the TTS engine's `activeWordIndex` (which is 0-based relative to `ttsText`).
  * Returns -1 if this paragraph is not currently speaking.
@@ -37,16 +54,16 @@ export function getActiveWordInParagraph(
 
   // Case 1: Exact match
   if (pClean === tClean) {
-    const pWordsCount = pClean.split(/\s+/).filter(Boolean).length;
+    const pWordsCount = countSpokenWords(pClean);
     return activeWordIndex < pWordsCount ? activeWordIndex : -1;
   }
 
   // Case 2: Selected text inside this paragraph (e.g. user selected a sentence or phrase)
   if (pClean.includes(tClean)) {
     const charIdx = pClean.indexOf(tClean);
-    const wordsBefore = pClean.slice(0, charIdx).trim().split(/\s+/).filter(Boolean).length;
-    const ttsWordsCount = tClean.split(/\s+/).filter(Boolean).length;
-    const pWordsCount = pClean.split(/\s+/).filter(Boolean).length;
+    const wordsBefore = countSpokenWords(pClean.slice(0, charIdx));
+    const ttsWordsCount = countSpokenWords(tClean);
+    const pWordsCount = countSpokenWords(pClean);
     const wordIdx = wordsBefore + activeWordIndex;
     if (activeWordIndex < ttsWordsCount + 3 && wordIdx < pWordsCount) {
       return wordIdx;
@@ -59,9 +76,9 @@ export function getActiveWordInParagraph(
   const normT = tClean.replace(/\s+/g, ' ');
   if (normP.includes(normT)) {
     const charIdx = normP.indexOf(normT);
-    const wordsBefore = normP.slice(0, charIdx).trim().split(/\s+/).filter(Boolean).length;
-    const ttsWordsCount = normT.split(/\s+/).filter(Boolean).length;
-    const pWordsCount = normP.split(/\s+/).filter(Boolean).length;
+    const wordsBefore = countSpokenWords(normP.slice(0, charIdx));
+    const ttsWordsCount = countSpokenWords(normT);
+    const pWordsCount = countSpokenWords(normP);
     const wordIdx = wordsBefore + activeWordIndex;
     if (activeWordIndex < ttsWordsCount + 3 && wordIdx < pWordsCount) {
       return wordIdx;
@@ -73,13 +90,11 @@ export function getActiveWordInParagraph(
   if (normT.includes(normP) || tClean.includes(pClean)) {
     const fullText = normT.includes(normP) ? normT : tClean;
     const targetP = normT.includes(normP) ? normP : pClean;
-    const pWordsCount = targetP.split(/\s+/).filter(Boolean).length;
+    const pWordsCount = countSpokenWords(targetP);
     if (pWordsCount >= 3) {
       const charIdx = fullText.indexOf(targetP);
       const textBefore = fullText.slice(0, charIdx);
-      const wordsBefore = textBefore.trim()
-        ? textBefore.trim().split(/\s+/).filter(Boolean).length
-        : 0;
+      const wordsBefore = textBefore.trim() ? countSpokenWords(textBefore) : 0;
 
       const relativeWord = activeWordIndex - wordsBefore;
       if (relativeWord >= 0 && relativeWord < pWordsCount) {
@@ -158,10 +173,11 @@ export const ParagraphBlock = memo(function ParagraphBlock({
     let running = 0;
     for (const pair of sentencePairs) {
       map.set(pair.id, running);
-      running += pair.primary.split(/\s+/).filter(Boolean).length;
+      const text = isSpeakingPrimary ? pair.primary : pair.secondary;
+      running += countSpokenWords(text);
     }
     return map;
-  }, [sentencePairs]);
+  }, [sentencePairs, isSpeakingPrimary]);
 
   // Match TTS reading position accurately within this paragraph
   const targetWordInParagraph = useMemo(() => {
@@ -216,12 +232,16 @@ export const ParagraphBlock = memo(function ParagraphBlock({
       );
     }
 
-    const sentenceWordCount = text.split(/\s+/).filter(Boolean).length;
+    const sentenceWordCount = countSpokenWords(text);
     const sentenceStart = startWordOffset;
     const sentenceEnd = startWordOffset + sentenceWordCount - 1;
 
     // Fast path: if the active word is not in this sentence, render plain text with zero span overhead
-    if (targetWordInParagraph < sentenceStart || targetWordInParagraph > sentenceEnd) {
+    if (
+      sentenceWordCount === 0 ||
+      targetWordInParagraph < sentenceStart ||
+      targetWordInParagraph > sentenceEnd
+    ) {
       return (
         <span data-pair-id={pairId} className="rounded">
           {text}
@@ -235,8 +255,11 @@ export const ParagraphBlock = memo(function ParagraphBlock({
       if (/^\s+$/.test(token)) {
         return token;
       }
-      wordIdx++;
-      const isActive = wordIdx === targetWordInParagraph;
+      const isWord = isSpokenWord(token);
+      if (isWord) {
+        wordIdx++;
+      }
+      const isActive = isWord && wordIdx === targetWordInParagraph;
 
       if (!isActive) {
         return token;

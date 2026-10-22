@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getActiveWordInParagraph } from '../reader-page-view';
+import { countSpokenWords, getActiveWordInParagraph, isSpokenWord } from '../reader-page-view';
 import { getVisibleReadingText } from '@/lib/reader/scroll-text';
 import type { ReaderBook } from '@/lib/reader/types';
 
@@ -69,6 +69,32 @@ describe('getActiveWordInParagraph', () => {
     const longSpokenText = 'In Chapter 1 of the story, we see Lennie and George walking together.';
     // Heading is only 2 words (< 3 words), so it should not match as active paragraph
     expect(getActiveWordInParagraph(heading, longSpokenText, 0)).toBe(-1);
+  });
+
+  it('skips standalone punctuation and hyphens so words sync correctly with Edge TTS boundaries', () => {
+    const sentence =
+      "On one side of the river the golden foothill slopes curve up to the strong and rocky Gabilan mountains, but on the valley side the water is lined with trees - willows fresh and green with every spring, carrying in their lower leaf junctures the debris of the winter's flooding; and sycamores with mottled, white, recumbent limbs and branches that arch over the pool.";
+
+    // Total spoken words should be 63 (standalone "-" is not counted as a spoken word)
+    expect(countSpokenWords(sentence)).toBe(63);
+
+    // Standalone punctuation checks
+    expect(isSpokenWord('-')).toBe(false);
+    expect(isSpokenWord('—')).toBe(false);
+    expect(isSpokenWord('...')).toBe(false);
+    expect(isSpokenWord('trees')).toBe(true);
+    expect(isSpokenWord("winter's")).toBe(true);
+    expect(isSpokenWord('pool.')).toBe(true);
+
+    // TTS index 62 is the 63rd word ("pool."), which is the final word of the paragraph
+    expect(getActiveWordInParagraph(sentence, sentence, 62)).toBe(62);
+    // Index 63 is out of range
+    expect(getActiveWordInParagraph(sentence, sentence, 63)).toBe(-1);
+
+    // Now test selection inside this paragraph after the dash:
+    const selection = 'willows fresh and green with every spring';
+    // "willows" is spoken word 30 in the paragraph (0..29 are before the dash)
+    expect(getActiveWordInParagraph(sentence, selection, 0)).toBe(30);
   });
 });
 
